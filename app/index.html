@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SinapxIA - Assignments Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <h1>SinapxIA</h1>
+            <p class="header-subtitle" data-i18n="header.subtitle">System for Insight, Adoption, Practice & eXpansion through Intelligent Agents</p>
+            <div class="header-controls">
+                <select id="languageSelector" class="language-selector">
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="nav-item active">
+                        <a href="#" data-i18n="sidebar.dashboard">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" data-i18n="sidebar.assignments">Assignments</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" data-i18n="sidebar.reports">Reports</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" data-i18n="sidebar.settings">Settings</a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="content">
+            <div class="dashboard-header">
+                <h2 data-i18n="dashboard.title">Assignments Dashboard</h2>
+                <div class="dimension-selector">
+                    <label for="dimensionSelect" data-i18n="dashboard.selectDimension">Select Dimension:</label>
+                    <select id="dimensionSelect" class="dimension-select">
+                        <option value="aiAdoption" selected data-i18n="dimensions.aiAdoption">AI Adoption</option>
+                        <option value="vacation" data-i18n="dimensions.vacation">Vacation</option>
+                        <option value="englishLevel" data-i18n="dimensions.englishLevel">English Level</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="dashboardGrid" class="dashboard-grid">
+                <!-- Grid will be dynamically generated -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p data-i18n="footer.copyright">&copy; 2025 SinapxIA. All rights reserved.</p>
+    </footer>
+
+    <!-- Modal for Employee Details -->
+    <div id="employeeModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3 id="modalEmployeeName"></h3>
+            <div class="modal-body">
+                <div class="modal-field">
+                    <label data-i18n="modal.email">Email:</label>
+                    <span id="modalEmployeeEmail"></span>
+                </div>
+                <div class="modal-field">
+                    <label data-i18n="modal.role">Role:</label>
+                    <span id="modalEmployeeRole"></span>
+                </div>
+                <div class="modal-field">
+                    <label data-i18n="modal.team">Team:</label>
+                    <span id="modalEmployeeTeam"></span>
+                </div>
+                <div class="modal-field">
+                    <label data-i18n="modal.date">Date:</label>
+                    <span id="modalEmployeeDate"></span>
+                </div>
+                <div class="modal-field">
+                    <label data-i18n="modal.observation">Observation:</label>
+                    <p id="modalEmployeeObservation"></p>
+                </div>
+                <div class="modal-field">
+                    <label data-i18n="modal.currentMetric">Current Metric:</label>
+                    <select id="modalMetricSelect" class="metric-select">
+                        <option value="Alto" data-i18n="metrics.high">High</option>
+                        <option value="Medio" data-i18n="metrics.medium">Medium</option>
+                        <option value="Bajo" data-i18n="metrics.low">Low</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button id="saveMetricBtn" class="btn btn-primary" data-i18n="modal.saveMetric">Save Metric</button>
+                    <button id="addEntryBtn" class="btn btn-secondary" data-i18n="modal.addEntry">Add New Entry</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/i18n.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

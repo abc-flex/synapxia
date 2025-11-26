@@ -1,0 +1,42 @@
+name,email,role,team,metric,date,observation
+Roger Ricardo Roldan Bonilla,rrroldanb@ultragroupla.com,BACK,HADES,Medio,15/01/2026,Nivel de adopción de IA medio
+Oscar David Morales Ortiz,odmoraleso@ultragroupla.com,BACK,SKYNET,Alto,16/01/2026,Nivel de adopción de IA medio
+Angelo Nieto Triana,anietot@ultragroupla.com,BACK,SKYNET,Medio,17/01/2026,Nivel de adopción de IA medio
+Abel Jose Bautista Perez,ajbautistap@ultragroupla.com,BACK,SKYNET,Alto,18/01/2026,Nivel de adopción de IA medio
+Juan Carlos Gonzalez Sanchez,jcgonzalezs@ultragroupla.com,BACK,KEPLER,Bajo,19/01/2026,Nivel de adopción de IA medio
+Fernando Zapata Montes,fzapatam@ultragroupla.com,BACK,KEPLER,Medio,20/01/2026,Nivel de adopción de IA medio
+Alber Joanny Carmona Salazar,ajcarmonas@ultragroupla.com,BACK,KEPLER,Medio,21/01/2026,Nivel de adopción de IA medio
+Juan Esteban Alvarez Echavarria,jealvareze@ultragroupla.com,BACK,PIXEL,Alto,22/01/2026,Nivel de adopción de IA medio
+Cristian David Prada Suarez,cdpradas@ultragroupla.com,BACK,PIXEL,Medio,23/01/2026,Nivel de adopción de IA medio
+Cesar Luis Reyes Lopez,clreyesl@ultragroupla.com,BACK,PIXEL,Medio,24/01/2026,Nivel de adopción de IA medio
+Yeferson Yuberley  Guerrero Castro,yyguerreroc@ultragroupla.com,BACK,ROCKET,Bajo,25/01/2026,Nivel de adopción de IA medio
+Hernando Jose Rumbo Nuñez,hjrumbon@ultragroupla.com,BACK,ROCKET,Alto,26/01/2026,Nivel de adopción de IA medio
+Jorge Eliecer Tapias Higuita,jetapiash@ultragroupla.com,BACK,ROCKET,Alto,27/01/2026,Nivel de adopción de IA medio
+Cristian Gomez Florez,cgomezf@ultragroupla.com,FRONT,HADES,Alto,28/01/2026,Nivel de adopción de IA medio
+Jhonatan Alberto Durango Rios,jadurangor@ultragroupla.com,FRONT,HADES,Medio,29/01/2026,Nivel de adopción de IA medio
+Luddy Mileny Puerta Ruiz,lmpuertar@ultragroupla.com,FRONT,SKYNET,Medio,30/01/2026,Nivel de adopción de IA medio
+Sergio Mauricio Pimiento Niño,smpimienton@ultragroupla.com,FRONT,SKYNET,Bajo,31/01/2026,Nivel de adopción de IA medio
+Ricardo Enrique Jaramillo Acevedo,rejaramilloa@ultragroupla.com,FRONT,SKYNET,Alto,1/02/2026,Nivel de adopción de IA medio
+Sergio Alejandro Riaño Acosta,sariañoa@ultragroupla.com,FRONT,KEPLER,Alto,2/02/2026,Nivel de adopción de IA medio
+Victor Alejandro Prada Noreña,vapradan@ultragroupla.com,FRONT,KEPLER,Alto,3/02/2026,Nivel de adopción de IA medio
+Cristhian David Velez Torres,cdvelezt@ultragroupla.com,FRONT,KEPLER,Alto,4/02/2026,Nivel de adopción de IA medio
+Robinson Betancur Marin,rbetancurm@ultragroupla.com,FRONT,PIXEL,Bajo,5/02/2026,Nivel de adopción de IA medio
+Andres Felipe Bolaños Ramirez,afbolañosr@ultragroupla.com,FRONT,PIXEL,Alto,6/02/2026,Nivel de adopción de IA medio
+Camila Espinosa Ramirez,cespinosar@ultragroupla.com,FRONT,ROCKET,Medio,7/02/2026,Nivel de adopción de IA medio
+Jeyson Julian Ospina Leon,jjospinal@ultragroupla.com,FRONT,ROCKET,Bajo,8/02/2026,Nivel de adopción de IA medio
+Johan Sebastian Hidalgo Sandoval,jshidalgos@ultragroupla.com,FRONT,ROCKET,Bajo,9/02/2026,Nivel de adopción de IA medio
+Juan David Ceballos Ospina,jdceballoso@ultragroupla.com,QA,HADES,Bajo,10/02/2026,Nivel de adopción de IA medio
+Oswaldo Alzate Franco,oalzatef@ultragroupla.com,QA,HADES,Bajo,11/02/2026,Nivel de adopción de IA medio
+Andrea Estefania Mejia,aestefaniam@ultragroupla.com,QA,HADES,Bajo,12/02/2026,Nivel de adopción de IA medio
+Jenny Marcela Florez Hinestroza,jmflorezh@ultragroupla.com,QA,SKYNET,Bajo,13/02/2026,Nivel de adopción de IA medio
+Carlos Alberto Rubio Gallego,carubiog@ultragroupla.com,QA,SKYNET,Alto,14/02/2026,Nivel de adopción de IA medio
+Natalia Gallego Rios,ngallegor@ultragroupla.com,QA,SKYNET,Medio,15/02/2026,Nivel de adopción de IA medio
+Jose Eulises Barbosa Colorado,jebarbosac@ultragroupla.com,QA,KEPLER,Alto,16/02/2026,Nivel de adopción de IA medio
+Jeferson Daniel Romero Acosta,jdromeroa@ultragroupla.com,QA,KEPLER,Bajo,17/02/2026,Nivel de adopción de IA medio
+Jesus Ernesto Marin Hernandez,jemarinh@ultragroupla.com,QA,KEPLER,Alto,18/02/2026,Nivel de adopción de IA medio
+Yhonatan Urrea Tascon,yurreat@ultragroupla.com,QA,PIXEL,Bajo,19/02/2026,Nivel de adopción de IA medio
+Camilo Pelaez Ramirez,cpelaezr@ultragroupla.com,QA,PIXEL,Medio,20/02/2026,Nivel de adopción de IA medio
+Andres Felipe Sanchez Quevedo,afsanchezq@ultragroupla.com,QA,PIXEL,Alto,21/02/2026,Nivel de adopción de IA medio
+Juan David Ceballos Cogollo,jdceballosc@ultragroupla.com,QA,ROCKET,Medio,22/02/2026,Nivel de adopción de IA medio
+Enma Del Carmen Gonzalez Sanchez,edcgonzalezs@ultragroupla.com,QA,ROCKET,Bajo,23/02/2026,Nivel de adopción de IA medio
+Diego Fernando Castellanos Vargas,dfcastellanosv@ultragroupla.com,QA,ROCKET,Alto,24/02/2026,Nivel de adopción de IA medio

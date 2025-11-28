@@ -51,36 +51,36 @@ function renderDashboard() {
     const roles = getUniqueRoles();
     const teams = getUniqueTeams();
 
-    let html = '<table class="grid-table"><thead><tr>';
-    html += '<th class="role-header">Role / Team</th>';
+    let html = '<table class="w-full border-collapse min-w-[800px]"><thead><tr>';
+    html += '<th class="bg-indigo-600 text-white text-left px-4 py-3 font-semibold sticky top-0 z-5 border border-gray-200">Role / Team</th>';
 
     // Create team headers
     teams.forEach(team => {
-        html += `<th>${team}</th>`;
+        html += `<th class="bg-gray-100 text-gray-900 px-4 py-3 font-semibold text-center border border-gray-200 sticky top-0 z-5">${team}</th>`;
     });
     html += '</tr></thead><tbody>';
 
     // Create rows for each role
     roles.forEach(role => {
         html += '<tr>';
-        html += `<td class="role-cell">${role}</td>`;
+        html += `<td class="bg-gray-50 text-gray-900 px-4 py-3 font-semibold border border-gray-200">${role}</td>`;
 
         // Create cells for each team
         teams.forEach(team => {
             const employees = getEmployeesByRoleAndTeam(role, team);
-            html += '<td>';
+            html += '<td class="px-4 py-3 border border-gray-200 text-center">';
 
             if (employees.length > 0) {
-                html += '<div class="avatars-container">';
+                html += '<div class="flex flex-wrap gap-2 justify-center items-center min-h-[60px]">';
                 employees.forEach(emp => {
                     const initials = getInitials(emp.name);
-                    const metricClass = getMetricClass(emp.metric);
+                    const metricClass = getMetricColorClass(emp.metric);
                     html += `
-                        <div class="avatar ${metricClass}" 
+                        <div class="avatar w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm text-white cursor-pointer transition-transform hover:scale-110 shadow-md relative z-20 ${metricClass}" 
                              onclick="openEmployeeModal('${emp.email}')"
                              title="${emp.name}">
                             ${initials}
-                            <div class="avatar-tooltip">${emp.name}</div>
+                            <div class="avatar-tooltip absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap">${emp.name}</div>
                         </div>
                     `;
                 });
@@ -94,6 +94,16 @@ function renderDashboard() {
 
     html += '</tbody></table>';
     container.innerHTML = html;
+}
+
+// Get metric color class
+function getMetricColorClass(metric) {
+    const colorMap = {
+        "Alto": "bg-green-500 hover:bg-green-600",
+        "Medio": "bg-amber-400 hover:bg-amber-500",
+        "Bajo": "bg-red-500 hover:bg-red-600"
+    };
+    return colorMap[metric] || "bg-gray-400";
 }
 
 // Open employee modal
@@ -112,13 +122,13 @@ function openEmployeeModal(email) {
     document.getElementById('modalMetricSelect').value = employee.metric;
 
     const modal = document.getElementById('employeeModal');
-    modal.classList.add('active');
+    modal.classList.remove('hidden');
 }
 
 // Close modal
 function closeModal() {
     const modal = document.getElementById('employeeModal');
-    modal.classList.remove('active');
+    modal.classList.add('hidden');
     currentEmployee = null;
 }
 
@@ -157,18 +167,7 @@ function addNewEntry() {
 function showNotification(message) {
     // Create notification element
     const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: #667eea;
-        color: white;
-        padding: 1rem 2rem;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        z-index: 10000;
-        animation: slideIn 0.3s ease;
-    `;
+    notification.className = 'fixed top-6 right-6 bg-indigo-600 text-white px-8 py-4 rounded-lg shadow-lg z-50 animate-slideIn';
     notification.textContent = message;
 
     document.body.appendChild(notification);
@@ -203,6 +202,10 @@ style.textContent = `
         to {
             opacity: 0;
         }
+    }
+    
+    .animate-slideIn {
+        animation: slideIn 0.3s ease;
     }
 `;
 document.head.appendChild(style);

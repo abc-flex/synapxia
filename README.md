@@ -21,7 +21,8 @@ This is a client-side UI demo for the SinapxIA Assignments Dashboard. The applic
 ## Technology Stack
 
 - **HTML5**: Structure and markup
-- **CSS3**: Styling and animations
+- **Tailwind CSS**: Utility-first CSS framework via CDN
+- **CSS3**: Custom animations and overrides
 - **JavaScript (ES6+)**: Client-side logic
 - **HTMX**: Progressive enhancement (included but ready for future enhancements)
 
@@ -29,13 +30,20 @@ This is a client-side UI demo for the SinapxIA Assignments Dashboard. The applic
 
 ```
 sinapxia/
-├── index.html          # Main HTML structure
-├── styles.css          # All styling and layout
-├── data.js            # Employee data (JSON format)
-├── app.js             # Main application logic
-├── i18n.js            # Internationalization support
-├── Data.csv           # Original CSV data (reference)
-└── README.md          # This file
+├── app/
+│   ├── index.html          # Main HTML structure
+│   ├── css/
+│   │   └── styles.css      # Custom CSS animations and overrides
+│   └── js/
+│       ├── app.js          # Main application logic
+│       ├── data.js         # Employee data (JSON format)
+│       └── i18n.js         # Internationalization support
+├── context/
+│   ├── data.csv            # Original CSV data (reference)
+│   ├── propmt.md           # Project prompts/documentation
+│   └── sample.jpg          # Sample image
+├── .gitignore              # Git ignore rules
+└── README.md               # This file
 ```
 
 ## Getting Started
@@ -48,9 +56,9 @@ sinapxia/
 ### Installation
 
 1. Clone or download this repository
-2. Open `index.html` in your web browser
+2. Open `app/index.html` in your web browser
 
-That's it! The application runs entirely in the browser.
+That's it! The application runs entirely in the browser with no build step required.
 
 ### Usage
 
@@ -80,7 +88,7 @@ The application uses a JSON array with the following structure:
 
 ### Adding New Dimensions
 
-To add new dimensions, update the dimension selector in `index.html`:
+To add new dimensions, update the dimension selector in `app/index.html`:
 
 ```html
 <option value="newDimension">New Dimension</option>
@@ -88,9 +96,10 @@ To add new dimensions, update the dimension selector in `index.html`:
 
 ### Changing Colors
 
-Modify the avatar colors in `styles.css`:
+The project uses Tailwind CSS for styling. Modify avatar colors by updating the Tailwind classes in `app/index.html` or add custom CSS in `app/css/styles.css`:
 
 ```css
+/* Custom color overrides if needed */
 .avatar.metric-high { background: #34c759; }
 .avatar.metric-medium { background: #ffcc00; }
 .avatar.metric-low { background: #ff3b30; }
@@ -98,7 +107,7 @@ Modify the avatar colors in `styles.css`:
 
 ### Adding Translations
 
-Add new translations in `i18n.js`:
+Add new translations in `app/js/i18n.js`:
 
 ```javascript
 translations.en.newSection = {

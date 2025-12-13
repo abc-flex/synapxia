@@ -1,39 +1,54 @@
 services:
-  db:
-    image: postgres:15-alpine
-    container_name: synapxia_db
+  postgres:
+    container_name: synapxia-db
+    image: postgres:16
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: synapxia
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_SCHEMA}
     ports:
       - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./bd/roles.sql:/docker-entrypoint-initdb.d/01-roles.sql
+    networks:
+      - synapxia-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  api:
-    build: .
-    container_name: synapxia_api
-    environment:
-      DB_HOST: db
-      DB_NAME: synapxia
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      DB_PORT: 5432
+  pgadmin:
+    container_name: synapxia-pgadmin
+    image: dpage/pgadmin4
     ports:
-      - "8000:8000"
+      - "8080:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
     depends_on:
-      db:
+      - postgres
+    networks:
+      - synapxia-network
+
+  api:
+    container_name: synapxia-api
+    build:
+      context: ./api
+      dockerfile: ./Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
         condition: service_healthy
     volumes:
-      - ./api:/app
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+      - ./api:/code
+    working_dir: /code/app
+    ports:
+      - 8000:80
+    networks:
+      - synapxia-network
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_SCHEMA}
+    command: uvicorn main:app --reload --host 0.0.0.0 --port 80
 
-volumes:
-  postgres_data:
+networks:
+  synapxia-network:
+    driver: bridge

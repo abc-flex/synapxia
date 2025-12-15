@@ -67,11 +67,11 @@ services:
     depends_on:
       - api
     ports:
-      - 4173:4173
+      - 4321:4321
     networks:
       - synapxia-network
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - API_PATH=http://synapxia-api:8000
 
 networks:

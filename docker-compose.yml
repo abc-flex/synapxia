@@ -1,6 +1,6 @@
 version: "3.9"
 services:
-  postgres:
+  db:
     container_name: synapxia-db
     image: postgres:16
     environment:
@@ -26,7 +26,7 @@ services:
       - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
       - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
     depends_on:
-      - postgres
+      - db
     networks:
       - synapxia-network
 
@@ -37,7 +37,7 @@ services:
       dockerfile: ./Dockerfile
     restart: unless-stopped
     depends_on:
-      postgres:
+      db:
         condition: service_healthy
     volumes:
       - ./api:/app

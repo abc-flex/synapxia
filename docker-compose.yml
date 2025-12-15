@@ -1,3 +1,4 @@
+version: "3.9"
 services:
   postgres:
     container_name: synapxia-db
@@ -39,15 +40,39 @@ services:
       postgres:
         condition: service_healthy
     volumes:
-      - ./api:/code
-    working_dir: /code/app
+      - ./api:/app
+    working_dir: /app
     ports:
       - 8000:80
     networks:
       - synapxia-network
     environment:
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_SCHEMA}
-    command: uvicorn main:app --reload --host 0.0.0.0 --port 80
+      - APP_ENV=development
+      - LOG_LEVEL=debug
+      - DB_HOST=${DB_HOST}
+      - DB_SCHEMA=${DB_SCHEMA}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_PORT=${DB_PORT}
+      - UV_APP=app.main:app
+    command: uv run fastapi dev --host 0.0.0.0 --port 80
+
+  ui:
+    container_name: synapxia-ui
+    build:
+      context: ./ui
+      dockerfile: ./Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - 4173:4173
+    networks:
+      - synapxia-network
+    environment:
+      - NODE_ENV=production
+      - API_PATH=http://synapxia-api:8000
 
 networks:
   synapxia-network:

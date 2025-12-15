@@ -7,7 +7,6 @@ COPY astro.config.mjs .
 COPY tailwind.config.cjs .
 COPY postcss.config.cjs .
 COPY src ./src
-COPY public ./public
 
 RUN bun install
 RUN bun astro build

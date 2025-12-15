@@ -2,7 +2,7 @@ version: "3.9"
 services:
   db:
     container_name: synapxia-db
-    image: postgres:16
+    image: postgres:18
     environment:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
@@ -12,8 +12,8 @@ services:
     networks:
       - synapxia-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 30s
       timeout: 5s
       retries: 5
 

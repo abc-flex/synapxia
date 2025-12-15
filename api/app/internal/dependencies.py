@@ -6,8 +6,8 @@ import psycopg2
 DB_CONFIG = {
     "host": os.getenv("DB_HOST", "db"),
     "database": os.getenv("DB_SCHEMA", "synapxia"),
-    "user": os.getenv("DB_USER", "postgres"),
-    "password": os.getenv("DB_PASSWORD", "postgres"),
+    "user": os.getenv("DB_USER"),
+    "password": os.getenv("DB_PASSWORD"),
     "port": os.getenv("DB_PORT", "5432"),
 }
 

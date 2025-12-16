@@ -20,7 +20,7 @@ CREATE TABLE teams (
 CREATE TABLE assignments (
     id           BIGINT GENERATED ALWAYS AS IDENTITY,
     team         VARCHAR(50)  NOT NULL,
-    user         BIGINT       NOT NULL,
+    user_id      BIGINT       NOT NULL,
     role         VARCHAR(50)  NOT NULL,
     observation  VARCHAR(255),
     valid_from   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
@@ -71,7 +71,7 @@ CREATE TABLE metrics (
     is_active    BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at   TIMESTAMPTZ,
-    CONSTRAINT pk_metrics PRIMARY KEY (code)
+    CONSTRAINT pk_metrics PRIMARY KEY (id)
 );
 
 -- ****************************************
@@ -93,7 +93,7 @@ ALTER TABLE assignments
 -- FK: assignments.user_id → users.id
 ALTER TABLE assignments
     ADD CONSTRAINT fk_assignments_users
-    FOREIGN KEY (user)
+    FOREIGN KEY (user_id)
     REFERENCES users (id);
 
 -- FK: assignments.role → roles.code
@@ -104,7 +104,7 @@ ALTER TABLE assignments
 
 -- Garantizar solo una asignación vigente por (team, user_id)
 CREATE UNIQUE INDEX uq_assignments_team_user_active
-ON assignments (team, user)
+ON assignments (team, user_id)
 WHERE valid_to IS NULL;
 
 -- projects.team → teams.code
@@ -127,6 +127,6 @@ ALTER TABLE metrics
 
 -- metrics.assigment → assigments.id
 ALTER TABLE metrics
-    ADD CONSTRAINT fk_metrics_assigments
-    FOREIGN KEY (assigment)
-    REFERENCES assigments (id);
+    ADD CONSTRAINT fk_metrics_assignments
+    FOREIGN KEY (assignment)
+    REFERENCES assignments (id);

@@ -347,6 +347,7 @@ VALUES
 -- **********************************
 
 INSERT INTO users (
+    id,
     username,
     email,
     password_hash,
@@ -355,6 +356,7 @@ INSERT INTO users (
     status,
     menu_role
 ) VALUES (
+    0,
     'admin',
     'admin@synapxia.dev',
     'SCRAM-SHA-256$4096:erZkGksCVwc49r8o18VeSg==$2c7cw07foNs0h+cLgJYdpcc7da/tjQRH7v5Y8UP0ugo=:yw24DEvmi0xGcE7qj2Y7g+QwCxuoO4q6JhZsaLkzMlg=',
@@ -375,15 +377,15 @@ VALUES (
     'List Type',
     'List types for system configuration',
     'List that classifies the types of lists in two categories: List of Values and Scale.',
-    'LIST_OF_VALUES'
+    'LIST_OF_VALUES',
     'Administration',
     TRUE
 );
 
 INSERT INTO list_items (list, value, label, sort_order, is_active)
 VALUES
-    ('Is Active', 'LIST_OF_VALUES',  'List of Values',  10, TRUE),
-    ('Is Active', 'SCALE', 'Scale', 20, TRUE);
+    ('List Type', 'LIST_OF_VALUES',  'List of Values',  10, TRUE),
+    ('List Type', 'SCALE', 'Scale', 20, TRUE);
 
 
 -- List: Is Active
@@ -392,7 +394,7 @@ VALUES (
     'Is Active',
     'Is Active flag',
     'Boolean flag used to indicate whether an element is active or inactive in SynapxIA.',
-    'LIST_OF_VALUES'
+    'LIST_OF_VALUES',
     'Administration',
     TRUE
 );
@@ -408,7 +410,7 @@ VALUES (
     'User Status',
     'User status values',
     'List of possible status values for users in SynapxIA (active or inactive).',
-    'LIST_OF_VALUES'
+    'LIST_OF_VALUES',
     'Administration',
     TRUE
 );
@@ -424,7 +426,7 @@ VALUES (
     'Option Type',
     'Option types for navigation items',
     'List that classifies application options by type, such as content pages, forms or reports.',
-    'LIST_OF_VALUES'
+    'LIST_OF_VALUES',
     'Administration',
      TRUE
 );
@@ -441,7 +443,7 @@ VALUES (
     'Project Status',
     'Project status values',
     'List of possible status values for Projects in SynapxIA (planned, in progress, on hold or complete).',
-    'LIST_OF_VALUES'
+    'LIST_OF_VALUES',
     'Collaboration',
     TRUE
 );
@@ -449,6 +451,6 @@ VALUES (
 INSERT INTO list_items (list, value, label, sort_order, is_active)
 VALUES
     ('Project Status', 'PLANNED',   'Planned',   10, TRUE),
-    ('Project Status', 'IN_PROGRESS', 'In Progress', 20, TRUE)
-    ('Project Status', 'ON_HOLD',  'On Hold',  30, TRUE);
+    ('Project Status', 'IN_PROGRESS', 'In Progress', 20, TRUE),
+    ('Project Status', 'ON_HOLD',  'On Hold',  30, TRUE),
     ('Project Status', 'COMPLETED','Completed', 40, TRUE);

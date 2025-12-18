@@ -47,4 +47,5 @@ env/
 
 db/data/*
 data.js
+data.json
 sample.jpg

@@ -1,13 +1,44 @@
 // Application state
+const STORAGE_KEY = 'employeesData';
+let employeesData = [];
 let currentDimension = 'aiAdoption';
 let currentEmployee = null;
 
 // Initialize the application
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     initializeI18n();
+    await loadEmployeesData();
     renderDashboard();
     setupEventListeners();
 });
+
+// Load data from localStorage first, then fallback to bundled JSON, then seed file
+async function loadEmployeesData() {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+        employeesData = JSON.parse(stored);
+        return;
+    }
+
+    try {
+        const response = await fetch('data/data.json');
+        if (!response.ok) throw new Error('Failed to load data.json');
+        employeesData = await response.json();
+        persistEmployeesData();
+    } catch (err) {
+        console.error('Error loading employees data:', err);
+        if (Array.isArray(window.employeesSeedData)) {
+            employeesData = window.employeesSeedData;
+            persistEmployeesData();
+        } else {
+            employeesData = [];
+        }
+    }
+}
+
+function persistEmployeesData() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(employeesData));
+}
 
 // Setup event listeners
 function setupEventListeners() {
@@ -43,6 +74,12 @@ function setupEventListeners() {
     languageSelector.addEventListener('change', (e) => {
         changeLanguage(e.target.value);
     });
+
+    // Hidden export button (aria-hidden true) still wired for manual trigger
+    const exportBtn = document.getElementById('exportDataBtn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', exportCurrentData);
+    }
 }
 
 // Render the dashboard grid
@@ -142,6 +179,7 @@ function saveMetric() {
     const employeeIndex = employeesData.findIndex(emp => emp.email === currentEmployee.email);
     if (employeeIndex !== -1) {
         employeesData[employeeIndex].metric = newMetric;
+        persistEmployeesData();
 
         // Show success message
         showNotification(translate('notifications.metricSaved') || 'Metric updated successfully');
@@ -209,3 +247,39 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+// Utilities for dashboard rendering
+function getUniqueRoles() {
+    return [...new Set(employeesData.map(emp => emp.role))];
+}
+
+function getUniqueTeams() {
+    return [...new Set(employeesData.map(emp => emp.team))];
+}
+
+function getEmployeesByRoleAndTeam(role, team) {
+    return employeesData.filter(emp => emp.role === role && emp.team === team);
+}
+
+function getInitials(name) {
+    return name
+        .split(' ')
+        .filter(Boolean)
+        .map(part => part[0])
+        .join('')
+        .slice(0, 3)
+        .toUpperCase();
+}
+
+// Export current dataset as downloadable JSON file
+function exportCurrentData() {
+    const blob = new Blob([JSON.stringify(employeesData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'sinapxia-data.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}

@@ -118,8 +118,13 @@ function setupEventListeners() {
 function renderDashboard() {
     const container = document.getElementById('dashboardGrid');
     const filteredEmployees = getEmployeesByDimension();
-    const roles = getUniqueRoles(filteredEmployees);
-    const teams = getUniqueTeams(filteredEmployees);
+    
+    // Separate employees with and without teams
+    const employeesWithTeam = filteredEmployees.filter(emp => emp.team && emp.team.trim() !== '');
+    const employeesWithoutTeam = filteredEmployees.filter(emp => !emp.team || emp.team.trim() === '');
+    
+    const roles = getUniqueRoles(employeesWithTeam);
+    const teams = getUniqueTeams(employeesWithTeam);
 
     let html = '<table class="w-full border-collapse min-w-[800px]"><thead><tr>';
     html += '<th class="bg-indigo-600 text-white text-left px-4 py-3 font-semibold sticky top-0 z-5 border border-gray-200">Role / Team</th>';
@@ -137,7 +142,7 @@ function renderDashboard() {
 
         // Create cells for each team
         teams.forEach(team => {
-            const employees = getEmployeesByRoleAndTeam(role, team, filteredEmployees);
+            const employees = getEmployeesByRoleAndTeam(role, team, employeesWithTeam);
             html += '<td class="px-4 py-3 border border-gray-200 text-center">';
 
             if (employees.length > 0) {
@@ -162,6 +167,36 @@ function renderDashboard() {
         html += '</tr>';
     });
 
+    // Add special row for employees without team
+    if (employeesWithoutTeam.length > 0) {
+        html += '<tr>';
+        html += '<td class="bg-amber-50 text-amber-900 px-4 py-3 font-semibold border border-gray-200">--</td>';
+        
+        // Span across all team columns
+        html += `<td colspan="${teams.length}" class="px-4 py-3 border border-gray-200 text-center">`;
+        html += `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 16px; justify-items: center; align-items: start; min-height: 120px;">`;
+        
+        employeesWithoutTeam.forEach(emp => {
+            const initials = getInitials(emp.name);
+            const metricClass = getMetricColorClass(emp.metric);
+            html += `
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                    <div class="avatar w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer transition-transform hover:scale-110 relative z-20 ${metricClass}" 
+                         onclick="openEmployeeModal('${emp.email}')"
+                         title="${emp.name}">
+                        ${initials}
+                        <div class="avatar-tooltip absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap">${emp.name}</div>
+                    </div>
+                    <span style="font-size: 10px; font-weight: 500; color: #374151; max-width: 70px; text-align: center; line-height: 1.3; word-wrap: break-word;">${emp.role}</span>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        html += '</td>';
+        html += '</tr>';
+    }
+
     html += '</tbody></table>';
     container.innerHTML = html;
 }
@@ -172,15 +207,15 @@ function getMetricColorClass(metric) {
         // gray: undefined or no data
         UNDEFINED: "bg-slate-100 text-slate-700 ring-1 ring-slate-200 shadow-sm",
         // red: no usage
-        NO_USAGE: "bg-red-100 text-red-700 ring-1 ring-red-200 shadow-sm",
+        NO_USAGE: "bg-red-300 text-red-700 ring-1 ring-red-300 shadow-sm",
         // orange: low usage
-        LOW: "bg-orange-100 text-orange-700 ring-1 ring-orange-200 shadow-sm",
+        LOW: "bg-orange-300 text-orange-700 ring-1 ring-orange-300 shadow-sm",
         // amber: modderate usage
-        MODERATE: "bg-yellow-100 text-yellow-700 ring-1 ring-yellow-200 shadow-sm",
+        MODERATE: "bg-yellow-300 text-yellow-700 ring-1 ring-yellow-300 shadow-sm",
         // lime: high usage 
-        HIGH: "bg-lime-100 text-lime-700 ring-1 ring-lime-200 shadow-sm",
+        HIGH: "bg-lime-300 text-lime-700 ring-1 ring-lime-300 shadow-sm",
         // emerald: optimal usage
-        VERY_HIGH: "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200 shadow-sm"
+        VERY_HIGH: "bg-green-300 text-green-700 ring-1 ring-green-300 shadow-sm"
     };
     return colorMap[metric] || "bg-gray-400";
 }
@@ -352,7 +387,7 @@ function exportCurrentData() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'sinapxia-data.json';
+    a.download = 'synapxia-data.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

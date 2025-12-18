@@ -2,7 +2,7 @@
 const translations = {
   en: {
     header: {
-      subtitle: "System for Insight, Adoption, Practice & eXpansion through Intelligent Agents"
+      subtitle: "Services Yielding New Applications and Practices for the eXpansion of Artificial Intelligence Adoption"
     },
     sidebar: {
       dashboard: "Dashboard",
@@ -61,7 +61,7 @@ const translations = {
   },
   es: {
     header: {
-      subtitle: "Sistema para Insight, Adopción, Práctica y eXpansión a través de Agentes Inteligentes"
+      subtitle: "Servicios Y Nuevas Aplicaciones para la Práctica y eXpansión de la Inteligencia Artificial"
     },
     sidebar: {
       dashboard: "Tablero",

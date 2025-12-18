@@ -1,6 +1,6 @@
 // Application state
 const STORAGE_KEY = 'employeesData';
-const METRIC_LEVELS = ['NO_USAGE', 'LOW', 'MODERATE', 'HIGH', 'VERY_HIGH'];
+const METRIC_LEVELS = ['UNDEFINED', 'NO_USAGE', 'LOW', 'MODERATE', 'HIGH', 'VERY_HIGH'];
 const LEGACY_METRIC_MAP = {
     'ALTO': 'HIGH',
     'ALTA': 'HIGH',
@@ -169,11 +169,18 @@ function renderDashboard() {
 // Get metric color class
 function getMetricColorClass(metric) {
     const colorMap = {
-        NO_USAGE: "bg-slate-100 text-slate-700 ring-1 ring-slate-200 shadow-sm",
-        LOW: "bg-rose-100 text-rose-600 ring-1 ring-rose-200 shadow-sm",
-        MODERATE: "bg-amber-100 text-amber-600 ring-1 ring-amber-200 shadow-sm",
-        HIGH: "bg-emerald-100 text-emerald-600 ring-1 ring-emerald-200 shadow-sm",
-        VERY_HIGH: "bg-blue-100 text-blue-600 ring-1 ring-blue-200 shadow-sm"
+        // gray: undefined or no data
+        UNDEFINED: "bg-slate-100 text-slate-700 ring-1 ring-slate-200 shadow-sm",
+        // red: no usage
+        NO_USAGE: "bg-red-100 text-red-700 ring-1 ring-red-200 shadow-sm",
+        // orange: low usage
+        LOW: "bg-orange-100 text-orange-700 ring-1 ring-orange-200 shadow-sm",
+        // amber: modderate usage
+        MODERATE: "bg-yellow-100 text-yellow-700 ring-1 ring-yellow-200 shadow-sm",
+        // lime: high usage 
+        HIGH: "bg-lime-100 text-lime-700 ring-1 ring-lime-200 shadow-sm",
+        // emerald: optimal usage
+        VERY_HIGH: "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200 shadow-sm"
     };
     return colorMap[metric] || "bg-gray-400";
 }
@@ -335,7 +342,7 @@ function refreshMetricSelectOptions() {
     if (currentEmployee && METRIC_LEVELS.includes(currentEmployee.metric)) {
         select.value = currentEmployee.metric;
     } else {
-        select.value = 'NO_USAGE';
+        select.value = 'UNDEFINED';
     }
 }
 

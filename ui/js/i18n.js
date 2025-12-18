@@ -52,7 +52,7 @@ const translations = {
       }
     },
     footer: {
-      copyright: "© 2025 SinapxIA. All rights reserved."
+      copyright: "© 2025 SynapxIA. All rights reserved."
     },
     notifications: {
       metricSaved: "Metric updated successfully",
@@ -88,6 +88,7 @@ const translations = {
       addEntry: "Agregar Nueva Entrada"
     },
     metrics: {
+      undefined: "No Definida",
       noUsage: "Sin Uso",
       low: "Bajo",
       moderate: "Moderado",
@@ -96,6 +97,7 @@ const translations = {
     },
     metricsDescriptions: {
       genAIDevs: {
+        UNDEFINED: "---",
         NO_USAGE: "No configurado Github Copilot, Cursor, Windsurf o Antigravity",
         LOW: "Chat en modo consulta para pequenos scripts y sugerencias de codigo",
         MODERATE: "Modo agente para generacion basica, refactorizacion y correccion de problemas",
@@ -103,6 +105,7 @@ const translations = {
         VERY_HIGH: "Agentes, multi-agentes y MCP avanzado para desarrollo con autonomia"
       },
       genAIQA: {
+        UNDEFINED: "---",
         NO_USAGE: "No hay herramientas con IA configuradas para la realizacion de pruebas",
         LOW: "Chat en modo consulta para pequenos scripts y sugerencias de pruebas",
         MODERATE: "Modo agente para generacion basica de pruebas y revision de problemas",
@@ -111,7 +114,7 @@ const translations = {
       }
     },
     footer: {
-      copyright: "© 2025 SinapxIA. Todos los derechos reservados."
+      copyright: "© 2025 SynapxIA. Todos los derechos reservados."
     },
     notifications: {
       metricSaved: "Métrica actualizada exitosamente",

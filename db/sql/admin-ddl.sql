@@ -20,6 +20,19 @@ CREATE TABLE modules (
     CONSTRAINT pk_modules PRIMARY KEY (code)
 );
 
+-- Table units
+CREATE TABLE units (
+    code        VARCHAR(50)  NOT NULL,
+    name        VARCHAR(100) NOT NULL,
+    description VARCHAR(255),
+    parent_unit VARCHAR(50),
+    unit_type   VARCHAR(50),
+    is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
+    created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ,
+    CONSTRAINT pk_units PRIMARY KEY (code)
+);
+
 -- Table lists
 CREATE TABLE lists (
     code        VARCHAR(50)  NOT NULL,
@@ -65,6 +78,7 @@ CREATE TABLE users (
     first_name     VARCHAR(100)  NOT NULL,
     last_name      VARCHAR(100)  NOT NULL,
     status         VARCHAR(100)  NOT NULL,
+    unit           VARCHAR(50)   NOT NULL,
     menu_role      VARCHAR(50)   NOT NULL,
     created_at     TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     updated_at     TIMESTAMPTZ,
@@ -110,6 +124,12 @@ ALTER TABLE lists
     FOREIGN KEY (module)
     REFERENCES modules (code);
 
+-- units.parent_unit → units.code
+ALTER TABLE units
+    ADD CONSTRAINT fk_units_units
+    FOREIGN KEY (parent_unit)
+    REFERENCES units (code);
+
 -- list_items.list → lists.code
 ALTER TABLE list_items
     ADD CONSTRAINT fk_list_items_lists
@@ -121,6 +141,12 @@ ALTER TABLE users
     ADD CONSTRAINT fk_users_roles
     FOREIGN KEY (menu_role)
     REFERENCES roles (code);
+
+-- users.unit → units.code
+ALTER TABLE users
+    ADD CONSTRAINT fk_users_units
+    FOREIGN KEY (unit)
+    REFERENCES units (code);
 
 -- options.module → modules.code
 ALTER TABLE options

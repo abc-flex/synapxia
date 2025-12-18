@@ -32,6 +32,11 @@ INSERT INTO modules (code, name, description, sort_order) VALUES
      'Processes maps the value chain and key process models of the organization, connecting them with AI initiatives, digital assets and GenAI metrics for continuous improvement.',
      70);
 
+
+
+insertar unit_type (p.ej. Department, Business Unit, Chapter… parametrizable con listas)
+
+
 -- **********************************
 -- ********* Table options **********
 -- **********************************

@@ -19,9 +19,9 @@ CREATE TABLE teams (
 -- Tabla assignments
 CREATE TABLE assignments (
     id           BIGINT GENERATED ALWAYS AS IDENTITY,
-    team         VARCHAR(50)  NOT NULL,
+    team         VARCHAR(50),
     user_id      BIGINT       NOT NULL,
-    role         VARCHAR(50)  NOT NULL,
+    role         VARCHAR(50),
     observation  VARCHAR(255),
     valid_from   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     valid_to     TIMESTAMPTZ,

@@ -112,6 +112,12 @@ function setupEventListeners() {
     if (exportBtn) {
         exportBtn.addEventListener('click', exportCurrentData);
     }
+
+    // Reload seed data button
+    const reloadBtn = document.getElementById('reloadDataBtn');
+    if (reloadBtn) {
+        reloadBtn.addEventListener('click', reloadSeedData);
+    }
 }
 
 // Render the dashboard grid
@@ -392,4 +398,18 @@ function exportCurrentData() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+}
+
+// Reload seed data from window.employeesSeedData
+function reloadSeedData() {
+    if (confirm('Seguro que desea recargar el archivo de empleados?')) {
+        if (Array.isArray(window.employeesSeedData)) {
+            employeesData = normalizeEmployeesData(window.employeesSeedData);
+            persistEmployeesData();
+            renderDashboard();
+            showNotification(translate('notifications.dataReloaded') || 'Datos recargados exitosamente');
+        } else {
+            showNotification('Error: No se encontraron datos para recargar');
+        }
+    }
 }

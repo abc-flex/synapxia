@@ -244,7 +244,7 @@ function addNewEntry() {
 function showNotification(message) {
     // Create notification element
     const notification = document.createElement('div');
-    notification.className = 'fixed top-6 right-6 bg-indigo-600 text-white px-8 py-4 rounded-lg shadow-lg z-50 animate-slideIn';
+    notification.className = 'fixed top-6 right-6 z-50 animate-slideIn bg-blue-50 text-blue-600 px-5 py-3 rounded-2xl shadow-lg border border-blue-100 font-semibold';
     notification.textContent = message;
 
     document.body.appendChild(notification);

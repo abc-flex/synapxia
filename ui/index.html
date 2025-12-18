@@ -8,38 +8,35 @@
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <link rel="stylesheet" href="css/styles.css" />
   </head>
-  <body class="bg-gray-100 flex flex-col min-h-screen">
+  <body class="bg-slate-50 text-slate-900 flex flex-col min-h-screen">
     <!-- Header -->
-    <header
-      class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
-    >
-      <div class="max-w-7xl mx-auto px-6 py-6">
-        <h1 class="text-3xl font-bold mb-1">SinapxIA</h1>
-        <p class="text-sm opacity-90 mb-4" data-i18n="header.subtitle">
-          System for Insight, Adoption, Practice & eXpansion through Intelligent
-          Agents
-        </p>
-        <div class="flex justify-end">
-          <select
-            id="languageSelector"
-            class="px-3 py-2 bg-white/10 border border-white/30 rounded-md text-white text-sm cursor-pointer hover:bg-white/20 transition"
-          >
-            <option value="en" class="text-gray-900">English</option>
-            <option value="es" class="text-gray-900">Español</option>
-          </select>
+    <header class="bg-white border-b border-slate-200 shadow-sm">
+      <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between gap-6">
+        <div>
+          <h1 class="text-3xl font-bold text-slate-900">SinapxIA</h1>
+          <p class="text-sm text-slate-500" data-i18n="header.subtitle">
+            System for Insight, Adoption, Practice & eXpansion through Intelligent Agents
+          </p>
         </div>
+        <select
+          id="languageSelector"
+          class="px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-700 text-sm cursor-pointer shadow-sm hover:border-indigo-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition"
+        >
+          <option value="en" class="text-gray-900">English</option>
+          <option value="es" class="text-gray-900">Español</option>
+        </select>
       </div>
     </header>
 
     <div class="flex flex-1 max-w-7xl w-full mx-auto">
       <!-- Sidebar -->
-      <aside class="w-64 bg-white border-r border-gray-200 p-6">
+      <aside class="w-64 bg-white border-r border-slate-200 p-6 shadow-sm">
         <nav class="space-y-1">
           <ul>
             <li class="nav-item">
               <a
                 href="#"
-                class="nav-link active block px-4 py-3 rounded-lg bg-indigo-600 text-white font-semibold transition"
+                class="nav-link active block px-4 py-3 rounded-lg bg-indigo-50 text-indigo-700 font-semibold transition border border-indigo-100"
                 data-i18n="sidebar.dashboard"
                 >Dashboard</a
               >
@@ -47,7 +44,7 @@
             <li class="nav-item">
               <a
                 href="#"
-                class="nav-link block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-indigo-600 transition"
+                class="nav-link block px-4 py-3 rounded-lg text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 transition"
                 data-i18n="sidebar.assignments"
                 >Assignments</a
               >
@@ -55,7 +52,7 @@
             <li class="nav-item">
               <a
                 href="#"
-                class="nav-link block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-indigo-600 transition"
+                class="nav-link block px-4 py-3 rounded-lg text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 transition"
                 data-i18n="sidebar.reports"
                 >Reports</a
               >
@@ -63,7 +60,7 @@
             <li class="nav-item">
               <a
                 href="#"
-                class="nav-link block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-indigo-600 transition"
+                class="nav-link block px-4 py-3 rounded-lg text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 transition"
                 data-i18n="sidebar.settings"
                 >Settings</a
               >
@@ -73,12 +70,12 @@
       </aside>
 
       <!-- Main Content -->
-      <main class="flex-1 p-8 overflow-x-auto">
+      <main class="flex-1 p-8 overflow-x-auto bg-slate-50">
         <div
           class="flex flex-col gap-4 md:flex-row md:justify-between md:items-center mb-8"
         >
           <h2
-            class="text-3xl font-bold text-gray-900"
+            class="text-3xl font-bold text-slate-900"
             data-i18n="dashboard.title"
           >
             Assignments Dashboard
@@ -87,13 +84,13 @@
             <div class="flex flex-col gap-2 md:flex-row md:items-center">
               <label
                 for="dimensionSelect"
-                class="font-semibold text-gray-700"
+                class="font-semibold text-slate-700"
                 data-i18n="dashboard.selectDimension"
                 >Select Dimension:</label
               >
               <select
                 id="dimensionSelect"
-                class="px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 text-base cursor-pointer focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-200 transition min-w-[240px]"
+                class="px-4 py-2 border border-slate-200 rounded-lg bg-white text-slate-900 text-base cursor-pointer shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition min-w-[240px]"
               >
                 <option
                   value="genAIDevs"
@@ -112,7 +109,7 @@
 
         <div
           id="dashboardGrid"
-          class="bg-white rounded-2xl p-6 shadow-md overflow-x-auto"
+          class="bg-white rounded-2xl p-6 shadow-lg border border-slate-200 overflow-x-auto"
         >
           <!-- Grid will be dynamically generated -->
         </div>
@@ -121,7 +118,7 @@
 
     <!-- Footer -->
     <footer
-      class="bg-white border-t border-gray-200 py-6 px-6 text-center text-gray-600 text-sm"
+      class="bg-white border-t border-slate-200 py-6 px-6 text-center text-slate-500 text-sm"
     >
       <p data-i18n="footer.copyright">
         &copy; 2025 SinapxIA. All rights reserved.
@@ -156,7 +153,7 @@
       class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center animate-fadeIn"
     >
       <div
-        class="bg-white rounded-2xl p-8 w-[620px] max-w-5xl shadow-2xl animate-slideDown"
+        class="bg-white rounded-2xl p-8 w-[700px] max-w-5xl shadow-2xl animate-slideDown border border-slate-200"
       >
         <div class="flex justify-between items-start mb-6">
           <h3
@@ -177,7 +174,7 @@
               data-i18n="modal.email"
               >Email:</label
             >
-            <span id="modalEmployeeEmail" class="text-gray-900"></span>
+            <span id="modalEmployeeEmail" class="text-slate-900"></span>
           </div>
           <div class="flex flex-col gap-4 md:flex-row md:gap-4">
             <div class="flex-1">
@@ -186,7 +183,7 @@
                 data-i18n="modal.role"
                 >Role:</label
               >
-              <span id="modalEmployeeRole" class="text-gray-900"></span>
+              <span id="modalEmployeeRole" class="text-slate-900"></span>
             </div>
             <div class="flex-1">
               <label
@@ -194,7 +191,7 @@
                 data-i18n="modal.team"
                 >Team:</label
               >
-              <span id="modalEmployeeTeam" class="text-gray-900"></span>
+              <span id="modalEmployeeTeam" class="text-slate-900"></span>
             </div>
             <div class="flex-1">
               <label
@@ -202,7 +199,7 @@
                 data-i18n="modal.date"
                 >Date:</label
               >
-              <span id="modalEmployeeDate" class="text-gray-900"></span>
+              <span id="modalEmployeeDate" class="text-slate-900"></span>
             </div>
           </div>
           <div>
@@ -214,7 +211,7 @@
             >
             <select
               id="modalMetricSelect"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-200 transition"
+              class="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition shadow-sm"
             >
               <option value="NO_USAGE">No Usage</option>
               <option value="LOW">Low</option>
@@ -231,7 +228,7 @@
             >
             <textarea
               id="modalEmployeeObservation"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-200 transition min-h-[120px]"
+              class="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition min-h-[120px] shadow-sm"
             ></textarea>
           </div>
         </div>
@@ -246,7 +243,7 @@
           </button>
           <button
             id="addEntryBtn"
-            class="flex-1 px-4 py-2 bg-gray-100 text-gray-900 font-semibold rounded-lg border border-gray-300 hover:bg-gray-200 transition transform hover:-translate-y-0.5"
+            class=" hidden flex-1 px-4 py-2 bg-gray-100 text-gray-900 font-semibold rounded-lg border border-gray-300 hover:bg-gray-200 transition transform hover:-translate-y-0.5"
             data-i18n="modal.addEntry"
           >
             Add New Entry

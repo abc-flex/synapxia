@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function loadEmployeesData() {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-        employeesData = setAllMetricsToNoUsage(normalizeEmployeesData(JSON.parse(stored)));
+        employeesData = normalizeEmployeesData(JSON.parse(stored));
         persistEmployeesData();
         return;
     }
@@ -33,12 +33,12 @@ async function loadEmployeesData() {
     try {
         const response = await fetch('data/data.json');
         if (!response.ok) throw new Error('Failed to load data.json');
-        employeesData = setAllMetricsToNoUsage(normalizeEmployeesData(await response.json()));
+        employeesData = normalizeEmployeesData(await response.json());
         persistEmployeesData();
     } catch (err) {
         console.error('Error loading employees data:', err);
         if (Array.isArray(window.employeesSeedData)) {
-            employeesData = setAllMetricsToNoUsage(normalizeEmployeesData(window.employeesSeedData));
+            employeesData = normalizeEmployeesData(window.employeesSeedData);
             persistEmployeesData();
         } else {
             employeesData = [];
@@ -146,7 +146,7 @@ function renderDashboard() {
                     const initials = getInitials(emp.name);
                     const metricClass = getMetricColorClass(emp.metric);
                     html += `
-                        <div class="avatar w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm text-white cursor-pointer transition-transform hover:scale-110 shadow-md relative z-20 ${metricClass}" 
+                        <div class="avatar w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer transition-transform hover:scale-110 relative z-20 ${metricClass}" 
                              onclick="openEmployeeModal('${emp.email}')"
                              title="${emp.name}">
                             ${initials}
@@ -169,11 +169,11 @@ function renderDashboard() {
 // Get metric color class
 function getMetricColorClass(metric) {
     const colorMap = {
-        NO_USAGE: "bg-gray-400 hover:bg-gray-500 text-gray-900",
-        LOW: "bg-red-500 hover:bg-red-600",
-        MODERATE: "bg-yellow-400 hover:bg-yellow-500 text-gray-900",
-        HIGH: "bg-green-500 hover:bg-green-600",
-        VERY_HIGH: "bg-blue-500 hover:bg-blue-600"
+        NO_USAGE: "bg-slate-100 text-slate-700 ring-1 ring-slate-200 shadow-sm",
+        LOW: "bg-rose-100 text-rose-600 ring-1 ring-rose-200 shadow-sm",
+        MODERATE: "bg-amber-100 text-amber-600 ring-1 ring-amber-200 shadow-sm",
+        HIGH: "bg-emerald-100 text-emerald-600 ring-1 ring-emerald-200 shadow-sm",
+        VERY_HIGH: "bg-blue-100 text-blue-600 ring-1 ring-blue-200 shadow-sm"
     };
     return colorMap[metric] || "bg-gray-400";
 }
@@ -280,7 +280,7 @@ style.textContent = `
             opacity: 0;
         }
     }
-    
+
     .animate-slideIn {
         animation: slideIn 0.3s ease;
     }
@@ -289,10 +289,11 @@ document.head.appendChild(style);
 
 // Utilities for dashboard rendering
 function getEmployeesByDimension() {
-    if (currentDimension === 'genAIQA') {
-        return employeesData.filter(emp => emp.role === 'QA');
-    }
-    return employeesData.filter(emp => emp.role !== 'QA');
+    // if (currentDimension === 'genAIQA') {
+    //     return employeesData.filter(emp => emp.role === 'QA');
+    // }
+    // return employeesData.filter(emp => emp.role !== 'QA');
+    return employeesData;
 }
 
 function getUniqueRoles(list) {

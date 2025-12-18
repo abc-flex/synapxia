@@ -3,6 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .routers import admin as admin_router
 from .routers import roles as roles_router
+from .routers import modules as modules_router
+from .routers import lists as lists_router
+from .routers import list_items as list_items_router
 
 app = FastAPI(
     title="SynapxIA API",
@@ -29,6 +32,9 @@ app.add_middleware(
 
 app.include_router(roles_router.router)
 app.include_router(admin_router.router)
+app.include_router(modules_router.router)
+app.include_router(lists_router.router)
+app.include_router(list_items_router.router)
 
 
 @app.get("/", tags=["health"])

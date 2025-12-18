@@ -46,5 +46,7 @@ env/
 .env
 
 db/data/*
-data.js
+*/**/data.js
+*/**/data.json
+
 sample.jpg

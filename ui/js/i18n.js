@@ -15,9 +15,8 @@ const translations = {
       selectDimension: "Select Dimension:"
     },
     dimensions: {
-      aiAdoption: "AI Adoption",
-      vacation: "Vacation",
-      englishLevel: "English Level"
+      genAIDevs: "GenAI Adoption for Devs",
+      genAIQA: "GenAI Adoption for QA"
     },
     modal: {
       email: "Email:",
@@ -30,9 +29,27 @@ const translations = {
       addEntry: "Add New Entry"
     },
     metrics: {
+      noUsage: "No Usage",
+      low: "Low",
+      moderate: "Moderate",
       high: "High",
-      medium: "Medium",
-      low: "Low"
+      veryHigh: "Very High"
+    },
+    metricsDescriptions: {
+      genAIDevs: {
+        NO_USAGE: "No GitHub Copilot, Cursor, Windsurf or Antigravity configured",
+        LOW: "Chat-only for small scripts and code suggestions",
+        MODERATE: "Agent mode for basic generation, refactors, and fixes",
+        HIGH: "Custom agents and MCP for advanced generation and Azure DevOps integration",
+        VERY_HIGH: "Agents, multi-agents, and advanced MCP for autonomous development"
+      },
+      genAIQA: {
+        NO_USAGE: "No AI testing tools configured",
+        LOW: "Chat-only for small scripts and test suggestions",
+        MODERATE: "Agent mode for basic test generation and issue review",
+        HIGH: "Custom agents and MCP to run tests and integrate with Azure DevOps",
+        VERY_HIGH: "Agents, multi-agents, and advanced MCP for autonomous testing"
+      }
     },
     footer: {
       copyright: "© 2025 SinapxIA. All rights reserved."
@@ -57,9 +74,8 @@ const translations = {
       selectDimension: "Seleccionar Dimensión:"
     },
     dimensions: {
-      aiAdoption: "Adopción de IA",
-      vacation: "Vacaciones",
-      englishLevel: "Nivel de Inglés"
+      genAIDevs: "Adopción GenAI para Devs",
+      genAIQA: "Adopción GenAI para QA"
     },
     modal: {
       email: "Correo:",
@@ -72,9 +88,27 @@ const translations = {
       addEntry: "Agregar Nueva Entrada"
     },
     metrics: {
+      noUsage: "Sin Uso",
+      low: "Bajo",
+      moderate: "Moderado",
       high: "Alto",
-      medium: "Medio",
-      low: "Bajo"
+      veryHigh: "Muy Alto"
+    },
+    metricsDescriptions: {
+      genAIDevs: {
+        NO_USAGE: "No configurado Github Copilot, Cursor, Windsurf o Antigravity",
+        LOW: "Chat en modo consulta para pequenos scripts y sugerencias de codigo",
+        MODERATE: "Modo agente para generacion basica, refactorizacion y correccion de problemas",
+        HIGH: "Agentes customizados y MCP para generacion avanzada e interaccion con Azure DevOps",
+        VERY_HIGH: "Agentes, multi-agentes y MCP avanzado para desarrollo con autonomia"
+      },
+      genAIQA: {
+        NO_USAGE: "No hay herramientas con IA configuradas para la realizacion de pruebas",
+        LOW: "Chat en modo consulta para pequenos scripts y sugerencias de pruebas",
+        MODERATE: "Modo agente para generacion basica de pruebas y revision de problemas",
+        HIGH: "Agentes customizados y MCP para realizar pruebas e interactuar con Azure DevOps",
+        VERY_HIGH: "Agentes, multi-agentes y MCP avanzado para pruebas autonomas"
+      }
     },
     footer: {
       copyright: "© 2025 SinapxIA. Todos los derechos reservados."

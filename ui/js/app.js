@@ -1,7 +1,16 @@
 // Application state
 const STORAGE_KEY = 'employeesData';
+const METRIC_LEVELS = ['NO_USAGE', 'LOW', 'MODERATE', 'HIGH', 'VERY_HIGH'];
+const LEGACY_METRIC_MAP = {
+    'ALTO': 'HIGH',
+    'ALTA': 'HIGH',
+    'MEDIO': 'MODERATE',
+    'MEDIA': 'MODERATE',
+    'BAJO': 'LOW',
+    'BAJA': 'LOW'
+};
 let employeesData = [];
-let currentDimension = 'aiAdoption';
+let currentDimension = 'genAIDevs';
 let currentEmployee = null;
 
 // Initialize the application
@@ -16,24 +25,45 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function loadEmployeesData() {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-        employeesData = JSON.parse(stored);
+        employeesData = setAllMetricsToNoUsage(normalizeEmployeesData(JSON.parse(stored)));
+        persistEmployeesData();
         return;
     }
 
     try {
         const response = await fetch('data/data.json');
         if (!response.ok) throw new Error('Failed to load data.json');
-        employeesData = await response.json();
+        employeesData = setAllMetricsToNoUsage(normalizeEmployeesData(await response.json()));
         persistEmployeesData();
     } catch (err) {
         console.error('Error loading employees data:', err);
         if (Array.isArray(window.employeesSeedData)) {
-            employeesData = window.employeesSeedData;
+            employeesData = setAllMetricsToNoUsage(normalizeEmployeesData(window.employeesSeedData));
             persistEmployeesData();
         } else {
             employeesData = [];
         }
     }
+}
+
+// Convert legacy metric labels to the new GenAI levels
+function normalizeEmployeesData(data) {
+    return data.map(emp => ({
+        ...emp,
+        metric: normalizeMetricValue(emp.metric)
+    }));
+}
+
+function normalizeMetricValue(metric) {
+    if (!metric) return 'NO_USAGE';
+    const candidate = metric.toString().trim().toUpperCase().replace(/\s+/g, '_');
+    if (METRIC_LEVELS.includes(candidate)) return candidate;
+    if (LEGACY_METRIC_MAP[candidate]) return LEGACY_METRIC_MAP[candidate];
+    return 'NO_USAGE';
+}
+
+function setAllMetricsToNoUsage(list) {
+    return list.map(emp => ({ ...emp, metric: 'NO_USAGE' }));
 }
 
 function persistEmployeesData() {
@@ -47,6 +77,7 @@ function setupEventListeners() {
     dimensionSelect.addEventListener('change', (e) => {
         currentDimension = e.target.value;
         renderDashboard();
+        refreshMetricSelectOptions();
     });
 
     // Modal close button
@@ -73,6 +104,7 @@ function setupEventListeners() {
     const languageSelector = document.getElementById('languageSelector');
     languageSelector.addEventListener('change', (e) => {
         changeLanguage(e.target.value);
+        refreshMetricSelectOptions();
     });
 
     // Hidden export button (aria-hidden true) still wired for manual trigger
@@ -85,8 +117,9 @@ function setupEventListeners() {
 // Render the dashboard grid
 function renderDashboard() {
     const container = document.getElementById('dashboardGrid');
-    const roles = getUniqueRoles();
-    const teams = getUniqueTeams();
+    const filteredEmployees = getEmployeesByDimension();
+    const roles = getUniqueRoles(filteredEmployees);
+    const teams = getUniqueTeams(filteredEmployees);
 
     let html = '<table class="w-full border-collapse min-w-[800px]"><thead><tr>';
     html += '<th class="bg-indigo-600 text-white text-left px-4 py-3 font-semibold sticky top-0 z-5 border border-gray-200">Role / Team</th>';
@@ -104,7 +137,7 @@ function renderDashboard() {
 
         // Create cells for each team
         teams.forEach(team => {
-            const employees = getEmployeesByRoleAndTeam(role, team);
+            const employees = getEmployeesByRoleAndTeam(role, team, filteredEmployees);
             html += '<td class="px-4 py-3 border border-gray-200 text-center">';
 
             if (employees.length > 0) {
@@ -136,9 +169,11 @@ function renderDashboard() {
 // Get metric color class
 function getMetricColorClass(metric) {
     const colorMap = {
-        "Alto": "bg-green-500 hover:bg-green-600",
-        "Medio": "bg-amber-400 hover:bg-amber-500",
-        "Bajo": "bg-red-500 hover:bg-red-600"
+        NO_USAGE: "bg-gray-400 hover:bg-gray-500 text-gray-900",
+        LOW: "bg-red-500 hover:bg-red-600",
+        MODERATE: "bg-yellow-400 hover:bg-yellow-500 text-gray-900",
+        HIGH: "bg-green-500 hover:bg-green-600",
+        VERY_HIGH: "bg-blue-500 hover:bg-blue-600"
     };
     return colorMap[metric] || "bg-gray-400";
 }
@@ -150,12 +185,14 @@ function openEmployeeModal(email) {
 
     currentEmployee = employee;
 
+    refreshMetricSelectOptions();
+
     document.getElementById('modalEmployeeName').textContent = employee.name;
     document.getElementById('modalEmployeeEmail').textContent = employee.email;
     document.getElementById('modalEmployeeRole').textContent = employee.role;
     document.getElementById('modalEmployeeTeam').textContent = employee.team;
     document.getElementById('modalEmployeeDate').textContent = employee.date;
-    document.getElementById('modalEmployeeObservation').textContent = employee.observation;
+    document.getElementById('modalEmployeeObservation').value = employee.observation || '';
     document.getElementById('modalMetricSelect').value = employee.metric;
 
     const modal = document.getElementById('employeeModal');
@@ -174,11 +211,13 @@ function saveMetric() {
     if (!currentEmployee) return;
 
     const newMetric = document.getElementById('modalMetricSelect').value;
+    const newObservation = document.getElementById('modalEmployeeObservation').value;
 
     // Find and update the employee in the data
     const employeeIndex = employeesData.findIndex(emp => emp.email === currentEmployee.email);
     if (employeeIndex !== -1) {
         employeesData[employeeIndex].metric = newMetric;
+        employeesData[employeeIndex].observation = newObservation;
         persistEmployeesData();
 
         // Show success message
@@ -249,16 +288,23 @@ style.textContent = `
 document.head.appendChild(style);
 
 // Utilities for dashboard rendering
-function getUniqueRoles() {
-    return [...new Set(employeesData.map(emp => emp.role))];
+function getEmployeesByDimension() {
+    if (currentDimension === 'genAIQA') {
+        return employeesData.filter(emp => emp.role === 'QA');
+    }
+    return employeesData.filter(emp => emp.role !== 'QA');
 }
 
-function getUniqueTeams() {
-    return [...new Set(employeesData.map(emp => emp.team))];
+function getUniqueRoles(list) {
+    return [...new Set(list.map(emp => emp.role))];
 }
 
-function getEmployeesByRoleAndTeam(role, team) {
-    return employeesData.filter(emp => emp.role === role && emp.team === team);
+function getUniqueTeams(list) {
+    return [...new Set(list.map(emp => emp.team))];
+}
+
+function getEmployeesByRoleAndTeam(role, team, list) {
+    return list.filter(emp => emp.role === role && emp.team === team);
 }
 
 function getInitials(name) {
@@ -269,6 +315,27 @@ function getInitials(name) {
         .join('')
         .slice(0, 3)
         .toUpperCase();
+}
+
+// Refresh modal metric options with dimension-specific labels
+function refreshMetricSelectOptions() {
+    const select = document.getElementById('modalMetricSelect');
+    if (!select) return;
+
+    select.innerHTML = '';
+
+    METRIC_LEVELS.forEach(level => {
+        const option = document.createElement('option');
+        option.value = level;
+        option.textContent = translate(`metricsDescriptions.${currentDimension}.${level}`) || level;
+        select.appendChild(option);
+    });
+
+    if (currentEmployee && METRIC_LEVELS.includes(currentEmployee.metric)) {
+        select.value = currentEmployee.metric;
+    } else {
+        select.value = 'NO_USAGE';
+    }
 }
 
 // Export current dataset as downloadable JSON file

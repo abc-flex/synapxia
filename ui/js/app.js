@@ -124,20 +124,21 @@ function setupEventListeners() {
 function renderDashboard() {
     const container = document.getElementById('dashboardGrid');
     const filteredEmployees = getEmployeesByDimension();
-    
+
     // Separate employees with and without teams
     const employeesWithTeam = filteredEmployees.filter(emp => emp.team && emp.team.trim() !== '');
     const employeesWithoutTeam = filteredEmployees.filter(emp => !emp.team || emp.team.trim() === '');
-    
+
     const roles = getUniqueRoles(employeesWithTeam);
     const teams = getUniqueTeams(employeesWithTeam);
 
     let html = '<table class="w-full border-collapse min-w-[800px]"><thead><tr>';
-    html += '<th class="bg-indigo-600 text-white text-left px-4 py-3 font-semibold sticky top-0 z-5 border border-gray-200">Role / Team</th>';
+    html += '<th class="bg-indigo-600 text-white text-left px-4 py-3 font-semibold sticky top-0 z-5 border border-gray-200">EQUIPO &#11208; ROL &#11206;</th>';
+    
 
     // Create team headers
     teams.forEach(team => {
-        html += `<th class="bg-gray-100 text-gray-900 px-4 py-3 font-semibold text-center border border-gray-200 sticky top-0 z-5">${team}</th>`;
+        html += `<th class="bg-gray-100 text-gray-900 px-4 py-3 font-semibold text-center border border-gray-200 sticky top-0 z-5">${team.toUpperCase()}</th>`;
     });
     html += '</tr></thead><tbody>';
 
@@ -157,11 +158,14 @@ function renderDashboard() {
                     const initials = getInitials(emp.name);
                     const metricClass = getMetricColorClass(emp.metric);
                     html += `
-                        <div class="avatar w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer transition-transform hover:scale-110 relative z-20 ${metricClass}" 
-                             onclick="openEmployeeModal('${emp.email}')"
-                             title="${emp.name}">
-                            ${initials}
-                            <div class="avatar-tooltip absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap">${emp.name}</div>
+                        <div class="avatar-wrapper relative inline-block" 
+                             onmouseenter="showAvatarTooltip(this, '${emp.name}')"
+                             onmouseleave="hideAvatarTooltip(this)">
+                            <div class="avatar w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer transition-transform hover:scale-110 ${metricClass}" 
+                                 onclick="openEmployeeModal('${emp.email}')">
+                                ${initials}
+                            </div>
+                            <div class="avatar-tooltip hidden absolute bottom-full left-1/2 -translate-x-1/2 mb-3 bg-gray-900 text-white text-xs px-3 py-2 rounded-lg whitespace-nowrap z-50 pointer-events-none shadow-lg">${emp.name}</div>
                         </div>
                     `;
                 });
@@ -177,27 +181,30 @@ function renderDashboard() {
     if (employeesWithoutTeam.length > 0) {
         html += '<tr>';
         html += '<td class="bg-amber-50 text-amber-900 px-4 py-3 font-semibold border border-gray-200">--</td>';
-        
+
         // Span across all team columns
         html += `<td colspan="${teams.length}" class="px-4 py-3 border border-gray-200 text-center">`;
         html += `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 16px; justify-items: center; align-items: start; min-height: 120px;">`;
-        
+
         employeesWithoutTeam.forEach(emp => {
             const initials = getInitials(emp.name);
             const metricClass = getMetricColorClass(emp.metric);
             html += `
                 <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                    <div class="avatar w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer transition-transform hover:scale-110 relative z-20 ${metricClass}" 
-                         onclick="openEmployeeModal('${emp.email}')"
-                         title="${emp.name}">
-                        ${initials}
-                        <div class="avatar-tooltip absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap">${emp.name}</div>
+                    <div class="avatar-wrapper relative inline-block" 
+                         onmouseenter="showAvatarTooltip(this, '${emp.name}')"
+                         onmouseleave="hideAvatarTooltip(this)">
+                        <div class="avatar w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer transition-transform hover:scale-110 ${metricClass}" 
+                             onclick="openEmployeeModal('${emp.email}')">
+                            ${initials}
+                        </div>
+                        <div class="avatar-tooltip hidden absolute bottom-full left-1/2 -translate-x-1/2 mb-3 bg-gray-900 text-white text-xs px-3 py-2 rounded-lg whitespace-nowrap z-50 pointer-events-none shadow-lg">${emp.name}</div>
                     </div>
                     <span style="font-size: 10px; font-weight: 500; color: #374151; max-width: 70px; text-align: center; line-height: 1.3; word-wrap: break-word;">${emp.role}</span>
                 </div>
             `;
         });
-        
+
         html += '</div>';
         html += '</td>';
         html += '</tr>';
@@ -332,8 +339,72 @@ style.textContent = `
     .animate-slideIn {
         animation: slideIn 0.3s ease;
     }
+
+    /* Improved avatar tooltip styles */
+    .avatar-wrapper {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .avatar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        aspect-ratio: 1;
+        flex-shrink: 0;
+    }
+
+    .avatar-tooltip {
+        opacity: 0;
+        transform: translateY(8px);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        will-change: opacity, transform;
+    }
+
+    .avatar-tooltip.visible {
+        opacity: 1;
+        transform: translateX(-50%);
+    }
+
+    /* Ensure tooltip appears above other elements */
+    .avatar-tooltip::before {
+        content: '';
+        position: absolute;
+        bottom: -4px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 8px;
+        height: 8px;
+        background-color: inherit;
+        border-radius: 1px;
+        z-index: -1;
+    }
 `;
 document.head.appendChild(style);
+
+// Tooltip management functions
+function showAvatarTooltip(element, name) {
+    const tooltip = element.querySelector('.avatar-tooltip');
+    if (tooltip) {
+        tooltip.textContent = name;
+        tooltip.classList.remove('hidden');
+        // Trigger reflow to ensure transition works
+        tooltip.offsetHeight;
+        tooltip.classList.add('visible');
+    }
+}
+
+function hideAvatarTooltip(element) {
+    const tooltip = element.querySelector('.avatar-tooltip');
+    if (tooltip) {
+        tooltip.classList.remove('visible');
+        setTimeout(() => {
+            tooltip.classList.add('hidden');
+        }, 200);
+    }
+}
 
 // Utilities for dashboard rendering
 function getEmployeesByDimension() {

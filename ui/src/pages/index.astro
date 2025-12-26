@@ -1,26 +1,23 @@
 ---
-import "../styles/globals.css";
+import BaseLayout from "../layouts/BaseLayout.astro";
 
-const title = "Synapxia";
+const title = "TailAdmin x Astro";
+const primaryNav = [
+  { label: "Dashboard", href: "#" },
+  { label: "Calendar", href: "#" },
+  { label: "User Profile", href: "#" },
+  { label: "Forms", href: "#" },
+  { label: "Tables", href: "#" },
+  { label: "Pages", href: "#" },
+];
 
 ---
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{title}</title>
-  </head>
-  <body
-    style="font-family: system-ui, -apple-system, sans-serif; display: grid; place-items: center; min-height: 100vh; margin: 0; background: #f7f7f7; color: #111;"
-  >
-    <main
-      style="text-align: center; padding: 2rem; background: white; border-radius: 12px; box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);"
-    >
-      <h1 style="font-size: 3rem; margin: 0 0 0.5rem;">{title}</h1>
-      <p style="margin: 0; font-size: 1.1rem; color: #555;">
-        A fresh Astro starter page.
-      </p>
-    </main>
-  </body>
-</html>
+<BaseLayout title={title} navItems={primaryNav}>
+  <div class="rounded-2xl border border-dashed border-slate-200 bg-white/70 p-10 text-center shadow-sm">
+    <p class="text-sm uppercase tracking-[0.2em] text-slate-400">TailAdmin</p>
+    <h1 class="mt-3 text-3xl font-bold text-slate-900">Astro Integration Starter</h1>
+    <p class="mt-3 text-slate-600">
+      Sidebar and header are now reusable components. Plug your content here.
+    </p>
+  </div>
+</BaseLayout>

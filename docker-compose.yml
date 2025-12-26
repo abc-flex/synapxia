@@ -63,6 +63,7 @@ services:
     container_name: synapxia-ui
     build:
       context: ./ui
+      target: development
       dockerfile: ./Dockerfile
     restart: unless-stopped
     depends_on:
@@ -71,6 +72,11 @@ services:
       - 4321:4321
     networks:
       - synapxia-network
+    volumes:
+      - ./ui:/app
+      - /app/node_modules
+    working_dir: /app
+    entrypoint: bun run dev
     environment:
       - NODE_ENV=development
       - API_PATH=http://synapxia-api:8000

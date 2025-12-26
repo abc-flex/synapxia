@@ -1,4 +1,4 @@
-FROM oven/bun:1.1.0
+FROM oven/bun:1.1.0 AS base
 
 WORKDIR /app
 
@@ -8,8 +8,17 @@ COPY tailwind.config.cjs .
 COPY postcss.config.cjs .
 COPY src ./src
 
-RUN bun install
+
+
+FROM base AS build
+
+RUN bun install --production
 RUN bun astro build
 
+
+FROM base AS development
+
+RUN bun install
+
 EXPOSE 4321
-CMD ["bun", "astro", "preview", "--host", "0.0.0.0", "--port", "4321"]
+

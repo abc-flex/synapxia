@@ -1,461 +1,282 @@
 -- **********************************
--- ********* Table modules **********
+-- ********* Table: options *********
 -- **********************************
 
-INSERT INTO modules (code, name, description, sort_order) VALUES
-    ('Administration',
-     'Administration and configuration of the platform.',
-     'Administration centralizes security, reference data and structural configuration of SynapxIA, ensuring consistent behavior across modules, user profiles and environments.',
-     10),
-    ('Collaboration',
-     'Collaboration spaces and teamwork.',
-     'Collaboration provides shared spaces, teams and structures so people can coordinate work, track progress and align around AI adoption initiatives across the organization.',
-     20),
-    ('Generative AI',
-     'Generative AI assets, prompts, flows and agents.',
-     'Generative AI groups the core GenAI capabilities of SynapxIA, including prompt galleries, MCP integrations, flows, models and agents to design and operate AI-powered solutions.',
-     30),
-    ('AI Initiatives',
-     'Lifecycle of AI initiatives and proposals.',
-     'AI Initiatives supports the full lifecycle of AI ideas and projects, from proposal and exploration to decision making, tracking and promotion into reusable assets.',
-     40),
-    ('Digital Assets',
-     'Management and exploration of digital assets.',
-     'Digital Assets manages the catalog, characterization and evolution of key digital assets, enabling reuse, governance and alignment with AI initiatives and business needs.',
-     50),
-    ('GenAI Metrics',
-     'Monitoring and analysis of Generative AI impact.',
-     'GenAI Metrics consolidates KPIs, dashboards and reports that measure the adoption, usage and value of Generative AI across the organization and its processes.',
-     60),
-    ('Processes',
-     'Value chain and business processes.',
-     'Processes maps the value chain and key process models of the organization, connecting them with AI initiatives, digital assets and GenAI metrics for continuous improvement.',
-     70);
+-- ===== Module: ADMIN =====
+INSERT INTO options (module, code, name, description, sort_order, type) VALUES
+    ('ADMIN','UNITS','Units',
+     'Configuration area to define and maintain the types of organizational units (e.g., Department, Business Unit, Chapter).',
+     10,'FORM'),
+    ('ADMIN','ROLES','Roles',
+     'Define roles, responsibilities and access to modules and options.',
+     20,'FORM'),
+    ('ADMIN','USERS','Users',
+     'Register, update and deactivate users and associate them with roles.',
+     30,'FORM'),
+    ('ADMIN','LISTS','Lists',
+     'Manage configurable lists and catalogs used throughout the platform.',
+     40,'FORM'),
+    ('ADMIN','MODULES','Modules',
+     'Register and control visibility and order of platform modules.',
+     50,'FORM'),
+    ('ADMIN','OPTIONS','Options',
+     'Configure options within each module and their visibility.',
+     60,'FORM');
 
+-- ===== Module: CATALOG =====
+INSERT INTO options (module, code, name, description, sort_order, type) VALUES
+    ('CATALOG','CATEGORIES','Categories',
+     'Define and maintain the taxonomy of digital asset categories.',
+     10,'FORM'),
+    ('CATALOG','CHARACTERISTICS','Characteristics',
+     'Define metadata and attributes describing digital assets.',
+     20,'FORM'),
+    ('CATALOG','ASSETS','Assets',
+     'Inventory of digital assets linked to owners, initiatives and processes.',
+     30,'FORM');
 
+-- ===== Module: COLLAB =====
+INSERT INTO options (module, code, name, description, sort_order, type) VALUES
+    ('COLLAB','TEAMS','Teams',
+     'Create and maintain cross-functional teams.',
+     10,'FORM'),
+    ('COLLAB','PROJECTS','Projects',
+     'Register and follow AI-related projects or workstreams.',
+     20,'FORM'),
+    ('COLLAB','DIMENSIONS','Dimensions',
+     'Define dimensions for segmentation and analysis.',
+     30,'FORM'),
+    ('COLLAB','DASHBOARD','Dashboard',
+     'Dashboard to monitor tasks and collaboration workload.',
+     40,'FORM');
 
-insertar unit_type (p.ej. Department, Business Unit, Chapter… parametrizable con listas)
+-- ===== Module: GEN_AI =====
+INSERT INTO options (module, code, name, description, sort_order, type) VALUES
+    ('GEN_AI','PROMPTS','Prompts',
+     'Curated gallery of reusable GenAI prompts.',
+     10,'FORM'),
+    ('GEN_AI','MCPS','MCPs',
+     'Repository of tools compatible with Model Context Protocol.',
+     20,'FORM'),
+    ('GEN_AI','RAG_APPS','RAG Apps',
+     'Configure and monitor RAG use cases.',
+     30,'FORM'),
+    ('GEN_AI','MODELS','Models',
+     'Catalog of AI and ML models used in the platform.',
+     40,'FORM'),
+    ('GEN_AI','ASSISTANTS','Assistants',
+     'Define assistants scope, tone and tools.',
+     50,'FORM'),
+    ('GEN_AI','AGENTS','Agents',
+     'Design and govern AI agents with higher autonomy.',
+     60,'FORM');
 
+-- ===== Module: INITS =====
+INSERT INTO options (module, code, name, description, sort_order, type) VALUES
+    ('INITS','PROPOSAL','Proposal',
+     'Capture new GenAI initiative proposals.',
+     10,'FORM'),
+    ('INITS','EXPLORE','Explore',
+     'Browse and analyze the initiative portfolio.',
+     20,'FORM'),
+    ('INITS','PROMOTE','Promote',
+     'Convert mature initiatives into reusable assets.',
+     30,'FORM');
+
+-- ===== Module: INSIGHTS =====
+INSERT INTO options (module, code, name, description, sort_order, type) VALUES
+    ('INSIGHTS','KPIS','KPIs',
+     'Define and track performance indicators.',
+     10,'FORM'),
+    ('INSIGHTS','DASHBOARDS','Dashboards',
+     'Dashboards for adoption and impact analysis.',
+     20,'FORM'),
+    ('INSIGHTS','REPORTS','Reports',
+     'Scheduled and on-demand GenAI reports.',
+     30,'FORM');
+
+-- ===== Module: WORKFLOWS =====
+INSERT INTO options (module, code, name, description, sort_order, type) VALUES
+    ('WORKFLOWS','VALUE_CHAIN','Value Chain',
+     'Identify stages where AI can create impact.',
+     10,'FORM'),
+    ('WORKFLOWS','MAP','Process Map',
+     'High-level process landscape representation.',
+     20,'FORM'),
+    ('WORKFLOWS','MODELS','Process Models',
+     'Document and relate detailed process models.',
+     30,'FORM'),
+    ('WORKFLOWS','AI_FLOWS','AI Flows',
+     'Design multi-step AI-enabled workflows.',
+     40,'FORM'),
+    ('WORKFLOWS','N8N','n8n',
+     'Document n8n-based integrations and automations.',
+     50,'FORM');
 
 -- **********************************
--- ********* Table options **********
--- **********************************
-
--- Module: Administration
-INSERT INTO options (module, code, name, description, sort_order, type) VALUES
-    ('Administration',
-     'Roles',
-     'Manage system roles and their permissions.',
-     'Configuration area to define and maintain the roles available in SynapxIA, documenting their responsibilities and controlling which modules and options they can access.',
-     10, 'FORM'),
-    ('Administration',
-     'Users',
-     'Manage platform users and their access.',
-     'Interface to register, update and deactivate users, manage their login identifiers and associate them with roles or profiles according to organizational governance policies.',
-     20, 'FORM'),
-    ('Administration',
-     'Lists',
-     'Configure parameterized lists used across the system.',
-     'Console to manage configurable lists and catalogs used in forms and pop-ups, allowing administrators to adjust values without code changes and keep data consistent.',
-     30, 'FORM'),
-    ('Administration',
-     'Modules',
-     'Manage application modules and their metadata.',
-     'Administration view to register, describe and order modules, controlling how the main navigation of SynapxIA is presented and which modules are visible to users.',
-     40, 'FORM'),
-    ('Administration',
-     'Options',
-     'Manage application options and navigation items.',
-     'Tool to configure options within each module, including labels, grouping and visibility, so the menu structure reflects the needs of different roles and journeys.',
-     50, 'FORM');
-
--- Module: Collaboration
-INSERT INTO options (module, code, name, description, sort_order, type) VALUES
-    ('Collaboration',
-     'Teams',
-     'Manage collaboration teams and groups.',
-     'Area to create and maintain cross-functional teams, assign members and define their roles, providing a shared context for working on AI initiatives and digital assets.',
-     10, 'FORM'),
-    ('Collaboration',
-     'Projects',
-     'Organize collaboration around specific projects.',
-     'Space to register and follow AI-related projects or workstreams, linking teams, initiatives and assets so collaboration happens around clear, shared objectives.',
-     20, 'FORM'),
-    ('Collaboration',
-     'Dimensions',
-     'Define collaboration and analysis dimensions.',
-     'Configuration view to define dimensions such as domain, business unit or maturity, which can be used to segment, filter and analyze collaborative work in SynapxIA.',
-     30, 'FORM'),
-    ('Collaboration',
-     'Assignments Dashboard',
-     'Visualize assignments, status and workload.',
-     'Dashboard that consolidates tasks, responsibilities and pending actions across teams and projects, helping balance workload and monitor collaboration progress.',
-     40, 'FORM');
-
--- Module: Generative AI
-INSERT INTO options (module, code, name, description, sort_order, type) VALUES
-    ('Generative AI',
-     'Prompt Gallery',
-     'Manage reusable prompts for Generative AI.',
-     'Central gallery where curated prompts are created, documented and shared, encouraging reuse of proven prompt patterns and governance of how GenAI is used in practice.',
-     10, 'FORM'),
-    ('Generative AI',
-     'MCPs Catalog',
-     'Catalog of MCP-based tools and integrations.',
-     'Repository of tools and integrations compatible with the Model Context Protocol (MCP), documenting capabilities, configuration details and recommended usage scenarios.',
-     20, 'FORM'),
-    ('Generative AI',
-     'AI Flows',
-     'Design and orchestrate AI-powered flows.',
-     'Workspace to design multi-step AI flows that connect prompts, tools, models and business rules, enabling reusable patterns that can be aligned with enterprise processes.',
-     30, 'FORM'),
-    ('Generative AI',
-     'RAG Applications',
-     'Manage Retrieval-Augmented Generation applications.',
-     'Module to configure, monitor and evolve RAG use cases, connecting data sources, defining retrieval strategies and following up on quality and behavior of GenAI outputs.',
-     40, 'FORM'),
-    ('Generative AI',
-     'Models',
-     'Manage and catalogue AI/ML models.',
-     'Catalog of AI and ML models used in SynapxIA, including ownership, purpose, constraints and integration points, helping standardize and govern model usage.',
-     50, 'FORM'),
-    ('Generative AI',
-     'Assistants',
-     'Configure AI assistants for specific use cases.',
-     'Configuration area for AI assistants oriented to well-defined use cases such as support, documentation or ideation, specifying their scope, tone, tools and guardrails.',
-     60, 'FORM'),
-    ('Generative AI',
-     'Agents',
-     'Configure autonomous or semi-autonomous AI agents.',
-     'Module to design agents with higher autonomy, defining their goals, allowed actions, monitoring signals and escalation paths, so they remain aligned with business constraints.',
-     70, 'FORM'),
-    ('Generative AI',
-     'N8n',
-     'Integrations and workflows orchestrated via n8n.',
-     'Space dedicated to workflows and automations built with n8n, documenting connectors, triggers and orchestrations that extend GenAI capabilities with external systems.',
-     80, 'FORM');
-
--- Module: AI Initiatives
-INSERT INTO options (module, code, name, description, sort_order, type) VALUES
-    ('AI Initiatives',
-     'Proposal',
-     'Register new AI initiative proposals.',
-     'Entry point to capture new AI initiative proposals with key information such as problem statement, expected value, sponsors, impacted processes and initial assumptions.',
-     10, 'FORM'),
-    ('AI Initiatives',
-     'Explore',
-     'Explore and filter AI initiatives.',
-     'View that lets stakeholders browse and filter the portfolio of AI initiatives by status, domain, value or risk, supporting transparency and alignment across the organization.',
-     20, 'FORM'),
-    ('AI Initiatives',
-     'Promote to Asset',
-     'Promote initiatives to reusable digital assets.',
-     'Functionality to convert a matured AI initiative into one or more reusable assets (such as models, flows or prompts), linking them back to the original business context.',
-     30, 'FORM');
-
--- Module: Digital Assets
-INSERT INTO options (module, code, name, description, sort_order, type) VALUES
-    ('Digital Assets',
-     'Categories',
-     'Define categories for organizing digital assets.',
-     'Configuration area to define and maintain the taxonomy of digital asset categories, helping users understand where to register and find information within SynapxIA.',
-     10, 'FORM'),
-    ('Digital Assets',
-     'Characteristics',
-     'Define attributes and characteristics of assets.',
-     'Administrative view to define metadata and attributes that describe assets (such as sensitivity, lifecycle or domain), enabling richer search and better governance.',
-     20, 'FORM'),
-    ('Digital Assets',
-     'Asset Catalog',
-     'Central catalog of registered digital assets.',
-     'Catalog that consolidates the inventory of relevant digital assets, linking them to owners, initiatives and processes so they can be reused and evolved over time.',
-     30, 'FORM');
-
--- Module: GenAI Metrics
-INSERT INTO options (module, code, name, description, sort_order, type) VALUES
-    ('GenAI Metrics',
-     'GenAI KPIs',
-     'Define and monitor key GenAI KPIs.',
-     'Module to define, calculate and track key performance indicators related to Generative AI usage, impact and quality across initiatives, teams and processes.',
-     10, 'FORM'),
-    ('GenAI Metrics',
-     'GenAI Dashboards',
-     'Visualize GenAI metrics through dashboards.',
-     'Set of dashboards that consolidate GenAI-related metrics into visual stories, enabling leaders to quickly understand adoption, performance and areas of opportunity.',
-     20, 'FORM'),
-    ('GenAI Metrics',
-     'GenAI Reports',
-     'Generate and distribute GenAI analytical reports.',
-     'Functionality to build, schedule and share reports about Generative AI adoption and outcomes, supporting regular communication with stakeholders and governance bodies.',
-     30, 'FORM');
-
--- Module: Processes
-INSERT INTO options (module, code, name, description, sort_order, type) VALUES
-    ('Processes',
-     'Value Chain',
-     'Model and manage the organizational value chain.',
-     'View dedicated to modeling the value chain, identifying stages where AI and digital assets can create impact and connecting them with initiatives and metrics.',
-     10, 'FORM'),
-    ('Processes',
-     'Processes Map',
-     'Provide a high-level map of processes.',
-     'Representation of the main process landscape, showing how processes are grouped and related and where AI initiatives or assets are expected to intervene.',
-     20, 'FORM'),
-    ('Processes',
-     'Processes Models',
-     'Detail and manage specific process models.',
-     'Module to document detailed process models, relate them to assets, initiatives and GenAI metrics, and use them as a reference for continuous improvement and automation.',
-     30, 'FORM');
-
-
--- **********************************
--- ********** Table roles ***********
+-- ********** Table: roles **********
 -- **********************************
 
 INSERT INTO roles (code, name, description, is_active)
 VALUES
-    ('Administrator',
+    ('ADMINISTRATOR',
      'Platform Administrator',
      'Full access to all modules and options in SynapxIA, including configuration, security and operational capabilities.',
      TRUE),
-    ('Administrative',
+    ('ADMINISTRATIVE',
      'Operational Administrator',
      'Administrative role with full edit access to collaboration, Generative AI, AI initiatives, metrics, processes and digital assets, but without platform-level administration features.',
      TRUE),
-    ('Collaborator',
+    ('COLLABORATOR',
      'Standard Collaborator',
      'Operational user with read access to collaboration, Generative AI, AI initiatives, processes and digital assets, and edit rights only for AI initiative proposals.',
      TRUE);
 
 -- **********************************
--- ******** Table privileges ********
+-- ******** Table: privileges ********
 -- **********************************
 
+-- ===== Role: ADMINISTRATOR =====
 INSERT INTO privileges (role, module, option, can_edit)
 VALUES
-    -- Administration
-    ('Administrator', 'Administration', 'Roles',              TRUE),
-    ('Administrator', 'Administration', 'Users',              TRUE),
-    ('Administrator', 'Administration', 'Lists',              TRUE),
-    ('Administrator', 'Administration', 'Modules',            TRUE),
-    ('Administrator', 'Administration', 'Options',            TRUE),
+    -- ADMIN
+    ('ADMINISTRATOR','ADMIN','UNITS',   TRUE),
+    ('ADMINISTRATOR','ADMIN','ROLES',   TRUE),
+    ('ADMINISTRATOR','ADMIN','USERS',   TRUE),
+    ('ADMINISTRATOR','ADMIN','LISTS',   TRUE),
+    ('ADMINISTRATOR','ADMIN','MODULES', TRUE),
+    ('ADMINISTRATOR','ADMIN','OPTIONS', TRUE),
 
-    -- Collaboration
-    ('Administrator', 'Collaboration', 'Teams',               TRUE),
-    ('Administrator', 'Collaboration', 'Projects',            TRUE),
-    ('Administrator', 'Collaboration', 'Dimensions',          TRUE),
-    ('Administrator', 'Collaboration', 'Assignments Dashboard', TRUE),
+    -- COLLAB
+    ('ADMINISTRATOR','COLLAB','TEAMS',      TRUE),
+    ('ADMINISTRATOR','COLLAB','PROJECTS',   TRUE),
+    ('ADMINISTRATOR','COLLAB','DIMENSIONS', TRUE),
+    ('ADMINISTRATOR','COLLAB','DASHBOARD',  TRUE),
 
-    -- Generative AI
-    ('Administrator', 'Generative AI', 'Prompt Gallery',      TRUE),
-    ('Administrator', 'Generative AI', 'MCPs Catalog',        TRUE),
-    ('Administrator', 'Generative AI', 'AI Flows',            TRUE),
-    ('Administrator', 'Generative AI', 'RAG Applications',    TRUE),
-    ('Administrator', 'Generative AI', 'Models',              TRUE),
-    ('Administrator', 'Generative AI', 'Assistants',          TRUE),
-    ('Administrator', 'Generative AI', 'Agents',              TRUE),
-    ('Administrator', 'Generative AI', 'N8n',                 TRUE),
+    -- GEN_AI
+    ('ADMINISTRATOR','GEN_AI','PROMPTS',    TRUE),
+    ('ADMINISTRATOR','GEN_AI','MCPS',       TRUE),
+    ('ADMINISTRATOR','GEN_AI','RAG_APPS',   TRUE),
+    ('ADMINISTRATOR','GEN_AI','MODELS',     TRUE),
+    ('ADMINISTRATOR','GEN_AI','ASSISTANTS', TRUE),
+    ('ADMINISTRATOR','GEN_AI','AGENTS',     TRUE),
 
-    -- AI Initiatives
-    ('Administrator', 'AI Initiatives', 'Proposal',           TRUE),
-    ('Administrator', 'AI Initiatives', 'Explore',            TRUE),
-    ('Administrator', 'AI Initiatives', 'Promote to Asset',   TRUE),
+    -- INITS
+    ('ADMINISTRATOR','INITS','PROPOSAL', TRUE),
+    ('ADMINISTRATOR','INITS','EXPLORE',  TRUE),
+    ('ADMINISTRATOR','INITS','PROMOTE',  TRUE),
 
-    -- Digital Assets
-    ('Administrator', 'Digital Assets', 'Categories',         TRUE),
-    ('Administrator', 'Digital Assets', 'Characteristics',    TRUE),
-    ('Administrator', 'Digital Assets', 'Asset Catalog',      TRUE),
+    -- CATALOG
+    ('ADMINISTRATOR','CATALOG','CATEGORIES',      TRUE),
+    ('ADMINISTRATOR','CATALOG','CHARACTERISTICS', TRUE),
+    ('ADMINISTRATOR','CATALOG','ASSETS',          TRUE),
 
-    -- GenAI Metrics
-    ('Administrator', 'GenAI Metrics', 'GenAI KPIs',          TRUE),
-    ('Administrator', 'GenAI Metrics', 'GenAI Dashboards',    TRUE),
-    ('Administrator', 'GenAI Metrics', 'GenAI Reports',       TRUE),
+    -- INSIGHTS
+    ('ADMINISTRATOR','INSIGHTS','KPIS',       TRUE),
+    ('ADMINISTRATOR','INSIGHTS','DASHBOARDS', TRUE),
+    ('ADMINISTRATOR','INSIGHTS','REPORTS',    TRUE),
 
-    -- Processes
-    ('Administrator', 'Processes', 'Value Chain',             TRUE),
-    ('Administrator', 'Processes', 'Processes Map',           TRUE),
-    ('Administrator', 'Processes', 'Processes Models',        TRUE);
+    -- WORKFLOWS
+    ('ADMINISTRATOR','WORKFLOWS','VALUE_CHAIN', TRUE),
+    ('ADMINISTRATOR','WORKFLOWS','MAP',         TRUE),
+    ('ADMINISTRATOR','WORKFLOWS','MODELS',      TRUE),
+    ('ADMINISTRATOR','WORKFLOWS','AI_FLOWS',    TRUE),
+    ('ADMINISTRATOR','WORKFLOWS','N8N',         TRUE);
 
+-- ===== Role: ADMINISTRATIVE =====
 INSERT INTO privileges (role, module, option, can_edit)
 VALUES
-    -- Collaboration
-    ('Administrative', 'Collaboration', 'Teams',               TRUE),
-    ('Administrative', 'Collaboration', 'Projects',            TRUE),
-    ('Administrative', 'Collaboration', 'Dimensions',          TRUE),
-    ('Administrative', 'Collaboration', 'Assignments Dashboard', TRUE),
+    -- COLLAB
+    ('ADMINISTRATIVE','COLLAB','TEAMS',      TRUE),
+    ('ADMINISTRATIVE','COLLAB','PROJECTS',   TRUE),
+    ('ADMINISTRATIVE','COLLAB','DIMENSIONS', TRUE),
+    ('ADMINISTRATIVE','COLLAB','DASHBOARD',  TRUE),
 
-    -- Generative AI
-    ('Administrative', 'Generative AI', 'Prompt Gallery',      TRUE),
-    ('Administrative', 'Generative AI', 'MCPs Catalog',        TRUE),
-    ('Administrative', 'Generative AI', 'AI Flows',            TRUE),
-    ('Administrative', 'Generative AI', 'RAG Applications',    TRUE),
-    ('Administrative', 'Generative AI', 'Models',              TRUE),
-    ('Administrative', 'Generative AI', 'Assistants',          TRUE),
-    ('Administrative', 'Generative AI', 'Agents',              TRUE),
-    ('Administrative', 'Generative AI', 'N8n',                 TRUE),
+    -- GEN_AI
+    ('ADMINISTRATIVE','GEN_AI','PROMPTS',    TRUE),
+    ('ADMINISTRATIVE','GEN_AI','MCPS',       TRUE),
+    ('ADMINISTRATIVE','GEN_AI','RAG_APPS',   TRUE),
+    ('ADMINISTRATIVE','GEN_AI','MODELS',     TRUE),
+    ('ADMINISTRATIVE','GEN_AI','ASSISTANTS', TRUE),
+    ('ADMINISTRATIVE','GEN_AI','AGENTS',     TRUE),
 
-    -- AI Initiatives
-    ('Administrative', 'AI Initiatives', 'Proposal',           TRUE),
-    ('Administrative', 'AI Initiatives', 'Explore',            TRUE),
-    ('Administrative', 'AI Initiatives', 'Promote to Asset',   TRUE),
+    -- INITS
+    ('ADMINISTRATIVE','INITS','PROPOSAL', TRUE),
+    ('ADMINISTRATIVE','INITS','EXPLORE',  TRUE),
+    ('ADMINISTRATIVE','INITS','PROMOTE',  TRUE),
 
-    -- Digital Assets
-    ('Administrative', 'Digital Assets', 'Categories',         TRUE),
-    ('Administrative', 'Digital Assets', 'Characteristics',    TRUE),
-    ('Administrative', 'Digital Assets', 'Asset Catalog',      TRUE),
+    -- CATALOG
+    ('ADMINISTRATIVE','CATALOG','CATEGORIES',      TRUE),
+    ('ADMINISTRATIVE','CATALOG','CHARACTERISTICS', TRUE),
+    ('ADMINISTRATIVE','CATALOG','ASSETS',          TRUE),
 
-    -- GenAI Metrics
-    ('Administrative', 'GenAI Metrics', 'GenAI KPIs',          TRUE),
-    ('Administrative', 'GenAI Metrics', 'GenAI Dashboards',    TRUE),
-    ('Administrative', 'GenAI Metrics', 'GenAI Reports',       TRUE),
+    -- INSIGHTS
+    ('ADMINISTRATIVE','INSIGHTS','KPIS',       TRUE),
+    ('ADMINISTRATIVE','INSIGHTS','DASHBOARDS', TRUE),
+    ('ADMINISTRATIVE','INSIGHTS','REPORTS',    TRUE),
 
-    -- Processes
-    ('Administrative', 'Processes', 'Value Chain',             TRUE),
-    ('Administrative', 'Processes', 'Processes Map',           TRUE),
-    ('Administrative', 'Processes', 'Processes Models',        TRUE);
+    -- WORKFLOWS
+    ('ADMINISTRATIVE','WORKFLOWS','VALUE_CHAIN', TRUE),
+    ('ADMINISTRATIVE','WORKFLOWS','MAP',         TRUE),
+    ('ADMINISTRATIVE','WORKFLOWS','MODELS',      TRUE),
+    ('ADMINISTRATIVE','WORKFLOWS','AI_FLOWS',    TRUE),
+    ('ADMINISTRATIVE','WORKFLOWS','N8N',         TRUE);
 
+-- ===== Role: COLLABORATOR =====
 INSERT INTO privileges (role, module, option, can_edit)
 VALUES
-    -- Collaboration (solo lectura)
-    ('Collaborator', 'Collaboration', 'Teams',               FALSE),
-    ('Collaborator', 'Collaboration', 'Projects',            FALSE),
-    ('Collaborator', 'Collaboration', 'Dimensions',          FALSE),
-    ('Collaborator', 'Collaboration', 'Assignments Dashboard', FALSE),
+    -- COLLAB (read-only)
+    ('COLLABORATOR','COLLAB','TEAMS',      FALSE),
+    ('COLLABORATOR','COLLAB','PROJECTS',   FALSE),
+    ('COLLABORATOR','COLLAB','DIMENSIONS', FALSE),
+    ('COLLABORATOR','COLLAB','DASHBOARD',  FALSE),
 
-    -- Generative AI (solo lectura)
-    ('Collaborator', 'Generative AI', 'Prompt Gallery',      FALSE),
-    ('Collaborator', 'Generative AI', 'MCPs Catalog',        FALSE),
-    ('Collaborator', 'Generative AI', 'AI Flows',            FALSE),
-    ('Collaborator', 'Generative AI', 'RAG Applications',    FALSE),
-    ('Collaborator', 'Generative AI', 'Models',              FALSE),
-    ('Collaborator', 'Generative AI', 'Assistants',          FALSE),
-    ('Collaborator', 'Generative AI', 'Agents',              FALSE),
-    ('Collaborator', 'Generative AI', 'N8n',                 FALSE),
+    -- GEN_AI (read-only)
+    ('COLLABORATOR','GEN_AI','PROMPTS',    FALSE),
+    ('COLLABORATOR','GEN_AI','MCPS',       FALSE),
+    ('COLLABORATOR','GEN_AI','RAG_APPS',   FALSE),
+    ('COLLABORATOR','GEN_AI','MODELS',     FALSE),
+    ('COLLABORATOR','GEN_AI','ASSISTANTS', FALSE),
+    ('COLLABORATOR','GEN_AI','AGENTS',     FALSE),
 
-    -- AI Initiatives
-    ('Collaborator', 'AI Initiatives', 'Proposal',           TRUE),
-    ('Collaborator', 'AI Initiatives', 'Explore',            FALSE),
-    ('Collaborator', 'AI Initiatives', 'Promote to Asset',   FALSE),
+    -- INITS
+    ('COLLABORATOR','INITS','PROPOSAL', TRUE),
+    ('COLLABORATOR','INITS','EXPLORE',  FALSE),
+    ('COLLABORATOR','INITS','PROMOTE',  FALSE),
 
-    -- Digital Assets (solo lectura)
-    ('Collaborator', 'Digital Assets', 'Categories',         FALSE),
-    ('Collaborator', 'Digital Assets', 'Characteristics',    FALSE),
-    ('Collaborator', 'Digital Assets', 'Asset Catalog',      FALSE),
+    -- CATALOG (read-only)
+    ('COLLABORATOR','CATALOG','CATEGORIES',      FALSE),
+    ('COLLABORATOR','CATALOG','CHARACTERISTICS', FALSE),
+    ('COLLABORATOR','CATALOG','ASSETS',          FALSE),
 
-    -- Processes (solo lectura)
-    ('Collaborator', 'Processes', 'Value Chain',             FALSE),
-    ('Collaborator', 'Processes', 'Processes Map',           FALSE),
-    ('Collaborator', 'Processes', 'Processes Models',        FALSE);
+    -- WORKFLOWS (read-only)
+    ('COLLABORATOR','WORKFLOWS','VALUE_CHAIN', FALSE),
+    ('COLLABORATOR','WORKFLOWS','MAP',         FALSE),
+    ('COLLABORATOR','WORKFLOWS','MODELS',      FALSE),
+    ('COLLABORATOR','WORKFLOWS','AI_FLOWS',    FALSE),
+    ('COLLABORATOR','WORKFLOWS','N8N',         FALSE);
+
+-- **********************************
+-- ********** Table units ***********
+-- **********************************
+
+INSERT INTO units (code, name, description, type, parent, is_active) VALUES
+    ('CORP', 'Corporate', 'Corporate Unit', 'BUSINESS_UNIT', NULL, TRUE),
+    ('ENG', 'Engineering', 'Engineering Department', 'DEPARTMENT', 'CORP', TRUE),
+    ('GEN_AI', 'Generative AI', 'Generative AI', 'CHAPTER', 'ENG', TRUE);
 
 -- **********************************
 -- ********** Table users ***********
 -- **********************************
 
-INSERT INTO users (
-    id,
-    username,
-    email,
-    password_hash,
-    first_name,
-    last_name,
-    status,
-    menu_role
-) VALUES (
-    0,
+INSERT INTO users (id, username, email, password_hash, first_name, last_name, menu_role, unit, is_active) VALUES
+   (0,
     'admin',
-    'admin@synapxia.dev',
+    'admin@synapxia.org',
     'SCRAM-SHA-256$4096:erZkGksCVwc49r8o18VeSg==$2c7cw07foNs0h+cLgJYdpcc7da/tjQRH7v5Y8UP0ugo=:yw24DEvmi0xGcE7qj2Y7g+QwCxuoO4q6JhZsaLkzMlg=',
     -- Password: Admin123*
     'Platform',
     'Administrator',
-    'Active',
-    'Administrator'
-);
-
--- **********************************
--- ***** Table lists/list_items *****
--- **********************************
-
--- List: List Type
-INSERT INTO lists (code, name, description, type, module, is_active)
-VALUES (
-    'List Type',
-    'List types for system configuration',
-    'List that classifies the types of lists in two categories: List of Values and Scale.',
-    'LIST_OF_VALUES',
-    'Administration',
-    TRUE
-);
-
-INSERT INTO list_items (list, value, label, sort_order, is_active)
-VALUES
-    ('List Type', 'LIST_OF_VALUES',  'List of Values',  10, TRUE),
-    ('List Type', 'SCALE', 'Scale', 20, TRUE);
-
-
--- List: Is Active
-INSERT INTO lists (code, name, description, type, module, is_active)
-VALUES (
-    'Is Active',
-    'Is Active flag',
-    'Boolean flag used to indicate whether an element is active or inactive in SynapxIA.',
-    'LIST_OF_VALUES',
-    'Administration',
-    TRUE
-);
-
-INSERT INTO list_items (list, value, label, sort_order, is_active)
-VALUES
-    ('Is Active', 'TRUE',  'True',  10, TRUE),
-    ('Is Active', 'FALSE', 'False', 20, TRUE);
-
--- List: User Status
-INSERT INTO lists (code, name, description, type, module, is_active)
-VALUES (
-    'User Status',
-    'User status values',
-    'List of possible status values for users in SynapxIA (active or inactive).',
-    'LIST_OF_VALUES',
-    'Administration',
-    TRUE
-);
-
-INSERT INTO list_items (list, value, label, sort_order, is_active)
-VALUES
-    ('User Status', 'ACTIVE',   'Active',   10, TRUE),
-    ('User Status', 'INACTIVE', 'Inactive', 20, TRUE);
-
--- List: Option Type
-INSERT INTO lists (code, name, description, type, module, is_active)
-VALUES (
-    'Option Type',
-    'Option types for navigation items',
-    'List that classifies application options by type, such as content pages, forms or reports.',
-    'LIST_OF_VALUES',
-    'Administration',
-     TRUE
-);
-
-INSERT INTO list_items (list, value, label, sort_order, is_active)
-VALUES
-    ('Option Type', 'CONTENT', 'Content', 10, TRUE),
-    ('Option Type', 'FORM',    'Form',    20, TRUE),
-    ('Option Type', 'REPORT',  'Report',  30, TRUE);
-
--- List: Project Status
-INSERT INTO lists (code, name, description, type, module, is_active)
-VALUES (
-    'Project Status',
-    'Project status values',
-    'List of possible status values for Projects in SynapxIA (planned, in progress, on hold or complete).',
-    'LIST_OF_VALUES',
-    'Collaboration',
-    TRUE
-);
-
-INSERT INTO list_items (list, value, label, sort_order, is_active)
-VALUES
-    ('Project Status', 'PLANNED',   'Planned',   10, TRUE),
-    ('Project Status', 'IN_PROGRESS', 'In Progress', 20, TRUE),
-    ('Project Status', 'ON_HOLD',  'On Hold',  30, TRUE),
-    ('Project Status', 'COMPLETED','Completed', 40, TRUE);
+    'ADMINISTRATOR',
+    'GEN_AI',
+    TRUE);

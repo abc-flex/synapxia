@@ -6,10 +6,10 @@
 CREATE TABLE teams (
     code             VARCHAR(50)  NOT NULL,
     name             VARCHAR(100) NOT NULL,
-    description      VARCHAR(255),
+    description      VARCHAR(500),
     lead             BIGINT,
-    chat_channel_url VARCHAR(255),
-    kanban_board_url VARCHAR(255),
+    chat_channel_url VARCHAR(500),
+    kanban_board_url VARCHAR(500),
     is_active        BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at       TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at       TIMESTAMPTZ,
@@ -21,8 +21,8 @@ CREATE TABLE assignments (
     id           BIGINT GENERATED ALWAYS AS IDENTITY,
     team         VARCHAR(50),
     user_id      BIGINT       NOT NULL,
-    role         VARCHAR(50),
-    observation  VARCHAR(255),
+    role         VARCHAR(50)  NOT NULL,
+    observation  VARCHAR(500),
     valid_from   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     valid_to     TIMESTAMPTZ,
     is_active    BOOLEAN      NOT NULL DEFAULT TRUE,
@@ -35,10 +35,10 @@ CREATE TABLE assignments (
 CREATE TABLE projects (
     code        VARCHAR(50)  NOT NULL,
     name        VARCHAR(100) NOT NULL,
-    description VARCHAR(255),
+    description VARCHAR(500),
     team        VARCHAR(50),
-    repo_url    VARCHAR(255),
-    status      VARCHAR(50)  NOT NULL,
+    repo_url    VARCHAR(500),
+    status      VARCHAR(100)  NOT NULL,
     start_date  DATE,
     end_date    DATE,
     is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
@@ -51,9 +51,9 @@ CREATE TABLE projects (
 CREATE TABLE dimensions (
     code        VARCHAR(50)  NOT NULL,
     name        VARCHAR(100) NOT NULL,
-    description VARCHAR(255),
-    scale       VARCHAR(50)  NOT NULL,
-    unit        VARCHAR(50),
+    description VARCHAR(500),
+    scale       VARCHAR(100),
+    unit        VARCHAR(100),
     is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ,
@@ -66,7 +66,7 @@ CREATE TABLE metrics (
     dimension    VARCHAR(50)  NOT NULL,
     assignment   BIGINT       NOT NULL,
     value        VARCHAR(100) NOT NULL,
-    observation  VARCHAR(255),
+    observation  VARCHAR(500),
     measured_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     is_active    BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
@@ -130,3 +130,76 @@ ALTER TABLE metrics
     ADD CONSTRAINT fk_metrics_assignments
     FOREIGN KEY (assignment)
     REFERENCES assignments (id);
+
+-- **********************************
+-- ***** Table lists/list_items *****
+-- **********************************
+
+-- ===== List: Project Status =====
+INSERT INTO lists (code, name, description, type, module, is_active) VALUES (
+    'PROJECT_STATUS',
+    'Project status values',
+    'List of possible status values for Projects in SynapxIA (planned, in progress, on hold or complete).',
+    'LIST_OF_VALUES',
+    'COLLAB',
+    TRUE);
+INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
+    ('PROJECT_STATUS', 'PLANNED', 'Planned',   10, TRUE),
+    ('PROJECT_STATUS', 'IN_PROGRESS', 'In Progress', 20, TRUE),
+    ('PROJECT_STATUS', 'ON_HOLD', 'On Hold',  30, TRUE),
+    ('PROJECT_STATUS', 'COMPLETED','Completed', 40, TRUE);
+
+-- ===== List: Dimensions Unit =====
+INSERT INTO lists (code, name, description, type, module, is_active) VALUES (
+    'DIMENSIONS_UNIT',
+    'Dimensions unit values',
+    'List of possible unit values for Dimensions in SynapxIA (e.g., hours, days, etc.).',
+    'LIST_OF_VALUES',
+    'COLLAB',
+    TRUE);
+INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
+    ('DIMENSIONS_UNIT', 'PCT', 'Percentage', 10, TRUE),
+    ('DIMENSIONS_UNIT', 'UNITS', 'Units', 20, TRUE),
+    ('DIMENSIONS_UNIT', 'COUNT', 'Count', 30, TRUE),
+    ('DIMENSIONS_UNIT', 'HOURS', 'Hours', 40, TRUE),
+    ('DIMENSIONS_UNIT', 'DAYS', 'Days', 50, TRUE);
+
+-- ===== List: GenAI Adoption for Devs =====
+INSERT INTO lists (code, name, description, type, module, is_active) VALUES (
+    'GENAI_DEV_ADOPTION',
+    'GenAI Adoption for Devs',
+    'Defines levels of adoption of Generative AI tools and practices among development teams.',
+    'SCALE',
+    'COLLAB',
+    TRUE);
+INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
+    ('GENAI_DEV_ADOPTION', 'NO_USAGE',  'Github Copilot, Cursor, Windsurf or Antigravity not configured', 10, TRUE),
+    ('GENAI_DEV_ADOPTION', 'LOW',       'Chat used in query mode for small scripts and code suggestions', 20, TRUE),
+    ('GENAI_DEV_ADOPTION', 'MODERATE',  'Agent mode for basic generation, refactoring and bug fixing', 30, TRUE),
+    ('GENAI_DEV_ADOPTION', 'HIGH',      'Custom agents and MCP for advanced generation and interaction with Azure DevOps', 40, TRUE),
+    ('GENAI_DEV_ADOPTION', 'VERY_HIGH', 'Agents, multi-agents and advanced MCP for more autonomous development', 50, TRUE);
+--    ('GENAI_DEV_ADOPTION', 'NO_USAGE',  'No configurado Github Copilot, Cursor, Windsurf o Antigravity', 10, TRUE), RED
+--    ('GENAI_DEV_ADOPTION', 'LOW',       'Chat en modo consulta para pequeños scripts y sugerencias de código', 20, TRUE), ORANGE
+--    ('GENAI_DEV_ADOPTION', 'MODERATE',  'Modo agente para generación básica, refactorización y corrección de problemas', 30, TRUE), YELLOW
+--    ('GENAI_DEV_ADOPTION', 'HIGH',      'Agentes customizados y MCP para generación avanzada e interacción con Azure DevOps', 40, TRUE), GREEN
+--    ('GENAI_DEV_ADOPTION', 'VERY_HIGH', 'Agentes, multi-agentes y MCP avanzado para desarrollo con autonomía', 50, TRUE); BLUE
+
+-- ===== List: GenAI Adoption for QA =====
+INSERT INTO lists (code, name, description, type, module, is_active) VALUES (
+    'GENAI_QA_ADOPTION',
+    'GenAI Adoption for QA',
+    'Defines levels of adoption of Generative AI tools and practices among QA teams.',
+    'SCALE',
+    'COLLAB',
+    TRUE);
+INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
+    ('GENAI_QA_ADOPTION', 'NO_USAGE',  'Github Copilot, Cursor, Windsurf or Antigravity not configured', 10, TRUE),
+    ('GENAI_QA_ADOPTION', 'LOW',       'Chat used in query mode for small scripts and code suggestions', 20, TRUE),
+    ('GENAI_QA_ADOPTION', 'MODERATE',  'Agent mode for basic generation, refactoring and bug fixing', 30, TRUE),
+    ('GENAI_QA_ADOPTION', 'HIGH',      'Custom agents and MCP for advanced generation and interaction with Azure DevOps', 40, TRUE),
+    ('GENAI_QA_ADOPTION', 'VERY_HIGH', 'Agents, multi-agents and advanced MCP for more autonomous development', 50, TRUE);
+--    ('GENAI_QA_ADOPTION', 'NO_USAGE',  'No hay herramientas con IA configuradas para la realización de pruebas', 10, TRUE),
+--    ('GENAI_QA_ADOPTION', 'LOW',       'Chat en modo consulta para pequeños scripts y sugerencias de pruebas', 20, TRUE),
+--    ('GENAI_QA_ADOPTION', 'MODERATE',  'Modo agente para generación básica de pruebas y revisión de problemas', 30, TRUE),
+--    ('GENAI_QA_ADOPTION', 'HIGH',      'Agentes customizados y MCP para realizar pruebas e interactuar con Azure DevOps', 40, TRUE),
+--    ('GENAI_QA_ADOPTION', 'VERY_HIGH', 'Agentes, multi-agentes y MCP avanzado para pruebas autónomas', 50, TRUE);

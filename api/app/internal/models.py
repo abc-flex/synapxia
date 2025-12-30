@@ -14,14 +14,15 @@ class Role(RoleBase, table=True):
     __tablename__ = "roles"
 
 class RoleCreate(SQLModel):
-    code: str
-    name: str
-    description: Optional[str] = None
+    code: str = Field(max_length=50, description="Código único del rol")
+    name: str = Field(max_length=100, description="Nombre del rol")
+    description: Optional[str] = Field(default=None, max_length=255, description="Descripción del rol")
+    is_active: Optional[bool] = Field(default=True, description="Indica si el rol está activo")
 
 class RoleUpdate(SQLModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    is_active: Optional[bool] = None
+    name: Optional[str] = Field(default=None, max_length=100, description="Nombre del rol")
+    description: Optional[str] = Field(default=None, max_length=255, description="Descripción del rol")
+    is_active: Optional[bool] = Field(default=None, description="Indica si el rol está activo")
 
 class ModuleBase(SQLModel):
     code: str = Field(max_length=50, primary_key=True)
@@ -34,7 +35,19 @@ class ModuleBase(SQLModel):
 
 class Module(ModuleBase, table=True):
     __tablename__ = "modules"
-    lists: List["List"] = Relationship(back_populates="module", sa_relationship_kwargs={"primaryjoin": "Module.code==List.module"})
+
+class ModuleCreate(SQLModel):
+    code: str = Field(max_length=50, description="Código único del módulo")
+    name: str = Field(max_length=100, description="Nombre del módulo")
+    description: Optional[str] = Field(default=None, max_length=255, description="Descripción del módulo")
+    sort_order: Optional[int] = Field(default=0, description="Orden de visualización")
+    is_active: Optional[bool] = Field(default=True, description="Indica si el módulo está activo")
+
+class ModuleUpdate(SQLModel):
+    name: Optional[str] = Field(default=None, max_length=100, description="Nombre del módulo")
+    description: Optional[str] = Field(default=None, max_length=255, description="Descripción del módulo")
+    sort_order: Optional[int] = Field(default=None, description="Orden de visualización")
+    is_active: Optional[bool] = Field(default=None, description="Indica si el módulo está activo")
 
 class ListBase(SQLModel):
     code: str = Field(max_length=50, primary_key=True)
@@ -48,8 +61,21 @@ class ListBase(SQLModel):
 
 class List(ListBase, table=True):
     __tablename__ = "lists"
-    module: Optional[Module] = Relationship(back_populates="lists", sa_relationship_kwargs={"primaryjoin": "List.module==Module.code"})
-    items: List["ListItem"] = Relationship(back_populates="list", sa_relationship_kwargs={"primaryjoin": "List.code==ListItem.list"})
+
+class ListCreate(SQLModel):
+    code: str = Field(max_length=50, description="Código único de la lista")
+    name: str = Field(max_length=100, description="Nombre de la lista")
+    description: Optional[str] = Field(default=None, max_length=255, description="Descripción de la lista")
+    type: str = Field(max_length=100, description="Tipo de lista")
+    module: Optional[str] = Field(default=None, max_length=50, description="Código del módulo asociado")
+    is_active: Optional[bool] = Field(default=True, description="Indica si la lista está activa")
+
+class ListUpdate(SQLModel):
+    name: Optional[str] = Field(default=None, max_length=100, description="Nombre de la lista")
+    description: Optional[str] = Field(default=None, max_length=255, description="Descripción de la lista")
+    type: Optional[str] = Field(default=None, max_length=100, description="Tipo de lista")
+    module: Optional[str] = Field(default=None, max_length=50, description="Código del módulo asociado")
+    is_active: Optional[bool] = Field(default=None, description="Indica si la lista está activa")
 
 class ListItemBase(SQLModel):
     list: str = Field(sa_column=Column('list', String, ForeignKey('lists.code'), primary_key=True))
@@ -62,4 +88,15 @@ class ListItemBase(SQLModel):
 
 class ListItem(ListItemBase, table=True):
     __tablename__ = "list_items"
-    list: Optional[List] = Relationship(back_populates="items", sa_relationship_kwargs={"primaryjoin": "ListItem.list==List.code"})
+
+class ListItemCreate(SQLModel):
+    list: str = Field(max_length=50, description="Código de la lista")
+    value: str = Field(max_length=100, description="Valor del elemento")
+    label: str = Field(max_length=150, description="Etiqueta del elemento")
+    sort_order: Optional[int] = Field(default=0, description="Orden de visualización")
+    is_active: Optional[bool] = Field(default=True, description="Indica si el elemento está activo")
+
+class ListItemUpdate(SQLModel):
+    label: Optional[str] = Field(default=None, max_length=150, description="Etiqueta del elemento")
+    sort_order: Optional[int] = Field(default=None, description="Orden de visualización")
+    is_active: Optional[bool] = Field(default=None, description="Indica si el elemento está activo")

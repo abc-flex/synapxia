@@ -1,0 +1,93 @@
+---
+export interface DataRow {
+  code: string;
+  name: string;
+  description: string;
+}
+
+export interface Props {
+  dataRoles?: DataRow[];
+}
+
+const {
+  dataRoles = [],
+} = Astro.props as Props;
+
+const hasData = dataRoles.length > 0;
+---
+
+<div
+  class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
+>
+  {
+    !hasData ? (
+      <div class="p-8 text-center">
+        <p class="text-gray-500 text-theme-sm dark:text-gray-400">
+          No se encontraron datos
+        </p>
+      </div>
+    ) : (
+      <div class="max-w-full overflow-x-auto">
+        <table class="min-w-full">
+      <!-- table header start -->
+      <thead>
+        <tr class="border-b border-gray-100 dark:border-gray-800">
+          <th class="px-5 py-3 sm:px-6">
+            <div class="flex items-center">
+              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">
+                Code
+              </p>
+            </div>
+          </th>
+          <th class="px-5 py-3 sm:px-6">
+            <div class="flex items-center">
+              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">
+                Name
+              </p>
+            </div>
+          </th>
+          <th class="px-5 py-3 sm:px-6">
+            <div class="flex items-center">
+              <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">
+                Description
+              </p>
+            </div>
+          </th>
+        </tr>
+      </thead>
+      <!-- table header end -->
+      <!-- table body start -->
+      <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+        {
+          dataRoles.map((row) => (
+            <tr>
+              <td class="px-5 py-4 sm:px-6">
+                <div class="flex items-center">
+                  <p class="text-gray-500 text-theme-sm dark:text-gray-400">
+                    {row.code}
+                  </p>
+                </div>
+              </td>
+              <td class="px-5 py-4 sm:px-6">
+                <div class="flex items-center">
+                  <p class="text-gray-500 text-theme-sm dark:text-white/90 font-medium">
+                    {row.name}
+                  </p>
+                </div>
+              </td>
+              <td class="px-5 py-4 sm:px-6">
+                <div class="flex items-center">
+                  <p class="text-gray-500 text-theme-sm dark:text-gray-400">
+                    {row.description}
+                  </p>
+                </div>
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+      </div>
+    )
+  }
+</div>

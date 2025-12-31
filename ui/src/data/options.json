@@ -1,0 +1,67 @@
+[
+  {
+	"module": "ADMIN",
+	"name": "Units",
+    "path": "/admin/roles"
+  },
+  {
+	"module": "ADMIN",
+	"name": "Roles",
+    "path": "/admin/roles"
+  },
+  {
+	"module": "ADMIN",
+	"name": "Users",
+    "path": "/admin/users"
+  },
+  {
+	"module": "ADMIN",
+	"name": "Lists",
+    "path": "/admin/lists"
+  },
+  {
+	"module": "ADMIN",
+	"name": "Modules",
+    "path": "/admin/modules"
+  },
+  {
+	"module": "ADMIN",
+	"name": "Options",
+    "path": "/admin/options"
+  },
+  {
+	"module": "CATALOG",
+	"name": "Categories", 
+    "path": "/catalog/categories"
+  },
+  {
+	"module": "CATALOG",
+	"name": "Characteristics",
+	"path": "/catalog/characteristics"
+  },
+  {
+	"module": "CATALOG",
+	"name": "Assets",
+	"path": "/catalog/assets"
+  },
+  {
+	"module": "COLLAB",
+	"name": "Teams",
+    "path": "/collab/teams"
+  },
+  {
+	"module": "COLLAB",
+	"name": "Projects",
+    "path": "/collab/projects"
+  },
+  {
+	"module": "COLLAB",
+	"name": "Dimensions",
+    "path": "/collab/dimensions"
+  },
+  {
+	"module": "COLLAB",
+	"name": "Dashboard",
+    "path": "/collab/assignments-dashboard"
+  }
+]  

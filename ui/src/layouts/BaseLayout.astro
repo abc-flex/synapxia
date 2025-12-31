@@ -1,14 +1,15 @@
 ---
 import "../styles/globals.css";
 import Header from "../components/Header.astro";
-import SideBar, { type NavItem } from "../components/SideBar.astro";
+import SideBar, { type NavModule, type NavOption } from "../components/SideBar.astro";
 
 interface Props {
   title?: string;
-  navItems?: NavItem[];
+  navModules?: NavModule[];
+  navOptions?: NavOption[];
 }
 
-const { title = "TailAdmin x Astro", navItems = [] } = Astro.props as Props;
+const { title = "SynapxIA", navModules=[], navOptions=[] } = Astro.props as Props;
 ---
 
 <!doctype html>
@@ -20,7 +21,7 @@ const { title = "TailAdmin x Astro", navItems = [] } = Astro.props as Props;
   </head>
   <body class="bg-slate-50 text-slate-900 dark:bg-gray-950 dark:text-white">
     <div class="min-h-screen flex">
-      <SideBar items={navItems} brandTitle={title} brandSubtitle="Dashboard" />
+      <SideBar modules={navModules} options={navOptions} brandTitle={title} />
 
       <div class="flex-1 flex flex-col min-h-screen">
         <Header title={title} subtitle="Dashboard" />

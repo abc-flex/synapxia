@@ -1,0 +1,17 @@
+[
+  {
+    "code": "ADMINISTRATOR",
+    "name": "Platform Administrator",    
+    "description": "Full access to all modules and options in SynapxIA, including configuration, security and operational capabilities."
+  },
+  {
+    "code": "ADMINISTRATIVE",
+    "name": "Operational Administrator",
+	  "description": "Administrative role with full edit access to collaboration, Generative AI, AI initiatives, metrics, processes and digital assets, but without platform-level administration features."
+  },
+  {
+    "code": "COLLABORATOR",
+    "name": "Standard Collaborator",
+	  "description": "Operational user with read access to collaboration, Generative AI, AI initiatives, processes and digital assets, and edit rights only for AI initiative proposals."
+  }
+]

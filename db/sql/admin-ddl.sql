@@ -14,6 +14,7 @@ CREATE TABLE modules (
     name        VARCHAR(100) NOT NULL,
     description VARCHAR(500),
     sort_order  INT          NOT NULL DEFAULT 0,
+    icon        VARCHAR(500),
     is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ,

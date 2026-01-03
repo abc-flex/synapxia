@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "astro": "^4.0.0",
-    "@astrojs/tailwind": "^4.0.0"
+    "@astrojs/tailwind": "^4.0.0",
+    "flowbite": "^2.4.1",
+    "simple-datatables": "^9.0.3"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.19",

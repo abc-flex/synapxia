@@ -1,67 +1,80 @@
 [
   {
-	"module": "ADMIN",
-	"name": "Units",
-    "path": "/admin/roles"
+    "module": "ADMIN",
+    "name": "Units",
+    "path": "/admin/roles",
+    "sort_order": 10
   },
   {
-	"module": "ADMIN",
-	"name": "Roles",
-    "path": "/admin/roles"
+    "module": "ADMIN",
+    "name": "Roles",
+    "path": "/admin/roles",
+    "sort_order": 20
   },
   {
-	"module": "ADMIN",
-	"name": "Users",
-    "path": "/admin/users"
+    "module": "ADMIN",
+    "name": "Users",
+    "path": "/admin/users",
+    "sort_order": 30
   },
   {
-	"module": "ADMIN",
-	"name": "Lists",
-    "path": "/admin/lists"
+    "module": "ADMIN",
+    "name": "Lists",
+    "path": "/admin/lists",
+    "sort_order": 40
   },
   {
-	"module": "ADMIN",
-	"name": "Modules",
-    "path": "/admin/modules"
+    "module": "ADMIN",
+    "name": "Modules",
+    "path": "/admin/modules",
+    "sort_order": 50
   },
   {
-	"module": "ADMIN",
-	"name": "Options",
-    "path": "/admin/options"
+    "module": "ADMIN",
+    "name": "Options",
+    "path": "/admin/options",
+    "sort_order": 60
   },
   {
-	"module": "CATALOG",
-	"name": "Categories", 
-    "path": "/catalog/categories"
+    "module": "CATALOG",
+    "name": "Categories",
+    "path": "/catalog/categories",
+    "sort_order": 10
   },
   {
-	"module": "CATALOG",
-	"name": "Characteristics",
-	"path": "/catalog/characteristics"
+    "module": "CATALOG",
+    "name": "Characteristics",
+    "path": "/catalog/characteristics",
+    "sort_order": 20
   },
   {
-	"module": "CATALOG",
-	"name": "Assets",
-	"path": "/catalog/assets"
+    "module": "CATALOG",
+    "name": "Assets",
+    "path": "/catalog/assets",
+    "sort_order": 30
   },
   {
-	"module": "COLLAB",
-	"name": "Teams",
-    "path": "/collab/teams"
+    "module": "COLLAB",
+    "name": "Teams",
+    "path": "/collab/teams",
+    "sort_order": 10
   },
   {
-	"module": "COLLAB",
-	"name": "Projects",
-    "path": "/collab/projects"
+    "module": "COLLAB",
+    "name": "Projects",
+    "path": "/collab/projects",
+    "sort_order": 20
   },
   {
-	"module": "COLLAB",
-	"name": "Dimensions",
-    "path": "/collab/dimensions"
+    "module": "COLLAB",
+    "name": "Dimensions",
+    "path": "/collab/dimensions",
+    "sort_order": 30
   },
   {
-	"module": "COLLAB",
-	"name": "Dashboard",
-    "path": "/collab/assignments-dashboard"
+    "module": "COLLAB",
+    "name": "Dashboard",
+    "path": "/collab/assignments-dashboard",
+    "sort_order": 40
   }
-]  
+]

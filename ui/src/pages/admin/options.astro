@@ -4,7 +4,6 @@ import Breadcrumb from "../../components/Breadcrumb.astro";
 import DataTable from "../../components/DataTable.astro";
 import modules from "../../data/modules.json";
 import options from "../../data/options.json";
-import roles from "../../data/roles.json";
 
 const title = "SynapxIA";
 const primaryNav = modules.map(module => ({
@@ -19,32 +18,34 @@ const itemsNav = options.map(option => ({
 }));
 
 const columns = [
-  { key: "code", label: "Code" },
-  { key: "name", label: "Name" }
+  { key: "module", label: "Module" },
+  { key: "name", label: "Name" },
+  { key: "path", label: "Path" },
+  { key: "order", label: "Sort Order" }
 ];
-const data = roles.map(rol => ({
-  code: rol.code,
-  name: rol.name,
-  description: rol.description
+const data = options.map((option, index) => ({
+  id: index,
+  module: option.module,
+  name: option.name,
+  path: option.path,
+  order: option.sort_order
 }));
 ---
 
 <BaseLayout title={title} navModules={primaryNav} navOptions={itemsNav}>
-  <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
+  <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
     <!-- Breadcrumb Start -->
-    <Breadcrumb moduleName="Administration" pageName="Roles" pageTitle="Roles List" homeLink="/" />
+    <Breadcrumb moduleName="Administration" pageName="Options" pageTitle="Options List" homeLink="/" />
     <!-- Breadcrumb End -->
 
     <div class="space-y-5 sm:space-y-6">
         <div class="space-y-5 sm:space-y-6">
           <div class="border-t border-gray-100 dark:border-gray-800 p-0">
-            <!-- ====== Table Start -->
             <DataTable 
               columns={columns} 
               data={data} 
-              tableItem="rol"
-              tableId="roles"/>
-            <!-- ====== Table End -->
+              tableItem="option"
+              tableId="options"/>
           </div>
         </div>
     </div>

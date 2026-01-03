@@ -27,7 +27,7 @@ const { title = "SynapxIA", navModules=[], navOptions=[] } = Astro.props as Prop
         <Header title={title} subtitle="Dashboard" />
 
         <main>
-          <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
+          <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
             <slot />
           </div>
         </main>
@@ -35,3 +35,5 @@ const { title = "SynapxIA", navModules=[], navOptions=[] } = Astro.props as Prop
     </div>
   </body>
 </html>
+
+<script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.3"></script>

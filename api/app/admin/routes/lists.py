@@ -147,3 +147,4 @@ def delete_list(list_code: str, session: Session = Depends(get_db_session)) -> L
     session.refresh(list_item)
     logger.info(f"List deactivated (logical delete): {list_code}")
     return list_item
+

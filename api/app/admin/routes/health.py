@@ -16,3 +16,4 @@ def health_check() -> dict[str, str]:
         raise HTTPException(
             status_code=503, detail=f"Database connection failed: {exc}"
         )
+

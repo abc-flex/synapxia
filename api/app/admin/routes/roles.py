@@ -135,3 +135,4 @@ def delete_role(role_code: str, session: Session = Depends(get_db_session)) -> R
     session.refresh(role)
     logger.info(f"Role deactivated (logical delete): {role_code}")
     return role
+

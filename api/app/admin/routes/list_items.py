@@ -101,7 +101,7 @@ def update_list_item(list_code: str, value: str, item_update: ListItemUpdate, se
         raise HTTPException(status_code=404, detail="List item not found")
 
     update_data = item_update.model_dump(exclude_unset=True)
-    for key, val in update_data.items():  # Corregido: usar 'val' en lugar de 'value'
+    for key, val in update_data.items():
         setattr(item, key, val)
     
     # Actualizar timestamp
@@ -144,3 +144,4 @@ def delete_list_item(list_code: str, value: str, session: Session = Depends(get_
     session.refresh(item)
     logger.info(f"List item deactivated (logical delete): {list_code}/{value}")
     return item
+

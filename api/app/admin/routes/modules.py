@@ -128,3 +128,4 @@ def delete_module(module_code: str, session: Session = Depends(get_db_session)) 
     session.refresh(module)
     logger.info(f"Module deactivated (logical delete): {module_code}")
     return module
+

@@ -49,6 +49,7 @@ const {
             <button
               class="p-1 text-blue-600 hover:bg-blue-100 rounded edit-btn"
               data-id={row.id}
+              data-action="edit"
               title="Edit"
             >
               <svg
@@ -68,6 +69,7 @@ const {
             <button
               class="p-1 text-red-600 hover:bg-red-100 rounded delete-btn"
               data-id={row.id}
+              data-action="delete"
               title="Delete"
             >
               <svg
@@ -246,6 +248,21 @@ const {
     const $exportDropdownEl = document.getElementById("exportDropdown");
     const dropdown = new Dropdown($exportDropdownEl, $exportButton);
     console.log(dropdown);
+
+    // Bubble edit/delete actions
+    document.querySelectorAll('.edit-btn, .delete-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const action = btn.getAttribute('data-action');
+        const id = btn.getAttribute('data-id');
+        if (!action || !id) return;
+        const event = new CustomEvent('datatable-action', {
+          bubbles: true,
+          detail: { action, id },
+        });
+        btn.dispatchEvent(event);
+      });
+    });
 
     document.getElementById("export-csv").addEventListener("click", () => {
       simpleDatatables.exportCSV(table, {

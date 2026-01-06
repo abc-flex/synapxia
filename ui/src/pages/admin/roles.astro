@@ -2,51 +2,122 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumb from "../../components//core/Breadcrumb.astro";
 import DataTable from "../../components/table/DataTable.astro";
+import RoleModal from "../../components/forms/RoleModal.astro";
 import modules from "../../data/modules.json";
 import options from "../../data/options.json";
 import roles from "../../data/roles.json";
 
 const title = "SynapxIA";
-const primaryNav = modules.map(module => ({
+const primaryNav = modules.map((module) => ({
   code: module.code,
   name: module.name,
-  icon: `${module.icon}`
+  icon: `${module.icon}`,
 }));
-const itemsNav = options.map(option => ({
+const itemsNav = options.map((option) => ({
   module: option.module,
   name: option.name,
-  path: option.path
+  path: option.path,
 }));
 
 const columns = [
   { key: "code", label: "Code" },
-  { key: "name", label: "Name" }
+  { key: "name", label: "Name" },
 ];
-const data = roles.map(rol => ({
+const data = roles.map((rol) => ({
+  id: rol.code,
   code: rol.code,
   name: rol.name,
-  description: rol.description
+  description: rol.description,
 }));
 ---
 
 <BaseLayout title={title} navModules={primaryNav} navOptions={itemsNav}>
   <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
     <!-- Breadcrumb Start -->
-    <Breadcrumb moduleName="Administration" pageName="Roles" pageTitle="Roles List" homeLink="/" />
+    <Breadcrumb
+      moduleName="Administration"
+      pageName="Roles"
+      pageTitle="Roles"
+      homeLink="/"
+    />
     <!-- Breadcrumb End -->
 
+    <RoleModal mode="create" modalId="role-create-modal" />
+    <RoleModal mode="edit" modalId="role-edit-modal" showTrigger={false} />
+    <RoleModal mode="delete" modalId="role-delete-modal" showTrigger={false} />
+
+    <div
+      id="roles-data"
+      data-roles={encodeURIComponent(JSON.stringify(data))}
+      class="hidden"
+      aria-hidden="true"
+    />
+
+    <script>
+      (() => {
+        if (typeof window === "undefined") return;
+
+        const dataEl = document.getElementById("roles-data");
+        const encoded = dataEl?.dataset?.roles || "%5B%5D"; // fallback to []
+        let roles = [];
+        try {
+          roles = JSON.parse(decodeURIComponent(encoded));
+        } catch (err) {
+          console.error("Failed to decode roles", err, encoded);
+          return;
+        }
+        const byId = Object.fromEntries(roles.map((r) => [r.id, r]));
+
+        const editDialog = document.getElementById("role-edit-modal");
+        const deleteDialog = document.getElementById("role-delete-modal");
+
+        const fillForm = (dialog, role) => {
+          if (!dialog) return;
+          const code = dialog.querySelector('input[name="code"]');
+          const name = dialog.querySelector('input[name="name"]');
+          const description = dialog.querySelector('textarea[name="description"]');
+          if (code) code.value = role?.code || "";
+          if (name) name.value = role?.name || "";
+          if (description) description.value = role?.description || "";
+        };
+
+        const openDialog = (dialog) => {
+          if (!dialog || dialog.open) return;
+          dialog.showModal();
+        };
+
+        document.addEventListener("datatable-action", (e) => {
+          const detail = (e as CustomEvent).detail || {};
+          const { action, id } = detail;
+          const role = id ? byId[id] : null;
+          if (!role) return;
+
+          if (action === "edit") {
+            fillForm(editDialog, role);
+            openDialog(editDialog);
+          }
+
+          if (action === "delete") {
+            fillForm(deleteDialog, role);
+            openDialog(deleteDialog);
+          }
+        });
+      })();
+    </script>
+
     <div class="space-y-5 sm:space-y-6">
-        <div class="space-y-5 sm:space-y-6">
-          <div class="border-t border-gray-100 dark:border-gray-800 p-0">
-            <!-- ====== Table Start -->
-            <DataTable 
-              columns={columns} 
-              data={data} 
-              tableItem="rol"
-              tableId="roles"/>
-            <!-- ====== Table End -->
-          </div>
+      <div class="space-y-5 sm:space-y-6">
+        <div class="border-t border-gray-100 dark:border-gray-800 p-0">
+          <!-- ====== Table Start -->
+          <DataTable
+            columns={columns}
+            data={data}
+            tableItem="rol"
+            tableId="roles"
+          />
+          <!-- ====== Table End -->
         </div>
+      </div>
     </div>
   </div>
 </BaseLayout>

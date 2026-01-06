@@ -1,4 +1,4 @@
-FROM oven/bun:1.1.0 AS base
+FROM oven/bun:1.3.5 AS base
 
 WORKDIR /app
 
@@ -9,10 +9,10 @@ COPY postcss.config.cjs .
 COPY src ./src
 
 
-
 FROM base AS build
 
 RUN bun install --production
+
 RUN bun astro build
 
 

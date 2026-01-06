@@ -56,6 +56,125 @@
   }
 }
 
+@layer components {
+  .menu-item {
+    @apply relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium;
+  }
+
+  .menu-item-active {
+    @apply bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300;
+  }
+
+  .menu-item-inactive {
+    @apply text-gray-700 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-gray-200;
+  }
+
+  .menu-item-icon-active {
+    @apply fill-indigo-600 dark:fill-indigo-400;
+  }
+
+  .menu-item-icon-inactive {
+    @apply fill-gray-500 group-hover:fill-gray-700 dark:fill-gray-400 dark:group-hover:fill-gray-200;
+  }
+
+  .menu-item-arrow {
+    @apply absolute right-2.5 top-1/2 -translate-y-1/2;
+  }
+
+  .menu-item-arrow-active {
+    @apply rotate-180 stroke-indigo-600 dark:stroke-indigo-400;
+  }
+
+  .menu-item-arrow-inactive {
+    @apply stroke-gray-500 group-hover:stroke-gray-700 dark:stroke-gray-400 dark:group-hover:stroke-gray-200;
+  }
+
+  .menu-dropdown-item {
+    @apply relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium;
+  }
+
+  .menu-dropdown-item-active {
+    @apply bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300;
+  }
+
+  .menu-dropdown-item-inactive {
+    @apply text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5;
+  }
+
+  .menu-dropdown-badge {
+    @apply block rounded-full px-2.5 py-0.5 text-xs font-medium uppercase text-indigo-600 dark:text-indigo-400;
+  }
+
+  .menu-dropdown-badge-active {
+    @apply bg-indigo-100 dark:bg-indigo-500/20;
+  }
+
+  .menu-dropdown-badge-inactive {
+    @apply bg-indigo-50 group-hover:bg-indigo-100 dark:bg-indigo-500/15 dark:group-hover:bg-indigo-500/20;
+  }
+
+  .menu-item-container summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .menu-item-container[open] > summary {
+    @apply menu-item-active;
+  }
+
+  .menu-item-container[open] > summary .menu-item-icon-inactive {
+    @apply menu-item-icon-active;
+  }
+
+  .menu-item-container[open] > summary .menu-item-arrow {
+    @apply rotate-180 stroke-indigo-600 dark:stroke-indigo-400;
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sidebar:hover {
+    width: 290px;
+  }
+
+  .sidebar:hover .logo {
+    display: block;
+  }
+
+  .sidebar:hover .logo-icon {
+    display: none;
+  }
+
+  .sidebar:hover .sidebar-header {
+    justify-content: space-between;
+  }
+
+  .sidebar:hover .menu-group-title {
+    display: block;
+  }
+
+  .sidebar:hover .menu-group-icon {
+    display: none;
+  }
+
+  .sidebar:hover .menu-item-text {
+    display: inline;
+  }
+
+  .sidebar:hover .menu-item-arrow {
+    display: block;
+  }
+
+  .sidebar:hover .menu-dropdown {
+    display: flex;
+  }
+}
+
 .animate-fadeIn {
   animation: fadeIn 0.25s ease;
 }

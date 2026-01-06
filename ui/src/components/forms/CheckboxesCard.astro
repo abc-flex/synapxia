@@ -1,0 +1,40 @@
+---
+import FormCard from "./FormCard.astro";
+---
+<FormCard title="Checkboxes">
+  <div class="flex flex-wrap items-center gap-8">
+    <label class="flex cursor-pointer items-center text-sm font-medium text-gray-700 select-none dark:text-gray-300">
+      <input type="checkbox" class="peer sr-only" />
+      <span
+        class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border border-gray-300 bg-white text-white transition peer-checked:border-indigo-600 peer-checked:bg-indigo-600 dark:border-gray-700 dark:bg-gray-900"
+      >
+        <svg class="h-3 w-3 opacity-0 peer-checked:opacity-100" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M11.6666 3.5L5.24992 9.91667L2.33325 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </span>
+      Default
+    </label>
+
+    <label class="flex cursor-pointer items-center text-sm font-medium text-gray-700 select-none dark:text-gray-300">
+      <input type="checkbox" class="peer sr-only" defaultChecked />
+      <span
+        class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border border-indigo-600 bg-indigo-600 text-white transition peer-hover:border-indigo-500 peer-hover:bg-indigo-500"
+      >
+        <svg class="h-3 w-3" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M11.6666 3.5L5.24992 9.91667L2.33325 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </span>
+      Checked
+    </label>
+
+    <label class="flex cursor-not-allowed items-center text-sm font-medium text-gray-400 select-none dark:text-gray-700">
+      <input type="checkbox" class="sr-only" disabled />
+      <span class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border border-gray-200 bg-gray-50 text-gray-300 dark:border-gray-800 dark:bg-gray-900">
+        <svg class="h-3 w-3" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M11.6666 3.5L5.24992 9.91667L2.33325 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </span>
+      Disabled
+    </label>
+  </div>
+</FormCard>

@@ -1,0 +1,85 @@
+---
+import type { NavModule, NavOption } from "../types/nav";
+
+interface Props {
+  module: NavModule;
+  options?: NavOption[];
+}
+
+const { module, options = [] } = Astro.props as Props;
+const hasChildren = options.length > 0;
+---
+
+{hasChildren ? (
+  <details class="menu-item-container group" aria-label={`${module.name} menu`}>
+    <summary class="menu-item group menu-item-inactive list-none cursor-pointer select-none">
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          fill-rule="evenodd"
+          clip-rule="evenodd"
+          d={module.icon}
+          class="menu-item-icon-inactive"
+        />
+      </svg>
+
+      <span class="menu-item-text">
+        {module.name}
+      </span>
+
+      <svg
+        class="menu-item-arrow stroke-current"
+        width="20"
+        height="20"
+        viewBox="0 0 20 20"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M4.79175 7.39584L10.0001 12.6042L15.2084 7.39585"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </summary>
+
+    <div class="overflow-hidden transform translate">
+      <ul class="flex flex-col gap-1 mt-2 menu-dropdown pl-9">
+        {options.map((option) => (
+          <li>
+            <a href={option.path} class="menu-dropdown-item group menu-dropdown-item-inactive">
+              {option.name}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </details>
+) : (
+  <a href="#" class="menu-item group menu-item-inactive">
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        fill-rule="evenodd"
+        clip-rule="evenodd"
+        d={module.icon}
+        class="menu-item-icon-inactive"
+      />
+    </svg>
+
+    <span class="menu-item-text">
+      {module.name}
+    </span>
+  </a>
+)}

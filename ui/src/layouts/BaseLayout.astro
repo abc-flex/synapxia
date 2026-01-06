@@ -1,7 +1,8 @@
 ---
 import "../styles/globals.css";
-import Header from "../components/Header.astro";
-import SideBar, { type NavModule, type NavOption } from "../components/SideBar.astro";
+import Header from "../components/core/Header.astro";
+import SideBar from "../components/core/SideBar.astro";
+import { NavModule, NavOption } from "../types/nav";
 
 interface Props {
   title?: string;
@@ -37,3 +38,57 @@ const { title = "SynapxIA", navModules=[], navOptions=[] } = Astro.props as Prop
 </html>
 
 <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.3"></script>
+
+<script>
+  (() => {
+    if (typeof window === "undefined") return;
+
+    const storageKey = "sidebar-collapsed";
+    const body = document.body;
+    const toggle = document.querySelector("[data-sidebar-toggle]");
+    const sidebar = document.querySelector(".sidebar");
+
+    if (!toggle || !sidebar) return;
+
+    const apply = (collapsed) => {
+      body.classList.toggle("sidebar-collapsed", collapsed);
+      toggle.setAttribute("aria-pressed", String(collapsed));
+    };
+
+    const saved = localStorage.getItem(storageKey);
+    apply(saved === "true");
+
+    toggle.addEventListener("click", () => {
+      const next = !body.classList.contains("sidebar-collapsed");
+      apply(next);
+      localStorage.setItem(storageKey, String(next));
+    });
+  })();
+
+  (() => {
+    if (typeof window === "undefined") return;
+
+    const storageKey = "theme";
+    const toggle = document.querySelector<HTMLElement>("[data-theme-toggle]");
+    const root = document.documentElement;
+
+    const apply = (theme: "light" | "dark") => {
+      if (theme === "dark") {
+        root.classList.add("dark");
+      } else {
+        root.classList.remove("dark");
+      }
+      toggle?.setAttribute("aria-pressed", String(theme === "dark"));
+      localStorage.setItem(storageKey, theme);
+    };
+
+    const saved = localStorage.getItem(storageKey) as "light" | "dark" | null;
+    const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    apply(saved ?? (prefersDark ? "dark" : "light"));
+
+    toggle?.addEventListener("click", () => {
+      const next = root.classList.contains("dark") ? "light" : "dark";
+      apply(next as "light" | "dark");
+    });
+  })();
+</script>

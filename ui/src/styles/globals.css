@@ -173,6 +173,146 @@
   .sidebar:hover .menu-dropdown {
     display: flex;
   }
+
+  .sidebar-collapsed .sidebar {
+    width: 90px;
+  }
+
+  .sidebar-collapsed .sidebar-header {
+    justify-content: center;
+  }
+
+  .sidebar-collapsed .menu-group-title,
+  .sidebar-collapsed .menu-item-text,
+  .sidebar-collapsed .menu-item-arrow,
+  .sidebar-collapsed .menu-dropdown,
+  .sidebar-collapsed .menu-dropdown-item,
+  .sidebar-collapsed .menu-group-icon,
+  .sidebar-collapsed .menu-dropdown-badge {
+    display: none;
+  }
+
+  .sidebar-collapsed .sidebar-header .leading-tight {
+    display: none;
+  }
+
+  .account-menu {
+    @apply inline-block text-gray-700 dark:text-gray-400;
+  }
+
+  .account-menu .account-trigger {
+    @apply inline-flex items-center rounded-lg px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer list-none select-none;
+  }
+
+  .account-menu .account-trigger::-webkit-details-marker {
+    display: none;
+  }
+
+  .account-menu[open] .account-trigger svg {
+    @apply rotate-180;
+  }
+
+  .account-dropdown {
+    @apply shadow-lg absolute right-0 mt-3 flex w-64 flex-col rounded-2xl border border-gray-200 bg-white p-4 text-left dark:border-gray-800 dark:bg-gray-900;
+    z-index: 20;
+  }
+
+  .account-link {
+    @apply flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-200;
+  }
+
+  .account-link-icon {
+    @apply text-gray-400 dark:text-gray-500;
+  }
+
+  .notification-menu {
+    @apply relative inline-block;
+  }
+
+  .notification-trigger {
+    @apply relative flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer;
+  }
+
+  .notification-trigger::-webkit-details-marker {
+    display: none;
+  }
+
+  .notification-menu[open] .notification-trigger {
+    @apply bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-white;
+  }
+
+  .notify-dot {
+    @apply absolute top-1 right-1 z-10 flex h-2 w-2 items-center justify-center rounded-full bg-orange-400;
+  }
+
+  .notify-ping {
+    @apply absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-400 opacity-75;
+  }
+
+  .notification-dropdown {
+    @apply shadow-lg absolute right-0 mt-3 flex w-80 flex-col rounded-2xl border border-gray-200 bg-white p-4 text-left dark:border-gray-800 dark:bg-gray-900;
+    z-index: 30;
+  }
+
+  .notification-list {
+    @apply custom-scrollbar max-h-96 overflow-y-auto space-y-3 pb-3;
+  }
+
+  .notification-item {
+    @apply flex items-start gap-3 rounded-xl border border-transparent px-2 py-2 hover:border-gray-100 hover:bg-gray-50 dark:hover:bg-white/5;
+  }
+
+  .notification-avatar {
+    @apply relative h-12 w-12 shrink-0 overflow-hidden rounded-full bg-gray-200;
+  }
+
+  .notification-avatar img {
+    @apply h-full w-full object-cover;
+  }
+
+  .status-dot {
+    @apply absolute bottom-0 right-0 h-3 w-3 rounded-full ring-2 ring-white dark:ring-gray-900;
+  }
+
+  .notification-body {
+    @apply space-y-1;
+  }
+
+  .notification-title {
+    @apply text-sm font-medium leading-snug text-gray-800 dark:text-white/90;
+  }
+
+  .notification-meta {
+    @apply text-xs text-gray-500 dark:text-gray-400;
+  }
+
+  .notification-footer {
+    @apply mt-2 flex items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-800 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-200;
+  }
+
+  .custom-scrollbar {
+    @apply overflow-y-auto;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    @apply w-1.5 h-1.5;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply rounded-full;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-gray-200;
+  }
+
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #344054;
+  }
+
+  .sidebar-collapsed .sidebar:hover {
+    width: 90px;
+  }
 }
 
 .animate-fadeIn {

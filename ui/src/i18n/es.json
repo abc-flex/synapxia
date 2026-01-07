@@ -1,0 +1,50 @@
+{
+  "header": {
+    "search_placeholder": "Buscar o escribir comando...",
+    "toggle_sidebar": "Alternar barra lateral"
+  },
+  "sidebar": {
+    "menu_title": "MENÚ"
+  },
+  "breadcrumb": {
+    "home": "Inicio"
+  },
+  "account_menu": {
+    "edit_profile": "Editar perfil",
+    "account_settings": "Configuración de cuenta",
+    "support": "Soporte",
+    "sign_out": "Cerrar sesión"
+  },
+  "notification_menu": {
+    "title": "Notificaciones"
+  },
+  "crud_modal": {
+    "add": "Agregar",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "save": "Guardar",
+    "save_changes": "Guardar Cambios",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "delete_confirmation": "¿Está seguro de que desea eliminar este",
+    "delete_warning": "Esta acción no se puede deshacer."
+  },
+  "role_modal": {
+    "add_new_role": "Agregar Nuevo Rol",
+    "edit_role": "Editar Rol",
+    "delete_role": "Eliminar Rol",
+    "save_role": "Guardar Rol",
+    "save_changes": "Guardar Cambios",
+    "add_role": "Agregar Rol",
+    "code": "Código",
+    "name": "Nombre",
+    "description": "Descripción",
+    "delete_confirmation": "¿Está seguro de que desea eliminar el rol",
+    "delete_warning": "Esta acción no se puede deshacer."
+  },
+  "data_table": {
+    "actions": "Acciones",
+    "edit": "Editar",
+    "delete": "Eliminar"
+  }
+}

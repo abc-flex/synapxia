@@ -56,8 +56,8 @@ const fieldKeys = ["code", "name", "description"];
     >
     </div>
 
-    <script type="module" client:load>
-      import { initCrudPage } from "/src/scripts/crudClient.js";
+    <script type="module">
+      import { initCrudPage } from "/scripts/crudClient.js";
       initCrudPage({
         dataId: "roles-data",
         editModalId: "role-edit-modal",

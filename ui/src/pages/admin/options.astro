@@ -92,14 +92,14 @@ const fieldKeys = optionFields.map((f) => f.key);
     >
     </div>
 
-    <script type="module" client:load>
-      import { initCrudPage } from "/src/scripts/crudClient.js";
+    <script type="module">
+      import { initCrudPage } from "/scripts/crudClient.js";
       initCrudPage({
         dataId: "options-data",
         editModalId: "option-edit-modal",
         deleteModalId: "option-delete-modal",
       });
-    </script>s
+    </script>
 
     <div class="space-y-5 sm:space-y-6">
       <div class="space-y-5 sm:space-y-6">

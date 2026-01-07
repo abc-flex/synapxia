@@ -1,4 +1,9 @@
 ---
+import { t } from "@/i18n";
+import { getLocale } from "@/utils/getLocale";
+
+const locale = getLocale(Astro);
+
 interface MenuItem {
   label: string;
   href?: string;
@@ -20,11 +25,11 @@ const {
   avatarUrl,
   initials = "MC",
   menuItems = [
-    { label: "Edit profile" },
-    { label: "Account settings" },
-    { label: "Support" },
+    { label: t(locale, "account_menu.edit_profile") },
+    { label: t(locale, "account_menu.account_settings") },
+    { label: t(locale, "account_menu.support") },
   ],
-  signOutLabel = "Sign out",
+  signOutLabel = t(locale, "account_menu.sign_out"),
 } = Astro.props as Props;
 ---
 

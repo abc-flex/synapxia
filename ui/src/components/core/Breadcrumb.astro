@@ -1,4 +1,9 @@
 ---
+import { t } from "@/i18n";
+import { getLocale } from "@/utils/getLocale";
+
+const locale = getLocale(Astro);
+
 export interface Props {
   moduleName?: string;
   pageName?: string;
@@ -28,7 +33,7 @@ const {
           class="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400"
           href={homeLink}
         >
-          Home
+          {t(locale, "breadcrumb.home")}
           <svg
             class="stroke-current"
             width="17"

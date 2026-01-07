@@ -1,4 +1,9 @@
 ---
+import { t } from "@/i18n";
+import { getLocale } from "@/utils/getLocale";
+
+const locale = getLocale(Astro);
+
 interface FieldOption {
   label: string;
   value: string;
@@ -41,15 +46,15 @@ const isEdit = mode === "edit";
 const isCreate = mode === "create";
 
 const title = isCreate
-  ? `Add ${entityName}`
+  ? `${t(locale, "crud_modal.add")} ${entityName}`
   : isEdit
-    ? `Edit ${entityName}`
-    : `Delete ${entityName}`;
+    ? `${t(locale, "crud_modal.edit")} ${entityName}`
+    : `${t(locale, "crud_modal.delete")} ${entityName}`;
 const primaryAction =
   actionLabel ||
-  (isCreate ? "Save" : isEdit ? "Save Changes" : `Delete ${entityName}`);
+  (isCreate ? t(locale, "crud_modal.save") : isEdit ? t(locale, "crud_modal.save_changes") : `${t(locale, "crud_modal.delete")} ${entityName}`);
 const triggerText =
-  triggerLabel || (isCreate ? `Add ${entityName}` : isEdit ? "Edit" : "Delete");
+  triggerLabel || (isCreate ? `${t(locale, "crud_modal.add")} ${entityName}` : isEdit ? t(locale, "crud_modal.edit") : t(locale, "crud_modal.delete"));
 ---
 
 {
@@ -84,7 +89,7 @@ const triggerText =
         type="button"
         class="p-1 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
         data-modal-close={modalId}
-        aria-label="Close"
+        aria-label={t(locale, "crud_modal.close")}
       >
         ✕
       </button>
@@ -94,8 +99,8 @@ const triggerText =
       {
         isDelete ? (
           <p class="text-sm text-gray-700 dark:text-gray-300">
-            Are you sure you want to delete this {entityName.toLowerCase()}?
-            This action cannot be undone.
+            {t(locale, "crud_modal.delete_confirmation")} {entityName.toLowerCase()}?
+            {" "}{t(locale, "crud_modal.delete_warning")}
           </p>
         ) : null
       }
@@ -209,7 +214,7 @@ const triggerText =
         class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
         data-modal-close={modalId}
       >
-        Cancel
+        {t(locale, "crud_modal.cancel")}
       </button>
       <button
         type="submit"

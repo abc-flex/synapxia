@@ -1,4 +1,9 @@
 ---
+import { t } from "@/i18n";
+import { getLocale } from "@/utils/getLocale";
+
+const locale = getLocale(Astro);
+
 import { NavModule, NavOption } from "../../types/nav";
 import MenuItem from "./SideBarMenuItem.astro";
 
@@ -46,7 +51,7 @@ const {
           <span
             class="menu-group-title"
           >
-            MENU
+            {t(locale, "sidebar.menu_title")}
           </span>
         </h3>
 

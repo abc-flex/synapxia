@@ -3,6 +3,7 @@ import { t } from "@/i18n";
 import { getLocale } from "@/utils/getLocale";
 
 const locale = getLocale(Astro);
+const newLang = locale === "en" ? "es" : "en";
 ---
 
 <button
@@ -10,28 +11,7 @@ const locale = getLocale(Astro);
   type="button"
   aria-label={t(locale, "header.change_language")}
   title={t(locale, "header.change_language")}
-  data-lang-toggle
-  data-current-lang={locale}
+  onclick={`document.cookie='lang=${newLang}; path=/; max-age=31536000; SameSite=Lax'; window.location.reload();`}
 >
   {locale.toUpperCase()}
 </button>
-
-<script>
-  // Language toggle functionality
-  document.addEventListener("DOMContentLoaded", () => {
-    const langToggle = document.querySelector("[data-lang-toggle]");
-
-    if (langToggle) {
-      langToggle.addEventListener("click", () => {
-        const currentLang = langToggle.getAttribute("data-current-lang");
-        const newLang = currentLang === "en" ? "es" : "en";
-
-        // Set language cookie
-        document.cookie = `lang=${newLang}; path=/; max-age=31536000`; // 1 year
-
-        // Reload page to apply new language
-        window.location.reload();
-      });
-    }
-  });
-</script>

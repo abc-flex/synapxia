@@ -138,42 +138,6 @@
     display: none;
   }
 
-  .sidebar:hover {
-    width: 290px;
-  }
-
-  .sidebar:hover .logo {
-    display: block;
-  }
-
-  .sidebar:hover .logo-icon {
-    display: none;
-  }
-
-  .sidebar:hover .sidebar-header {
-    justify-content: space-between;
-  }
-
-  .sidebar:hover .menu-group-title {
-    display: block;
-  }
-
-  .sidebar:hover .menu-group-icon {
-    display: none;
-  }
-
-  .sidebar:hover .menu-item-text {
-    display: inline;
-  }
-
-  .sidebar:hover .menu-item-arrow {
-    display: block;
-  }
-
-  .sidebar:hover .menu-dropdown {
-    display: flex;
-  }
-
   .sidebar-collapsed .sidebar {
     width: 90px;
   }
@@ -242,11 +206,11 @@
   }
 
   .notify-dot {
-    @apply absolute top-1 right-1 z-10 flex h-2 w-2 items-center justify-center rounded-full bg-orange-400;
+    @apply absolute top-1 right-1 z-10 flex h-2 w-2 items-center justify-center rounded-full bg-indigo-600;
   }
 
   .notify-ping {
-    @apply absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-400 opacity-75;
+    @apply absolute inline-flex h-full w-full animate-ping rounded-full bg-indigo-400 opacity-75;
   }
 
   .notification-dropdown {
@@ -309,10 +273,6 @@
 
   .dark .custom-scrollbar::-webkit-scrollbar-thumb {
     background-color: #344054;
-  }
-
-  .sidebar-collapsed .sidebar:hover {
-    width: 90px;
   }
 }
 

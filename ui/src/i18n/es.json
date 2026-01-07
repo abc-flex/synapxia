@@ -1,7 +1,11 @@
 {
   "header": {
     "search_placeholder": "Buscar o escribir comando...",
-    "toggle_sidebar": "Alternar barra lateral"
+    "toggle_sidebar": "Alternar barra lateral",
+    "toggle_theme": "Alternar tema",
+    "change_language": "Cambiar idioma",
+    "language_en": "Inglés",
+    "language_es": "Español"
   },
   "sidebar": {
     "menu_title": "MENÚ"

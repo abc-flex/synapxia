@@ -1,53 +1,77 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import Breadcrumb from "../../components//core/Breadcrumb.astro";
 import DataTable from "../../components/table/DataTable.astro";
+import CrudModal from "../../components/forms/CrudModal.astro";
 import modules from "../../data/modules.json";
 import options from "../../data/options.json";
 
 const title = "SynapxIA";
-const primaryNav = modules.map(module => ({
+const primaryNav = modules.map((module) => ({
   code: module.code,
   name: module.name,
-  icon: `${module.icon}`
+  icon: `${module.icon}`,
 }));
-const itemsNav = options.map(option => ({
+const itemsNav = options.map((option) => ({
   module: option.module,
   name: option.name,
-  path: option.path
+  path: option.path,
 }));
 
 const columns = [
   { key: "module", label: "Module" },
   { key: "name", label: "Name" },
   { key: "path", label: "Path" },
-  { key: "order", label: "Sort Order" }
 ];
-const data = options.map((option, index) => ({
-  id: index,
+const data = options.map((option) => ({
+  id: `${option.module}:${option.path}`,
   module: option.module,
   name: option.name,
   path: option.path,
-  order: option.sort_order
+  sort_order: option.sort_order,
 }));
+
+const moduleOptions = modules.map((m) => ({ label: m.name, value: m.code }));
+const optionFields = [
+  { key: "name", label: "Name", required: true, placeholder: "e.g. Users" },
+  { key: "module", label: "Module", type: "select" as const, required: true, options: moduleOptions },
+  { key: "path", label: "Path", required: true, placeholder: "/admin/users" },
+  { key: "sort_order", label: "Sort Order", type: "number" as const, placeholder: "10" },
+];
+const fieldKeys = optionFields.map((f) => f.key);
 ---
 
 <BaseLayout title={title} navModules={primaryNav} navOptions={itemsNav}>
-  <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
-    <!-- Breadcrumb Start -->
-    <Breadcrumb moduleName="Administration" pageName="Options" pageTitle="Options List" homeLink="/" />
-    <!-- Breadcrumb End -->
+  <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
+    <Breadcrumb moduleName="Administration" pageName="Options" pageTitle="Options" homeLink="/" />
+
+    <CrudModal mode="create" modalId="option-create-modal" entityName="Option" fields={optionFields} />
+    <CrudModal mode="edit" modalId="option-edit-modal" entityName="Option" fields={optionFields} showTrigger={false} />
+    <CrudModal mode="delete" modalId="option-delete-modal" entityName="Option" fields={optionFields} showTrigger={false} />
+
+    <div
+      id="options-data"
+      data-rows={encodeURIComponent(JSON.stringify(data))}
+      data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
+      class="hidden"
+      aria-hidden="true"
+    />
+
+    <script type="module">
+      import { initCrudPage } from "/src/scripts/crudClient.js";
+      initCrudPage({
+        dataId: "options-data",
+        editModalId: "option-edit-modal",
+        deleteModalId: "option-delete-modal",
+      });
+    </script>
 
     <div class="space-y-5 sm:space-y-6">
-        <div class="space-y-5 sm:space-y-6">
-          <div class="border-t border-gray-100 dark:border-gray-800 p-0">
-            <DataTable 
-              columns={columns} 
-              data={data} 
-              tableItem="option"
-              tableId="options"/>
-          </div>
+      <div class="space-y-5 sm:space-y-6">
+        <div class="border-t border-gray-100 dark:border-gray-800 p-0">
+          <DataTable columns={columns} data={data} tableItem="option" tableId="options" />
         </div>
+      </div>
     </div>
   </div>
 </BaseLayout>

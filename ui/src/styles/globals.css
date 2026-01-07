@@ -263,15 +263,16 @@
   }
 
   .notification-avatar {
-    @apply relative h-12 w-12 shrink-0 overflow-hidden rounded-full bg-gray-200;
+    @apply relative h-12 w-12 shrink-0 rounded-full bg-gray-200;
+    overflow: visible;
   }
 
   .notification-avatar img {
-    @apply h-full w-full object-cover;
+    @apply h-full w-full rounded-full object-cover;
   }
 
   .status-dot {
-    @apply absolute bottom-0 right-0 h-3 w-3 rounded-full ring-2 ring-white dark:ring-gray-900;
+    @apply absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full ring-2 ring-white dark:ring-gray-900;
   }
 
   .notification-body {

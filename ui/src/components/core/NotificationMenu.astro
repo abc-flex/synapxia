@@ -5,6 +5,7 @@ interface NotificationItem {
   subtitle?: string;
   timeAgo?: string;
   avatarUrl?: string;
+  status?: "active" | "inactive" | "away";
   statusColor?: string;
 }
 
@@ -22,7 +23,7 @@ const {
       subtitle: "Project",
       timeAgo: "5 min ago",
       avatarUrl: "https://i.pravatar.cc/64?img=12",
-      statusColor: "bg-emerald-400",
+      status: "active",
     },
     {
       id: 2,
@@ -30,37 +31,47 @@ const {
       subtitle: "Project",
       timeAgo: "8 min ago",
       avatarUrl: "https://i.pravatar.cc/64?img=32",
-      statusColor: "bg-green-500",
+      status: "away",
     },
     {
       id: 3,
-      title: "Jocelyn Kenter requests permission to change Project - Nganter App",
+      title:
+        "Jocelyn Kenter requests permission to change Project - Nganter App",
       subtitle: "Project",
       timeAgo: "15 min ago",
       avatarUrl: "https://i.pravatar.cc/64?img=47",
-      statusColor: "bg-emerald-500",
+      status: "inactive",
     },
     {
       id: 4,
-      title: "Brandon Philips requests permission to change Project - Nganter App",
+      title:
+        "Brandon Philips requests permission to change Project - Nganter App",
       subtitle: "Project",
       timeAgo: "1 hr ago",
       avatarUrl: "https://i.pravatar.cc/64?img=18",
-      statusColor: "bg-red-400",
+      status: "active",
     },
   ],
   badge = true,
   title = "Notification",
 } = Astro.props as Props;
+
+const statusColors: Record<string, string> = {
+  active: "bg-emerald-500",
+  away: "bg-amber-400",
+  inactive: "bg-gray-400",
+};
 ---
 
 <details class="notification-menu relative" aria-label="Notifications">
   <summary class="notification-trigger group" role="button">
-    {badge ? (
-      <span class="notify-dot" aria-hidden="true">
-        <span class="notify-ping"></span>
-      </span>
-    ) : null}
+    {
+      badge ? (
+        <span class="notify-dot" aria-hidden="true">
+          <span class="notify-ping" />
+        </span>
+      ) : null
+    }
     <svg
       class="h-5 w-5 stroke-current"
       viewBox="0 0 20 20"
@@ -71,36 +82,47 @@ const {
         fill-rule="evenodd"
         clip-rule="evenodd"
         d="M10.0005 2.08325C7.69809 2.08325 5.83383 3.94752 5.83383 6.24992V7.33747C5.83383 7.69173 5.69792 8.03574 5.45479 8.28852L4.82093 8.94013C4.24545 9.5414 4.67142 10.5449 5.50248 10.5449H14.4985C15.3295 10.5449 15.7555 9.5414 15.1801 8.94013L14.5462 8.28852C14.3031 8.03574 14.1672 7.69173 14.1672 7.33747V6.24992C14.1672 3.94752 12.3029 2.08325 10.0005 2.08325ZM4.20551 12.0833C3.57819 12.0833 3.0135 12.4562 2.78569 13.0398C2.43645 13.9495 3.11263 14.8271 4.07364 14.8271H15.9274C16.8884 14.8271 17.5646 13.9495 17.2153 13.0398C16.9875 12.4562 16.4228 12.0833 15.7955 12.0833H4.20551ZM8.87549 15.8333C8.87549 16.4116 9.29758 16.9166 9.87549 16.9166H10.1255C10.7034 16.9166 11.1255 16.4116 11.1255 15.8333H8.87549Z"
-        fill="currentColor"
-      />
+        fill="currentColor"></path>
     </svg>
   </summary>
 
   <div class="notification-dropdown">
     <div class="flex items-center justify-between pb-3">
-      <h3 class="text-lg font-semibold text-gray-900 dark:text-white/90">{title}</h3>
-      <button class="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300" type="button" onclick="this.closest('details').removeAttribute('open')">
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-white/90">
+        {title}
+      </h3>
+      <button
+        class="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+        type="button"
+        onclick="this.closest('details').removeAttribute('open')"
+      >
         ✕
       </button>
     </div>
 
     <div class="notification-list custom-scrollbar">
-      {items.map((item) => (
-        <article class="notification-item" key={item.id}>
-          <div class="notification-avatar">
-            {item.avatarUrl ? (
-              <img src={item.avatarUrl} alt={item.title} />
-            ) : (
-              <div class="placeholder-avatar">•</div>
-            )}
-            {item.statusColor ? <span class={`status-dot ${item.statusColor}`}></span> : null}
-          </div>
-          <div class="notification-body">
-            <p class="notification-title">{item.title}</p>
-            <p class="notification-meta">{item.subtitle} · {item.timeAgo}</p>
-          </div>
-        </article>
-      ))}
+      {
+        items.map((item) => (
+          <article class="notification-item" key={item.id}>
+            <div class="notification-avatar">
+              {item.avatarUrl ? (
+                <img src={item.avatarUrl} alt={item.title} />
+              ) : (
+                <div class="placeholder-avatar">•</div>
+              )}
+              <span
+                class={`status-dot ${item.statusColor || statusColors[item.status || "inactive"]}`}
+              />
+            </div>
+            <div class="notification-body">
+              <p class="notification-title">{item.title}</p>
+              <p class="notification-meta">
+                {item.subtitle} · {item.timeAgo}
+              </p>
+            </div>
+          </article>
+        ))
+      }
     </div>
 
     <a href="#" class="notification-footer">View All Notification</a>

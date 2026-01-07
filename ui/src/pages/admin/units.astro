@@ -2,10 +2,10 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumb from "../../components//core/Breadcrumb.astro";
 import DataTable from "../../components/table/DataTable.astro";
-import RoleModal from "../../components/forms/RoleModal.astro";
+import CrudModal from "../../components/forms/CrudModal.astro";
 import modules from "../../data/modules.json";
 import options from "../../data/options.json";
-import roles from "../../data/roles.json";
+import units from "../../data/units.json";
 
 const title = "SynapxIA";
 const primaryNav = modules.map((module) => ({
@@ -23,32 +23,46 @@ const columns = [
   { key: "code", label: "Code" },
   { key: "name", label: "Name" },
 ];
-const data = roles.map((rol) => ({
-  id: rol.code,
-  code: rol.code,
-  name: rol.name,
-  description: rol.description,
+const data = units.map((unit) => ({
+  id: unit.code,
+  code: unit.code,
+  name: unit.name,
+  description: unit.description,
 }));
-const fieldKeys = ["code", "name", "description"];
+
+const unitFields = [
+  {
+    key: "code",
+    label: "Code",
+    required: true,
+    placeholder: "e.g. UNIT-OPS",
+  },
+  {
+    key: "name",
+    label: "Name",
+    required: true,
+    placeholder: "e.g. Operations",
+  },
+  {
+    key: "description",
+    label: "Description",
+    type: "textarea" as const,
+    placeholder: "Optional details",
+  },
+];
+const fieldKeys = unitFields.map((f) => f.key);
 ---
 
 <BaseLayout title={title} navModules={primaryNav} navOptions={itemsNav}>
   <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
-    <!-- Breadcrumb Start -->
-    <Breadcrumb
-      moduleName="Administration"
-      pageName="Roles"
-      pageTitle="Roles"
-      homeLink="/"
-    />
-    <!-- Breadcrumb End -->
+    <Breadcrumb moduleName="Administration" pageName="Units" pageTitle="Units" homeLink="/" />
 
-    <RoleModal mode="create" modalId="role-create-modal" />
-    <RoleModal mode="edit" modalId="role-edit-modal" showTrigger={false} />
-    <RoleModal mode="delete" modalId="role-delete-modal" showTrigger={false} />
+    <CrudModal mode="create" modalId="unit-create-modal" entityName="Unit" fields={unitFields} />
+    <CrudModal mode="edit" modalId="unit-edit-modal" entityName="Unit" fields={unitFields} showTrigger={false} />
+    <CrudModal mode="delete" modalId="unit-delete-modal" entityName="Unit" fields={unitFields} showTrigger={false} />
 
     <div
-      id="roles-data"
+      id="units-data"
       data-rows={encodeURIComponent(JSON.stringify(data))}
       data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
       class="hidden"
@@ -58,23 +72,16 @@ const fieldKeys = ["code", "name", "description"];
     <script type="module">
       import { initCrudPage } from "/src/scripts/crudClient.js";
       initCrudPage({
-        dataId: "roles-data",
-        editModalId: "role-edit-modal",
-        deleteModalId: "role-delete-modal",
+        dataId: "units-data",
+        editModalId: "unit-edit-modal",
+        deleteModalId: "unit-delete-modal",
       });
     </script>
 
     <div class="space-y-5 sm:space-y-6">
       <div class="space-y-5 sm:space-y-6">
         <div class="border-t border-gray-100 dark:border-gray-800 p-0">
-          <!-- ====== Table Start -->
-          <DataTable
-            columns={columns}
-            data={data}
-            tableItem="rol"
-            tableId="roles"
-          />
-          <!-- ====== Table End -->
+          <DataTable columns={columns} data={data} tableItem="unit" tableId="units" />
         </div>
       </div>
     </div>

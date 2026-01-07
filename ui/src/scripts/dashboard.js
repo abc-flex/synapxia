@@ -1,5 +1,5 @@
 import { employeesData } from "../data/data.js";
-import { translations } from "../../src/data/translations.js";
+import { translations } from "../data/translations.js";
 
 const rolesOrder = ["BACK", "FRONT", "QA"];
 const teamsOrder = ["HADES", "SKYNET", "KEPLER", "PIXEL", "ROCKET"];

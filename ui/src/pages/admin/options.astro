@@ -6,6 +6,7 @@ import CrudModal from "../../components/forms/CrudModal.astro";
 import modules from "../../data/modules.json";
 import options from "../../data/options.json";
 
+
 const title = "SynapxIA";
 const primaryNav = modules.map((module) => ({
   code: module.code,
@@ -91,14 +92,14 @@ const fieldKeys = optionFields.map((f) => f.key);
     >
     </div>
 
-    <script type="module">
-      import { initCrudPage } from "/public/scripts/crudClient.js";
+    <script type="module" client:load>
+      import { initCrudPage } from "/src/scripts/crudClient.js";
       initCrudPage({
         dataId: "options-data",
         editModalId: "option-edit-modal",
         deleteModalId: "option-delete-modal",
       });
-    </script>
+    </script>s
 
     <div class="space-y-5 sm:space-y-6">
       <div class="space-y-5 sm:space-y-6">

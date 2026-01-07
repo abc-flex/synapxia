@@ -53,10 +53,11 @@ const fieldKeys = ["code", "name", "description"];
       data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
       class="hidden"
       aria-hidden="true"
-    />
+    >
+    </div>
 
     <script type="module">
-      import { initCrudPage } from "/src/scripts/crudClient.js";
+      import { initCrudPage } from "/public/scripts/crudClient.js";
       initCrudPage({
         dataId: "roles-data",
         editModalId: "role-edit-modal",

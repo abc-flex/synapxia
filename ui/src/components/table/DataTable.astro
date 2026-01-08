@@ -1,4 +1,9 @@
 ---
+import { t } from "@/i18n";
+import { getLocale } from "@/utils/getLocale";
+
+const locale = getLocale(Astro);
+
 /**
  * DataTable Component
  * Props:
@@ -35,7 +40,7 @@ const {
           </th>
         ))
       }
-      <th class="px-4 py-3 w-[100px] min-w-[100px] text-right">Actions</th>
+      <th class="px-4 py-3 w-[100px] min-w-[100px] text-right">{t(locale, "data_table.actions")}</th>
     </tr>
   </thead>
   <tbody>
@@ -50,7 +55,7 @@ const {
               class="p-1 text-blue-600 hover:bg-blue-100 rounded edit-btn"
               data-id={row.id}
               data-action="edit"
-              title="Edit"
+              title={t(locale, "data_table.edit")}
             >
               <svg
                 class="w-5 h-5"
@@ -70,7 +75,7 @@ const {
               class="p-1 text-red-600 hover:bg-red-100 rounded delete-btn"
               data-id={row.id}
               data-action="delete"
-              title="Delete"
+              title={t(locale, "data_table.delete")}
             >
               <svg
                 class="w-5 h-5"

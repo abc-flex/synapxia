@@ -1,4 +1,9 @@
 ---
+import { t } from "@/i18n";
+import { getLocale } from "@/utils/getLocale";
+
+const locale = getLocale(Astro);
+
 interface Props {
   title?: string;
   subtitle?: string;
@@ -21,6 +26,8 @@ const {
 
 import AccountMenu from "./AccountMenu.astro";
 import NotificationMenu from "./NotificationMenu.astro";
+import LanguageSwitcher from "./LanguageSwitcher.astro";
+import ThemeSwitcher from "./ThemeSwitcher.astro";
 ---
 
 <header
@@ -32,7 +39,7 @@ import NotificationMenu from "./NotificationMenu.astro";
     >
       <button
         class="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 text-gray-500 lg:h-11 lg:w-11 dark:border-gray-800 dark:text-gray-400"
-        aria-label="Toggle sidebar"
+        aria-label={t(locale, "header.toggle_sidebar")}
         aria-pressed="false"
         type="button"
         data-sidebar-toggle
@@ -92,7 +99,7 @@ import NotificationMenu from "./NotificationMenu.astro";
             </span>
             <input
               type="text"
-              placeholder="Search or type command..."
+              placeholder={t(locale, "header.search_placeholder")}
               class="h-11 w-full rounded-lg border border-gray-200 bg-transparent py-2.5 pr-14 pl-12 text-sm text-gray-800 placeholder:text-gray-400 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
             />
             <button
@@ -111,15 +118,8 @@ import NotificationMenu from "./NotificationMenu.astro";
       class="flex items-center justify-between gap-4 px-3 py-4 lg:justify-end lg:px-0"
     >
       <div class="flex items-center gap-2">
-        <button
-          class="relative flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
-          type="button"
-          aria-label="Toggle theme"
-          aria-pressed="false"
-          data-theme-toggle
-        >
-          ☀️
-        </button>
+        <ThemeSwitcher />
+        <LanguageSwitcher />
         <NotificationMenu />
 
         <AccountMenu

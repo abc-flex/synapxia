@@ -1,4 +1,9 @@
 ---
+import { t } from "@/i18n";
+import { getLocale } from "@/utils/getLocale";
+
+const locale = getLocale(Astro);
+
 interface Role {
   code?: string;
   name?: string;
@@ -20,21 +25,21 @@ const {
 } = Astro.props as Props;
 
 const titleMap = {
-  create: "Add New Role",
-  edit: "Edit Role",
-  delete: "Delete Role",
+  create: t(locale, "role_modal.add_new_role"),
+  edit: t(locale, "role_modal.edit_role"),
+  delete: t(locale, "role_modal.delete_role"),
 } as const;
 
 const actionMap = {
-  create: "Save Role",
-  edit: "Save Changes",
-  delete: "Delete Role",
+  create: t(locale, "role_modal.save_role"),
+  edit: t(locale, "role_modal.save_changes"),
+  delete: t(locale, "role_modal.delete_role"),
 } as const;
 
 const triggerLabelMap = {
-  create: "Add Role",
-  edit: "Edit",
-  delete: "Delete",
+  create: t(locale, "role_modal.add_role"),
+  edit: t(locale, "crud_modal.edit"),
+  delete: t(locale, "crud_modal.delete"),
 } as const;
 
 const isDelete = mode === "delete";
@@ -84,11 +89,11 @@ const isCreate = mode === "create";
       {
         isDelete ? (
           <p class="text-sm text-gray-700 dark:text-gray-300">
-            Are you sure you want to delete role{" "}
+            {t(locale, "role_modal.delete_confirmation")}{" "}
             <span class="font-semibold">
               {role.name || role.code || "this role"}
             </span>
-            ? This action cannot be undone.
+            ? {t(locale, "role_modal.delete_warning")}
           </p>
         ) : null
       }
@@ -97,7 +102,7 @@ const isCreate = mode === "create";
         <label
           for={`${modalId}-code`}
           class="text-sm font-medium text-gray-700 dark:text-gray-300"
-          >Code</label
+          >{t(locale, "role_modal.code")}</label
         >
         <input
           id={`${modalId}-code`}
@@ -115,7 +120,7 @@ const isCreate = mode === "create";
         <label
           for={`${modalId}-name`}
           class="text-sm font-medium text-gray-700 dark:text-gray-300"
-          >Name</label
+          >{t(locale, "role_modal.name")}</label
         >
         <input
           id={`${modalId}-name`}
@@ -133,7 +138,7 @@ const isCreate = mode === "create";
         <label
           for={`${modalId}-description`}
           class="text-sm font-medium text-gray-700 dark:text-gray-300"
-          >Description</label
+          >{t(locale, "role_modal.description")}</label
         >
         <textarea
           id={`${modalId}-description`}
@@ -155,7 +160,7 @@ const isCreate = mode === "create";
         class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
         data-modal-close={modalId}
       >
-        Cancel
+        {t(locale, "crud_modal.cancel")}
       </button>
       <button
         type="submit"

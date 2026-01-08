@@ -1,0 +1,17 @@
+---
+import { t } from "@/i18n";
+import { getLocale } from "@/utils/getLocale";
+
+const locale = getLocale(Astro);
+const newLang = locale === "en" ? "es" : "en";
+---
+
+<button
+  class="relative flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-base font-semibold text-gray-700 transition hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
+  type="button"
+  aria-label={t(locale, "header.change_language")}
+  title={t(locale, "header.change_language")}
+  onclick={`document.cookie='lang=${newLang}; path=/; max-age=31536000; SameSite=Lax'; window.location.reload();`}
+>
+  {locale.toUpperCase()}
+</button>

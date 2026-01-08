@@ -5,6 +5,11 @@ export default defineConfig({
   site: "http://localhost:4321",
   integrations: [tailwind()],
   vite: {
+    resolve: {
+      alias: {
+        '@': '/src',
+      },
+    },
     server: {
       watch: {
         usePolling: true,

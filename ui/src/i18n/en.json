@@ -1,0 +1,54 @@
+{
+  "header": {
+    "search_placeholder": "Search or type command...",
+    "toggle_sidebar": "Toggle sidebar",
+    "toggle_theme": "Toggle theme",
+    "change_language": "Change language",
+    "language_en": "English",
+    "language_es": "Spanish"
+  },
+  "sidebar": {
+    "menu_title": "MENU"
+  },
+  "breadcrumb": {
+    "home": "Home"
+  },
+  "account_menu": {
+    "edit_profile": "Edit profile",
+    "account_settings": "Account settings",
+    "support": "Support",
+    "sign_out": "Sign out"
+  },
+  "notification_menu": {
+    "title": "Notification"
+  },
+  "crud_modal": {
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "save_changes": "Save Changes",
+    "cancel": "Cancel",
+    "close": "Close",
+    "delete_confirmation": "Are you sure you want to delete this",
+    "delete_warning": "This action cannot be undone."
+  },
+  "role_modal": {
+    "add_new_role": "Add New Role",
+    "edit_role": "Edit Role",
+    "delete_role": "Delete Role",
+    "save_role": "Save Role",
+    "save_changes": "Save Changes",
+    "add_role": "Add Role",
+    "code": "Code",
+    "name": "Name",
+    "description": "Description",
+    "delete_confirmation": "Are you sure you want to delete role",
+    "delete_warning": "This action cannot be undone."
+  },
+  "data_table": {
+    "actions": "Actions",
+    "edit": "Edit",
+    "delete": "Delete"
+  }
+}

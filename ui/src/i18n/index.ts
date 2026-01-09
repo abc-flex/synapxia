@@ -3,6 +3,8 @@ import es from "./es.json";
 
 const translations = { en, es };
 
+export const ui = { en, es }; // Export for client-side use
+
 export type Locale = keyof typeof translations;
 
 type NestedKeyOf<ObjectType extends object> = {
@@ -13,10 +15,10 @@ type NestedKeyOf<ObjectType extends object> = {
 
 export type TranslationKey = NestedKeyOf<typeof en>;
 
-function getNestedValue(obj: any, path: string): string {
+const getNestedValue = (obj: any, path: string): string => {
   return path.split('.').reduce((current, key) => current?.[key], obj) ?? path;
 }
 
-export function t(locale: Locale, key: TranslationKey): string {
+export const t = (locale: Locale, key: TranslationKey): string => {
   return getNestedValue(translations[locale], key) ?? getNestedValue(translations.en, key);
 }

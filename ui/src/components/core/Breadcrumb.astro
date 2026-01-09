@@ -9,6 +9,8 @@ export interface Props {
   pageName?: string;
   pageTitle?: string;
   homeLink?: string;
+  moduleNameKey?: string;
+  pageNameKey?: string;
 }
 
 const {
@@ -16,6 +18,8 @@ const {
     pageName = "Option",
     pageTitle = "Option Title",
     homeLink = "/",
+    moduleNameKey,
+    pageNameKey,
 } = Astro.props as Props;
 ---
 
@@ -33,7 +37,7 @@ const {
           class="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400"
           href={homeLink}
         >
-          {t(locale, "breadcrumb.home")}
+          <span data-i18n="breadcrumb.home">{t(locale, "breadcrumb.home")}</span>
           <svg
             class="stroke-current"
             width="17"
@@ -54,7 +58,7 @@ const {
       </li>
       <li>
         <a class="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
-          {moduleName}
+          <span data-i18n={moduleNameKey}>{moduleName}</span>
           <svg
             class="stroke-current"
             width="17"
@@ -76,7 +80,7 @@ const {
       <li
         class="text-sm text-gray-800 dark:text-white/90"
       >
-        {pageName}
+        <span data-i18n={pageNameKey}>{pageName}</span>
       </li>
     </ol>
   </nav>

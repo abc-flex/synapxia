@@ -25,11 +25,11 @@ const {
   avatarUrl,
   initials = "MC",
   menuItems = [
-    { label: t(locale, "account_menu.edit_profile") },
-    { label: t(locale, "account_menu.account_settings") },
-    { label: t(locale, "account_menu.support") },
+    { label: "account_menu.edit_profile" },
+    { label: "account_menu.account_settings" },
+    { label: "account_menu.support" },
   ],
-  signOutLabel = t(locale, "account_menu.sign_out"),
+  signOutLabel = "account_menu.sign_out",
 } = Astro.props as Props;
 ---
 
@@ -65,7 +65,7 @@ const {
         <li>
           <a href={item.href || "#"} class="account-link group">
             <span class="account-link-icon" aria-hidden="true">•</span>
-            {item.label}
+            <span data-i18n={item.label}>{t(locale, item.label)}</span>
           </a>
         </li>
       ))}
@@ -73,7 +73,7 @@ const {
 
     <button class="account-link mt-3 w-full text-left" type="button">
       <span class="account-link-icon" aria-hidden="true">↩</span>
-      {signOutLabel}
+      <span data-i18n={signOutLabel}>{t(locale, signOutLabel)}</span>
     </button>
   </div>
 </details>

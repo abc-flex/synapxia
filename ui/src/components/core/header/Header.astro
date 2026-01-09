@@ -1,6 +1,7 @@
 ---
 import { t } from "@/i18n";
 import { getLocale } from "@/utils/getLocale";
+import Menu from "@/components/icons/menu.svg?raw";
 
 const locale = getLocale(Astro);
 
@@ -45,7 +46,9 @@ import SearchBar from "./SearchBar.astro";
         type="button"
         data-sidebar-toggle
       >
-        <img src="/src/components/icons/Menu.svg" alt="" class="h-5 w-5" />
+        <span class="h-5 w-5">
+          <Fragment set:html={Menu} />
+        </span>
       </button>
 
       {

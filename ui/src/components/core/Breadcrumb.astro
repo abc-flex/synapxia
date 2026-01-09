@@ -1,6 +1,7 @@
 ---
 import { t } from "@/i18n";
 import { getLocale } from "@/utils/getLocale";
+import ChevronRight from "@/components/icons/chevron-right.svg?raw";
 
 const locale = getLocale(Astro);
 
@@ -37,11 +38,9 @@ const {
         >
           <span data-i18n="breadcrumb.home">{t(locale, "breadcrumb.home")}</span
           >
-          <img
-            src="/src/components/icons/chevron-right.svg"
-            alt=""
-            class="h-4 w-4 stroke-current"
-          />
+          <span class="h-4 w-4 stroke-current">
+            <Fragment set:html={ChevronRight} />
+          </span>
         </a>
       </li>
       <li>
@@ -49,11 +48,9 @@ const {
           class="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400"
         >
           <span data-i18n={moduleNameKey}>{moduleName}</span>
-          <img
-            src="/src/components/icons/chevron-right.svg"
-            alt=""
-            class="h-4 w-4 stroke-current"
-          />
+          <span class="h-4 w-4 stroke-current">
+            <Fragment set:html={ChevronRight} />
+          </span>
         </a>
       </li>
       <li class="text-sm text-gray-800 dark:text-white/90">

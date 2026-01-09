@@ -1,4 +1,7 @@
 ---
+import ChevronDown from "@/components/icons/chevron-down.svg?raw";
+import Check from "@/components/icons/check.svg?raw";
+
 const languages = [
   { code: "en", label: "English", flag: "🇬🇧" },
   { code: "es", label: "Español", flag: "🇨🇴" },
@@ -16,16 +19,14 @@ const languages = [
     aria-expanded="false"
   >
     <span id="current-lang-label">EN</span>
-    <img
-      src="/src/components/icons/chevron-down.svg"
-      alt=""
-      class="ml-1 h-3 w-3"
-    />
+    <span class="ml-1 h-3 w-3">
+      <Fragment set:html={ChevronDown} />
+    </span>
   </button>
 
   <div
     id="lang-dropdown"
-    class="absolute right-0 mt-2 w-48 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800 hidden z-50"
+    class="absolute right-0 mt-2 w-40 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800 hidden z-50"
     role="menu"
     aria-orientation="vertical"
   >
@@ -33,19 +34,19 @@ const languages = [
       languages.map((lang) => (
         <button
           type="button"
-          class="lang-option flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition hover:bg-gray-50 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg"
+          class="lang-option flex w-full items-center gap-2 px-4 py-3 text-left text-sm transition hover:bg-gray-50 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg"
           data-lang={lang.code}
         >
           <span class="text-2xl">{lang.flag}</span>
           <span class="flex-1 font-medium text-gray-900 dark:text-gray-100">
             {lang.label}
           </span>
-          <img
-            src="/src/components/icons/check.svg"
-            alt="Selected"
+          <span
             class="lang-check h-4 w-4 text-indigo-600"
             data-lang-check={lang.code}
-          />
+          >
+            <Fragment set:html={Check} />
+          </span>
         </button>
       ))
     }

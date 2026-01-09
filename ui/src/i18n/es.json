@@ -50,5 +50,25 @@
     "actions": "Acciones",
     "edit": "Editar",
     "delete": "Eliminar"
+  },
+  "modules": {
+    "ADMIN": "Administración",
+    "CATALOG": "Activos Digitales",
+    "COLLAB": "Colaboración"
+  },
+  "menu_options": {
+    "units": "Unidades",
+    "roles": "Roles",
+    "users": "Usuarios",
+    "lists": "Listas",
+    "modules": "Módulos",
+    "options": "Opciones",
+    "categories": "Categorías",
+    "characteristics": "Características",
+    "assets": "Activos",
+    "teams": "Equipos",
+    "projects": "Proyectos",
+    "dimensions": "Dimensiones",
+    "dashboard": "Tablero"
   }
 }

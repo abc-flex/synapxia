@@ -1,17 +1,176 @@
 ---
-import { t } from "@/i18n";
-import { getLocale } from "@/utils/getLocale";
+import ChevronDown from "@/components/icons/chevron-down.svg?raw";
+import Check from "@/components/icons/check.svg?raw";
 
-const locale = getLocale(Astro);
-const newLang = locale === "en" ? "es" : "en";
+const languages = [
+  { code: "en", label: "English", flag: "🇬🇧" },
+  { code: "es", label: "Español", flag: "🇨🇴" },
+];
 ---
 
-<button
-  class="relative flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-base font-semibold text-gray-700 transition hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
-  type="button"
-  aria-label={t(locale, "header.change_language")}
-  title={t(locale, "header.change_language")}
-  onclick={`document.cookie='lang=${newLang}; path=/; max-age=31536000; SameSite=Lax'; window.location.reload();`}
->
-  {locale.toUpperCase()}
-</button>
+<div class="relative" id="lang-switcher-container">
+  <button
+    id="lang-switcher"
+    class="relative flex h-11 w-14 items-center justify-center rounded-full border border-gray-200 bg-white text-base font-semibold text-gray-700 transition hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
+    type="button"
+    aria-label="Change language"
+    title="Change language"
+    aria-haspopup="true"
+    aria-expanded="false"
+  >
+    <span id="current-lang-label">EN</span>
+    <span class="ml-1 h-3 w-3">
+      <Fragment set:html={ChevronDown} />
+    </span>
+  </button>
+
+  <div
+    id="lang-dropdown"
+    class="absolute right-0 mt-2 w-40 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800 hidden z-50"
+    role="menu"
+    aria-orientation="vertical"
+  >
+    {
+      languages.map((lang) => (
+        <button
+          type="button"
+          class="lang-option flex w-full items-center gap-2 px-4 py-3 text-left text-sm transition hover:bg-gray-50 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg"
+          data-lang={lang.code}
+        >
+          <span class="text-2xl">{lang.flag}</span>
+          <span class="flex-1 font-medium text-gray-900 dark:text-gray-100">
+            {lang.label}
+          </span>
+          <span
+            class="lang-check h-4 w-4 text-indigo-600"
+            data-lang-check={lang.code}
+          >
+            <Fragment set:html={Check} />
+          </span>
+        </button>
+      ))
+    }
+  </div>
+</div>
+
+<script>
+  const getCurrentLanguage = () => {
+    // Get language from localStorage
+    const stored = localStorage.getItem("lang");
+    if (stored === "en" || stored === "es") {
+      return stored;
+    }
+    // Fallback to browser language
+    const browserLang = navigator.language.split("-")[0];
+    return browserLang === "es" ? "es" : "en";
+  };
+
+  const updateUI = (lang: string) => {
+    // Update button label
+    const label = document.getElementById("current-lang-label");
+    if (label) {
+      label.textContent = lang.toUpperCase();
+    }
+
+    // Update checkmarks
+    const checks = document.querySelectorAll(".lang-check");
+    checks.forEach((check) => {
+      const checkLang = check.getAttribute("data-lang-check");
+      if (checkLang === lang) {
+        check.classList.remove("hidden");
+      } else {
+        check.classList.add("hidden");
+      }
+    });
+  };
+
+  const switchLanguage = (newLang: string) => {
+    const currentLang = getCurrentLanguage();
+
+    // Validate if the language is already selected
+    if (currentLang === newLang) {
+      closeDropdown();
+      return;
+    }
+
+    // Save to localStorage
+    localStorage.setItem("lang", newLang);
+
+    // Translate page without reload
+    if (window.translatePage) {
+      window.translatePage(newLang);
+    }
+
+    // Update UI
+    updateUI(newLang);
+    closeDropdown();
+  };
+
+  const toggleDropdown = () => {
+    const dropdown = document.getElementById("lang-dropdown");
+    const button = document.getElementById("lang-switcher");
+
+    if (!dropdown || !button) return;
+
+    const isHidden = dropdown.classList.contains("hidden");
+
+    if (isHidden) {
+      dropdown.classList.remove("hidden");
+      button.setAttribute("aria-expanded", "true");
+    } else {
+      dropdown.classList.add("hidden");
+      button.setAttribute("aria-expanded", "false");
+    }
+  };
+
+  const closeDropdown = () => {
+    const dropdown = document.getElementById("lang-dropdown");
+    const button = document.getElementById("lang-switcher");
+
+    if (!dropdown || !button) return;
+
+    dropdown.classList.add("hidden");
+    button.setAttribute("aria-expanded", "false");
+  };
+
+  // Initialize UI on page load
+  const currentLang = getCurrentLanguage();
+  updateUI(currentLang);
+
+  // Initialize
+  const langButton = document.getElementById("lang-switcher");
+  const langOptions = document.querySelectorAll(".lang-option");
+
+  if (langButton) {
+    langButton.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleDropdown();
+    });
+  }
+
+  // Handle language option clicks
+  langOptions.forEach((option) => {
+    option.addEventListener("click", (e) => {
+      const target = e.currentTarget as HTMLElement;
+      const lang = target.getAttribute("data-lang");
+      if (lang) {
+        switchLanguage(lang);
+      }
+    });
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener("click", (e) => {
+    const container = document.getElementById("lang-switcher-container");
+    if (container && !container.contains(e.target as Node)) {
+      closeDropdown();
+    }
+  });
+
+  // Close dropdown on escape key
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      closeDropdown();
+    }
+  });
+</script>

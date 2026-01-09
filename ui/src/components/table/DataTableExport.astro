@@ -97,7 +97,7 @@ const {
     document.getElementById("export-table") &&
     typeof simpleDatatables.DataTable !== "undefined"
   ) {
-    const exportCustomCSV = function (dataTable, userOptions = {}) {
+    const exportCustomCSV = (dataTable, userOptions = {}) => {
       // A modified CSV export that includes a row of minuses at the start and end.
       const clonedUserOptions = {
         ...userOptions,
@@ -245,7 +245,6 @@ const {
     const $exportButton = document.getElementById("exportDropdownButton");
     const $exportDropdownEl = document.getElementById("exportDropdown");
     const dropdown = new Dropdown($exportDropdownEl, $exportButton);
-    console.log(dropdown);
 
     document.getElementById("export-csv").addEventListener("click", () => {
       simpleDatatables.exportCSV(table, {

@@ -50,5 +50,25 @@
     "actions": "Actions",
     "edit": "Edit",
     "delete": "Delete"
+  },
+  "modules": {
+    "ADMIN": "Administration",
+    "CATALOG": "Digital Assets",
+    "COLLAB": "Collaboration"
+  },
+  "menu_options": {
+    "units": "Units",
+    "roles": "Roles",
+    "users": "Users",
+    "lists": "Lists",
+    "modules": "Modules",
+    "options": "Options",
+    "categories": "Categories",
+    "characteristics": "Characteristics",
+    "assets": "Assets",
+    "teams": "Teams",
+    "projects": "Projects",
+    "dimensions": "Dimensions",
+    "dashboard": "Dashboard"
   }
 }

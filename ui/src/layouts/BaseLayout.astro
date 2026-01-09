@@ -2,6 +2,7 @@
 import "../styles/globals.css";
 import Header from "../components/core/header/Header.astro";
 import SideBar from "../components/core/sidebar/SideBar.astro";
+import ClientTranslations from "../components/ClientTranslations.astro";
 import { NavModule, NavOption } from "../types/nav";
 
 interface Props {
@@ -21,6 +22,7 @@ const { title = "SynapxIA", navModules=[], navOptions=[] } = Astro.props as Prop
     <title>{title}</title>
   </head>
   <body class="bg-slate-50 text-slate-900 dark:bg-gray-950 dark:text-white">
+    <ClientTranslations />
     <div class="min-h-screen flex">
       <SideBar modules={navModules} options={navOptions} brandTitle={title} />
 

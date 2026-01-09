@@ -39,19 +39,7 @@ const {
       {avatarUrl ? <img src={avatarUrl} alt={name} class="h-full w-full object-cover" /> : initials}
     </span>
     <span class="mr-1 block text-sm font-medium text-gray-700 dark:text-gray-400">{name.split(" ")[0]}</span>
-    <svg
-      class="h-5 w-5 stroke-gray-500 transition duration-200 group-open:rotate-180 dark:stroke-gray-400"
-      viewBox="0 0 18 20"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M4.3125 8.65625L9 13.3437L13.6875 8.65625"
-        stroke-width="1.5"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      />
-    </svg>
+    <img src="/src/components/icons/ChevronDown.svg" alt="" class="h-5 w-5 text-gray-500 dark:text-gray-400 transition duration-200 group-open:rotate-180" />
   </summary>
 
   <div class="account-dropdown">

@@ -49,7 +49,18 @@
   "data_table": {
     "actions": "Acciones",
     "edit": "Editar",
-    "delete": "Eliminar"
+    "delete": "Eliminar",
+    "export_as": "Exportar como",
+    "export_csv": "Exportar CSV",
+    "export_json": "Exportar JSON",
+    "export_txt": "Exportar TXT",
+    "export_sql": "Exportar SQL",
+    "entries_per_page": "entradas por página",
+    "search_placeholder": "Buscar...",
+    "showing": "Mostrando",
+    "to": "a",
+    "of": "de",
+    "entries": "entradas"
   },
   "modules": {
     "ADMIN": "Administración",

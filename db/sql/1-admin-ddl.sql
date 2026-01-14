@@ -21,12 +21,12 @@ CREATE TABLE modules (
     CONSTRAINT pk_modules PRIMARY KEY (code)
 );
 
--- Table units
-CREATE TABLE units (
+-- Table business_units
+CREATE TABLE business_units (
     code        VARCHAR(50)  NOT NULL,
     name        VARCHAR(100) NOT NULL,
     description VARCHAR(500),
-    type        VARCHAR(100),
+    type        VARCHAR(100), -- references List_items where list='UNIT_TYPE'
     parent      VARCHAR(50),
     is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
@@ -40,7 +40,7 @@ CREATE TABLE lists (
     name        VARCHAR(100) NOT NULL,
     description VARCHAR(500),
     module      VARCHAR(50),
-    type        VARCHAR(100) NOT NULL,
+    type        VARCHAR(100) NOT NULL, -- references List_items where list='LIST_TYPE'
     is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ,
@@ -79,7 +79,7 @@ CREATE TABLE users (
     first_name     VARCHAR(100)  NOT NULL,
     last_name      VARCHAR(100)  NOT NULL,
     menu_role      VARCHAR(50)   NOT NULL,
-    unit           VARCHAR(50)   NOT NULL,
+    business_unit  VARCHAR(50)   NOT NULL,
     is_active      BOOLEAN       NOT NULL DEFAULT TRUE,
     created_at     TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     updated_at     TIMESTAMPTZ,
@@ -95,7 +95,7 @@ CREATE TABLE options (
     description VARCHAR(500),
     path        VARCHAR(500),
     icon        VARCHAR(500),
-	type        VARCHAR(100) NOT NULL,
+	type        VARCHAR(100) NOT NULL, -- references List_items where list='OPTION_TYPE'
     sort_order  INT          NOT NULL DEFAULT 0,
     is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
@@ -125,11 +125,11 @@ ALTER TABLE lists
     FOREIGN KEY (module)
     REFERENCES modules (code);
 
--- units.parent_unit → units.code
-ALTER TABLE units
-    ADD CONSTRAINT fk_units_units
+-- business_units.parent → business_units.code
+ALTER TABLE business_units
+    ADD CONSTRAINT fk_parent_business_units
     FOREIGN KEY (parent)
-    REFERENCES units (code);
+    REFERENCES business_units (code);
 
 -- list_items.list → lists.code
 ALTER TABLE list_items
@@ -207,24 +207,18 @@ INSERT INTO modules (code, name, description, sort_order) VALUES
 
 -- ===== List: List Type =====
 INSERT INTO lists (code, name, description, type, module, is_active) VALUES (
-    'LIST_TYPE',
-    'List types for system configuration',
+    'LIST_TYPE', 'List types for system configuration',
     'List that classifies the types of lists in two categories: List of Values and Scale.',
-    'LIST_OF_VALUES',
-    'ADMIN',
-    TRUE);
+    'LIST_OF_VALUES', 'ADMIN', TRUE);
 INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
     ('LIST_TYPE', 'LIST_OF_VALUES', 'List of Values', 10, TRUE),
     ('LIST_TYPE', 'SCALE', 'Scale', 20, TRUE);
 
 -- ===== List: Option Type =====
 INSERT INTO lists (code, name, description, type, module, is_active) VALUES (
-    'OPTION_TYPE',
-    'Option types for navigation items',
+    'OPTION_TYPE', 'Option types for navigation items',
     'List that classifies application options by type, such as content pages, forms or reports.',
-    'LIST_OF_VALUES',
-    'ADMIN',
-     TRUE);
+    'LIST_OF_VALUES', 'ADMIN', TRUE);
 INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
     ('OPTION_TYPE', 'CONTENT', 'Content', 10, TRUE),
     ('OPTION_TYPE', 'FORM',    'Form',    20, TRUE),
@@ -232,12 +226,9 @@ INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
 
 -- ===== List: Unit Type =====
 INSERT INTO lists (code, name, description, type, module, is_active) VALUES (
-    'UNIT_TYPE',
-    'Types of organizational units',
+    'UNIT_TYPE', 'Types of organizational units',
     'List that classifies the types of organizational units (e.g., Department, Business Unit, Chapter) available in SynapxIA.',
-    'LIST_OF_VALUES',
-    'ADMIN',
-     TRUE);
+    'LIST_OF_VALUES', 'ADMIN', TRUE);
 INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
     ('UNIT_TYPE', 'BUSINESS_UNIT','Business Unit', 10, TRUE),
     ('UNIT_TYPE', 'DEPARTMENT',   'Department',    20, TRUE),

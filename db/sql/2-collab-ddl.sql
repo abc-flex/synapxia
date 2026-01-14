@@ -38,7 +38,7 @@ CREATE TABLE projects (
     description VARCHAR(500),
     team        VARCHAR(50),
     repo_url    VARCHAR(500),
-    status      VARCHAR(100)  NOT NULL,
+    status      VARCHAR(100)  NOT NULL, -- references List_items where list='PROJECT_STATUS'
     start_date  DATE,
     end_date    DATE,
     is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
@@ -53,7 +53,7 @@ CREATE TABLE dimensions (
     name        VARCHAR(100) NOT NULL,
     description VARCHAR(500),
     scale       VARCHAR(100),
-    unit        VARCHAR(100),
+    unit        VARCHAR(100), -- references List_items where list='DIMENSIONS_UNIT'
     is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ,
@@ -65,7 +65,7 @@ CREATE TABLE metrics (
     id           BIGINT GENERATED ALWAYS AS IDENTITY,
     dimension    VARCHAR(50)  NOT NULL,
     assignment   BIGINT       NOT NULL,
-    value        VARCHAR(100) NOT NULL,
+    value        VARCHAR(100) NOT NULL, -- references List_items where list IN ['GENAI_DEV_ADOPTION', 'GENAI_QA_ADOPTION', ...]
     observation  VARCHAR(500),
     measured_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     is_active    BOOLEAN      NOT NULL DEFAULT TRUE,
@@ -137,12 +137,9 @@ ALTER TABLE metrics
 
 -- ===== List: Project Status =====
 INSERT INTO lists (code, name, description, type, module, is_active) VALUES (
-    'PROJECT_STATUS',
-    'Project status values',
+    'PROJECT_STATUS', 'Project status values',
     'List of possible status values for Projects in SynapxIA (planned, in progress, on hold or complete).',
-    'LIST_OF_VALUES',
-    'COLLAB',
-    TRUE);
+    'LIST_OF_VALUES', 'COLLAB', TRUE);
 INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
     ('PROJECT_STATUS', 'PLANNED', 'Planned',   10, TRUE),
     ('PROJECT_STATUS', 'IN_PROGRESS', 'In Progress', 20, TRUE),
@@ -151,12 +148,9 @@ INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
 
 -- ===== List: Dimensions Unit =====
 INSERT INTO lists (code, name, description, type, module, is_active) VALUES (
-    'DIMENSIONS_UNIT',
-    'Dimensions unit values',
+    'DIMENSIONS_UNIT', 'Dimensions unit values',
     'List of possible unit values for Dimensions in SynapxIA (e.g., hours, days, etc.).',
-    'LIST_OF_VALUES',
-    'COLLAB',
-    TRUE);
+    'LIST_OF_VALUES', 'COLLAB', TRUE);
 INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
     ('DIMENSIONS_UNIT', 'PCT', 'Percentage', 10, TRUE),
     ('DIMENSIONS_UNIT', 'UNITS', 'Units', 20, TRUE),
@@ -166,12 +160,9 @@ INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
 
 -- ===== List: GenAI Adoption for Devs =====
 INSERT INTO lists (code, name, description, type, module, is_active) VALUES (
-    'GENAI_DEV_ADOPTION',
-    'GenAI Adoption for Devs',
+    'GENAI_DEV_ADOPTION', 'GenAI Adoption for Devs',
     'Defines levels of adoption of Generative AI tools and practices among development teams.',
-    'SCALE',
-    'COLLAB',
-    TRUE);
+    'SCALE', 'COLLAB', TRUE);
 INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
     ('GENAI_DEV_ADOPTION', 'NO_USAGE',  'Github Copilot, Cursor, Windsurf or Antigravity not configured', 10, TRUE),
     ('GENAI_DEV_ADOPTION', 'LOW',       'Chat used in query mode for small scripts and code suggestions', 20, TRUE),
@@ -186,12 +177,9 @@ INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
 
 -- ===== List: GenAI Adoption for QA =====
 INSERT INTO lists (code, name, description, type, module, is_active) VALUES (
-    'GENAI_QA_ADOPTION',
-    'GenAI Adoption for QA',
+    'GENAI_QA_ADOPTION', 'GenAI Adoption for QA',
     'Defines levels of adoption of Generative AI tools and practices among QA teams.',
-    'SCALE',
-    'COLLAB',
-    TRUE);
+    'SCALE', 'COLLAB', TRUE);
 INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
     ('GENAI_QA_ADOPTION', 'NO_USAGE',  'Github Copilot, Cursor, Windsurf or Antigravity not configured', 10, TRUE),
     ('GENAI_QA_ADOPTION', 'LOW',       'Chat used in query mode for small scripts and code suggestions', 20, TRUE),

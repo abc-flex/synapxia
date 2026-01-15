@@ -4,6 +4,8 @@ from typing import Optional
 from datetime import datetime, date
 
 # Teams Models
+
+
 class TeamBase(SQLModel):
     code: str = Field(max_length=50, primary_key=True)
     name: str = Field(max_length=100)
@@ -15,27 +17,41 @@ class TeamBase(SQLModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
 
+
 class Team(TeamBase, table=True):
     __tablename__ = "teams"
 
+
 class TeamCreate(SQLModel):
-    code: str = Field(max_length=50, description="Código único del equipo")
-    name: str = Field(max_length=100, description="Nombre del equipo")
-    description: Optional[str] = Field(default=None, max_length=500, description="Descripción del equipo")
-    lead: Optional[int] = Field(default=None, description="ID del líder del equipo")
-    chat_channel_url: Optional[str] = Field(default=None, max_length=500, description="URL del canal de chat")
-    kanban_board_url: Optional[str] = Field(default=None, max_length=500, description="URL del tablero Kanban")
-    is_active: Optional[bool] = Field(default=True, description="Indica si el equipo está activo")
+    code: str = Field(max_length=50, description="Unique team code")
+    name: str = Field(max_length=100, description="Team name")
+    description: Optional[str] = Field(
+        default=None, max_length=500, description="Team description")
+    lead: Optional[int] = Field(default=None, description="Team leader ID")
+    chat_channel_url: Optional[str] = Field(
+        default=None, max_length=500, description="Chat channel URL")
+    kanban_board_url: Optional[str] = Field(
+        default=None, max_length=500, description="Kanban board URL")
+    is_active: Optional[bool] = Field(
+        default=True, description="Indicates if the team is active")
+
 
 class TeamUpdate(SQLModel):
-    name: Optional[str] = Field(default=None, max_length=100, description="Nombre del equipo")
-    description: Optional[str] = Field(default=None, max_length=500, description="Descripción del equipo")
-    lead: Optional[int] = Field(default=None, description="ID del líder del equipo")
-    chat_channel_url: Optional[str] = Field(default=None, max_length=500, description="URL del canal de chat")
-    kanban_board_url: Optional[str] = Field(default=None, max_length=500, description="URL del tablero Kanban")
-    is_active: Optional[bool] = Field(default=None, description="Indica si el equipo está activo")
+    name: Optional[str] = Field(
+        default=None, max_length=100, description="Team name")
+    description: Optional[str] = Field(
+        default=None, max_length=500, description="Team description")
+    lead: Optional[int] = Field(default=None, description="Team leader ID")
+    chat_channel_url: Optional[str] = Field(
+        default=None, max_length=500, description="Chat channel URL")
+    kanban_board_url: Optional[str] = Field(
+        default=None, max_length=500, description="Kanban board URL")
+    is_active: Optional[bool] = Field(
+        default=None, description="Indicates if the team is active")
 
 # Assignments Models
+
+
 class AssignmentBase(SQLModel):
     team: Optional[str] = Field(default=None, foreign_key="teams.code")
     user_id: int = Field(foreign_key="users.id")
@@ -47,28 +63,44 @@ class AssignmentBase(SQLModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
 
+
 class Assignment(AssignmentBase, table=True):
     __tablename__ = "assignments"
     id: Optional[int] = Field(default=None, primary_key=True)
 
+
 class AssignmentCreate(SQLModel):
-    team: Optional[str] = Field(default=None, max_length=50, description="Código del equipo")
-    user_id: int = Field(description="ID del usuario")
-    role: str = Field(max_length=50, description="Código del rol")
-    observation: Optional[str] = Field(default=None, max_length=500, description="Observación")
-    valid_from: Optional[datetime] = Field(default=None, description="Fecha de inicio de validez")
-    valid_to: Optional[datetime] = Field(default=None, description="Fecha de fin de validez")
-    is_active: Optional[bool] = Field(default=True, description="Indica si la asignación está activa")
+    team: Optional[str] = Field(
+        default=None, max_length=50, description="Team code")
+    user_id: int = Field(description="User ID")
+    role: str = Field(max_length=50, description="Role code")
+    observation: Optional[str] = Field(
+        default=None, max_length=500, description="Observation")
+    valid_from: Optional[datetime] = Field(
+        default=None, description="Validity start date")
+    valid_to: Optional[datetime] = Field(
+        default=None, description="Validity end date")
+    is_active: Optional[bool] = Field(
+        default=True, description="Indicates if the assignment is active")
+
 
 class AssignmentUpdate(SQLModel):
-    team: Optional[str] = Field(default=None, max_length=50, description="Código del equipo")
-    role: Optional[str] = Field(default=None, max_length=50, description="Código del rol")
-    observation: Optional[str] = Field(default=None, max_length=500, description="Observación")
-    valid_from: Optional[datetime] = Field(default=None, description="Fecha de inicio de validez")
-    valid_to: Optional[datetime] = Field(default=None, description="Fecha de fin de validez")
-    is_active: Optional[bool] = Field(default=None, description="Indica si la asignación está activa")
+    team: Optional[str] = Field(
+        default=None, max_length=50, description="Team code")
+    role: Optional[str] = Field(
+        default=None, max_length=50, description="Role code")
+    observation: Optional[str] = Field(
+        default=None, max_length=500, description="Observation")
+    valid_from: Optional[datetime] = Field(
+        default=None, description="Validity start date")
+    valid_to: Optional[datetime] = Field(
+        default=None, description="Validity end date")
+    is_active: Optional[bool] = Field(
+        default=None, description="Indicates if the assignment is active")
 
 # Projects Models
+
+
 class ProjectBase(SQLModel):
     code: str = Field(max_length=50, primary_key=True)
     name: str = Field(max_length=100)
@@ -82,31 +114,46 @@ class ProjectBase(SQLModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
 
+
 class Project(ProjectBase, table=True):
     __tablename__ = "projects"
 
+
 class ProjectCreate(SQLModel):
-    code: str = Field(max_length=50, description="Código único del proyecto")
-    name: str = Field(max_length=100, description="Nombre del proyecto")
-    description: Optional[str] = Field(default=None, max_length=500, description="Descripción del proyecto")
-    team: Optional[str] = Field(default=None, max_length=50, description="Código del equipo")
-    repo_url: Optional[str] = Field(default=None, max_length=500, description="URL del repositorio")
-    status: str = Field(max_length=100, description="Estado del proyecto")
-    start_date: Optional[date] = Field(default=None, description="Fecha de inicio")
-    end_date: Optional[date] = Field(default=None, description="Fecha de fin")
-    is_active: Optional[bool] = Field(default=True, description="Indica si el proyecto está activo")
+    code: str = Field(max_length=50, description="Unique project code")
+    name: str = Field(max_length=100, description="Project name")
+    description: Optional[str] = Field(
+        default=None, max_length=500, description="Project description")
+    team: Optional[str] = Field(
+        default=None, max_length=50, description="Team code")
+    repo_url: Optional[str] = Field(
+        default=None, max_length=500, description="Repository URL")
+    status: str = Field(max_length=100, description="Project status")
+    start_date: Optional[date] = Field(default=None, description="Start date")
+    end_date: Optional[date] = Field(default=None, description="End date")
+    is_active: Optional[bool] = Field(
+        default=True, description="Indicates if the project is active")
+
 
 class ProjectUpdate(SQLModel):
-    name: Optional[str] = Field(default=None, max_length=100, description="Nombre del proyecto")
-    description: Optional[str] = Field(default=None, max_length=500, description="Descripción del proyecto")
-    team: Optional[str] = Field(default=None, max_length=50, description="Código del equipo")
-    repo_url: Optional[str] = Field(default=None, max_length=500, description="URL del repositorio")
-    status: Optional[str] = Field(default=None, max_length=100, description="Estado del proyecto")
-    start_date: Optional[date] = Field(default=None, description="Fecha de inicio")
-    end_date: Optional[date] = Field(default=None, description="Fecha de fin")
-    is_active: Optional[bool] = Field(default=None, description="Indica si el proyecto está activo")
+    name: Optional[str] = Field(
+        default=None, max_length=100, description="Project name")
+    description: Optional[str] = Field(
+        default=None, max_length=500, description="Project description")
+    team: Optional[str] = Field(
+        default=None, max_length=50, description="Team code")
+    repo_url: Optional[str] = Field(
+        default=None, max_length=500, description="Repository URL")
+    status: Optional[str] = Field(
+        default=None, max_length=100, description="Project status")
+    start_date: Optional[date] = Field(default=None, description="Start date")
+    end_date: Optional[date] = Field(default=None, description="End date")
+    is_active: Optional[bool] = Field(
+        default=None, description="Indicates if the project is active")
 
 # Dimensions Models
+
+
 class DimensionBase(SQLModel):
     code: str = Field(max_length=50, primary_key=True)
     name: str = Field(max_length=100)
@@ -117,25 +164,39 @@ class DimensionBase(SQLModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
 
+
 class Dimension(DimensionBase, table=True):
     __tablename__ = "dimensions"
 
+
 class DimensionCreate(SQLModel):
-    code: str = Field(max_length=50, description="Código único de la dimensión")
-    name: str = Field(max_length=100, description="Nombre de la dimensión")
-    description: Optional[str] = Field(default=None, max_length=500, description="Descripción de la dimensión")
-    scale: Optional[str] = Field(default=None, max_length=50, description="Código de la escala (lista)")
-    unit: Optional[str] = Field(default=None, max_length=100, description="Unidad de medida")
-    is_active: Optional[bool] = Field(default=True, description="Indica si la dimensión está activa")
+    code: str = Field(max_length=50, description="Unique dimension code")
+    name: str = Field(max_length=100, description="Dimension name")
+    description: Optional[str] = Field(
+        default=None, max_length=500, description="Dimension description")
+    scale: Optional[str] = Field(
+        default=None, max_length=50, description="Scale code (list)")
+    unit: Optional[str] = Field(
+        default=None, max_length=100, description="Unit of measure")
+    is_active: Optional[bool] = Field(
+        default=True, description="Indicates if the dimension is active")
+
 
 class DimensionUpdate(SQLModel):
-    name: Optional[str] = Field(default=None, max_length=100, description="Nombre de la dimensión")
-    description: Optional[str] = Field(default=None, max_length=500, description="Descripción de la dimensión")
-    scale: Optional[str] = Field(default=None, max_length=50, description="Código de la escala (lista)")
-    unit: Optional[str] = Field(default=None, max_length=100, description="Unidad de medida")
-    is_active: Optional[bool] = Field(default=None, description="Indica si la dimensión está activa")
+    name: Optional[str] = Field(
+        default=None, max_length=100, description="Dimension name")
+    description: Optional[str] = Field(
+        default=None, max_length=500, description="Dimension description")
+    scale: Optional[str] = Field(
+        default=None, max_length=50, description="Scale code (list)")
+    unit: Optional[str] = Field(
+        default=None, max_length=100, description="Unit of measure")
+    is_active: Optional[bool] = Field(
+        default=None, description="Indicates if the dimension is active")
 
 # Metrics Models
+
+
 class MetricBase(SQLModel):
     dimension: str = Field(max_length=50, foreign_key="dimensions.code")
     assignment: int = Field(foreign_key="assignments.id")
@@ -146,20 +207,30 @@ class MetricBase(SQLModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
 
+
 class Metric(MetricBase, table=True):
     __tablename__ = "metrics"
     id: Optional[int] = Field(default=None, primary_key=True)
 
+
 class MetricCreate(SQLModel):
-    dimension: str = Field(max_length=50, description="Código de la dimensión")
-    assignment: int = Field(description="ID de la asignación")
-    value: str = Field(max_length=100, description="Valor de la métrica")
-    observation: Optional[str] = Field(default=None, max_length=500, description="Observación")
-    measured_at: Optional[datetime] = Field(default=None, description="Fecha de medición")
-    is_active: Optional[bool] = Field(default=True, description="Indica si la métrica está activa")
+    dimension: str = Field(max_length=50, description="Dimension code")
+    assignment: int = Field(description="Assignment ID")
+    value: str = Field(max_length=100, description="Metric value")
+    observation: Optional[str] = Field(
+        default=None, max_length=500, description="Observation")
+    measured_at: Optional[datetime] = Field(
+        default=None, description="Measurement date")
+    is_active: Optional[bool] = Field(
+        default=True, description="Indicates if the metric is active")
+
 
 class MetricUpdate(SQLModel):
-    value: Optional[str] = Field(default=None, max_length=100, description="Valor de la métrica")
-    observation: Optional[str] = Field(default=None, max_length=500, description="Observación")
-    measured_at: Optional[datetime] = Field(default=None, description="Fecha de medición")
-    is_active: Optional[bool] = Field(default=None, description="Indica si la métrica está activa")
+    value: Optional[str] = Field(
+        default=None, max_length=100, description="Metric value")
+    observation: Optional[str] = Field(
+        default=None, max_length=500, description="Observation")
+    measured_at: Optional[datetime] = Field(
+        default=None, description="Measurement date")
+    is_active: Optional[bool] = Field(
+        default=None, description="Indicates if the metric is active")

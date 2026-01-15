@@ -16,23 +16,23 @@ router = APIRouter(prefix="/api/dimensions", tags=["dimensions"])
 @router.post("/", response_model=Dimension, status_code=201)
 def create_dimension(dimension: DimensionCreate, session: Session = Depends(get_db_session)) -> Dimension:
     """
-    Crear una nueva dimensión.
-    
-    - **code**: Código único de la dimensión (requerido)
-    - **name**: Nombre de la dimensión (requerido)
-    - **description**: Descripción opcional
-    - **scale**: Código de la escala (lista) (opcional)
-    - **unit**: Unidad de medida (opcional)
-    - **is_active**: Estado activo/inactivo (default: True)
+    Create a new dimension.
+
+    - **code**: Unique dimension code (required)
+    - **name**: Dimension name (required)
+    - **description**: Optional description
+    - **scale**: Scale code (list) (optional)
+    - **unit**: Unit of measurement (optional)
+    - **is_active**: Active/inactive status (default: True)
     """
-    # Validar que el código no exista
+    # Validate that the code does not exist
     existing_dimension = session.get(Dimension, dimension.code)
     if existing_dimension:
         raise HTTPException(
             status_code=409,
             detail=f"Dimension with code '{dimension.code}' already exists"
         )
-    
+
     try:
         db_dimension = Dimension.model_validate(dimension)
         session.add(db_dimension)
@@ -42,7 +42,8 @@ def create_dimension(dimension: DimensionCreate, session: Session = Depends(get_
         return db_dimension
     except IntegrityError as e:
         session.rollback()
-        logger.error(f"Integrity error creating dimension {dimension.code}: {e}")
+        logger.error(
+            f"Integrity error creating dimension {dimension.code}: {e}")
         raise HTTPException(
             status_code=409,
             detail=f"Dimension with code '{dimension.code}' already exists"
@@ -52,21 +53,22 @@ def create_dimension(dimension: DimensionCreate, session: Session = Depends(get_
 @router.get("/", response_model=List[Dimension])
 def list_dimensions(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[Dimension]:
     """
-    Listar todas las dimensiones con paginación.
-    
-    - **skip**: Número de registros a saltar (default: 0)
-    - **limit**: Número máximo de registros a retornar (default: 100)
+    List all dimensions with pagination.
+
+    - **skip**: Number of records to skip (default: 0)
+    - **limit**: Maximum number of records to return (default: 100)
     """
-    dimensions = session.exec(select(Dimension).offset(skip).limit(limit).order_by(Dimension.name)).all()
+    dimensions = session.exec(select(Dimension).offset(
+        skip).limit(limit).order_by(Dimension.name)).all()
     return dimensions
 
 
 @router.get("/{dimension_code}", response_model=Dimension)
 def get_dimension(dimension_code: str, session: Session = Depends(get_db_session)) -> Dimension:
     """
-    Obtener una dimensión por su código.
-    
-    - **dimension_code**: Código único de la dimensión
+    Get a dimension by its code.
+
+    - **dimension_code**: Unique dimension code
     """
     dimension = session.get(Dimension, dimension_code)
     if not dimension:
@@ -77,10 +79,10 @@ def get_dimension(dimension_code: str, session: Session = Depends(get_db_session
 @router.put("/{dimension_code}", response_model=Dimension)
 def update_dimension(dimension_code: str, dimension_update: DimensionUpdate, session: Session = Depends(get_db_session)) -> Dimension:
     """
-    Actualizar una dimensión existente.
-    
-    - **dimension_code**: Código único de la dimensión a actualizar
-    - Solo se actualizan los campos proporcionados
+    Update an existing dimension.
+
+    - **dimension_code**: Unique dimension code to update
+    - Only provided fields are updated
     """
     dimension = session.get(Dimension, dimension_code)
     if not dimension:
@@ -89,8 +91,8 @@ def update_dimension(dimension_code: str, dimension_update: DimensionUpdate, ses
     update_data = dimension_update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(dimension, key, value)
-    
-    # Actualizar timestamp
+
+    # Update timestamp
     dimension.updated_at = datetime.utcnow()
 
     session.add(dimension)
@@ -103,30 +105,29 @@ def update_dimension(dimension_code: str, dimension_update: DimensionUpdate, ses
 @router.delete("/{dimension_code}", response_model=Dimension, status_code=200)
 def delete_dimension(dimension_code: str, session: Session = Depends(get_db_session)) -> Dimension:
     """
-    Eliminar una dimensión (borrado lógico).
-    
-    Realiza un borrado lógico estableciendo is_active=False en lugar de eliminar el registro.
-    
-    - **dimension_code**: Código único de la dimensión a eliminar
+    Delete a dimension (logical delete).
+
+    Performs a logical delete by setting is_active=False instead of deleting the record.
+
+    - **dimension_code**: Unique dimension code to delete
     """
     dimension = session.get(Dimension, dimension_code)
     if not dimension:
         raise HTTPException(status_code=404, detail="Dimension not found")
-    
-    # Verificar si ya está inactiva
+
+    # Check if already inactive
     if not dimension.is_active:
         raise HTTPException(
             status_code=400,
             detail=f"Dimension with code '{dimension_code}' is already inactive"
         )
 
-    # Borrado lógico: actualizar is_active a False
+    # Logical delete: update is_active to False
     dimension.is_active = False
     dimension.updated_at = datetime.utcnow()
-    
+
     session.add(dimension)
     session.commit()
     session.refresh(dimension)
     logger.info(f"Dimension deactivated (logical delete): {dimension_code}")
     return dimension
-

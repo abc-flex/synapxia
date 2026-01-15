@@ -32,7 +32,7 @@ WITH default_hash AS (
 user_data AS (
     SELECT *
     FROM (VALUES
-        -- 1–12  (equipo CORE)
+        -- 1–12  (CORE team)
         ('juan.perez',        'juan.perez@synapxia.local',        'Juan',      'Perez',        'TL'),
         ('maria.rodriguez',   'maria.rodriguez@synapxia.local',   'Maria',     'Rodriguez',    'PO'),
         ('carlos.gomez',      'carlos.gomez@synapxia.local',      'Carlos',    'Gomez',        'PO'),
@@ -46,7 +46,7 @@ user_data AS (
         ('camilo.castillo',   'camilo.castillo@synapxia.local',   'Camilo',    'Castillo',     'QA'),
         ('natalia.vargas',    'natalia.vargas@synapxia.local',    'Natalia',   'Vargas',       'QA'),
 
-        -- 13–24 (equipo SUPPORT)
+        -- 13–24 (SUPPORT team)
         ('sebastian.rios',    'sebastian.rios@synapxia.local',    'Sebastian', 'Rios',         'TL'),
         ('andrea.mejia',      'andrea.mejia@synapxia.local',      'Andrea',    'Mejia',        'PO'),
         ('felipe.suarez',     'felipe.suarez@synapxia.local',     'Felipe',    'Suarez',       'PO'),
@@ -60,7 +60,7 @@ user_data AS (
         ('oscar.ordonez',     'oscar.ordonez@synapxia.local',     'Oscar',     'Ordonez',      'QA'),
         ('viviana.benitez',   'viviana.benitez@synapxia.local',   'Viviana',   'Benitez',      'QA'),
 
-        -- 25–36 (equipo OPS)
+        -- 25–36 (OPS team)
         ('rodrigo.molina',    'rodrigo.molina@synapxia.local',    'Rodrigo',   'Molina',       'TL'),
         ('manuela.cabrera',   'manuela.cabrera@synapxia.local',   'Manuela',   'Cabrera',      'PO'),
         ('fabian.gallego',    'fabian.gallego@synapxia.local',    'Fabian',    'Gallego',      'PO'),
@@ -74,7 +74,7 @@ user_data AS (
         ('edwin.chacon',      'edwin.chacon@synapxia.local',      'Edwin',     'Chacon',       'QA'),
         ('monica.cordoba',    'monica.cordoba@synapxia.local',    'Monica',    'Cordoba',      'QA'),
 
-        -- 37–48 (equipo ANALYTICS)
+        -- 37–48 (ANALYTICS team)
         ('pedro.delgadillo',  'pedro.delgadillo@synapxia.local',  'Pedro',     'Delgadillo',   'TL'),
         ('angela.fonseca',    'angela.fonseca@synapxia.local',    'Angela',    'Fonseca',      'PO'),
         ('cristian.giraldo',  'cristian.giraldo@synapxia.local',  'Cristian',  'Giraldo',      'PO'),
@@ -88,7 +88,7 @@ user_data AS (
         ('veronica.restrepo', 'veronica.restrepo@synapxia.local', 'Veronica',  'Restrepo',     'QA'),
         ('hugo.salamanca',    'hugo.salamanca@synapxia.local',    'Hugo',      'Salamanca',    'QA'),
 
-        -- 49–60 (equipo LAB)
+        -- 49–60 (LAB team)
         ('lorena.tovar',      'lorena.tovar@synapxia.local',      'Lorena',    'Tovar',        'TL'),
         ('german.uribe',      'german.uribe@synapxia.local',      'German',    'Uribe',        'PO'),
         ('adriana.velasquez', 'adriana.velasquez@synapxia.local', 'Adriana',   'Velasquez',    'PO'),

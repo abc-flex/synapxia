@@ -3,7 +3,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumb from "../../components/core/Breadcrumb.astro";
 import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
-import roles from "../../data/roles.json";
+import lists from "../../data/lists.json";
 import modules from "../../data/modules.json";
 import options from "../../data/options.json";
 
@@ -19,27 +19,33 @@ const itemsNav = options.map((option) => ({
   path: option.path,
 }));
 
+
 const columns = [
-  { key: "code", label: "Code" },
-  { key: "name", label: "Name" },
+  { key: "module", label: "Module", visible: true },
+  { key: "code", label: "Code", visible: true },
+  { key: "name", label: "Name", visible: true },
+  { key: "type", label: "Type", visible: true },
 ];
-const data = roles.map((item) => ({
+const data = lists.map((item) => ({
   id: item.code,
+  module: item.module,
   code: item.code,
   name: item.name,
+  type: item.type,
   description: item.description,
   is_active: item.is_active,
   created_at: item.created_at,
   updated_at: item.updated_at,
 }));
 const tableFields = [
-  { key: "code", label: "Code", required: true, placeholder: "e.g. ADMIN" },
-  { key: "name", label: "Name", required: true, placeholder: "e.g. Administration" },
+  { key: "module", label: "Module", required: true, placeholder: "e.g. ADMIN" },
+  { key: "code", label: "Code", required: true, placeholder: "e.g. STATUS" },
+  { key: "name", label: "Name", required: true, placeholder: "e.g. List statuses for..." },
   {
     key: "description",
     label: "Description",
     type: "textarea" as const,
-    placeholder: "Optional details of role",
+    placeholder: "Optional details of list",
   },
   { key: "is_active", label: "Active", type: "checkbox" as const },
 ];
@@ -48,41 +54,39 @@ const fieldKeys = tableFields.map((f) => f.key);
 
 <BaseLayout title={title} navModules={primaryNav} navOptions={itemsNav}>
   <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
-    <!-- Breadcrumb Start -->
     <Breadcrumb
       moduleName="Administration"
-      pageName="Roles"
-      pageTitle="Roles"
+      pageName="Lists"
+      pageTitle="Lists"
       homeLink="/"
       moduleNameKey="modules.ADMIN"
-      pageNameKey="menu_options.roles"
+      pageNameKey="menu_options.lists"
     />
-    <!-- Breadcrumb End -->
 
     <CrudModal
       mode="create"
-      modalId="role-create-modal"
-      entityName="Role"
+      modalId="list-create-modal"
+      entityName="List"
       fields={tableFields}
       showTrigger={false}
     />
     <CrudModal
       mode="edit"
-      modalId="role-edit-modal"
-      entityName="Role"
+      modalId="list-edit-modal"
+      entityName="List"
       fields={tableFields}
       showTrigger={false}
     />
     <CrudModal
       mode="delete"
-      modalId="role-delete-modal"
-      entityName="Role"
+      modalId="list-delete-modal"
+      entityName="List"
       fields={tableFields}
       showTrigger={false}
     />
 
     <div
-      id="roles-data"
+      id="lists-data"
       data-rows={encodeURIComponent(JSON.stringify(data))}
       data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
       class="hidden"
@@ -91,25 +95,27 @@ const fieldKeys = tableFields.map((f) => f.key);
     </div>
 
     <script type="module">
-      import { initCrudPage } from "/scripts/crudClient.js";
+      import { initCrudPage, openEditModal, openDeleteModal } from "/scripts/crudClient.js";
+
       initCrudPage({
-        dataId: "roles-data",
-        editModalId: "role-edit-modal",
-        deleteModalId: "role-delete-modal",
+        dataId: "lists-data",
+        editModalId: "list-edit-modal",
+        deleteModalId: "list-delete-modal",
       });
     </script>
 
     <div class="space-y-5 sm:space-y-6 bg-white dark:bg-gray-900 rounded-lg shadow-sm p-6">
       <div class="space-y-5 sm:space-y-6">
-        <div class="border-t border-gray-100 dark:border-gray-800 p-0">
-          <!-- ====== Table Start -->
+        <div class="border-0 p-0">
           <DataTable
             columns={columns}
             data={data}
-            tableId="roles"
-            i18Item="role"
+            tableId="lists"
+            i18Item="list"
+            columnFilter="module"
+            detailPage="/admin/items_list"
+            mdItem="itemlist"
           />
-          <!-- ====== Table End -->
         </div>
       </div>
     </div>

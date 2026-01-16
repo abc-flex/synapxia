@@ -20,6 +20,7 @@ const itemsNav = options.map((option) => ({
 }));
 
 const columns = [
+  { key: "sort_order", label: "#" },
   { key: "module", label: "Module" },
   { key: "name", label: "Name" },
   { key: "path", label: "Path" },
@@ -69,6 +70,7 @@ const fieldKeys = optionFields.map((f) => f.key);
       modalId="option-create-modal"
       entityName="Option"
       fields={optionFields}
+      showTrigger={false}
     />
     <CrudModal
       mode="edit"
@@ -103,14 +105,15 @@ const fieldKeys = optionFields.map((f) => f.key);
       });
     </script>
 
-    <div class="space-y-5 sm:space-y-6">
+    <div class="space-y-5 sm:space-y-6 bg-white dark:bg-gray-900 rounded-lg shadow-sm p-6">
       <div class="space-y-5 sm:space-y-6">
         <div class="border-t border-gray-100 dark:border-gray-800 p-0">
           <DataTable
             columns={columns}
             data={data}
-            tableItem="option"
             tableId="options"
+            i18Item="option"
+            columnFilter="module"
           />
         </div>
       </div>

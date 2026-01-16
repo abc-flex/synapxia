@@ -3,7 +3,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumb from "../../components/core/Breadcrumb.astro";
 import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
-import roles from "../../data/roles.json";
+import lists from "../../data/items_list.json";
 import modules from "../../data/modules.json";
 import options from "../../data/options.json";
 
@@ -20,27 +20,26 @@ const itemsNav = options.map((option) => ({
 }));
 
 const columns = [
-  { key: "code", label: "Code" },
-  { key: "name", label: "Name" },
+  { key: "sort_order", label: "#", visible: true },
+  { key: "list", label: "List", visible: false},
+  { key: "value", label: "Value", visible: true },
+  { key: "label", label: "Label", visible: true },
 ];
-const data = roles.map((item) => ({
-  id: item.code,
-  code: item.code,
-  name: item.name,
-  description: item.description,
+const data = lists.map((item) => ({
+  id: item.value,
+  list: item.list,
+  value: item.value,
+  label: item.label,
+  sort_order: item.sort_order,
   is_active: item.is_active,
   created_at: item.created_at,
   updated_at: item.updated_at,
 }));
 const tableFields = [
-  { key: "code", label: "Code", required: true, placeholder: "e.g. ADMIN" },
-  { key: "name", label: "Name", required: true, placeholder: "e.g. Administration" },
-  {
-    key: "description",
-    label: "Description",
-    type: "textarea" as const,
-    placeholder: "Optional details of role",
-  },
+  { key: "list", label: "List", required: true },
+  { key: "value", label: "Value", required: true },
+  { key: "label", label: "Label", required: true },
+  { key: "sort_order", label: "sort_order", required: true },
   { key: "is_active", label: "Active", type: "checkbox" as const },
 ];
 const fieldKeys = tableFields.map((f) => f.key);
@@ -48,41 +47,39 @@ const fieldKeys = tableFields.map((f) => f.key);
 
 <BaseLayout title={title} navModules={primaryNav} navOptions={itemsNav}>
   <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
-    <!-- Breadcrumb Start -->
     <Breadcrumb
       moduleName="Administration"
-      pageName="Roles"
-      pageTitle="Roles"
+      pageName="ItemsList"
+      pageTitle="Items Lists"
       homeLink="/"
       moduleNameKey="modules.ADMIN"
-      pageNameKey="menu_options.roles"
+      pageNameKey="menu_options.items_list"
     />
-    <!-- Breadcrumb End -->
 
     <CrudModal
       mode="create"
-      modalId="role-create-modal"
-      entityName="Role"
+      modalId="itemlist-create-modal"
+      entityName="ItemList"
       fields={tableFields}
       showTrigger={false}
     />
     <CrudModal
       mode="edit"
-      modalId="role-edit-modal"
-      entityName="Role"
+      modalId="itemlist-edit-modal"
+      entityName="ItemList"
       fields={tableFields}
       showTrigger={false}
     />
     <CrudModal
       mode="delete"
-      modalId="role-delete-modal"
-      entityName="Role"
+      modalId="itemlist-delete-modal"
+      entityName="ItemList"
       fields={tableFields}
       showTrigger={false}
     />
 
     <div
-      id="roles-data"
+      id="itemslist-data"
       data-rows={encodeURIComponent(JSON.stringify(data))}
       data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
       class="hidden"
@@ -91,25 +88,27 @@ const fieldKeys = tableFields.map((f) => f.key);
     </div>
 
     <script type="module">
-      import { initCrudPage } from "/scripts/crudClient.js";
+      import { initCrudPage, openEditModal, openDeleteModal } from "/scripts/crudClient.js";
+
       initCrudPage({
-        dataId: "roles-data",
-        editModalId: "role-edit-modal",
-        deleteModalId: "role-delete-modal",
+        dataId: "itemslist-data",
+        editModalId: "itemlist-edit-modal",
+        deleteModalId: "itemlist-delete-modal",
       });
     </script>
 
     <div class="space-y-5 sm:space-y-6 bg-white dark:bg-gray-900 rounded-lg shadow-sm p-6">
       <div class="space-y-5 sm:space-y-6">
-        <div class="border-t border-gray-100 dark:border-gray-800 p-0">
-          <!-- ====== Table Start -->
+        <div class="border-0 p-0">
           <DataTable
             columns={columns}
             data={data}
-            tableId="roles"
-            i18Item="role"
+            tableId="items_list"
+            i18Item="itemlist"
+            columnFilter="list"
+            masterPage="/admin/lists"
+            mdItem="list"
           />
-          <!-- ====== Table End -->
         </div>
       </div>
     </div>

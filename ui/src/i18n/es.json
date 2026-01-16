@@ -22,46 +22,6 @@
   "notification_menu": {
     "title": "Notificaciones"
   },
-  "crud_modal": {
-    "add": "Agregar",
-    "edit": "Editar",
-    "delete": "Eliminar",
-    "save": "Guardar",
-    "save_changes": "Guardar Cambios",
-    "cancel": "Cancelar",
-    "close": "Cerrar",
-    "delete_confirmation": "¿Está seguro de que desea eliminar este",
-    "delete_warning": "Esta acción no se puede deshacer."
-  },
-  "role_modal": {
-    "add_new_role": "Agregar Nuevo Rol",
-    "edit_role": "Editar Rol",
-    "delete_role": "Eliminar Rol",
-    "save_role": "Guardar Rol",
-    "save_changes": "Guardar Cambios",
-    "add_role": "Agregar Rol",
-    "code": "Código",
-    "name": "Nombre",
-    "description": "Descripción",
-    "delete_confirmation": "¿Está seguro de que desea eliminar el rol",
-    "delete_warning": "Esta acción no se puede deshacer."
-  },
-  "data_table": {
-    "actions": "Acciones",
-    "edit": "Editar",
-    "delete": "Eliminar",
-    "export_as": "Exportar como",
-    "export_csv": "Exportar CSV",
-    "export_json": "Exportar JSON",
-    "export_txt": "Exportar TXT",
-    "export_sql": "Exportar SQL",
-    "entries_per_page": "entradas por página",
-    "search_placeholder": "Buscar...",
-    "showing": "Mostrando",
-    "to": "a",
-    "of": "de",
-    "entries": "entradas"
-  },
   "modules": {
     "ADMIN": "Administración",
     "CATALOG": "Activos Digitales",
@@ -81,5 +41,90 @@
     "projects": "Proyectos",
     "dimensions": "Dimensiones",
     "dashboard": "Tablero"
+  },
+  "crud_modal": {
+    "add": "Agregar",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "save": "Guardar",
+    "save_changes": "Guardar Cambios",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "delete_confirmation": "¿Está seguro de que desea eliminar este",
+    "delete_warning": "Esta acción no se puede deshacer."
+  },
+  "data_table": {
+    "actions": "Acciones",
+    "add": "Crear",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "all": "Ver todos",
+    "search": "Buscar...",
+    "export_as": "Exportar como",
+    "export_csv": "Exportar CSV",
+    "export_json": "Exportar JSON",
+    "export_txt": "Exportar TXT",
+    "export_sql": "Exportar SQL",
+    "entries_per_page": "entradas por página",
+    "search_placeholder": "Buscar...",
+    "showing": "Mostrando",
+    "to": "a",
+    "of": "de",
+    "entries": "entradas",
+    "save": "Guardar",
+    "save_changes": "Guardar Cambios",
+    "delete_warning": "Esta acción no se puede deshacer."
+  },
+  "module_modal": {
+    "code": "Código",
+    "name": "Nombre",
+    "description": "Descripción",
+    "sort_order": "Orden",
+    "icon": "Ícono",
+    "one_title": "Módulo",
+    "many_title": "Módulos",
+    "add_new": "Nuevo Módulo",
+    "delete_confirmation": "¿Está seguro de que desea eliminar este Módulo"
+  },
+  "option_modal": {
+    "code": "Código",
+    "name": "Nombre",
+    "type": "Tipo",
+    "path": "Ruta",
+    "icon": "Ícono",
+    "sort_order": "Orden",
+    "one_title": "Módulo",
+    "many_title": "Módulos",
+    "add_new": "Nuevo Módulo",
+    "delete_confirmation": "¿Está seguro de que desea eliminar este Módulo"
+  },
+  "role_modal": {
+    "code": "Código",
+    "name": "Nombre",
+    "description": "Descripción",
+    "one_title": "Rol",
+    "many_title": "Roles",
+    "add_new": "Nuevo Rol",
+    "delete_confirmation": "¿Está seguro de que desea eliminar este Rol"
+  },
+  "list_modal": {
+    "code": "Código",
+    "name": "Nombre",
+    "type": "Tipo",
+    "description": "Descripción",
+    "one_title": "Lista",
+    "many_title": "Listas",
+    "add_new": "Nueva Lista",
+    "delete_confirmation": "¿Está seguro de que desea eliminar esta Lista"
+  },
+  "itemlist_modal": {
+    "list": "Lista",
+    "value": "Valor",
+    "label": "Etiqueta",
+    "sort_order": "Orden",
+    "one_title": "Item Lista",
+    "many_title": "Items Lista",
+    "add_new": "Nuevo Item Lista",
+    "delete_confirmation": "¿Está seguro de que desea eliminar este Item de la Lista"
   }
 }

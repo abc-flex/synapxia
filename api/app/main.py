@@ -27,7 +27,7 @@ from .collab.routes import projects as projects_router
 from .collab.routes import dimensions as dimensions_router
 from .collab.routes import metrics as metrics_router
 
-# Configurar logging
+# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="SynapxIA API",
     version="1.0.0",
-    description="API para gestión de adopción de IA - System for Insight, Adoption, Practice & eXpansion through Intelligent Agents",
+    description="API for AI adoption management - System for Insight, Adoption, Practice & eXpansion through Intelligent Agents",
     openapi_tags=[
         {
             "name": "health",
@@ -128,7 +128,7 @@ app = FastAPI(
     ],
 )
 
-# Configurar CORS
+# Configure CORS
 cors_origins = os.getenv("CORS_ORIGINS", "*").split(",")
 app.add_middleware(
     CORSMiddleware,
@@ -138,7 +138,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Incluir routers
+# Include routers
 # Administration module
 app.include_router(admin_health_router.router)
 app.include_router(roles_router.router)
@@ -166,7 +166,7 @@ app.include_router(projects_router.router)
 app.include_router(dimensions_router.router)
 app.include_router(metrics_router.router)
 
-# TODO: Agregar routers de otros módulos cuando estén implementados
+# TODO: Add routers for other modules when implemented
 # - genai (Generative AI)
 # - inits (GenAI Initiatives)
 # - insights (GenAI Insights)
@@ -175,23 +175,23 @@ app.include_router(metrics_router.router)
 
 @app.on_event("startup")
 async def startup_event():
-    """Evento de inicio de la aplicación."""
+    """Application startup event."""
     logger.info("SynapxIA API starting up...")
     logger.info(f"Environment: {os.getenv('APP_ENV', 'development')}")
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    """Evento de cierre de la aplicación."""
+    """Application shutdown event."""
     logger.info("SynapxIA API shutting down...")
 
 
 @app.get("/", tags=["health"])
 def read_root() -> dict:
     """
-    Endpoint raíz de la API.
-    
-    Retorna información básica sobre la API y sus endpoints principales.
+    API root endpoint.
+
+    Returns basic information about the API and its main endpoints.
     """
     return {
         "message": "SynapxIA API - System for Insight, Adoption, Practice & eXpansion through Intelligent Agents",

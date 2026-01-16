@@ -4,274 +4,229 @@ import { getLocale } from "@/utils/getLocale";
 
 const locale = getLocale(Astro);
 
-/**
- * DataTable Component
- * Props:
- * - columns: Array<{key: string, label: string}>
- * - data: Array<Record<string, any>>
- * - tableId: string (default: "datatable")
- * - tableItem: string (default: "dataitem")
- * - showAddButton: boolean (default: true)
- */
 const {
   columns = [],
   data = [],
   tableId = "datatable",
-  tableItem = "dataitem",
+  i18Item = "i18item",
   showAddButton = true,
+  columnFilter = null,
+  masterPage = null,
+  detailPage = null,
+  mdItem = null,
 } = Astro.props;
 ---
 
-<table id="export-table">
-  <thead
-    class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400"
+<div class="space-y-2">
+  <!-- 🔹 TOP BAR -->
+  <div
+    class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
   >
-    <tr>
+    <!-- Left -->
+    <div class="flex items-center gap-3">
       {
-        columns.map((col) => (
-          <th
-            class="px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 select-none transition"
-            data-column={col.key}
+        showAddButton && (
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-1 text-sm font-semibold text-white hover:bg-indigo-700"
+            data-modal-open={`${i18Item}-create-modal`}
           >
-            <div class="flex items-center gap-2">
-              {col.label}
-              <span class="sort-indicator text-xs opacity-50">⇅</span>
-            </div>
+            <span class="text-lg">+</span>
+            {t(locale, `${i18Item}_modal.one_title`)}
+          </button>
+        )
+      }
+      {
+        columnFilter && (
+          <div class="relative">
+            <select
+              id={`${tableId}-filter`}
+              data-column-key={columnFilter}
+              class="w-44 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm
+                  focus:border-indigo-500 focus:ring-indigo-500"
+            >
+              <option value="">All {columnFilter}s</option>
+            </select>
+          </div>
+        )
+      }
+    </div>
+
+    <!-- Right -->
+    <div class="flex items-center gap-3 relative">
+      <!-- Search -->
+      <input
+        id={`${tableId}-search`}
+        type="search"
+        placeholder={t(locale, "data_table.search")}
+        class="w-56 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm
+               focus:border-indigo-500 focus:ring-indigo-500"
+      />
+
+      <!-- Export -->
+      <button
+        id={`${tableId}-export-btn`}
+        type="button"
+        class="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-gray-100"
+      >
+        <img src="/src/images/icons/arrow-down-tray.svg" class="w-5 h-5" />
+      </button>
+
+      <div
+        id={`${tableId}-export-menu`}
+        class="absolute right-0 top-full z-20 mt-2 hidden w-44 rounded-lg bg-white shadow-lg ring-1 ring-gray-200"
+      >
+        <ul class="py-1 text-sm">
+          <li>
+            <button
+              data-export="csv"
+              class="block w-full px-4 py-2 hover:bg-gray-100"
+              >Export CSV</button
+            >
+          </li>
+          <li>
+            <button
+              data-export="json"
+              class="block w-full px-4 py-2 hover:bg-gray-100"
+              >Export JSON</button
+            >
+          </li>
+          <li>
+            <button
+              data-export="txt"
+              class="block w-full px-4 py-2 hover:bg-gray-100"
+              >Export TXT</button
+            >
+          </li>
+          <li>
+            <button
+              data-export="sql"
+              class="block w-full px-4 py-2 hover:bg-gray-100"
+              >Export SQL</button
+            >
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🔹 TABLE -->
+  <div class="overflow-x-auto">
+    <table
+      id={tableId}
+      class="w-full text-sm text-left text-gray-600 datatable-dense"
+    >
+      <thead
+        class="bg-gray-200 text-xs uppercase text-gray-700 border-b border-black"
+      >
+        <tr>
+          {
+            columns.map((col) => (
+              <th class="px-2 py-1 font-semibold tracking-wide">{col.label}</th>
+            ))
+          }
+          <th class="px-4 py-4 text-right">
+            {t(locale, "data_table.actions")}
           </th>
-        ))
-      }
-      <th class="px-4 py-3 w-[100px] min-w-[100px] text-right">
-        <span data-i18n="data_table.actions">{t(locale, "data_table.actions")}</span>
-      </th>
-    </tr>
-  </thead>
-  <tbody>
-    {
-      data.map((row) => (
-        <tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
-          {columns.map((col) => (
-            <td class="px-4 py-3">{row[col.key]}</td>
-          ))}
-          <td class="px-4 py-3 flex justify-end gap-2">
-            <button
-              class="p-1 text-blue-600 hover:bg-blue-100 rounded edit-btn"
-              data-id={row.id}
-              data-action="edit"
-              title={t(locale, "data_table.edit")}
-              data-i18n-title="data_table.edit"
-            >
-              <img src="/src/components/icons/Edit.svg" alt="" class="w-5 h-5" />
-            </button>
-            <button
-              class="p-1 text-red-600 hover:bg-red-100 rounded delete-btn"
-              data-id={row.id}
-              data-action="delete"
-              title={t(locale, "data_table.delete")}
-              data-i18n-title="data_table.delete"
-            >
-              <img src="/src/components/icons/Delete.svg" alt="" class="w-5 h-5" />
-            </button>
-          </td>
         </tr>
-      ))
-    }
-  </tbody>
-</table>
+      </thead>
+      <tbody
+        class="[&>tr:nth-child(even)]:bg-gray-100 [&>tr:hover]:bg-gray-200"
+      >
+        {
+          data.map((row) => (
+            <tr class="border-b">
+              {columns.map((col) => (
+                <td class="px-2 py-1">{row[col.key]}</td>
+              ))}
+              <td class="actions-cell px-2 py-1 text-right space-x-0">
+                <div class="actions-wrapper">
+                  {detailPage && (
+                    <a
+                      href={detailPage + "?list=" + row.id}
+                      class="detail-btn action-btn"
+                      title={t(locale, `${mdItem}_modal.many_title`)}
+                    >
+                      <img
+                        src="/src/images/icons/list-bullet.svg"
+                        alt=""
+                        class="w-5 h-5"
+                      />
+                    </a>
+                    <span class="dot">•</span>
+                  )}
+                  <button
+                    class="p-1 text-blue-600 hover:bg-blue-100 rounded edit-btn"
+                    data-id={row.id}
+                    data-action="edit"
+                    data-i18n-title={`${i18Item}_modal.edit`}
+                    title={t(locale, `${i18Item}_modal.edit`)}                    
+                  >
+                    <img
+                      src="/src/images/icons/edit.svg"
+                      alt=""
+                      class="w-5 h-5"
+                    />
+                  </button>
+                  <button
+                    class="p-1 text-red-600 hover:bg-red-100 rounded delete-btn"
+                    data-id={row.id}
+                    data-action="delete"
+                    data-i18n-title={`${i18Item}_modal.delete`}
+                    title={t(locale, `${i18Item}_modal.delete`)}                    
+                  >
+                    <img
+                      src="/src/images/icons/delete.svg"
+                      alt=""
+                      class="w-5 h-5"
+                    />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
 
-<script>
-  import { Dropdown } from "flowbite";
-  if (
-    document.getElementById("export-table") &&
-    typeof simpleDatatables.DataTable !== "undefined"
-  ) {
-    const exportCustomCSV = (dataTable, userOptions = {}) => {
-      // A modified CSV export that includes a row of minuses at the start and end.
-      const clonedUserOptions = {
-        ...userOptions,
-      };
-      clonedUserOptions.download = false;
-      const csv = simpleDatatables.exportCSV(dataTable, clonedUserOptions);
-      // If CSV didn't work, exit.
-      if (!csv) {
-        return false;
-      }
-      const defaults = {
-        download: true,
-        lineDelimiter: "\n",
-        columnDelimiter: ";",
-      };
-      const options = {
-        ...defaults,
-        ...clonedUserOptions,
-      };
-      const separatorRow = Array(
-        dataTable.data.headings.filter(
-          (_heading, index) => !dataTable.columns.settings[index]?.hidden
-        ).length
-      )
-        .fill("+")
-        .join("+"); // Use "+" as the delimiter
+  <!-- 🔹 PAGINATION -->
+  <div
+    id={`${tableId}-pagination`}
+    class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+  >
+    <!-- Info -->
+    <div id={`${tableId}-pagination-info`} class="text-sm text-gray-600"></div>
+    <select
+      id={`${tableId}-per-page`}
+      class="ml-3 rounded-lg border px-2 py-2 text-sm"
+    >
+      <option value="5">5</option>
+      <option value="10" selected>10</option>
+      <option value="25">25</option>
+      <option value="50">50</option>
+    </select>
 
-      const str =
-        separatorRow +
-        options.lineDelimiter +
-        csv +
-        options.lineDelimiter +
-        separatorRow;
+    <!-- Controls -->
+    <div class="flex items-center gap-2">
+      <button
+        id={`${tableId}-prev`}
+        class="px-1 py-1 text-sm border rounded hover:bg-gray-100"
+      >
+        <img src="/src/images/icons/chevron-left.svg" alt="" class="w-5 h-5" />
+      </button>
+      <div id={`${tableId}-pages`} class="flex items-center gap-1"></div>
+      <button
+        id={`${tableId}-next`}
+        class="px-1 py-1 text-sm border rounded hover:bg-gray-100"
+      >
+        <img src="/src/images/icons/chevron-right.svg" alt="" class="w-5 h-5" />
+      </button>
+    </div>
+  </div>
+</div>
 
-      if (userOptions.download) {
-        // Create a link to trigger the download
-        const link = document.createElement("a");
-        link.href = encodeURI("data:text/csv;charset=utf-8," + str);
-        link.download = (options.filename || "datatable_export") + ".txt";
-        // Append the link
-        document.body.appendChild(link);
-        // Trigger the download
-        link.click();
-        // Remove the link
-        document.body.removeChild(link);
-      }
-
-      return str;
-    };
-    const table = new simpleDatatables.DataTable("#export-table", {
-      template: (options, dom) =>
-        "<div class='" +
-        options.classes.top +
-        "'>" +
-        "<div class='flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-3 rtl:space-x-reverse w-full sm:w-auto'>" +
-        (options.paging && options.perPageSelect
-          ? "<div class='" +
-            options.classes.dropdown +
-            "'>" +
-            "<label>" +
-            "<select class='" +
-            options.classes.selector +
-            "'></select> " +
-            options.labels.perPage +
-            "</label>" +
-            "</div>"
-          : "") +
-        "<button id='exportDropdownButton' type='button' class='flex w-full sm:w-auto text-body bg-neutral-secondary-medium box-border border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading focus:ring-4 focus:ring-neutral-tertiary shadow-xs font-medium leading-5 rounded-base text-sm px-3 py-2 focus:outline-none'>" +
-        "Export as" +
-        "<svg class='-me-0.5 ms-1.5 h-4 w-4' aria-hidden='true' xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' viewBox='0 0 24 24'>" +
-        "<path stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m19 9-7 7-7-7' />" +
-        "</svg>" +
-        "</button>" +
-        "<div id='exportDropdown' class='z-10 hidden w-52 divide-y divide-gray-100 rounded-lg bg-white shadow-sm dark:bg-gray-700' data-popper-placement='bottom'>" +
-        "<ul class='p-2 text-left text-sm font-medium text-gray-500 dark:text-gray-400' aria-labelledby='exportDropdownButton'>" +
-        "<li>" +
-        "<button id='export-csv' class='group inline-flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white'>" +
-        "<svg class='me-1.5 h-4 w-4 text-gray-400 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white' aria-hidden='true' xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='currentColor' viewBox='0 0 24 24'>" +
-        "<path fill-rule='evenodd' d='M9 2.221V7H4.221a2 2 0 0 1 .365-.5L8.5 2.586A2 2 0 0 1 9 2.22ZM11 2v5a2 2 0 0 1-2 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2 2 2 0 0 0 2 2h12a2 2 0 0 0 2-2 2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2V4a2 2 0 0 0-2-2h-7Zm1.018 8.828a2.34 2.34 0 0 0-2.373 2.13v.008a2.32 2.32 0 0 0 2.06 2.497l.535.059a.993.993 0 0 0 .136.006.272.272 0 0 1 .263.367l-.008.02a.377.377 0 0 1-.018.044.49.49 0 0 1-.078.02 1.689 1.689 0 0 1-.297.021h-1.13a1 1 0 1 0 0 2h1.13c.417 0 .892-.05 1.324-.279.47-.248.78-.648.953-1.134a2.272 2.272 0 0 0-2.115-3.06l-.478-.052a.32.32 0 0 1-.285-.341.34.34 0 0 1 .344-.306l.94.02a1 1 0 1 0 .043-2l-.943-.02h-.003Zm7.933 1.482a1 1 0 1 0-1.902-.62l-.57 1.747-.522-1.726a1 1 0 0 0-1.914.578l1.443 4.773a1 1 0 0 0 1.908.021l1.557-4.773Zm-13.762.88a.647.647 0 0 1 .458-.19h1.018a1 1 0 1 0 0-2H6.647A2.647 2.647 0 0 0 4 13.647v1.706A2.647 2.647 0 0 0 6.647 18h1.018a1 1 0 1 0 0-2H6.647A.647.647 0 0 1 6 15.353v-1.706c0-.172.068-.336.19-.457Z' clip-rule='evenodd'/>" +
-        "</svg>" +
-        "<span>Export CSV</span>" +
-        "</button>" +
-        "</li>" +
-        "<li>" +
-        "<button id='export-json' class='group inline-flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white'>" +
-        "<svg class='me-1.5 h-4 w-4 text-gray-400 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white' aria-hidden='true' xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='currentColor' viewBox='0 0 24 24'>" +
-        "<path fill-rule='evenodd' d='M9 2.221V7H4.221a2 2 0 0 1 .365-.5L8.5 2.586A2 2 0 0 1 9 2.22ZM11 2v5a2 2 0 0 1-2 2H4v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-7Zm-.293 9.293a1 1 0 0 1 0 1.414L9.414 14l1.293 1.293a1 1 0 0 1-1.414 1.414l-2-2a1 1 0 0 1 0-1.414l2-2a1 1 0 0 1 1.414 0Zm2.586 1.414a1 1 0 0 1 1.414-1.414l2 2a1 1 0 0 1 0 1.414l-2 2a1 1 0 0 1-1.414-1.414L14.586 14l-1.293-1.293Z' clip-rule='evenodd'/>" +
-        "</svg>" +
-        "<span>Export JSON</span>" +
-        "</button>" +
-        "</li>" +
-        "<li>" +
-        "<button id='export-txt' class='group inline-flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white'>" +
-        "<svg class='me-1.5 h-4 w-4 text-gray-400 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white' aria-hidden='true' xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='currentColor' viewBox='0 0 24 24'>" +
-        "<path fill-rule='evenodd' d='M9 2.221V7H4.221a2 2 0 0 1 .365-.5L8.5 2.586A2 2 0 0 1 9 2.22ZM11 2v5a2 2 0 0 1-2 2H4v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-7ZM8 16a1 1 0 0 1 1-1h6a1 1 0 1 1 0 2H9a1 1 0 0 1-1-1Zm1-5a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2H9Z' clip-rule='evenodd'/>" +
-        "</svg>" +
-        "<span>Export TXT</span>" +
-        "</button>" +
-        "</li>" +
-        "<li>" +
-        "<button id='export-sql' class='group inline-flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white'>" +
-        "<svg class='me-1.5 h-4 w-4 text-gray-400 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white' aria-hidden='true' xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='currentColor' viewBox='0 0 24 24'>" +
-        "<path d='M12 7.205c4.418 0 8-1.165 8-2.602C20 3.165 16.418 2 12 2S4 3.165 4 4.603c0 1.437 3.582 2.602 8 2.602ZM12 22c4.963 0 8-1.686 8-2.603v-4.404c-.052.032-.112.06-.165.09a7.75 7.75 0 0 1-.745.387c-.193.088-.394.173-.6.253-.063.024-.124.05-.189.073a18.934 18.934 0 0 1-6.3.998c-2.135.027-4.26-.31-6.3-.998-.065-.024-.126-.05-.189-.073a10.143 10.143 0 0 1-.852-.373 7.75 7.75 0 0 1-.493-.267c-.053-.03-.113-.058-.165-.09v4.404C4 20.315 7.037 22 12 22Zm7.09-13.928a9.91 9.91 0 0 1-.6.253c-.063.025-.124.05-.189.074a18.935 18.935 0 0 1-6.3.998c-2.135.027-4.26-.31-6.3-.998-.065-.024-.126-.05-.189-.074a10.163 10.163 0 0 1-.852-.372 7.816 7.816 0 0 1-.493-.268c-.055-.03-.115-.058-.167-.09V12c0 .917 3.037 2.603 8 2.603s8-1.686 8-2.603V7.596c-.052.031-.112.059-.165.09a7.816 7.816 0 0 1-.745.386Z'/>" +
-        "</svg>" +
-        "<span>Export SQL</span>" +
-        "</button>" +
-        "</li>" +
-        "</ul>" +
-        "</div>" +
-        "</div>" +
-        (options.searchable
-          ? "<div class='" +
-            options.classes.search +
-            "'>" +
-            "<input class='" +
-            options.classes.input +
-            "' placeholder='" +
-            options.labels.placeholder +
-            "' type='search' title='" +
-            options.labels.searchTitle +
-            "'" +
-            (dom.id ? " aria-controls='" + dom.id + "'" : "") +
-            ">" +
-            "</div>"
-          : "") +
-        "</div>" +
-        "<div class='" +
-        options.classes.container +
-        "'" +
-        (options.scrollY.length
-          ? " style='height: " + options.scrollY + "; overflow-Y: auto;'"
-          : "") +
-        "></div>" +
-        "<div class='" +
-        options.classes.bottom +
-        "'>" +
-        (options.paging
-          ? "<div class='" + options.classes.info + "'></div>"
-          : "") +
-        "<nav class='" +
-        options.classes.pagination +
-        "'></nav>" +
-        "</div>",
-    });
-    const $exportButton = document.getElementById("exportDropdownButton");
-    const $exportDropdownEl = document.getElementById("exportDropdown");
-    const dropdown = new Dropdown($exportDropdownEl, $exportButton);
-    console.log(dropdown);
-
-    // Bubble edit/delete actions
-    document.querySelectorAll('.edit-btn, .delete-btn').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        const action = btn.getAttribute('data-action');
-        const id = btn.getAttribute('data-id');
-        if (!action || !id) return;
-        const event = new CustomEvent('datatable-action', {
-          bubbles: true,
-          detail: { action, id },
-        });
-        btn.dispatchEvent(event);
-      });
-    });
-
-    document.getElementById("export-csv").addEventListener("click", () => {
-      simpleDatatables.exportCSV(table, {
-        download: true,
-        lineDelimiter: "\n",
-        columnDelimiter: ";",
-      });
-    });
-    document.getElementById("export-sql").addEventListener("click", () => {
-      simpleDatatables.exportSQL(table, {
-        download: true,
-        tableName: "export_table",
-      });
-    });
-    document.getElementById("export-txt").addEventListener("click", () => {
-      simpleDatatables.exportTXT(table, {
-        download: true,
-      });
-    });
-    document.getElementById("export-json").addEventListener("click", () => {
-      simpleDatatables.exportJSON(table, {
-        download: true,
-        space: 3,
-      });
-    });
-  }
+<script type="module" define:vars={{ tableId, data, columns }}>
+  import { initAdvancedTable } from "/src/components/table/advancedTable";
+  initAdvancedTable(tableId, data, columns);
 </script>

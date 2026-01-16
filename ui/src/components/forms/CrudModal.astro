@@ -229,26 +229,38 @@ const triggerText =
 <script define:vars={{ modalId }}>
   (() => {
     if (typeof window === "undefined") return;
+
     const modal = document.getElementById(modalId);
     if (!modal) return;
 
-    const openBtn = document.querySelector(`[data-modal-open="${modalId}"]`);
-    const closeButtons = Array.from(
-      document.querySelectorAll(`[data-modal-close="${modalId}"]`)
-    );
-
     const open = () => {
-      if (modal.hasAttribute("open")) return;
-      modal.showModal();
+      if (!modal.hasAttribute("open")) modal.showModal();
     };
 
     const close = () => {
-      if (!modal.hasAttribute("open")) return;
-      modal.close();
+      if (modal.hasAttribute("open")) modal.close();
     };
 
-    openBtn?.addEventListener("click", open);
-    closeButtons.forEach((btn) => btn.addEventListener("click", close));
+    // ✅ DELEGACIÓN GLOBAL (CLAVE)
+    document.addEventListener("click", (event) => {
+      const openBtn = event.target.closest(
+        `[data-modal-open="${modalId}"]`
+      );
+      const closeBtn = event.target.closest(
+        `[data-modal-close="${modalId}"]`
+      );
+
+      if (openBtn) {
+        event.preventDefault();
+        open();
+      }
+
+      if (closeBtn) {
+        event.preventDefault();
+        close();
+      }
+    });
+
     modal.addEventListener("click", (event) => {
       const rect = modal.getBoundingClientRect();
       const isInDialog =
@@ -256,8 +268,10 @@ const triggerText =
         event.clientY <= rect.top + rect.height &&
         rect.left <= event.clientX &&
         event.clientX <= rect.left + rect.width;
+
       if (!isInDialog) close();
     });
+
     modal.addEventListener("cancel", (e) => {
       e.preventDefault();
       close();

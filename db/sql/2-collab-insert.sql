@@ -1,5 +1,5 @@
 -- **********************************
--- ********** Table roles ***********
+-- ********** Table Roles ***********
 -- **********************************
 
 INSERT INTO roles (code, name, description, is_active) VALUES
@@ -11,7 +11,7 @@ INSERT INTO roles (code, name, description, is_active) VALUES
 
 
 -- **********************************
--- ********** Table teams ***********
+-- ********** Table Teams ***********
 -- **********************************
 
 INSERT INTO teams (code, name, description, lead, chat_channel_url, kanban_board_url, is_active)
@@ -23,7 +23,7 @@ VALUES
     ('LAB',       'Innovation Lab',              'Exploratory team oriented to experiments, prototypes and proofs of concept for new ideas and technologies.',     NULL, NULL, NULL, TRUE);
 
 -- **********************************
--- ********** Table users ***********
+-- ********** Table Users ***********
 -- **********************************
 
 WITH default_hash AS (
@@ -110,7 +110,7 @@ INSERT INTO users (
     first_name,
     last_name,
     menu_role,
-    unit,
+    business_unit,
     is_active
 )
 SELECT
@@ -125,7 +125,7 @@ SELECT
 FROM user_data;
 
 -- **********************************
--- ******* Table assignments ********
+-- ******* Table Assignments ********
 -- **********************************
 
 INSERT INTO assignments (team, user_id, role)

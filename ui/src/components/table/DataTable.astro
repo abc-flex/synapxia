@@ -24,6 +24,19 @@ const {
   >
     <!-- Left -->
     <div class="flex items-center gap-3">
+      {masterPage && (
+        <a
+          href={masterPage}
+          class="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-gray-100"
+          title={t(locale, `${mdItem}_modal.many_title`)}
+        >
+          <img
+            src="/src/images/icons/arrow-uturn-left.svg"
+            alt=""
+            class="w-5 h-5"
+          />
+        </a>
+      )}
       {
         showAddButton && (
           <button

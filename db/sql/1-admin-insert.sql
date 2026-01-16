@@ -1,5 +1,5 @@
 -- **********************************
--- ********* Table: options *********
+-- ********* Table: Options *********
 -- **********************************
 
 -- ===== Module: ADMIN =====
@@ -114,7 +114,7 @@ INSERT INTO options (module, code, name, description, sort_order, type) VALUES
      50,'FORM');
 
 -- **********************************
--- ********** Table: roles **********
+-- ********** Table: Roles **********
 -- **********************************
 
 INSERT INTO roles (code, name, description, is_active)
@@ -133,7 +133,7 @@ VALUES
      TRUE);
 
 -- **********************************
--- ******** Table: privileges ********
+-- ******** Table: Privileges ********
 -- **********************************
 
 -- ===== Role: ADMINISTRATOR =====
@@ -257,19 +257,19 @@ VALUES
     ('COLLABORATOR','WORKFLOWS','N8N',         FALSE);
 
 -- **********************************
--- ********** Table units ***********
+-- ********** Table Units ***********
 -- **********************************
 
-INSERT INTO units (code, name, description, type, parent, is_active) VALUES
+INSERT INTO business_units (code, name, description, type, parent, is_active) VALUES
     ('CORP', 'Corporate', 'Corporate Unit', 'BUSINESS_UNIT', NULL, TRUE),
     ('ENG', 'Engineering', 'Engineering Department', 'DEPARTMENT', 'CORP', TRUE),
     ('GEN_AI', 'Generative AI', 'Generative AI', 'CHAPTER', 'ENG', TRUE);
 
 -- **********************************
--- ********** Table users ***********
+-- ********** Table Users ***********
 -- **********************************
 
-INSERT INTO users (id, username, email, password_hash, first_name, last_name, menu_role, unit, is_active) VALUES
+INSERT INTO users (id, username, email, password_hash, first_name, last_name, menu_role, business_unit, is_active) VALUES
    (0,
     'admin',
     'admin@synapxia.org',

@@ -26,7 +26,7 @@ CREATE TABLE business_units (
     code        VARCHAR(50)  NOT NULL,
     name        VARCHAR(100) NOT NULL,
     description VARCHAR(500),
-    type        VARCHAR(100), -- references List_items where list='UNIT_TYPE'
+    type        VARCHAR(100), -- references List_items where list='BIZ_UNIT_TYPE'
     parent      VARCHAR(50),
     is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
@@ -143,11 +143,11 @@ ALTER TABLE users
     FOREIGN KEY (menu_role)
     REFERENCES roles (code);
 
--- users.unit → units.code
+-- users.business_unit → business_units.code
 ALTER TABLE users
-    ADD CONSTRAINT fk_users_units
-    FOREIGN KEY (unit)
-    REFERENCES units (code);
+    ADD CONSTRAINT fk_users_business_units
+    FOREIGN KEY (business_unit)
+    REFERENCES business_units (code);
 
 -- options.module → modules.code
 ALTER TABLE options
@@ -224,12 +224,12 @@ INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
     ('OPTION_TYPE', 'FORM',    'Form',    20, TRUE),
     ('OPTION_TYPE', 'REPORT',  'Report',  30, TRUE);
 
--- ===== List: Unit Type =====
+-- ===== List: Business Unit Type =====
 INSERT INTO lists (code, name, description, type, module, is_active) VALUES (
-    'UNIT_TYPE', 'Types of organizational units',
+    'BIZ_UNIT_TYPE', 'Types of organizational units',
     'List that classifies the types of organizational units (e.g., Department, Business Unit, Chapter) available in SynapxIA.',
     'LIST_OF_VALUES', 'ADMIN', TRUE);
 INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
-    ('UNIT_TYPE', 'BUSINESS_UNIT','Business Unit', 10, TRUE),
-    ('UNIT_TYPE', 'DEPARTMENT',   'Department',    20, TRUE),
-    ('UNIT_TYPE', 'CHAPTER',      'Chapter',       30, TRUE);
+    ('BIZ_UNIT_TYPE', 'BUSINESS_UNIT','Business Unit', 10, TRUE),
+    ('BIZ_UNIT_TYPE', 'DEPARTMENT',   'Department',    20, TRUE),
+    ('BIZ_UNIT_TYPE', 'CHAPTER',      'Chapter',       30, TRUE);

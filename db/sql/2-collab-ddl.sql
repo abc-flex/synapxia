@@ -41,6 +41,7 @@ CREATE TABLE projects (
     status      VARCHAR(100)  NOT NULL, -- references List_items where list='PROJECT_STATUS'
     start_date  DATE,
     end_date    DATE,
+    detail      TEXT,
     is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ,

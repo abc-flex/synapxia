@@ -80,6 +80,7 @@ services:
     environment:
       - NODE_ENV=development
       - API_PATH=http://synapxia-api:8000
+      - PUBLIC_API_PATH=http://localhost:8000
 
 networks:
   synapxia-network:

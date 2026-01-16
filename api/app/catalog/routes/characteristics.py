@@ -16,23 +16,23 @@ router = APIRouter(prefix="/api/characteristics", tags=["characteristics"])
 @router.post("/", response_model=Characteristic, status_code=201)
 def create_characteristic(characteristic: CharacteristicCreate, session: Session = Depends(get_db_session)) -> Characteristic:
     """
-    Crear una nueva característica.
-    
-    - **code**: Código único de la característica (requerido)
-    - **name**: Nombre de la característica (requerido)
-    - **type**: Tipo de característica (requerido)
-    - **status**: Estado de la característica (requerido)
-    - **description**: Descripción opcional
-    - **is_active**: Estado activo/inactivo (default: True)
+    Create a new characteristic.
+
+    - **code**: Unique characteristic code (required)
+    - **name**: Characteristic name (required)
+    - **type**: Characteristic type (required)
+    - **status**: Characteristic status (required)
+    - **description**: Optional description
+    - **is_active**: Active/inactive status (default: True)
     """
-    # Validar que el código no exista
+    # Validate that the code does not exist
     existing_characteristic = session.get(Characteristic, characteristic.code)
     if existing_characteristic:
         raise HTTPException(
             status_code=409,
             detail=f"Characteristic with code '{characteristic.code}' already exists"
         )
-    
+
     try:
         db_characteristic = Characteristic.model_validate(characteristic)
         session.add(db_characteristic)
@@ -42,7 +42,8 @@ def create_characteristic(characteristic: CharacteristicCreate, session: Session
         return db_characteristic
     except IntegrityError as e:
         session.rollback()
-        logger.error(f"Integrity error creating characteristic {characteristic.code}: {e}")
+        logger.error(
+            f"Integrity error creating characteristic {characteristic.code}: {e}")
         raise HTTPException(
             status_code=409,
             detail=f"Characteristic with code '{characteristic.code}' already exists"
@@ -52,21 +53,22 @@ def create_characteristic(characteristic: CharacteristicCreate, session: Session
 @router.get("/", response_model=List[Characteristic])
 def list_characteristics(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[Characteristic]:
     """
-    Listar todas las características con paginación.
-    
-    - **skip**: Número de registros a saltar (default: 0)
-    - **limit**: Número máximo de registros a retornar (default: 100)
+    List all characteristics with pagination.
+
+    - **skip**: Number of records to skip (default: 0)
+    - **limit**: Maximum number of records to return (default: 100)
     """
-    characteristics = session.exec(select(Characteristic).offset(skip).limit(limit).order_by(Characteristic.name)).all()
+    characteristics = session.exec(select(Characteristic).offset(
+        skip).limit(limit).order_by(Characteristic.name)).all()
     return characteristics
 
 
 @router.get("/{characteristic_code}", response_model=Characteristic)
 def get_characteristic(characteristic_code: str, session: Session = Depends(get_db_session)) -> Characteristic:
     """
-    Obtener una característica por su código.
-    
-    - **characteristic_code**: Código único de la característica
+    Get a characteristic by its code.
+
+    - **characteristic_code**: Unique characteristic code
     """
     characteristic = session.get(Characteristic, characteristic_code)
     if not characteristic:
@@ -77,10 +79,10 @@ def get_characteristic(characteristic_code: str, session: Session = Depends(get_
 @router.put("/{characteristic_code}", response_model=Characteristic)
 def update_characteristic(characteristic_code: str, characteristic_update: CharacteristicUpdate, session: Session = Depends(get_db_session)) -> Characteristic:
     """
-    Actualizar una característica existente.
-    
-    - **characteristic_code**: Código único de la característica a actualizar
-    - Solo se actualizan los campos proporcionados
+    Update an existing characteristic.
+
+    - **characteristic_code**: Unique characteristic code to update
+    - Only provided fields are updated
     """
     characteristic = session.get(Characteristic, characteristic_code)
     if not characteristic:
@@ -89,8 +91,8 @@ def update_characteristic(characteristic_code: str, characteristic_update: Chara
     update_data = characteristic_update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(characteristic, key, value)
-    
-    # Actualizar timestamp
+
+    # Update timestamp
     characteristic.updated_at = datetime.utcnow()
 
     session.add(characteristic)
@@ -103,30 +105,30 @@ def update_characteristic(characteristic_code: str, characteristic_update: Chara
 @router.delete("/{characteristic_code}", response_model=Characteristic, status_code=200)
 def delete_characteristic(characteristic_code: str, session: Session = Depends(get_db_session)) -> Characteristic:
     """
-    Eliminar una característica (borrado lógico).
-    
-    Realiza un borrado lógico estableciendo is_active=False en lugar de eliminar el registro.
-    
-    - **characteristic_code**: Código único de la característica a eliminar
+    Delete a characteristic (logical delete).
+
+    Performs a logical delete by setting is_active=False instead of deleting the record.
+
+    - **characteristic_code**: Unique characteristic code to delete
     """
     characteristic = session.get(Characteristic, characteristic_code)
     if not characteristic:
         raise HTTPException(status_code=404, detail="Characteristic not found")
-    
-    # Verificar si ya está inactiva
+
+    # Check if already inactive
     if not characteristic.is_active:
         raise HTTPException(
             status_code=400,
             detail=f"Characteristic with code '{characteristic_code}' is already inactive"
         )
 
-    # Borrado lógico: actualizar is_active a False
+    # Logical delete: update is_active to False
     characteristic.is_active = False
     characteristic.updated_at = datetime.utcnow()
-    
+
     session.add(characteristic)
     session.commit()
     session.refresh(characteristic)
-    logger.info(f"Characteristic deactivated (logical delete): {characteristic_code}")
+    logger.info(
+        f"Characteristic deactivated (logical delete): {characteristic_code}")
     return characteristic
-

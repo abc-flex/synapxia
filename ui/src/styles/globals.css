@@ -20,6 +20,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -30,6 +31,7 @@
     transform: translateY(-20px);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -41,6 +43,7 @@
     transform: translateX(100%);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
@@ -51,6 +54,7 @@
   from {
     opacity: 1;
   }
+
   to {
     opacity: 0;
   }
@@ -117,15 +121,15 @@
     display: none;
   }
 
-  .menu-item-container[open] > summary {
+  .menu-item-container[open]>summary {
     @apply menu-item-active;
   }
 
-  .menu-item-container[open] > summary .menu-item-icon-inactive {
+  .menu-item-container[open]>summary .menu-item-icon-inactive {
     @apply menu-item-icon-active;
   }
 
-  .menu-item-container[open] > summary .menu-item-arrow {
+  .menu-item-container[open]>summary .menu-item-arrow {
     @apply rotate-180 stroke-indigo-600 dark:stroke-indigo-400;
   }
 
@@ -300,4 +304,178 @@
 
 .avatar:hover .avatar-tooltip {
   opacity: 1;
+}
+
+/* ===============================
+   DATATABLE STYLES
+================================ */
+
+/* Dense table (default) */
+.datatable-dense th,
+.datatable-dense td {
+  padding: 0.25rem 0.5rem !important;
+  /* py-1 px-2 */
+  font-size: 0.75rem;
+  /* text-xs */
+  line-height: 1.25rem;
+}
+
+/* Optional compact variant */
+.datatable-compact th,
+.datatable-compact td {
+  padding: 0.375rem 0.75rem !important;
+  /* py-1.5 px-3 */
+  font-size: 0.8125rem;
+  /* text-sm */
+}
+
+/* Header style */
+.datatable-dense thead th {
+  border-bottom: 2px solid #000;
+  font-weight: 600;
+  color: #1f2937;
+  /* gray-800 */
+}
+
+/* Body rows */
+.datatable-dense tbody tr {
+  border-bottom: 1px solid #e5e7eb;
+  /* gray-200 */
+}
+
+/* Actions column tighter */
+.datatable-dense td:last-child {
+  white-space: nowrap;
+}
+
+/* ===============================
+   DATATABLE ACTIONS ALIGNMENT
+================================ */
+
+.datatable-dense td.actions-cell {
+  vertical-align: middle;
+  padding: 0.125rem 0.25rem !important;
+}
+
+/* Contenedor de acciones */
+.datatable-dense .actions-wrapper {
+  display: inline-flex;
+  align-items: center;
+  /* 🔑 ESTO corrige el problema */
+  justify-content: flex-end;
+  gap: 0.25rem;
+}
+
+/* Botones */
+.datatable-dense .actions-wrapper .action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.125rem 0.25rem;
+  line-height: 1rem;
+}
+
+/* Separador */
+.datatable-dense .actions-wrapper .dot {
+  font-size: 0.75rem;
+  line-height: 1;
+  opacity: 0.5;
+}
+
+
+/* ===============================
+   DATATABLE DARK MODE
+================================ */
+
+.dark .datatable-dense {
+  background-color: #0f172a;
+  /* slate-900 */
+  color: #e5e7eb;
+  /* gray-200 */
+}
+
+.dark .datatable-dense {
+  background-color: #0f172a;
+  /* slate-900 */
+  color: #e5e7eb;
+  /* gray-200 */
+}
+
+.dark .datatable-dense thead {
+  background-color: #334155;
+  /* slate-700 */
+}
+
+.dark .datatable-dense thead th {
+  padding: 0.5rem 0.75rem;
+  /* un poco más que body */
+  font-size: 0.75rem;
+  /* text-xs */
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+
+  color: #93c5fd;
+  /* blue-300 / slate-blue look */
+
+  border-bottom: 1px solid #475569;
+  /* slate-600 */
+}
+
+.dark .datatable-dense tbody tr {
+  border-bottom: 1px solid #1e293b;
+  /* slate-800 */
+}
+
+/* Striped rows */
+.dark .datatable-dense tbody tr:nth-child(even) {
+  background-color: #020617;
+  /* slate-950 */
+}
+
+/* Hover */
+.dark .datatable-dense tbody tr:hover {
+  background-color: #1e293b;
+  /* slate-800 */
+}
+
+.dark .datatable-dense .actions-wrapper a.action-btn {
+  color: #cbd5f5;
+  /* indigo-200 */
+}
+
+.dark .datatable-dense .actions-wrapper a.action-btn:hover {
+  background-color: #1e293b;
+  /* slate-800 */
+  color: #e0e7ff;
+  /* indigo-100 */
+}
+
+.dark .datatable-dense .actions-wrapper .dot {
+  color: #64748b;
+  /* slate-500 */
+}
+
+.dark .datatable-dense input,
+.dark .datatable-dense select {
+  background-color: #020617;
+  /* slate-950 */
+  border-color: #334155;
+  /* slate-700 */
+  color: #e5e7eb;
+}
+
+.dark .datatable-dense input::placeholder {
+  color: #94a3b8;
+  /* slate-400 */
+}
+
+.dark .datatable-dense .pagination button {
+  background-color: transparent;
+  border-color: #334155;
+  color: #e5e7eb;
+}
+
+.dark .datatable-dense .pagination button:hover {
+  background-color: #1e293b;
 }

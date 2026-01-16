@@ -1,6 +1,6 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import Breadcrumb from "../../components//core/Breadcrumb.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
 import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
 import modules from "../../data/modules.json";
@@ -70,6 +70,7 @@ const fieldKeys = moduleFields.map((f) => f.key);
       modalId="module-create-modal"
       entityName="Module"
       fields={moduleFields}
+      showTrigger={false}
     />
     <CrudModal
       mode="edit"
@@ -110,8 +111,8 @@ const fieldKeys = moduleFields.map((f) => f.key);
           <DataTable
             columns={columns}
             data={data}
-            tableItem="module"
             tableId="modules"
+            i18Item="module"
           />
         </div>
       </div>

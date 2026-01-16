@@ -16,23 +16,23 @@ router = APIRouter(prefix="/api/privileges", tags=["privileges"])
 @router.post("/", response_model=Privilege, status_code=201)
 def create_privilege(privilege: PrivilegeCreate, session: Session = Depends(get_db_session)) -> Privilege:
     """
-    Crear un nuevo privilegio.
-    
-    - **role**: Código del rol (requerido)
-    - **module**: Código del módulo (requerido)
-    - **option**: Código de la opción (requerido)
-    - **can_edit**: Indica si puede editar (default: True)
-    - **is_active**: Estado activo/inactivo (default: True)
+    Create a new privilege.
+
+    - **role**: Role code (required)
+    - **module**: Module code (required)
+    - **option**: Option code (required)
+    - **can_edit**: Indicates if can edit (default: True)
+    - **is_active**: Active/inactive status (default: True)
     """
-    # Validar que el rol exista
+    # Validate that the role exists
     role = session.get(Role, privilege.role)
     if not role:
         raise HTTPException(
             status_code=400,
             detail=f"Role with code '{privilege.role}' does not exist"
         )
-    
-    # Validar que la opción exista
+
+    # Validate that the option exists
     option = session.exec(
         select(Option).where(
             Option.module == privilege.module,
@@ -44,8 +44,8 @@ def create_privilege(privilege: PrivilegeCreate, session: Session = Depends(get_
             status_code=400,
             detail=f"Option with module '{privilege.module}' and code '{privilege.option}' does not exist"
         )
-    
-    # Validar que el privilegio no exista ya
+
+    # Validate that the privilege does not already exist
     existing_privilege = session.exec(
         select(Privilege).where(
             Privilege.role == privilege.role,
@@ -58,17 +58,19 @@ def create_privilege(privilege: PrivilegeCreate, session: Session = Depends(get_
             status_code=409,
             detail=f"Privilege with role '{privilege.role}', module '{privilege.module}' and option '{privilege.option}' already exists"
         )
-    
+
     try:
         db_privilege = Privilege.model_validate(privilege)
         session.add(db_privilege)
         session.commit()
         session.refresh(db_privilege)
-        logger.info(f"Privilege created: {privilege.role}/{privilege.module}/{privilege.option}")
+        logger.info(
+            f"Privilege created: {privilege.role}/{privilege.module}/{privilege.option}")
         return db_privilege
     except IntegrityError as e:
         session.rollback()
-        logger.error(f"Integrity error creating privilege {privilege.role}/{privilege.module}/{privilege.option}: {e}")
+        logger.error(
+            f"Integrity error creating privilege {privilege.role}/{privilege.module}/{privilege.option}: {e}")
         raise HTTPException(
             status_code=409,
             detail=f"Privilege with role '{privilege.role}', module '{privilege.module}' and option '{privilege.option}' already exists"
@@ -78,23 +80,24 @@ def create_privilege(privilege: PrivilegeCreate, session: Session = Depends(get_
 @router.get("/", response_model=List[Privilege])
 def list_privileges(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[Privilege]:
     """
-    Listar todos los privilegios con paginación.
-    
-    - **skip**: Número de registros a saltar (default: 0)
-    - **limit**: Número máximo de registros a retornar (default: 100)
+    List all privileges with pagination.
+
+    - **skip**: Number of records to skip (default: 0)
+    - **limit**: Maximum number of records to return (default: 100)
     """
-    privileges = session.exec(select(Privilege).offset(skip).limit(limit).order_by(Privilege.role, Privilege.module, Privilege.option)).all()
+    privileges = session.exec(select(Privilege).offset(skip).limit(
+        limit).order_by(Privilege.role, Privilege.module, Privilege.option)).all()
     return privileges
 
 
 @router.get("/{role_code}/{module_code}/{option_code}", response_model=Privilege)
 def get_privilege(role_code: str, module_code: str, option_code: str, session: Session = Depends(get_db_session)) -> Privilege:
     """
-    Obtener un privilegio por su rol, módulo y opción.
-    
-    - **role_code**: Código del rol
-    - **module_code**: Código del módulo
-    - **option_code**: Código de la opción
+    Get a privilege by its role, module and option.
+
+    - **role_code**: Role code
+    - **module_code**: Module code
+    - **option_code**: Option code
     """
     privilege = session.exec(
         select(Privilege).where(
@@ -113,12 +116,12 @@ def update_privilege(
     role_code: str, module_code: str, option_code: str, privilege_update: PrivilegeUpdate, session: Session = Depends(get_db_session)
 ) -> Privilege:
     """
-    Actualizar un privilegio existente.
-    
-    - **role_code**: Código del rol
-    - **module_code**: Código del módulo
-    - **option_code**: Código de la opción
-    - Solo se actualizan los campos proporcionados
+    Update an existing privilege.
+
+    - **role_code**: Role code
+    - **module_code**: Module code
+    - **option_code**: Option code
+    - Only provided fields are updated
     """
     privilege = session.exec(
         select(Privilege).where(
@@ -133,8 +136,8 @@ def update_privilege(
     update_data = privilege_update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(privilege, key, value)
-    
-    # Actualizar timestamp
+
+    # Update timestamp
     privilege.updated_at = datetime.utcnow()
 
     session.add(privilege)
@@ -147,13 +150,13 @@ def update_privilege(
 @router.delete("/{role_code}/{module_code}/{option_code}", response_model=Privilege, status_code=200)
 def delete_privilege(role_code: str, module_code: str, option_code: str, session: Session = Depends(get_db_session)) -> Privilege:
     """
-    Eliminar un privilegio (borrado lógico).
-    
-    Realiza un borrado lógico estableciendo is_active=False en lugar de eliminar el registro.
-    
-    - **role_code**: Código del rol
-    - **module_code**: Código del módulo
-    - **option_code**: Código de la opción
+    Delete a privilege (logical delete).
+
+    Performs a logical delete by setting is_active=False instead of deleting the record.
+
+    - **role_code**: Role code
+    - **module_code**: Module code
+    - **option_code**: Option code
     """
     privilege = session.exec(
         select(Privilege).where(
@@ -164,21 +167,21 @@ def delete_privilege(role_code: str, module_code: str, option_code: str, session
     ).first()
     if not privilege:
         raise HTTPException(status_code=404, detail="Privilege not found")
-    
-    # Verificar si ya está inactivo
+
+    # Check if already inactive
     if not privilege.is_active:
         raise HTTPException(
             status_code=400,
             detail=f"Privilege with role '{role_code}', module '{module_code}' and option '{option_code}' is already inactive"
         )
 
-    # Borrado lógico: actualizar is_active a False
+    # Logical delete: update is_active to False
     privilege.is_active = False
     privilege.updated_at = datetime.utcnow()
-    
+
     session.add(privilege)
     session.commit()
     session.refresh(privilege)
-    logger.info(f"Privilege deactivated (logical delete): {role_code}/{module_code}/{option_code}")
+    logger.info(
+        f"Privilege deactivated (logical delete): {role_code}/{module_code}/{option_code}")
     return privilege
-

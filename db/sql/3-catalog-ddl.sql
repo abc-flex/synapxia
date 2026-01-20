@@ -14,8 +14,8 @@ CREATE TABLE categories (
     CONSTRAINT pk_categories PRIMARY KEY (code)
 );
 
--- Table characteristics
-CREATE TABLE characteristics (
+-- Table features
+CREATE TABLE features (
     code        VARCHAR(50)  NOT NULL,
     name        VARCHAR(100) NOT NULL,
     description VARCHAR(500),
@@ -23,7 +23,7 @@ CREATE TABLE characteristics (
     is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ,
-    CONSTRAINT pk_characteristics PRIMARY KEY (code)
+    CONSTRAINT pk_features PRIMARY KEY (code)
 );
 
 -- Table assets
@@ -49,13 +49,13 @@ CREATE TABLE assets (
 -- Table characterizations
 CREATE TABLE characterizations (
     asset           BIGINT   NOT NULL,
-    characteristic  VARCHAR(50)   NOT NULL,
+    feature        VARCHAR(50)   NOT NULL,
     value           VARCHAR(500)  NOT NULL,
     detail          TEXT,
     is_active       BOOLEAN       NOT NULL DEFAULT TRUE,
     created_at      TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMPTZ,
-    CONSTRAINT pk_characterizations PRIMARY KEY (asset, characteristic)
+    CONSTRAINT pk_characterizations PRIMARY KEY (asset, feature)
 );
 
 -- Table favorites
@@ -131,11 +131,11 @@ ALTER TABLE characterizations
     FOREIGN KEY (asset)
     REFERENCES assets (id);
 
--- characterizations.characteristic → characteristics.code
+-- characterizations.feature → features.code
 ALTER TABLE characterizations
     ADD CONSTRAINT fk_charzs_chars
-    FOREIGN KEY (characteristic)
-    REFERENCES characteristics (code);
+    FOREIGN KEY (feature)
+    REFERENCES features (code);
 
 -- favorites.user_id → users.id
 ALTER TABLE favorites
@@ -183,18 +183,17 @@ ALTER TABLE asset_relations
 -- ***** Table lists/list_items *****
 -- **********************************
 
--- ===== List: Characteristic Type =====
+-- ===== List: Feature Type =====
 INSERT INTO lists (code, name, description, type, module, is_active) VALUES (
-    'CHARS_TYPE', 'List of characteristic types for system configuration',
-    'List that classifies the types of characteristics (e.g., General, Technical, Commercial, Usability, Documentation and Platform) available in SynapxIA.',
+    'FEAT_TYPE', 'List of feature types for system configuration',
+    'List that classifies the types of features (e.g., General, Technical, Commercial, Usability, Documentation and Platform) available in SynapxIA.',
     'LIST_OF_VALUES', 'CATALOG', TRUE);
 INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
-    ('CHARS_TYPE', 'GENERAL', 'General', 10, TRUE),
-    ('CHARS_TYPE', 'TECHNICAL', 'Technical', 20, TRUE),
-    ('CHARS_TYPE', 'COMMERCIAL', 'Commercial', 30, TRUE),
-    ('CHARS_TYPE', 'USABILITY', 'Usability', 40, TRUE),
-    ('CHARS_TYPE', 'DOCUMENTATION', 'Documentation', 50, TRUE),
-    ('CHARS_TYPE', 'PLATFORM', 'Platform', 60, TRUE);
+    ('FEAT_TYPE', 'GENERAL', 'General', 10, TRUE),
+    ('FEAT_TYPE', 'TECHNICAL', 'Technical', 20, TRUE),
+    ('FEAT_TYPE', 'COMMERCIAL', 'Commercial', 30, TRUE),
+    ('FEAT_TYPE', 'USABILITY', 'Usability', 40, TRUE),
+    ('FEAT_TYPE', 'DOCUMENTATION', 'Documentation', 50, TRUE);
 
 -- ===== List: Visibility Level =====
 INSERT INTO lists (code, name, description, type, module, is_active) VALUES (

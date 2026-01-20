@@ -170,11 +170,11 @@ INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
     ('GENAI_DEV_ADOPTION', 'MODERATE',  'Agent mode for basic generation, refactoring and bug fixing', 30, TRUE),
     ('GENAI_DEV_ADOPTION', 'HIGH',      'Custom agents and MCP for advanced generation and interaction with Azure DevOps', 40, TRUE),
     ('GENAI_DEV_ADOPTION', 'VERY_HIGH', 'Agents, multi-agents and advanced MCP for more autonomous development', 50, TRUE);
---    ('GENAI_DEV_ADOPTION', 'NO_USAGE',  'Github Copilot, Cursor, Windsurf or Antigravity not configured', 10, TRUE), RED
---    ('GENAI_DEV_ADOPTION', 'LOW',       'Chat in query mode for small scripts and code suggestions', 20, TRUE), ORANGE
---    ('GENAI_DEV_ADOPTION', 'MODERATE',  'Agent mode for basic generation, refactoring and bug fixing', 30, TRUE), YELLOW
---    ('GENAI_DEV_ADOPTION', 'HIGH',      'Custom agents and MCP for advanced generation and interaction with Azure DevOps', 40, TRUE), GREEN
---    ('GENAI_DEV_ADOPTION', 'VERY_HIGH', 'Agents, multi-agents and advanced MCP for autonomous development', 50, TRUE); BLUE
+--    ('GENAI_DEV_ADOPTION', 'NO_USAGE',  'No configurado Github Copilot, Cursor, Windsurf o Antigravity', 10, TRUE), RED
+--    ('GENAI_DEV_ADOPTION', 'LOW',       'Chat en modo consulta para pequeños scripts y sugerencias de código', 20, TRUE), ORANGE
+--    ('GENAI_DEV_ADOPTION', 'MODERATE',  'Modo agente para generación básica, refactorización y corrección de problemas', 30, TRUE), YELLOW
+--    ('GENAI_DEV_ADOPTION', 'HIGH',      'Agentes customizados y MCP para generación avanzada e interacción con Azure DevOps', 40, TRUE), GREEN
+--    ('GENAI_DEV_ADOPTION', 'VERY_HIGH', 'Agentes, multi-agentes y MCP avanzado para desarrollo con autonomía', 50, TRUE); BLUE
 
 -- ===== List: GenAI Adoption for QA =====
 INSERT INTO lists (code, name, description, type, module, is_active) VALUES (
@@ -187,8 +187,8 @@ INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
     ('GENAI_QA_ADOPTION', 'MODERATE',  'Agent mode for basic generation, refactoring and bug fixing', 30, TRUE),
     ('GENAI_QA_ADOPTION', 'HIGH',      'Custom agents and MCP for advanced generation and interaction with Azure DevOps', 40, TRUE),
     ('GENAI_QA_ADOPTION', 'VERY_HIGH', 'Agents, multi-agents and advanced MCP for more autonomous development', 50, TRUE);
---    ('GENAI_QA_ADOPTION', 'NO_USAGE',  'No AI tools configured for testing', 10, TRUE),
---    ('GENAI_QA_ADOPTION', 'LOW',       'Chat in query mode for small scripts and test suggestions', 20, TRUE),
---    ('GENAI_QA_ADOPTION', 'MODERATE',  'Agent mode for basic test generation and issue review', 30, TRUE),
---    ('GENAI_QA_ADOPTION', 'HIGH',      'Custom agents and MCP for testing and interaction with Azure DevOps', 40, TRUE),
---    ('GENAI_QA_ADOPTION', 'VERY_HIGH', 'Agents, multi-agents and advanced MCP for autonomous testing', 50, TRUE);
+--    ('GENAI_QA_ADOPTION', 'NO_USAGE',  'No hay herramientas con IA configuradas para la realización de pruebas', 10, TRUE),
+--    ('GENAI_QA_ADOPTION', 'LOW',       'Chat en modo consulta para pequeños scripts y sugerencias de pruebas', 20, TRUE),
+--    ('GENAI_QA_ADOPTION', 'MODERATE',  'Modo agente para generación básica de pruebas y revisión de problemas', 30, TRUE),
+--    ('GENAI_QA_ADOPTION', 'HIGH',      'Agentes customizados y MCP para realizar pruebas e interactuar con Azure DevOps', 40, TRUE),
+--    ('GENAI_QA_ADOPTION', 'VERY_HIGH', 'Agentes, multi-agentes y MCP avanzado para pruebas autónomas', 50, TRUE);

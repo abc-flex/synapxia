@@ -5,7 +5,7 @@
 DROP TABLE IF EXISTS asset_relations;
 DROP TABLE IF EXISTS favorites;
 DROP TABLE IF EXISTS characterizations;
-DROP TABLE IF EXISTS characteristics;
+DROP TABLE IF EXISTS features;
 DROP TABLE IF EXISTS actions;
 DROP TABLE IF EXISTS assets;
 DROP TABLE IF EXISTS categories;
@@ -30,5 +30,5 @@ DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS roles;
 DROP TABLE IF EXISTS list_items;
 DROP TABLE IF EXISTS lists;
-DROP TABLE IF EXISTS units;
+DROP TABLE IF EXISTS business_units;
 DROP TABLE IF EXISTS modules;

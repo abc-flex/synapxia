@@ -3,9 +3,24 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumb from "../../components/core/Breadcrumb.astro";
 import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
-import lists from "../../data/lists.json";
+import Toast from "../../components/Toast.astro";
+import { getAllLists } from "../../lib/lists";
 import modules from "../../data/modules.json";
 import options from "../../data/options.json";
+
+// Fetch lists from API
+let lists: any[] = [];
+let errorMessage: string | null = null;
+
+try {
+  const apiLists = await getAllLists();
+  lists = apiLists;
+} catch (error) {
+  console.error('Failed to fetch lists:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch lists from API';
+  // Fallback to empty array to still render the page
+  lists = [];
+}
 
 const title = "SynapxIA";
 const primaryNav = modules.map((module) => ({
@@ -54,6 +69,8 @@ const fieldKeys = tableFields.map((f) => f.key);
 ---
 
 <BaseLayout title={title} navModules={primaryNav} navOptions={itemsNav}>
+  {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
+  
   <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
     <Breadcrumb
       moduleName="Administration"

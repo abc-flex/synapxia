@@ -9,7 +9,7 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_SCHEMA}
     ports:
-      - "5432:5432"
+      - 5432:5432
     networks:
       - synapxia-network
     healthcheck:
@@ -22,7 +22,7 @@ services:
     container_name: synapxia-pgadmin
     image: dpage/pgadmin4:9.11
     ports:
-      - "8080:80"
+      - 8080:80
     environment:
       - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
       - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
@@ -77,10 +77,6 @@ services:
       - /app/node_modules
     working_dir: /app
     entrypoint: bun run dev
-    environment:
-      - NODE_ENV=development
-      - API_PATH=http://synapxia-api:8000
-      - PUBLIC_API_PATH=http://localhost:8000
 
 networks:
   synapxia-network:

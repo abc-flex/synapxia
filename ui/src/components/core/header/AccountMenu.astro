@@ -14,7 +14,6 @@ interface Props {
   name?: string;
   email?: string;
   avatarUrl?: string;
-  initials?: string;
   menuItems?: MenuItem[];
   signOutLabel?: string;
 }
@@ -23,7 +22,6 @@ const {
   name = "Musharof Chowdhury",
   email = "randomuser@pimjo.com",
   avatarUrl,
-  initials = "MC",
   menuItems = [
     { label: "account_menu.edit_profile" },
     { label: "account_menu.account_settings" },
@@ -31,12 +29,23 @@ const {
   ],
   signOutLabel = "account_menu.sign_out",
 } = Astro.props as Props;
+
+// Generate initials from name
+const initials = name
+  .split(" ")
+  .map(word => word.charAt(0).toUpperCase())
+  .join("")
+  .slice(0, 2); // Limit to 2 characters
 ---
 
 <details class="account-menu relative" aria-label="Account menu">
   <summary class="account-trigger group" role="button">
-    <span class="mr-3 h-11 w-11 overflow-hidden rounded-full bg-indigo-100 text-indigo-700 font-semibold flex items-center justify-center">
-      {avatarUrl ? <img src={avatarUrl} alt={name} class="h-full w-full object-cover" /> : initials}
+    <span class="mr-3 h-11 w-11 shrink-0 aspect-square overflow-hidden rounded-full bg-indigo-100 text-indigo-700 font-semibold flex items-center justify-center text-sm">
+      {avatarUrl ? (
+        <img src={avatarUrl} alt={name} class="h-full w-full object-cover rounded-full" />
+      ) : (
+        <span>{initials}</span>
+      )}
     </span>
     <span class="mr-1 block text-sm font-medium text-gray-700 dark:text-gray-400">{name.split(" ")[0]}</span>
     <img src="/src/images/icons/chevron-down.svg" alt="" class="h-5 w-5 text-gray-500 dark:text-gray-400 transition duration-200 group-open:rotate-180" />

@@ -4,9 +4,9 @@ import Breadcrumb from "../../components/core/Breadcrumb.astro";
 import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
-import { getAllLists } from "../../lib/lists";
 import modules from "../../data/modules.json";
 import options from "../../data/options.json";
+import { getAllLists } from "@/lib/lists";
 
 // Fetch lists from API
 let lists: any[] = [];

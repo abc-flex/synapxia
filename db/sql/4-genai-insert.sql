@@ -131,3 +131,33 @@ La implementación de los métodos de acceso a datos se realiza con SQLAlchemy c
 ## Frontend
 El frontend usa Python con la versión 2.3.3 del framework Flask y necesita de la generación de varios tipos de componentes en los que puedes tomar las decisiones que consideres prudentes y genera los archivos y componentes necesarios.
 $$);
+
+-- **********************************
+-- ****** Table asset_relations *****
+-- **********************************
+
+INSERT INTO asset_relations (source, target, type) VALUES
+    (1, 2, 'DEPENDS_ON'),
+    (2, 1, 'USED_BY');
+
+-- **********************************
+-- ******* Table actions ************
+-- **********************************
+
+INSERT INTO actions (id, asset, user_id, kind, type, content, parent) VALUES
+    (1, 1, 0, 'CONTRIBUTION', '3-PUBLICATION', NULL, NULL),
+    (2, 1, 0, 'CONTRIBUTION', '6-USAGE', NULL, NULL),
+    (3, 1, 0, 'CONTRIBUTION', '6-QUESTION', 'Is it possible to create the prompt and agent for a Django framework?', NULL),
+    (4, 1, 0, 'CONTRIBUTION', '6-ANSWER', 'Coming soon.', 3),
+    (5, 1, 0, 'CONTRIBUTION', '6-VOTE', 'POSITIVE', NULL),
+    (6, 1, 0, 'CONTRIBUTION', '6-COMMENT', 'This prompt and its related agent are great.', NULL),
+    (7, 2, 0, 'CONTRIBUTION', '3-PUBLICATION', NULL, NULL),
+    (8, 2, 0, 'CONTRIBUTION', '6-USAGE', NULL, NULL);
+
+-- **********************************
+-- ********* Table favorites ********
+-- **********************************
+
+INSERT INTO favorites (user_id, asset) VALUES
+    (0, 1),
+    (0, 2);

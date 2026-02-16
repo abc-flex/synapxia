@@ -3,115 +3,115 @@
 -- **********************************
 
 -- ===== Module: ADMIN =====
-INSERT INTO options (module, code, name, description, sort_order, type) VALUES
-    ('ADMIN','UNITS','Units',
-     'Configuration area to define and maintain the types of organizational units (e.g., Department, Business Unit, Chapter).',
-     10,'FORM'),
+INSERT INTO options (module, code, name, description, sort_order, type, path) VALUES
+    ('ADMIN','BUSINESS_UNITS','Business Units',
+     'Configuration area to define and maintain the types of organizational business units (e.g., Department, Business Unit, Chapter).',
+     10,'FORM','/admin/business_units'),
     ('ADMIN','ROLES','Roles',
      'Define roles, responsibilities and access to modules and options.',
-     20,'FORM'),
+     20,'FORM','/admin/roles'),
     ('ADMIN','USERS','Users',
      'Register, update and deactivate users and associate them with roles.',
-     30,'FORM'),
+     30,'FORM','/admin/users'),
     ('ADMIN','LISTS','Lists',
      'Manage configurable lists and catalogs used throughout the platform.',
-     40,'FORM'),
+     40,'FORM','/admin/lists'),
     ('ADMIN','MODULES','Modules',
      'Register and control visibility and order of platform modules.',
-     50,'FORM'),
+     50,'FORM','/admin/modules'),
     ('ADMIN','OPTIONS','Options',
      'Configure options within each module and their visibility.',
-     60,'FORM');
+     60,'FORM','/admin/options');
 
 -- ===== Module: CATALOG =====
-INSERT INTO options (module, code, name, description, sort_order, type) VALUES
+INSERT INTO options (module, code, name, description, sort_order, type, path) VALUES
     ('CATALOG','CATEGORIES','Categories',
      'Define and maintain the taxonomy of digital asset categories.',
-     10,'FORM'),
+     10,'FORM','/catalog/categories'),
     ('CATALOG','CHARACTERISTICS','Characteristics',
      'Define metadata and attributes describing digital assets.',
-     20,'FORM'),
+     20,'FORM','/catalog/characteristics'),
     ('CATALOG','ASSETS','Assets',
      'Inventory of digital assets linked to owners, initiatives and processes.',
-     30,'FORM');
+     30,'FORM','/catalog/assets');
 
 -- ===== Module: COLLAB =====
-INSERT INTO options (module, code, name, description, sort_order, type) VALUES
+INSERT INTO options (module, code, name, description, sort_order, type, path) VALUES
     ('COLLAB','TEAMS','Teams',
      'Create and maintain cross-functional teams.',
-     10,'FORM'),
+     10,'FORM','/collab/teams'),
     ('COLLAB','PROJECTS','Projects',
      'Register and follow AI-related projects or workstreams.',
-     20,'FORM'),
+     20,'FORM','/collab/projects'),
     ('COLLAB','DIMENSIONS','Dimensions',
      'Define dimensions for segmentation and analysis.',
-     30,'FORM'),
+     30,'FORM','/collab/dimensions'),
     ('COLLAB','DASHBOARD','Dashboard',
      'Dashboard to monitor tasks and collaboration workload.',
-     40,'FORM');
+     40,'FORM','/collab/dashboard');
 
 -- ===== Module: GEN_AI =====
-INSERT INTO options (module, code, name, description, sort_order, type) VALUES
+INSERT INTO options (module, code, name, description, sort_order, type, path) VALUES
     ('GEN_AI','PROMPTS','Prompts',
      'Curated gallery of reusable GenAI prompts.',
-     10,'FORM'),
+     10,'FORM','/genai/prompts'),
     ('GEN_AI','MCPS','MCPs',
      'Repository of tools compatible with Model Context Protocol.',
-     20,'FORM'),
+     20,'FORM','/genai/mcps'),
     ('GEN_AI','RAG_APPS','RAG Apps',
      'Configure and monitor RAG use cases.',
-     30,'FORM'),
+     30,'FORM','/genai/rag_apps'),
     ('GEN_AI','MODELS','Models',
      'Catalog of AI and ML models used in the platform.',
-     40,'FORM'),
+     40,'FORM','/genai/models'),
     ('GEN_AI','ASSISTANTS','Assistants',
      'Define assistants scope, tone and tools.',
-     50,'FORM'),
+     50,'FORM','/genai/assistants'),
     ('GEN_AI','AGENTS','Agents',
      'Design and govern AI agents with higher autonomy.',
-     60,'FORM');
+     60,'FORM','/genai/agents');
 
 -- ===== Module: INITS =====
-INSERT INTO options (module, code, name, description, sort_order, type) VALUES
+INSERT INTO options (module, code, name, description, sort_order, type, path) VALUES
     ('INITS','PROPOSAL','Proposal',
      'Capture new GenAI initiative proposals.',
-     10,'FORM'),
+     10,'FORM','/inits/prompts'),
     ('INITS','EXPLORE','Explore',
      'Browse and analyze the initiative portfolio.',
-     20,'FORM'),
+     20,'FORM','/inits/explore'),
     ('INITS','PROMOTE','Promote',
      'Convert mature initiatives into reusable assets.',
-     30,'FORM');
+     30,'FORM','/inits/promote');
 
 -- ===== Module: INSIGHTS =====
-INSERT INTO options (module, code, name, description, sort_order, type) VALUES
+INSERT INTO options (module, code, name, description, sort_order, type, path) VALUES
     ('INSIGHTS','KPIS','KPIs',
      'Define and track performance indicators.',
-     10,'FORM'),
+     10,'FORM','/insights/kpis'),
     ('INSIGHTS','DASHBOARDS','Dashboards',
      'Dashboards for adoption and impact analysis.',
-     20,'FORM'),
+     20,'FORM','/insights/dashboards'),
     ('INSIGHTS','REPORTS','Reports',
      'Scheduled and on-demand GenAI reports.',
-     30,'FORM');
+     30,'FORM','/insights/reports');
 
 -- ===== Module: WORKFLOWS =====
-INSERT INTO options (module, code, name, description, sort_order, type) VALUES
+INSERT INTO options (module, code, name, description, sort_order, type, path) VALUES
     ('WORKFLOWS','VALUE_CHAIN','Value Chain',
      'Identify stages where AI can create impact.',
-     10,'FORM'),
+     10,'FORM','/workflows/value_chain'),
     ('WORKFLOWS','MAP','Process Map',
      'High-level process landscape representation.',
-     20,'FORM'),
+     20,'FORM','/workflows/process_map'),
     ('WORKFLOWS','MODELS','Process Models',
      'Document and relate detailed process models.',
-     30,'FORM'),
+     30,'FORM','/workflows/process_models'),
     ('WORKFLOWS','AI_FLOWS','AI Flows',
      'Design multi-step AI-enabled workflows.',
-     40,'FORM'),
+     40,'FORM','/workflows/ai_flows'),
     ('WORKFLOWS','N8N','n8n',
      'Document n8n-based integrations and automations.',
-     50,'FORM');
+     50,'FORM','/workflows/n8n');
 
 -- **********************************
 -- ********** Table: Roles **********

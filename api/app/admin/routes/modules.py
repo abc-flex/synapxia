@@ -21,6 +21,7 @@ def create_module(module: ModuleCreate, session: Session = Depends(get_db_sessio
     - **code**: Unique module code (required)
     - **name**: Module name (required)
     - **description**: Optional module description
+    - **icon**: Option icon (optional)
     - **sort_order**: Display order (default: 0)
     - **is_active**: Active/inactive status (default: True)
     """

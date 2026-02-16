@@ -72,6 +72,29 @@ def list_list_items(skip: int = 0, limit: int = 100, session: Session = Depends(
     items = session.exec(select(ListItem).offset(skip).limit(limit).order_by(ListItem.list, ListItem.sort_order, ListItem.value)).all()
     return items
 
+@router.get("/{list_code}", response_model=List[ListItem])
+def get_list_items_by_list(
+    list_code: str, 
+    session: Session = Depends(get_db_session)
+) -> List[ListItem]:
+    """
+    Obtener todos los elementos de una lista específica.
+    
+    - **list_code**: Código de la lista para filtrar
+    """
+    # Validar primero si la lista existe (opcional, pero recomendado por integridad)
+    list_exists = session.get(ListModel, list_code)
+    if not list_exists:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"List with code '{list_code}' does not exist"
+        )
+    items = session.exec(
+        select(ListItem)
+        .where(ListItem.list == list_code)
+        .order_by(ListItem.sort_order, ListItem.label)
+    ).all()
+    return items
 
 @router.get("/{list_code}/{value}", response_model=ListItem)
 def get_list_item(list_code: str, value: str, session: Session = Depends(get_db_session)) -> ListItem:

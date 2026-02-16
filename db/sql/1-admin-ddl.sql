@@ -171,35 +171,35 @@ ALTER TABLE privileges
 -- ********* Table: modules *********
 -- **********************************
 
-INSERT INTO modules (code, name, description, sort_order) VALUES
+INSERT INTO modules (code, name, description, sort_order, icon) VALUES
     ('ADMIN',
      'Administration',
      'Administration centralizes security, reference data and structural configuration of SynapxIA, ensuring consistent behavior across modules, user profiles and environments.',
-     10),
+     10,'wrench-screwdriver'),
     ('CATALOG',
      'Digital Assets',
      'Digital Assets manages the catalog, characterization and evolution of key digital assets, enabling reuse, governance and alignment with AI initiatives and business needs.',
-     20),
+     20,'server-stack'),
     ('COLLAB',
      'Collaboration',
      'Collaboration provides shared spaces, teams and structures so people can coordinate work, track progress and align around AI adoption initiatives across the organization.',
-     30),
+     30,'user-group'),
     ('GEN_AI',
      'Generative AI',
      'Generative AI groups the core GenAI capabilities of SynapxIA, including prompt galleries, MCP integrations, flows, models and agents to design and operate AI-powered solutions.',
-     40),
+     40,'sparkles'),
     ('INITS',
      'GenAI Initiatives',
      'AI Initiatives supports the full lifecycle of AI ideas and projects, from proposal and exploration to decision making, tracking and promotion into reusable assets.',
-     50),
+     50,'ellipsis-horizontal-circle'),
     ('INSIGHTS',
      'GenAI Insights',
      'GenAI Metrics consolidates KPIs, dashboards and reports that measure the adoption, usage and value of Generative AI across the organization and its processes.',
-     60),
+     60,'presentation-chart-bar'),
     ('WORKFLOWS',
      'Processes',
      'Processes maps the value chain and key process models of the organization, connecting them with AI initiatives, digital assets and GenAI metrics for continuous improvement.',
-     70);
+     70,'share');
 
 -- **********************************
 -- ***** Table lists/list_items *****

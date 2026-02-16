@@ -8,7 +8,7 @@ from .admin.routes import roles as roles_router
 from .admin.routes import modules as modules_router
 from .admin.routes import lists as lists_router
 from .admin.routes import list_items as list_items_router
-from .admin.routes import units as units_router
+from .admin.routes import business_units as business_units_router
 from .admin.routes import users as users_router
 from .admin.routes import options as options_router
 from .admin.routes import privileges as privileges_router
@@ -145,7 +145,7 @@ app.include_router(roles_router.router)
 app.include_router(modules_router.router)
 app.include_router(lists_router.router)
 app.include_router(list_items_router.router)
-app.include_router(units_router.router)
+app.include_router(business_units_router.router)
 app.include_router(users_router.router)
 app.include_router(options_router.router)
 app.include_router(privileges_router.router)

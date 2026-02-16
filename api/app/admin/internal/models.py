@@ -39,6 +39,8 @@ class ModuleBase(SQLModel):
     name: str = Field(max_length=100)
     description: Optional[str] = Field(default=None, max_length=255)
     sort_order: int = Field(default=0)
+    icon: Optional[str] = Field(
+        default=None, max_length=500, description="Module icon")
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
@@ -53,6 +55,8 @@ class ModuleCreate(SQLModel):
     name: str = Field(max_length=100, description="Module name")
     description: Optional[str] = Field(
         default=None, max_length=255, description="Module description")
+    icon: Optional[str] = Field(
+        default=None, max_length=500, description="Module icon")
     sort_order: Optional[int] = Field(default=0, description="Display order")
     is_active: Optional[bool] = Field(
         default=True, description="Indicates if the module is active")
@@ -63,6 +67,8 @@ class ModuleUpdate(SQLModel):
         default=None, max_length=100, description="Module name")
     description: Optional[str] = Field(
         default=None, max_length=255, description="Module description")
+    icon: Optional[str] = Field(
+        default=None, max_length=500, description="Module icon")
     sort_order: Optional[int] = Field(
         default=None, description="Display order")
     is_active: Optional[bool] = Field(
@@ -142,50 +148,50 @@ class ListItemUpdate(SQLModel):
     is_active: Optional[bool] = Field(
         default=None, description="Indicates if the item is active")
 
-# Units Models
+# BusinessUnits Models
 
 
-class UnitBase(SQLModel):
+class BusinessUnitBase(SQLModel):
     code: str = Field(max_length=50, primary_key=True)
     name: str = Field(max_length=100)
     description: Optional[str] = Field(default=None, max_length=500)
-    unit_type: Optional[str] = Field(
-        default=None, max_length=50, sa_column_kwargs={"name": "unit_type"})
-    parent_unit: Optional[str] = Field(
-        default=None, max_length=50, foreign_key="units.code", sa_column_kwargs={"name": "parent_unit"})
+    type: Optional[str] = Field(
+        default=None, max_length=50, sa_column_kwargs={"name": "type"})
+    parent: Optional[str] = Field(
+        default=None, max_length=50, foreign_key="units.code", sa_column_kwargs={"name": "parent"})
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
 
 
-class Unit(UnitBase, table=True):
-    __tablename__ = "units"
+class BusinessUnit(BusinessUnitBase, table=True):
+    __tablename__ = "business_units"
 
 
-class UnitCreate(SQLModel):
-    code: str = Field(max_length=50, description="Unique unit code")
-    name: str = Field(max_length=100, description="Unit name")
+class BusinessUnitCreate(SQLModel):
+    code: str = Field(max_length=50, description="Unique business_unit code")
+    name: str = Field(max_length=100, description="Business_Unit name")
     description: Optional[str] = Field(
-        default=None, max_length=500, description="Unit description")
-    unit_type: Optional[str] = Field(
-        default=None, max_length=50, description="Unit type")
-    parent_unit: Optional[str] = Field(
-        default=None, max_length=50, description="Parent unit code")
+        default=None, max_length=500, description="Business_Unit description")
+    type: Optional[str] = Field(
+        default=None, max_length=50, description="Business_Unit type")
+    parent: Optional[str] = Field(
+        default=None, max_length=50, description="Parent business_unit code")
     is_active: Optional[bool] = Field(
-        default=True, description="Indicates if the unit is active")
+        default=True, description="Indicates if the business_unit is active")
 
 
-class UnitUpdate(SQLModel):
+class BusinessUnitUpdate(SQLModel):
     name: Optional[str] = Field(
-        default=None, max_length=100, description="Unit name")
+        default=None, max_length=100, description="Business_Unit name")
     description: Optional[str] = Field(
-        default=None, max_length=500, description="Unit description")
-    unit_type: Optional[str] = Field(
-        default=None, max_length=50, description="Unit type")
-    parent_unit: Optional[str] = Field(
-        default=None, max_length=50, description="Parent unit code")
+        default=None, max_length=500, description="Business_Unit description")
+    type: Optional[str] = Field(
+        default=None, max_length=50, description="Business_Unit type")
+    parent: Optional[str] = Field(
+        default=None, max_length=50, description="Parent business_unit code")
     is_active: Optional[bool] = Field(
-        default=None, description="Indicates if the unit is active")
+        default=None, description="Indicates if the business_unit is active")
 
 # Users Models
 
@@ -197,7 +203,7 @@ class UserBase(SQLModel):
     first_name: str = Field(max_length=100)
     last_name: str = Field(max_length=100)
     menu_role: str = Field(max_length=50, foreign_key="roles.code")
-    unit: str = Field(max_length=50, foreign_key="units.code")
+    business_unit: str = Field(max_length=50, foreign_key="units.code")
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
@@ -216,7 +222,7 @@ class UserCreate(SQLModel):
     first_name: str = Field(max_length=100, description="First name")
     last_name: str = Field(max_length=100, description="Last name")
     menu_role: str = Field(max_length=50, description="Role code")
-    unit: str = Field(max_length=50, description="Unit code")
+    business_unit: str = Field(max_length=50, description="Business_Unit code")
     is_active: Optional[bool] = Field(
         default=True, description="Indicates if the user is active")
 
@@ -232,8 +238,8 @@ class UserUpdate(SQLModel):
         default=None, max_length=100, description="Last name")
     menu_role: Optional[str] = Field(
         default=None, max_length=50, description="Role code")
-    unit: Optional[str] = Field(
-        default=None, max_length=50, description="Unit code")
+    business_unit: Optional[str] = Field(
+        default=None, max_length=50, description="Business_Unit code")
     is_active: Optional[bool] = Field(
         default=None, description="Indicates if the user is active")
     last_login_at: Optional[datetime] = Field(

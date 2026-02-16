@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 from sqlalchemy.exc import IntegrityError
 
-from ..internal.models import User, UserCreate, UserUpdate, Role, Unit
+from ..internal.models import User, UserCreate, UserUpdate, Role, BusinessUnit
 from ..internal.dependencies import get_db_session
 
 logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ def create_user(user: UserCreate, session: Session = Depends(get_db_session)) ->
     - **first_name**: First name (required)
     - **last_name**: Last name (required)
     - **menu_role**: Role code (required)
-    - **unit**: Unit code (required)
+    - **business_unit**: Business unit code (required)
     - **is_active**: Active/inactive status (default: True)
     """
     # Validate that the username does not exist
@@ -53,12 +53,12 @@ def create_user(user: UserCreate, session: Session = Depends(get_db_session)) ->
             detail=f"Role with code '{user.menu_role}' does not exist"
         )
 
-    # Validate that the unit exists
-    unit = session.get(Unit, user.unit)
-    if not unit:
+    # Validate that the business_unit exists
+    business_unit = session.get(BusinessUnit, user.business_unit)
+    if not business_unit:
         raise HTTPException(
             status_code=400,
-            detail=f"Unit with code '{user.unit}' does not exist"
+            detail=f"Business unit with code '{user.business_unit}' does not exist"
         )
 
     try:
@@ -87,6 +87,30 @@ def list_users(skip: int = 0, limit: int = 100, session: Session = Depends(get_d
     """
     users = session.exec(select(User).offset(
         skip).limit(limit).order_by(User.username)).all()
+    return users
+
+@router.get("/{role_code}", response_model=List[User])
+def get_users_by_role(
+    role_code: str, 
+    session: Session = Depends(get_db_session)
+) -> List[User]:
+    """
+    Get all users from a specific role.
+    
+    - **role_code**: role code to filter users
+    """
+    # Validate if role exists (optional)
+    role_exists = session.get(Role, role_code)
+    if not role_exists:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"Role with code '{role_code}' does not exist"
+        )
+    users = session.exec(
+        select(User)
+        .where(User.menu_role == role_code)
+        .order_by(User.username)
+    ).all()
     return users
 
 
@@ -134,13 +158,13 @@ def update_user(user_id: int, user_update: UserUpdate, session: Session = Depend
                 detail=f"Role with code '{user_update.menu_role}' does not exist"
             )
 
-    # Validate that the unit exists if provided
-    if user_update.unit is not None:
-        unit = session.get(Unit, user_update.unit)
-        if not unit:
+    # Validate that the business_unit exists if provided
+    if user_update.business_unit is not None:
+        business_unit = session.get(BusinessUnit, user_update.business_unit)
+        if not business_unit:
             raise HTTPException(
                 status_code=400,
-                detail=f"Unit with code '{user_update.unit}' does not exist"
+                detail=f"Business unit with code '{user_update.business_unit}' does not exist"
             )
 
     update_data = user_update.model_dump(exclude_unset=True)

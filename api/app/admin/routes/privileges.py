@@ -111,6 +111,31 @@ def get_privilege(role_code: str, module_code: str, option_code: str, session: S
     return privilege
 
 
+@router.get("/{role_code}", response_model=List[Privilege])
+def get_privileges_by_role(
+    role_code: str, 
+    session: Session = Depends(get_db_session)
+) -> List[Privilege]:
+    """
+    Get all privileges for a specific role.
+    
+    - **role_code**: Role code to filter by
+    """
+    # Validar primero si la lista existe (opcional, pero recomendado por integridad)
+    role_exists = session.get(Role, role_code)
+    if not role_exists:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"Role with code '{role_code}' does not exist"
+        )
+    items = session.exec(
+        select(Privilege)
+        .where(Privilege.role == role_code)
+        .order_by(Privilege.module, Privilege.option)
+    ).all()
+    return items
+
+
 @router.put("/{role_code}/{module_code}/{option_code}", response_model=Privilege)
 def update_privilege(
     role_code: str, module_code: str, option_code: str, privilege_update: PrivilegeUpdate, session: Session = Depends(get_db_session)

@@ -1,7 +1,8 @@
 export function initAdvancedTable(
     tableId: string,
     data: Record<string, any>[],
-    columns: { key: string; label: string }[]
+    columns: { key: string; label: string }[],
+    columnFilter: string | null = null
 ) {
 
     let currentPage = 1;
@@ -54,6 +55,15 @@ export function initAdvancedTable(
                 option.textContent = String(value);
                 filterSelect.appendChild(option);
             });
+
+            // 🔹 Obtener valor inicial desde URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const filterParam = columnFilter
+                ? urlParams.get(columnFilter)
+                : null;
+            if (filterParam) {
+                filterSelect.value = filterParam;
+            }
         }
 
         filterSelect.addEventListener("change", () => {
@@ -182,66 +192,66 @@ export function initAdvancedTable(
     }
 
     function renderPagination() {
-    const allRows = Array.from(
-        table.querySelectorAll<HTMLTableRowElement>("tbody tr")
-    );
+        const allRows = Array.from(
+            table.querySelectorAll<HTMLTableRowElement>("tbody tr")
+        );
 
-    // 🔹 SOLO filas que pasan el filtro
-    const filteredRows = allRows.filter(
-        (row) => !row.classList.contains("hidden-by-filter")
-    );
+        // 🔹 SOLO filas que pasan el filtro
+        const filteredRows = allRows.filter(
+            (row) => !row.classList.contains("hidden-by-filter")
+        );
 
-    const total = filteredRows.length;
-    const totalPages = Math.ceil(total / perPage) || 1;
+        const total = filteredRows.length;
+        const totalPages = Math.ceil(total / perPage) || 1;
 
-    if (currentPage > totalPages) {
-        currentPage = totalPages;
-    }
+        if (currentPage > totalPages) {
+            currentPage = totalPages;
+        }
 
-    const start = (currentPage - 1) * perPage;
-    const end = start + perPage;
+        const start = (currentPage - 1) * perPage;
+        const end = start + perPage;
 
-    // 🔹 Primero ocultar TODAS
-    allRows.forEach((row) => {
-        row.classList.add("hidden");
-    });
-
-    // 🔹 Mostrar solo las filas visibles de esta página
-    filteredRows.slice(start, end).forEach((row) => {
-        row.classList.remove("hidden");
-    });
-
-    // 🔹 Info
-    const info = document.getElementById(`${tableId}-pagination-info`);
-    if (info) {
-        info.textContent =
-        total === 0
-            ? "No results"
-            : `Showing ${start + 1}–${Math.min(end, total)} of ${total}`;
-    }
-
-    // 🔹 Pages
-    const pages = document.getElementById(`${tableId}-pages`);
-    if (pages) {
-        pages.innerHTML = "";
-
-        for (let i = 1; i <= totalPages; i++) {
-        const btn = document.createElement("button");
-        btn.textContent = String(i);
-        btn.className =
-            "px-3 py-1 text-sm rounded " +
-            (i === currentPage
-            ? "bg-indigo-600 text-white"
-            : "border hover:bg-gray-100");
-
-        btn.addEventListener("click", () => {
-            currentPage = i;
-            renderPagination();
+        // 🔹 Primero ocultar TODAS
+        allRows.forEach((row) => {
+            row.classList.add("hidden");
         });
 
-        pages.appendChild(btn);
+        // 🔹 Mostrar solo las filas visibles de esta página
+        filteredRows.slice(start, end).forEach((row) => {
+            row.classList.remove("hidden");
+        });
+
+        // 🔹 Info
+        const info = document.getElementById(`${tableId}-pagination-info`);
+        if (info) {
+            info.textContent =
+                total === 0
+                    ? "No results"
+                    : `Showing ${start + 1}–${Math.min(end, total)} of ${total}`;
         }
-    }
+
+        // 🔹 Pages
+        const pages = document.getElementById(`${tableId}-pages`);
+        if (pages) {
+            pages.innerHTML = "";
+
+            for (let i = 1; i <= totalPages; i++) {
+                const btn = document.createElement("button");
+                btn.textContent = String(i);
+                btn.className =
+                    "px-3 py-1 text-sm rounded " +
+                    (i === currentPage
+                        ? "bg-indigo-600 text-white"
+                        : "border hover:bg-gray-100");
+
+                btn.addEventListener("click", () => {
+                    currentPage = i;
+                    renderPagination();
+                });
+
+                pages.appendChild(btn);
+            }
+        }
     }
 
     document
@@ -269,8 +279,9 @@ export function initAdvancedTable(
             renderPagination();
         });
     }
-    
-    renderPagination();
+
+    // 🔹 Aplicar filtros iniciales después de renderizar
+    applyFilters();
 
 }
 
@@ -332,3 +343,4 @@ function downloadFile(content: string, filename: string, type: string) {
 
     URL.revokeObjectURL(url);
 }
+

@@ -3,21 +3,26 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumb from "../../components/core/Breadcrumb.astro";
 import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
-import lists from "../../data/items_list.json";
-import modules from "../../data/modules.json";
-import options from "../../data/options.json";
+import Toast from "../../components/Toast.astro";
+import { getNavigationData } from "@/lib/navigation";
+import { getListItems } from "@/lib/list_items";
+
+// Fetch list_items from API
+let list_items: any[] = [];
+let errorMessage: string | null = null;
+
+try {
+  const apiLists = await getListItems();
+  list_items = apiLists;
+} catch (error) {
+  console.error('Failed to fetch list_items:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch list_items from API';
+  // Fallback to empty array to still render the page
+  list_items = [];
+}
 
 const title = "SynapxIA";
-const primaryNav = modules.map((module) => ({
-  code: module.code,
-  name: module.name,
-  icon: `${module.icon}`,
-}));
-const itemsNav = options.map((option) => ({
-  module: option.module,
-  name: option.name,
-  path: option.path,
-}));
+const { primaryNav, itemsNav } = getNavigationData();
 
 const columns = [
   { key: "sort_order", label: "#", visible: true },
@@ -25,7 +30,7 @@ const columns = [
   { key: "value", label: "Value", visible: true },
   { key: "label", label: "Label", visible: true },
 ];
-const data = lists.map((item) => ({
+const data = list_items.map((item) => ({
   id: item.value,
   list: item.list,
   value: item.value,
@@ -46,6 +51,8 @@ const fieldKeys = tableFields.map((f) => f.key);
 ---
 
 <BaseLayout title={title} navModules={primaryNav} navOptions={itemsNav}>
+  {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
+
   <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
     <Breadcrumb
       moduleName="Administration"
@@ -53,27 +60,27 @@ const fieldKeys = tableFields.map((f) => f.key);
       pageTitle="Items Lists"
       homeLink="/"
       moduleNameKey="modules.ADMIN"
-      pageNameKey="menu_options.items_list"
+      pageNameKey="menu_options.list_items"
     />
 
     <CrudModal
       mode="create"
-      modalId="itemlist-create-modal"
-      entityName="ItemList"
+      modalId="list_item-create-modal"
+      entityName="ListItem"
       fields={tableFields}
       showTrigger={false}
     />
     <CrudModal
       mode="edit"
-      modalId="itemlist-edit-modal"
-      entityName="ItemList"
+      modalId="list_item-edit-modal"
+      entityName="ListItem"
       fields={tableFields}
       showTrigger={false}
     />
     <CrudModal
       mode="delete"
-      modalId="itemlist-delete-modal"
-      entityName="ItemList"
+      modalId="list_item-delete-modal"
+      entityName="ListItem"
       fields={tableFields}
       showTrigger={false}
     />
@@ -92,24 +99,22 @@ const fieldKeys = tableFields.map((f) => f.key);
 
       initCrudPage({
         dataId: "itemslist-data",
-        editModalId: "itemlist-edit-modal",
-        deleteModalId: "itemlist-delete-modal",
+        editModalId: "list_item-edit-modal",
+        deleteModalId: "list_item-delete-modal",
       });
     </script>
 
-    <div class="space-y-5 sm:space-y-6 bg-white dark:bg-gray-900 rounded-lg shadow-sm p-6">
-      <div class="space-y-5 sm:space-y-6">
-        <div class="border-0 p-0">
-          <DataTable
-            columns={columns}
-            data={data}
-            tableId="items_list"
-            i18Item="itemlist"
-            columnFilter="list"
-            masterPage="/admin/lists"
-            mdItem="list"
-          />
-        </div>
+    <div class="space-y-5 sm:space-y-6">
+      <div class="border-0 p-0">
+        <DataTable
+          columns={columns}
+          data={data}
+          tableId="items_list"
+          i18Item="list_item"
+          columnFilter="list"
+          masterPage="/admin/lists"
+          mdItem="list"
+        />
       </div>
     </div>
   </div>

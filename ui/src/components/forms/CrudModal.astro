@@ -5,13 +5,16 @@ import { getLocale } from "@/utils/getLocale";
 const locale = getLocale(Astro);
 
 interface FieldOption {
-  label: string;
-  value: string;
+  label?: string;
+  value?: string;
+  code?: string;
+  name?: string;
 }
 
 interface Field {
   key: string;
   label: string;
+  name?: string;
   type?: "text" | "textarea" | "select" | "email" | "number" | "checkbox";
   required?: boolean;
   disabled?: boolean;
@@ -23,6 +26,7 @@ interface Props {
   modalId?: string;
   mode?: "create" | "edit" | "delete";
   entityName?: string;
+  entityI18key?: string;
   fields?: Field[];
   initialValues?: Record<string, any>;
   showTrigger?: boolean;
@@ -34,6 +38,7 @@ const {
   modalId = "crud-modal",
   mode = "create",
   entityName = "Item",
+  entityI18key = entityName.toLowerCase(),
   fields = [],
   initialValues = {},
   showTrigger = true,
@@ -46,15 +51,24 @@ const isEdit = mode === "edit";
 const isCreate = mode === "create";
 
 const title = isCreate
-  ? `${t(locale, "crud_modal.add")} ${entityName}`
+  ? t(locale, `${entityI18key}_modal.add_new`)
   : isEdit
-    ? `${t(locale, "crud_modal.edit")} ${entityName}`
-    : `${t(locale, "crud_modal.delete")} ${entityName}`;
+    ? t(locale, `${entityI18key}_modal.edit`)
+    : t(locale, `${entityI18key}_modal.delete`);
 const primaryAction =
   actionLabel ||
-  (isCreate ? t(locale, "crud_modal.save") : isEdit ? t(locale, "crud_modal.save_changes") : `${t(locale, "crud_modal.delete")} ${entityName}`);
+  (isCreate
+    ? t(locale, "crud_modal.save")
+    : isEdit
+      ? t(locale, "crud_modal.save_changes")
+      : t(locale, `${entityI18key}_modal.delete`));
 const triggerText =
-  triggerLabel || (isCreate ? `${t(locale, "crud_modal.add")} ${entityName}` : isEdit ? t(locale, "crud_modal.edit") : t(locale, "crud_modal.delete"));
+  triggerLabel ||
+  (isCreate
+    ? t(locale, `${entityI18key}_modal.add_new`)
+    : isEdit
+    ? t(locale, `${entityI18key}_modal.edit`)
+    : t(locale, `${entityI18key}_modal.delete`));
 ---
 
 {
@@ -98,13 +112,17 @@ const triggerText =
     <div class="space-y-4 px-5 py-4">
       {
         isDelete ? (
-          <p class="text-sm text-gray-700 dark:text-gray-300">
-            {t(locale, "crud_modal.delete_confirmation")} {entityName.toLowerCase()}?
-            {" "}{t(locale, "crud_modal.delete_warning")}
-          </p>
+          <div id="toast-danger"
+            class="flex w-full items-center rounded-lg bg-red-50 p-2 text-red-800 border border-red-200 dark:bg-gray-800 dark:text-red-400 dark:border-red-800"
+            role="alert"
+          >            
+            <p class="text-sm text-gray-700 dark:text-gray-300">
+              {t(locale, "crud_modal.delete_confirmation")} {entityName.toLowerCase()}?
+              <strong class="block">{"* "}{t(locale, "crud_modal.delete_warning")}</strong>
+            </p>
+          </div>
         ) : null
       }
-
       {
         fields.map((field) => {
           const value = initialValues?.[field.key];
@@ -118,6 +136,7 @@ const triggerText =
                   for={inputId}
                   class="text-sm font-medium text-gray-700 dark:text-gray-300"
                 >
+                  {field.required && <span class="text-red-500">*</span>}
                   {field.label}
                 </label>
                 <textarea
@@ -128,7 +147,9 @@ const triggerText =
                   disabled={disabled}
                   placeholder={field.placeholder}
                   class={`w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white/90 dark:placeholder:text-white/30 ${disabled ? "opacity-60" : ""}`}
-                >{value}</textarea>
+                >
+                  {value}
+                </textarea>
               </div>
             );
           }
@@ -140,7 +161,8 @@ const triggerText =
                   for={inputId}
                   class="text-sm font-medium text-gray-700 dark:text-gray-300"
                 >
-                  {field.label}
+                  {field.required && <span class="text-red-500">*</span>}
+                  {field.label || field.name}
                 </label>
                 <select
                   id={inputId}
@@ -149,10 +171,10 @@ const triggerText =
                   disabled={disabled}
                   class={`h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white/90 ${disabled ? "opacity-60" : ""}`}
                 >
-                  <option value="">Select {field.label.toLowerCase()}</option>
+                  <option value="">--- Select {field.label.toLowerCase() || field.name.toLowerCase()} ---</option>
                   {(field.options || []).map((opt) => (
-                    <option value={opt.value} selected={opt.value === value}>
-                      {opt.label}
+                    <option value={opt.value||opt.code} selected={opt.value === value || opt.code === value}>
+                      {opt.label || opt.name}
                     </option>
                   ))}
                 </select>
@@ -175,6 +197,7 @@ const triggerText =
                   for={inputId}
                   class="text-sm font-medium text-gray-700 dark:text-gray-300"
                 >
+                  {field.required && <span class="text-red-500">*</span>}
                   {field.label}
                 </label>
               </div>
@@ -188,6 +211,7 @@ const triggerText =
                 for={inputId}
                 class="text-sm font-medium text-gray-700 dark:text-gray-300"
               >
+                {field.required && <span class="text-red-500">*</span>}
                 {field.label}
               </label>
               <input
@@ -243,12 +267,8 @@ const triggerText =
 
     // ✅ DELEGACIÓN GLOBAL (CLAVE)
     document.addEventListener("click", (event) => {
-      const openBtn = event.target.closest(
-        `[data-modal-open="${modalId}"]`
-      );
-      const closeBtn = event.target.closest(
-        `[data-modal-close="${modalId}"]`
-      );
+      const openBtn = event.target.closest(`[data-modal-open="${modalId}"]`);
+      const closeBtn = event.target.closest(`[data-modal-close="${modalId}"]`);
 
       if (openBtn) {
         event.preventDefault();

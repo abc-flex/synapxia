@@ -43,9 +43,13 @@ const {
             type="button"
             class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-1 text-sm font-semibold text-white hover:bg-indigo-700"
             data-modal-open={`${i18Item}-create-modal`}
+            data-i18n-title={`${i18Item}_modal.one_title`}
+            title=""
           >
             <span class="text-lg">+</span>
-            {t(locale, `${i18Item}_modal.one_title`)}
+            <span data-i18n-title={`${i18Item}_modal.one_title`}>
+              {t(locale, `${i18Item}_modal.one_title`)}                    
+            </span>
           </button>
         )
       }
@@ -55,7 +59,7 @@ const {
             <select
               id={`${tableId}-filter`}
               data-column-key={columnFilter}
-              class="w-44 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm
+              class="w-100 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm
                   focus:border-indigo-500 focus:ring-indigo-500"
             >
               <option value="">All {columnFilter}s</option>
@@ -156,8 +160,9 @@ const {
                 <div class="actions-wrapper">
                   {detailPage && (
                     <a
-                      href={detailPage + "?list=" + row.id}
+                      href={detailPage + "?" + i18Item + "=" + row.id}
                       class="detail-btn action-btn"
+                      data-i18n-title={`${mdItem}_modal.many_title`}
                       title={t(locale, `${mdItem}_modal.many_title`)}
                     >
                       <img
@@ -172,6 +177,7 @@ const {
                     class="p-1 text-blue-600 hover:bg-blue-100 rounded edit-btn"
                     data-id={row.id}
                     data-action="edit"
+                    data-modal-open={`${i18Item}-edit-modal`}
                     data-i18n-title={`${i18Item}_modal.edit`}
                     title={t(locale, `${i18Item}_modal.edit`)}                    
                   >
@@ -185,6 +191,7 @@ const {
                     class="p-1 text-red-600 hover:bg-red-100 rounded delete-btn"
                     data-id={row.id}
                     data-action="delete"
+                    data-modal-open={`${i18Item}-delete-modal`}
                     data-i18n-title={`${i18Item}_modal.delete`}
                     title={t(locale, `${i18Item}_modal.delete`)}                    
                   >
@@ -239,7 +246,7 @@ const {
   </div>
 </div>
 
-<script type="module" define:vars={{ tableId, data, columns }}>
+<script type="module" define:vars={{ tableId, data, columns, columnFilter }}>
   import { initAdvancedTable } from "/src/components/table/advancedTable";
-  initAdvancedTable(tableId, data, columns);
+  initAdvancedTable(tableId, data, columns, columnFilter);
 </script>

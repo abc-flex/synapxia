@@ -3,21 +3,38 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumb from "../../components//core/Breadcrumb.astro";
 import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
-import modules from "../../data/modules.json";
-import options from "../../data/options.json";
+import Toast from "../../components/Toast.astro";
+import { getNavigationData } from "@/lib/navigation";
+import { getOptions } from "@/lib/options";
+import { getModules } from "@/lib/modules";
 
+// Fetch options from API
+let options: any[] = [];
+let errorMessage: string | null = null;
+try {
+  const apiOptions = await getOptions();
+  options = apiOptions;
+} catch (error) {
+  console.error('Failed to fetch options:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch options from API';
+  // Fallback to empty array to still render the page
+  options = [];
+}
+
+// Fetch modules from API for select field
+let modules: any[] = [];
+try {
+  const apiModules = await getModules();
+  modules = apiModules;
+} catch (error) {
+  console.error('Failed to fetch modules:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch modules from API';
+  // Fallback to empty array to still render the page
+  modules = [];
+}
 
 const title = "SynapxIA";
-const primaryNav = modules.map((module) => ({
-  code: module.code,
-  name: module.name,
-  icon: `${module.icon}`,
-}));
-const itemsNav = options.map((option) => ({
-  module: option.module,
-  name: option.name,
-  path: option.path,
-}));
+const { primaryNav, itemsNav } = getNavigationData();
 
 const columns = [
   { key: "sort_order", label: "#" },
@@ -33,16 +50,9 @@ const data = options.map((option) => ({
   sort_order: option.sort_order,
 }));
 
-const moduleOptions = modules.map((m) => ({ label: m.name, value: m.code }));
 const optionFields = [
   { key: "name", label: "Name", required: true, placeholder: "e.g. Users" },
-  {
-    key: "module",
-    label: "Module",
-    type: "select" as const,
-    required: true,
-    options: moduleOptions,
-  },
+  { key: "module", label: "Module", type: "select" as const, options: modules, required: true },
   { key: "path", label: "Path", required: true, placeholder: "/admin/users" },
   {
     key: "sort_order",
@@ -55,6 +65,8 @@ const fieldKeys = optionFields.map((f) => f.key);
 ---
 
 <BaseLayout title={title} navModules={primaryNav} navOptions={itemsNav}>
+  {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
+
   <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
     <Breadcrumb
       moduleName="Administration"
@@ -105,17 +117,15 @@ const fieldKeys = optionFields.map((f) => f.key);
       });
     </script>
 
-    <div class="space-y-5 sm:space-y-6 bg-white dark:bg-gray-900 rounded-lg shadow-sm p-6">
-      <div class="space-y-5 sm:space-y-6">
-        <div class="border-t border-gray-100 dark:border-gray-800 p-0">
-          <DataTable
-            columns={columns}
-            data={data}
-            tableId="options"
-            i18Item="option"
-            columnFilter="module"
-          />
-        </div>
+    <div class="space-y-5 sm:space-y-6">
+      <div class="border-0 p-0">
+        <DataTable
+          columns={columns}
+          data={data}
+          tableId="options"
+          i18Item="option"
+          columnFilter="module"
+        />
       </div>
     </div>
   </div>

@@ -4,16 +4,16 @@ import Breadcrumb from "../../components/core/Breadcrumb.astro";
 import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
-import modules from "../../data/modules.json";
-import options from "../../data/options.json";
-import { getAllLists } from "@/lib/lists";
+import { getNavigationData } from "@/lib/navigation";
+import { getLists } from "@/lib/lists";
+import { getModules } from "@/lib/modules";
+import { getListItemsbyList } from "@/lib/list_items";
 
 // Fetch lists from API
 let lists: any[] = [];
 let errorMessage: string | null = null;
-
 try {
-  const apiLists = await getAllLists();
+  const apiLists = await getLists();
   lists = apiLists;
 } catch (error) {
   console.error('Failed to fetch lists:', error);
@@ -22,17 +22,24 @@ try {
   lists = [];
 }
 
+// Fetch modules from API for select field
+let modules: any[] = [];
+try {
+  const apiModules = await getModules();
+  modules = apiModules;
+} catch (error) {
+  console.error('Failed to fetch modules:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch modules from API';
+  // Fallback to empty array to still render the page
+  modules = [];
+}
+
+// Fetch items_list from API for select field
+let types: any[] = [];
+types = await getListItemsbyList('LIST_TYPE');
+
 const title = "SynapxIA";
-const primaryNav = modules.map((module) => ({
-  code: module.code,
-  name: module.name,
-  icon: `${module.icon}`,
-}));
-const itemsNav = options.map((option) => ({
-  module: option.module,
-  name: option.name,
-  path: option.path,
-}));
+const { primaryNav, itemsNav } = getNavigationData();
 
 
 const columns = [
@@ -53,17 +60,16 @@ const data = lists.map((item) => ({
   updated_at: item.updated_at,
 }));
 const tableFields = [
-  { key: "module", label: "Module", required: true, placeholder: "e.g. ADMIN" },
   { key: "code", label: "Code", required: true, placeholder: "e.g. STATUS" },
   { key: "name", label: "Name", required: true, placeholder: "e.g. List statuses for..." },
-  { key: "type", label: "Type", required: true, placeholder: "e.g. List statuses for..." },
+  { key: "type", label: "Type", type: "select", options: types, required: true },
+  { key: "module", label: "Module", type: "select" as const, options: modules, required: false },
   {
     key: "description",
     label: "Description",
     type: "textarea" as const,
     placeholder: "Optional details of list",
   },
-  { key: "is_active", label: "Active", type: "checkbox" as const },
 ];
 const fieldKeys = tableFields.map((f) => f.key);
 ---
@@ -122,19 +128,17 @@ const fieldKeys = tableFields.map((f) => f.key);
       });
     </script>
 
-    <div class="space-y-5 sm:space-y-6 bg-white dark:bg-gray-900 rounded-lg shadow-sm p-6">
-      <div class="space-y-5 sm:space-y-6">
-        <div class="border-0 p-0">
-          <DataTable
-            columns={columns}
-            data={data}
-            tableId="lists"
-            i18Item="list"
-            columnFilter="module"
-            detailPage="/admin/items_list"
-            mdItem="itemlist"
-          />
-        </div>
+    <div class="space-y-5 sm:space-y-6">
+      <div class="border-0 p-0">
+        <DataTable
+          columns={columns}
+          data={data}
+          tableId="lists"
+          i18Item="list"
+          columnFilter="module"
+          detailPage="/admin/list_items"
+          mdItem="list_item"
+        />
       </div>
     </div>
   </div>

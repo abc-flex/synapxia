@@ -6,9 +6,9 @@
     "sort_order": 10,
     "created_at": "2026-01-13T03:05:33.391965Z",
     "updated_at": null,
-    "name": "Units",
-    "path": "/admin/units",
-    "code": "UNITS",
+    "name": "Business Units",
+    "path": "/admin/business_units",
+    "code": "BUSINESS_UNITS",
     "type": "FORM",
     "is_active": true
   },

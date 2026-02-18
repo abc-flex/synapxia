@@ -5,47 +5,45 @@ import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
 import { getNavigationData } from "@/lib/navigation";
-import { getRoles } from "@/lib/roles";
+import { getPrivileges } from "@/lib/privileges";
 
-// Fetch roles from API
-let roles: any[] = [];
+// Fetch privileges from API
+let privileges: any[] = [];
 let errorMessage: string | null = null;
 
 try {
-  const apiRoles = await getRoles();
-  roles = apiRoles;
+  const apiLists = await getPrivileges();
+  privileges = apiLists;
 } catch (error) {
-  console.error('Failed to fetch roles:', error);
-  errorMessage = error instanceof Error ? error.message : 'Failed to fetch roles from API';
+  console.error('Failed to fetch privileges:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch privileges from API';
   // Fallback to empty array to still render the page
-  roles = [];
+  privileges = [];
 }
 
 const title = "SynapxIA";
 const { primaryNav, itemsNav } = getNavigationData();
 
 const columns = [
-  { key: "code", label: "Code" },
-  { key: "name", label: "Name" },
+  { key: "role", label: "Role", visible: false},
+  { key: "module", label: "Module", visible: true },
+  { key: "option", label: "Option", visible: true },
+  { key: "can_edit", label: "Can Edit", visible: true },
 ];
-const data = roles.map((item) => ({
-  id: item.code,
-  code: item.code,
-  name: item.name,
-  description: item.description,
+const data = privileges.map((item) => ({
+  role: item.role,
+  module: item.module,
+  option: item.option,
+  can_edit: item.can_edit,
   is_active: item.is_active,
   created_at: item.created_at,
   updated_at: item.updated_at,
 }));
 const tableFields = [
-  { key: "code", label: "Code", required: true, placeholder: "e.g. ADMIN" },
-  { key: "name", label: "Name", required: true, placeholder: "e.g. Administration" },
-  {
-    key: "description",
-    label: "Description",
-    type: "textarea" as const,  
-    placeholder: "Optional details of role",
-  },
+  { key: "role", label: "Role", required: true },
+  { key: "module", label: "Module", required: true },
+  { key: "option", label: "Option", required: true },
+  { key: "can_edit", label: "Can Edit", type: "checkbox" as const },
 ];
 const fieldKeys = tableFields.map((f) => f.key);
 ---
@@ -54,41 +52,39 @@ const fieldKeys = tableFields.map((f) => f.key);
   {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
 
   <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
-    <!-- Breadcrumb Start -->
     <Breadcrumb
       moduleName="Administration"
-      pageName="Roles"
-      pageTitle="Roles"
+      pageName="Privileges"
+      pageTitle="Privileges"
       homeLink="/"
       moduleNameKey="modules.ADMIN"
-      pageNameKey="menu_options.roles"
+      pageNameKey="menu_options.privileges"
     />
-    <!-- Breadcrumb End -->
 
     <CrudModal
       mode="create"
-      modalId="role-create-modal"
-      entityName="Role"
+      modalId="privilege-create-modal"
+      entityName="Privilege"
       fields={tableFields}
       showTrigger={false}
     />
     <CrudModal
       mode="edit"
-      modalId="role-edit-modal"
-      entityName="Role"
+      modalId="privilege-edit-modal"
+      entityName="Privilege"
       fields={tableFields}
       showTrigger={false}
     />
     <CrudModal
       mode="delete"
-      modalId="role-delete-modal"
-      entityName="Role"
+      modalId="privilege-delete-modal"
+      entityName="Privilege"
       fields={tableFields}
       showTrigger={false}
     />
 
     <div
-      id="roles-data"
+      id="privileges-data"
       data-rows={encodeURIComponent(JSON.stringify(data))}
       data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
       class="hidden"
@@ -97,26 +93,26 @@ const fieldKeys = tableFields.map((f) => f.key);
     </div>
 
     <script type="module">
-      import { initCrudPage } from "/scripts/crudClient.js";
+      import { initCrudPage, openEditModal, openDeleteModal } from "/scripts/crudClient.js";
+
       initCrudPage({
-        dataId: "roles-data",
-        editModalId: "role-edit-modal",
-        deleteModalId: "role-delete-modal",
+        dataId: "privileges-data",
+        editModalId: "privilege-edit-modal",
+        deleteModalId: "privilege-delete-modal",
       });
     </script>
 
     <div class="space-y-5 sm:space-y-6">
-      <div class="space-y-5 sm:space-y-6">
-        <!-- ====== Table Start -->
+      <div class="border-0 p-0">
         <DataTable
           columns={columns}
           data={data}
-          tableId="roles"
-          i18Item="role"
-          detailPage="/admin/privileges"
-          mdItem="privilege"
+          tableId="privileges"
+          i18Item="privilege"
+          columnFilter="role"
+          masterPage="/admin/roles"
+          mdItem="role"
         />
-        <!-- ====== Table End -->
       </div>
     </div>
   </div>

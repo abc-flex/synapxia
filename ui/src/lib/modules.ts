@@ -4,7 +4,7 @@
  */
 
 import { apiGet, apiPost, apiPut, apiDelete, buildQueryString } from './api';
-import type { Module } from '../types/api';
+import type { Module } from '../types/module';
 
 /**
  * Fetch all modules with optional pagination

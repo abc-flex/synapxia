@@ -1,7 +1,5 @@
 ---
-import { NavModule, NavOption } from '../../types/nav';
-
-
+import { NavModule, NavOption } from "../../types/nav";
 
 interface Props {
   module: NavModule;
@@ -12,76 +10,66 @@ const { module, options = [] } = Astro.props as Props;
 const hasChildren = options.length > 0;
 ---
 
-{hasChildren ? (
-  <details class="menu-item-container group" aria-label={`${module.name} menu`}>
-    <summary class="menu-item group menu-item-inactive list-none cursor-pointer select-none">
-      <svg
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          fill-rule="evenodd"
-          clip-rule="evenodd"
-          d={module.icon}
-          class="menu-item-icon-inactive"
-        />
-      </svg>
-
-      <span class="menu-item-text" data-i18n={`modules.${module.code}`}>
-        {module.name}
-      </span>
-
-      <svg
-        class="menu-item-arrow stroke-current"
-        width="20"
-        height="20"
-        viewBox="0 0 20 20"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M4.79175 7.39584L10.0001 12.6042L15.2084 7.39585"
-          stroke-width="1.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        />
-      </svg>
-    </summary>
-
-    <div class="overflow-hidden transform translate">
-      <ul class="flex flex-col gap-1 mt-2 menu-dropdown pl-9">
-        {options.map((option) => (
-          <li>
-            <a href={option.path} class="menu-dropdown-item group menu-dropdown-item-inactive">
-              <span data-i18n={`menu_options.${option.name.toLowerCase()}`}>{option.name}</span>
-            </a>
-          </li>
-        ))}
-      </ul>
-    </div>
-  </details>
-) : (
-  <a href="#" class="menu-item group menu-item-inactive">
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
+{
+  hasChildren ? (
+    <details
+      class="menu-item-container group"
+      aria-label={`${module.name} menu`}
     >
-      <path
-        fill-rule="evenodd"
-        clip-rule="evenodd"
-        d={module.icon}
-        class="menu-item-icon-inactive"
-      />
-    </svg>
+      <summary class="menu-item group menu-item-inactive list-none cursor-pointer select-none">
+        <span class="h-6 w-6 text-gray-100 bg-color-gray-100 dark:bg-gray-800 flex items-center justify-center rounded-md mr-3">
+          <img
+            src={module.icon}
+            alt=""
+          />
+        </span>
 
-    <span class="menu-item-text">
-      {module.name}
-    </span>
-  </a>
-)}
+        <span class="menu-item-text" data-i18n={`modules.${module.code}`}>
+          {module.name}
+        </span>
+
+        <svg
+          class="menu-item-arrow stroke-current"
+          width="20"
+          height="20"
+          viewBox="0 0 20 20"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M4.79175 7.39584L10.0001 12.6042L15.2084 7.39585"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </summary>
+
+      <div class="overflow-hidden transform translate">
+        <ul class="flex flex-col gap-1 mt-2 menu-dropdown pl-9">
+          {options.map((option) => (
+            <li>
+              <a
+                href={option.path}
+                class="menu-dropdown-item group menu-dropdown-item-inactive"
+              >
+                <span data-i18n={`menu_options.${option.code.toLowerCase()}`}>
+                  {option.name}
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </details>
+  ) : (
+    <a href="#" class="menu-item group menu-item-inactive">
+      <img
+        src={module.icon}
+        alt=""
+        class="h-5 w-5 text-gray-500 dark:text-gray-400"
+      />
+      <span class="menu-item-text">{module.name}</span>
+    </a>
+  )
+}

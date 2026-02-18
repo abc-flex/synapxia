@@ -1,0 +1,123 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components//core/Breadcrumb.astro";
+import DataTable from "../../components/table/DataTable.astro";
+import CrudModal from "../../components/forms/CrudModal.astro";
+import Toast from "../../components/Toast.astro";
+import { getNavigationData } from "@/lib/navigation";
+import { getUsers } from "@/lib/users";
+import { getBusinessUnits } from "@/lib/business_units";
+
+// Fetch users from API
+let users: any[] = [];
+let errorMessage: string | null = null;
+try {
+  const apiUsers = await getUsers();
+  users = apiUsers;
+} catch (error) {
+  console.error('Failed to fetch users:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch users from API';
+  // Fallback to empty array to still render the page
+  users = [];
+}
+
+// Fetch business_units from API for select field
+let business_units: any[] = [];
+try {
+  const apiBusinessUnits = await getBusinessUnits();
+  business_units = apiBusinessUnits;
+} catch (error) {
+  console.error('Failed to fetch business_units:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch business_units from API';
+  // Fallback to empty array to still render the page
+  business_units = [];
+}
+
+const title = "SynapxIA";
+const { primaryNav, itemsNav } = getNavigationData();
+
+const columns = [
+  { key: "business_unit", label: "Business_Unit" },
+  { key: "name", label: "Name" },
+  { key: "username", label: "Username" },
+  { key: "menu_role", label: "Menu_Role" },
+];
+const data = users.map((user) => ({
+  id: `${user.id}:${user.path}`,
+  name: `${user.first_name} ${user.last_name}`,
+  username: user.username,
+  menu_role: user.menu_role,
+  business_unit: user.business_unit,
+}));
+
+const optionFields = [
+];
+const fieldKeys = optionFields.map((f) => f.key);
+---
+
+<BaseLayout title={title} navModules={primaryNav} navOptions={itemsNav}>
+  {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
+
+  <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
+    <Breadcrumb
+      moduleName="Administration"
+      pageName="Users"
+      pageTitle="Users"
+      homeLink="/"
+      moduleNameKey="modules.ADMIN"
+      pageNameKey="menu_options.users"
+    />
+
+    <CrudModal
+      mode="create"
+      modalId="user-create-modal"
+      entityName="User"
+      fields={optionFields}
+      showTrigger={false}
+    />
+    <CrudModal
+      mode="edit"
+      modalId="user-edit-modal"
+      entityName="User"
+      fields={optionFields}
+      showTrigger={false}
+    />
+    <CrudModal
+      mode="delete"
+      modalId="user-delete-modal"
+      entityName="User"
+      fields={optionFields}
+      showTrigger={false}
+    />
+
+    <div
+      id="users-data"
+      data-rows={encodeURIComponent(JSON.stringify(data))}
+      data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
+      class="hidden"
+      aria-hidden="true"
+    >
+    </div>
+
+    <script type="module">
+      import { initCrudPage } from "/scripts/crudClient.js";
+      initCrudPage({
+        dataId: "users-data",
+        editModalId: "user-edit-modal",
+        deleteModalId: "user-delete-modal",
+      });
+    </script>
+
+    <div class="space-y-5 sm:space-y-6">
+      <div class="border-0 p-0">
+        <DataTable
+          columns={columns}
+          data={data}
+          tableId="users"
+          i18Item="user"
+          columnFilter="business_unit"
+        />
+      </div>
+    </div>
+  </div>
+</BaseLayout>

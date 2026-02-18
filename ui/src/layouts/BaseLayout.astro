@@ -11,7 +11,11 @@ interface Props {
   navOptions?: NavOption[];
 }
 
-const { title = "SynapxIA", navModules=[], navOptions=[] } = Astro.props as Props;
+const {
+  title = "SynapxIA",
+  navModules = [],
+  navOptions = [],
+} = Astro.props as Props;
 ---
 
 <!doctype html>
@@ -39,6 +43,7 @@ const { title = "SynapxIA", navModules=[], navOptions=[] } = Astro.props as Prop
   </body>
 </html>
 
+<script src="https://unpkg.com/flowbite@latest/dist/flowbite.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.3"></script>
 
 <script>
@@ -85,7 +90,9 @@ const { title = "SynapxIA", navModules=[], navOptions=[] } = Astro.props as Prop
     };
 
     const saved = localStorage.getItem(storageKey) as "light" | "dark" | null;
-    const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const prefersDark =
+      window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches;
     apply(saved ?? (prefersDark ? "dark" : "light"));
 
     toggle?.addEventListener("click", () => {

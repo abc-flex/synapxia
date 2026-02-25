@@ -1,13 +1,20 @@
 import logging
 from typing import List
 from datetime import datetime
+from pydantic import BaseModel
 
 from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func, literal
 
 from ..internal.models import User, UserCreate, UserUpdate, Role, BusinessUnit
 from ..internal.dependencies import get_db_session
+
+class UserSelectOption(BaseModel):
+    """Model for user select options"""
+    value: int
+    label: str
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/users", tags=["users"])
@@ -77,6 +84,24 @@ def create_user(user: UserCreate, session: Session = Depends(get_db_session)) ->
         )
 
 
+@router.get("/select", response_model=List[UserSelectOption])
+def list_users_for_select(session: Session = Depends(get_db_session)) -> List[UserSelectOption]:
+    """
+    Returns a users list optimized for selects with value (id) and label (full name). 
+    Only active users.
+    """
+    statement = (
+        select(
+            User.id, 
+            func.concat(User.first_name, literal(" "), User.last_name).label("full_name")
+        )
+        .where(User.is_active == True)
+        .order_by(User.first_name, User.last_name)
+    )
+    results = session.exec(statement).all()
+    return [UserSelectOption(value=row[0], label=row[1]) for row in results]
+
+
 @router.get("/", response_model=List[User])
 def list_users(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[User]:
     """
@@ -89,7 +114,8 @@ def list_users(skip: int = 0, limit: int = 100, session: Session = Depends(get_d
         skip).limit(limit).order_by(User.username)).all()
     return users
 
-@router.get("/{role_code}", response_model=List[User])
+
+@router.get("/role/{role_code}", response_model=List[User])
 def get_users_by_role(
     role_code: str, 
     session: Session = Depends(get_db_session)

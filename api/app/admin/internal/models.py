@@ -214,6 +214,9 @@ class User(UserBase, table=True):
     __tablename__ = "users"
     id: Optional[int] = Field(default=None, primary_key=True)
 
+class UserSelect(UserBase):
+    id: int
+    name: str
 
 class UserCreate(SQLModel):
     username: str = Field(max_length=50, description="Unique username")

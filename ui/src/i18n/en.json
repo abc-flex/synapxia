@@ -96,6 +96,7 @@
     "add_new": "New Business Unit",
     "edit": "Edit Business Unit",
     "delete": "Delete Business Unit",
+    "empty_message": "No Business Units found",
     "delete_confirmation": "Are you sure you want to delete this Business Unit"
   },
   "role_modal": {
@@ -107,6 +108,7 @@
     "add_new": "New Role",
     "edit": "Edit Role",
     "delete": "Delete Role",
+    "empty_message": "No Roles found",
     "delete_confirmation": "Are you sure you want to delete this Role"
   },
   "privilege_modal": {
@@ -119,6 +121,7 @@
     "add_new": "New Privilege",
     "edit": "Edit Privilege",
     "delete": "Delete Privilege",
+    "empty_message": "No Privileges found",
     "delete_confirmation": "Are you sure you want to delete this Privilege"
   },
   "user_modal": {
@@ -134,6 +137,7 @@
     "add_new": "New User",
     "edit": "Edit User",
     "delete": "Delete User",
+    "empty_message": "No Users found",
     "delete_confirmation": "Are you sure you want to delete this User"
   },
   "list_modal": {
@@ -147,6 +151,7 @@
     "add_new": "New List",
     "edit": "Edit List",
     "delete": "Delete List",
+    "empty_message": "No Lists found",
     "delete_confirmation": "Are you sure you want to delete this List"
   },
   "list_item_modal": {
@@ -154,12 +159,13 @@
     "value": "Value",
     "label": "Label",
     "sort_order": "Sort Order",
-    "one_title": "Item List",
-    "many_title": "Items List",
-    "add_new": "New Item-List",
-    "edit": "Edit Item-List",
-    "delete": "Delete Item-List",
-    "delete_confirmation": "Are you sure you want to delete thist Item-List"
+    "one_title": "List Item",
+    "many_title": "List Items",
+    "add_new": "New List Item",
+    "edit": "Edit List Item",
+    "delete": "Delete List Item",
+    "empty_message": "No List Items found",
+    "delete_confirmation": "Are you sure you want to delete this List Item"
   },
   "module_modal": {
     "code": "Code",
@@ -172,6 +178,7 @@
     "add_new": "New Module",
     "edit": "Edit Module",
     "delete": "Delete Module",
+    "empty_message": "No Modules found",
     "delete_confirmation": "Are you sure you want to delete this Module"
   },
   "option_modal": {
@@ -186,6 +193,51 @@
     "add_new": "New Option",
     "edit": "Edit Option",
     "delete": "Delete Option",
+    "empty_message": "No Options found",
     "delete_confirmation": "Are you sure you want to delete this Option"
+  },
+  "category_modal": {
+    "code": "Code",
+    "name": "Name",
+    "description": "Description",
+    "parent": "Parent",
+    "one_title": "Category",
+    "many_title": "Categories",
+    "add_new": "New Category",
+    "edit": "Edit Category",
+    "delete": "Delete Category",
+    "empty_message": "No Categories found",
+    "delete_confirmation": "Are you sure you want to delete this Category"
+  },
+  "team_modal": {
+    "code": "Code",
+    "name": "Name",
+    "description": "Description",
+    "lead": "Lead",
+    "chat_channel_url": "Chat Channel URL",
+    "kanban_board_url": "Kanban Board URL",
+    "one_title": "Team",
+    "many_title": "Teams",
+    "add_new": "New Team",
+    "edit": "Edit Team",
+    "delete": "Delete Team",
+    "empty_message": "No Teams found",
+    "delete_confirmation": "Are you sure you want to delete this Team"
+  },
+  "assignment_modal": {
+    "id": "ID",
+    "team": "Team",
+    "user_id": "User ID",
+    "role": "Role",
+    "observation": "Observation",
+    "valid_from": "Valid From",
+    "valid_to": "Valid To",
+    "one_title": "Assignment",
+    "many_title": "Assignments",
+    "add_new": "New Assignment",
+    "edit": "Edit Assignment",
+    "delete": "Delete Assignment",
+    "empty_message": "No Assignments found",
+    "delete_confirmation": "Are you sure you want to delete this Assignment"
   }
 }

@@ -1,19 +1,9 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import modules from "../data/modules.json";
-import options from "../data/options.json";
+import { getNavigationData } from "@/lib/navigation";
 
 const title = "SynapxIA";
-const primaryNav = modules.map(module => ({
-  code: module.code,
-  name: module.name,
-  icon: `${module.icon}`
-}));
-const itemsNav = options.map(option => ({
-  module: option.module,
-  name: option.name,
-  path: option.path
-}));
+const { primaryNav, itemsNav } = getNavigationData();
 
 ---
 <BaseLayout title={title} navModules={primaryNav} navOptions={itemsNav}>

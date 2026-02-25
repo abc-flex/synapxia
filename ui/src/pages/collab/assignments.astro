@@ -1,0 +1,123 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import DataTable from "../../components/table/DataTable.astro";
+import CrudModal from "../../components/forms/CrudModal.astro";
+import Toast from "../../components/Toast.astro";
+import { getNavigationData } from "@/lib/navigation";
+import { getAssignments } from "@/lib/assignments";
+
+// Fetch assignments from API
+let assignments: any[] = [];
+let errorMessage: string | null = null;
+
+try {
+  const apiLists = await getAssignments();
+  assignments = apiLists;
+} catch (error) {
+  console.error('Failed to fetch assignments:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch assignments from API';
+  // Fallback to empty array to still render the page
+  assignments = [];
+}
+
+const title = "SynapxIA";
+const { primaryNav, itemsNav } = getNavigationData();
+
+const columns = [
+  { key: "id", label: "#", visible: false },
+  { key: "team", label: "Team", visible: false},
+  { key: "user_id", label: "User", visible: true },
+  { key: "role", label: "Role", visible: true },
+];
+
+const data = assignments.map((item) => ({
+  id: item.id,
+  team: item.team,
+  user_id: item.user_id,
+  role: item.role,
+  observation: item.observation,
+  valid_from: item.valid_from,
+  valid_to: item.valid_to,
+}));
+const tableFields = [
+  { key: "id", label: "ID", required: true },
+  { key: "team", label: "Team", required: true },
+  { key: "user_id", label: "User ID", required: true },
+  { key: "role", label: "Role", required: true },
+  { key: "observation", label: "Observation", required: false },
+  { key: "valid_from", label: "Valid From", required: false },
+  { key: "valid_to", label: "Valid To", required: false },
+];
+const fieldKeys = tableFields.map((f) => f.key);
+---
+
+<BaseLayout title={title} navModules={primaryNav} navOptions={itemsNav}>
+  {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
+
+  <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
+    <Breadcrumb
+      moduleName="Collaboration"
+      pageName="Assignments"
+      pageTitle="Assignments"
+      homeLink="/"
+      moduleNameKey="modules.COLLAB"
+      pageNameKey="menu_options.assignments"
+    />
+
+    <CrudModal
+      mode="create"
+      modalId="assignment-create-modal"
+      entityName="Assignment"
+      fields={tableFields}
+      showTrigger={false}
+    />
+    <CrudModal
+      mode="edit"
+      modalId="assignment-edit-modal"
+      entityName="Assignment"
+      fields={tableFields}
+      showTrigger={false}
+    />
+    <CrudModal
+      mode="delete"
+      modalId="assignment-delete-modal"
+      entityName="Assignment"
+      fields={tableFields}
+      showTrigger={false}
+    />
+
+    <div
+      id="itemslist-data"
+      data-rows={encodeURIComponent(JSON.stringify(data))}
+      data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
+      class="hidden"
+      aria-hidden="true"
+    >
+    </div>
+
+    <script type="module">
+      import { initCrudPage, openEditModal, openDeleteModal } from "/scripts/crudClient.js";
+
+      initCrudPage({
+        dataId: "itemslist-data",
+        editModalId: "assignment-edit-modal",
+        deleteModalId: "assignment-delete-modal",
+      });
+    </script>
+
+    <div class="space-y-5 sm:space-y-6">
+      <div class="border-0 p-0">
+        <DataTable
+          columns={columns}
+          data={data}
+          tableId="assignments"
+          i18Item="assignment"
+          columnFilter="team"
+          masterPage="/collab/teams"
+          mdItem="team"
+        />
+      </div>
+    </div>
+  </div>
+</BaseLayout>

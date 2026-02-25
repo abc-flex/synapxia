@@ -1,0 +1,138 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import DataTable from "../../components/table/DataTable.astro";
+import CrudModal from "../../components/forms/CrudModal.astro";
+import Toast from "../../components/Toast.astro";
+import { getNavigationData } from "@/lib/navigation";
+import { getTeams } from "@/lib/teams";
+import { getUsersSelect } from "@/lib/users";
+
+// Fetch teams from API
+let teams: any[] = [];
+let errorMessage: string | null = null;
+
+try {
+  const apiTeams = await getTeams();
+  teams = apiTeams;
+} catch (error) {
+  console.error('Failed to fetch teams:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch teams from API';
+  // Fallback to empty array to still render the page
+  teams = [];
+}
+
+// Fetch users from API for select field
+let users: any[] = [];
+try {
+  const apiUsers = await getUsersSelect();
+  users = apiUsers;
+} catch (error) {
+  console.error('Failed to fetch users:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch users from API';
+  // Fallback to empty array to still render the page
+  users = [];
+}
+
+const title = "SynapxIA";
+const { primaryNav, itemsNav } = getNavigationData();
+
+const columns = [
+  { key: "code", label: "Code", visible: true },
+  { key: "name", label: "Name", visible: true },
+  { key: "lead", label: "Lead", visible: true },
+];
+const data = teams.map((item) => ({
+  id: item.code,
+  code: item.code,
+  name: item.name,
+  lead: item.lead,
+}));
+
+const teamFields = [
+  { key: "code", label: "Code", required: true, placeholder: "" },
+  { key: "name", label: "Name", required: true, placeholder: "" },
+  { key: "lead", label: "Lead", type: "select", options: users, required: false },
+  {
+    key: "description",
+    label: "Description",
+    type: "textarea" as const,
+    required: false,
+    placeholder: ""
+  },
+  { key: "chat_channel_url", label: "Chat Channel URL", type: "text", required: false },
+  { key: "kanban_board_url", label: "Kanban Board URL", type: "text", required: false },
+];
+const fieldKeys = teamFields.map((f) => f.key);
+---
+
+<BaseLayout title={title} navModules={primaryNav} navOptions={itemsNav}>
+  {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
+
+  <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
+    <Breadcrumb
+      moduleName="Collaboration"
+      pageName="Teams"
+      pageTitle="Teams"
+      homeLink="/"
+      moduleNameKey="modules.COLLAB"
+      pageNameKey="menu_options.teams"
+    />
+
+    <CrudModal
+      mode="create"
+      modalId="team-create-modal"
+      entityName="Team"
+      fields={teamFields}
+      showTrigger={false}
+    />
+    <CrudModal
+      mode="edit"
+      modalId="team-edit-modal"
+      entityName="Team"
+      fields={teamFields}
+      showTrigger={false}
+    />
+    <CrudModal
+      mode="delete"
+      modalId="team-delete-modal"
+      entityName="Team"
+      fields={teamFields}
+      showTrigger={false}
+    />
+
+    <div
+      id="teams-data"
+      data-rows={encodeURIComponent(JSON.stringify(data))}
+      data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
+      class="hidden"
+      aria-hidden="true"
+    >
+    </div>
+
+    <script type="module">
+      import { initCrudPage } from "/scripts/crudClient.js";
+      initCrudPage({
+        dataId: "teams-data",
+        createModalId: "team-create-modal",
+        editModalId: "team-edit-modal",
+        deleteModalId: "team-delete-modal",
+        baseUrl: "/api/teams",
+        entityName: "team",
+      });
+    </script>
+
+    <div class="space-y-5 sm:space-y-6">
+      <div class="space-y-5 sm:space-y-6">
+        <DataTable
+          columns={columns}
+          data={data}
+          tableId="teams"
+          i18Item="team"
+          detailPage="/collab/assignments"
+          mdItem="assignment"
+        />
+      </div>
+    </div>
+  </div>
+</BaseLayout>

@@ -22,6 +22,6 @@ export async function getRoles(skip: number = 0, limit: number = 100): Promise<R
  * @param code - Unique role code
  * @returns Promise with role data
  */
-export async function getRol(code: string): Promise<Role> {
+export async function getRole(code: string): Promise<Role> {
   return apiGet<Role>(`/api/roles/${encodeURIComponent(code)}`);
 }

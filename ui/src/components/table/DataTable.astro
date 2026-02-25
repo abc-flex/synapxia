@@ -54,7 +54,7 @@ const {
         )
       }
       {
-        columnFilter && (
+        columnFilter && data.length > 0 && (
           <div class="relative">
             <select
               id={`${tableId}-filter`}
@@ -69,9 +69,9 @@ const {
       }
     </div>
 
-    <!-- Right -->
+    <!-- Right: Search & Export -->
+    {data.length > 0 && (
     <div class="flex items-center gap-3 relative">
-      <!-- Search -->
       <input
         id={`${tableId}-search`}
         type="search"
@@ -80,7 +80,6 @@ const {
                focus:border-indigo-500 focus:ring-indigo-500"
       />
 
-      <!-- Export -->
       <button
         id={`${tableId}-export-btn`}
         type="button"
@@ -125,8 +124,10 @@ const {
         </ul>
       </div>
     </div>
+    )}
   </div>
 
+  {data.length > 0 && (
   <!-- 🔹 TABLE -->
   <div class="overflow-x-auto">
     <table
@@ -244,6 +245,25 @@ const {
       </button>
     </div>
   </div>
+  )}
+
+  {data.length == 0 && (
+  <div class="rounded-xl no-border p-4">
+    <div class="flex items-center gap-3">
+      <div class="-mt-0.5 text-blue-light-500">
+        <span class="h-6 w-6 text-gray-100 bg-color-gray-100 dark:bg-gray-800 flex items-center justify-center rounded-md mr-0">
+          <img src="/src/images/icons/information-circle.svg" alt=""/>
+        </span>
+      </div>
+      <div>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+            {t(locale, `${i18Item}_modal.empty_message`)}                    
+          </p>
+      </div>
+    </div>
+  </div>
+  )}
+
 </div>
 
 <script type="module" define:vars={{ tableId, data, columns, columnFilter }}>

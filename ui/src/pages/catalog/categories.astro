@@ -1,0 +1,125 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import DataTable from "../../components/table/DataTable.astro";
+import CrudModal from "../../components/forms/CrudModal.astro";
+import Toast from "../../components/Toast.astro";
+import { getNavigationData } from "@/lib/navigation";
+import { getCategories } from "@/lib/categories";
+
+// Fetch categories from API
+let categories: any[] = [];
+let errorMessage: string | null = null;
+
+try {
+  const apiCategories = await getCategories();
+  categories = apiCategories;
+} catch (error) {
+  console.error('Failed to fetch categories:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch categories from API';
+  // Fallback to empty array to still render the page
+  categories = [];
+}
+
+const title = "SynapxIA";
+const { primaryNav, itemsNav } = getNavigationData();
+
+const columns = [
+  { key: "code", label: "Code" },
+  { key: "name", label: "Name" },
+];
+const data = categories.map((item) => ({
+  id: item.code,
+  code: item.code,
+  name: item.name,
+  description: item.description,
+  is_active: item.is_active,
+  created_at: item.created_at,
+  updated_at: item.updated_at,
+}));
+const tableFields = [
+  { key: "code", label: "Code", required: true, placeholder: "" },
+  { key: "name", label: "Name", required: true, placeholder: "" },
+  { key: "parent", label: "Parent Category", required: false, placeholder: "" },
+  {
+    key: "description",
+    label: "Description",
+    type: "textarea" as const,  
+    required: false,
+    placeholder: "Optional details of category",
+  },
+];
+const fieldKeys = tableFields.map((f) => f.key);
+---
+
+<BaseLayout title={title} navModules={primaryNav} navOptions={itemsNav}>
+  {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
+
+  <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
+    <!-- Breadcrumb Start -->
+    <Breadcrumb
+      moduleName="Digital Assets"
+      pageName="Categories"
+      pageTitle="Categories"
+      homeLink="/"
+      moduleNameKey="modules.CATALOG"
+      pageNameKey="menu_options.categories"
+    />
+    <!-- Breadcrumb End -->
+
+    <CrudModal
+      mode="create"
+      modalId="category-create-modal"
+      entityName="Category"
+      fields={tableFields}
+      showTrigger={false}
+    />
+    <CrudModal
+      mode="edit"
+      modalId="category-edit-modal"
+      entityName="Category"
+      fields={tableFields}
+      showTrigger={false}
+    />
+    <CrudModal
+      mode="delete"
+      modalId="category-delete-modal"
+      entityName="Category"
+      fields={tableFields}
+      showTrigger={false}
+    />
+
+    <div
+      id="categories-data"
+      data-rows={encodeURIComponent(JSON.stringify(data))}
+      data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
+      class="hidden"
+      aria-hidden="true"
+    >
+    </div>
+
+    <script type="module">
+      import { initCrudPage } from "/scripts/crudClient.js";
+      initCrudPage({
+        dataId: "categories-data",
+        editModalId: "category-edit-modal",
+        deleteModalId: "category-delete-modal",
+      });
+    </script>
+
+    <div class="space-y-5 sm:space-y-6">
+      <div class="space-y-5 sm:space-y-6">
+        <!-- ====== Table Start -->
+        <DataTable
+          columns={columns}
+          data={data}
+          tableId="categories"
+          i18Item="category"
+          detailPage="/admin/categories"
+          mdItem="category"
+        />
+        <!-- ====== Table End -->
+      </div>
+    </div>
+  </div>
+</BaseLayout>

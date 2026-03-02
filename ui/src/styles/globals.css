@@ -62,7 +62,7 @@
 
 @layer components {
   .menu-item {
-    @apply relative flex items-center gap-3 rounded-lg px-2 py-1 text-sm font-medium;
+    @apply relative flex items-center gap-3 rounded-lg px-0 py-1 text-sm font-medium;
   }
 
   .menu-item-active {
@@ -94,7 +94,7 @@
   }
 
   .menu-dropdown-item {
-    @apply relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium;
+    @apply relative flex items-center gap-3 rounded-lg px-2 py-2 text-sm font-medium;
   }
 
   .menu-dropdown-item-active {

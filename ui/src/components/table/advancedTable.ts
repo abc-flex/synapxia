@@ -1,3 +1,5 @@
+import { ui } from "@/i18n";
+
 export function initAdvancedTable(
     tableId: string,
     data: Record<string, any>[],
@@ -7,6 +9,24 @@ export function initAdvancedTable(
 
     let currentPage = 1;
     let perPage = 10;
+
+    // Get current locale from localStorage or default to 'en'
+    const getCurrentLocale = (): 'en' | 'es' => {
+        const stored = localStorage.getItem("lang");
+        return (stored === 'es' || stored === 'en') ? stored : 'en';
+    };
+
+    // Helper to get nested translation value
+    const t = (key: string): string => {
+        const locale = getCurrentLocale();
+        const keys = key.split('.');
+        let value: any = ui[locale];
+        for (const k of keys) {
+            value = value?.[k];
+            if (value === undefined) return key;
+        }
+        return value ?? key;
+    };
 
     const table = document.getElementById(tableId) as HTMLTableElement | null;
     if (!table) return;
@@ -225,17 +245,19 @@ export function initAdvancedTable(
         const info = document.getElementById(`${tableId}-pagination-info`);
         if (info) {
             if (total === 0) {
-                info.textContent = "data_table.no_results";
+                info.textContent = t("data_table.no_results");
                 info.setAttribute("data-i18n", "data_table.no_results");
-                info.removeAttribute("data-start");
-                info.removeAttribute("data-end");
-                info.removeAttribute("data-total");
+
             } else {
-                info.textContent = "data_table.showing_results";
-                info.setAttribute("data-i18n", "data_table.showing_results");
-                info.setAttribute("data-start", String(start + 1));
-                info.setAttribute("data-end", String(Math.min(end, total)));
-                info.setAttribute("data-total", String(total));
+                // Build structured HTML with separate translatable elements
+                info.innerHTML = `
+                    <span data-i18n="data_table.showing">${t("data_table.showing")}</span>
+                    <span>${start + 1}–${Math.min(end, total)}</span>
+                    <span data-i18n="data_table.of">${t("data_table.of")}</span>
+                    <span>${total}</span>
+                `;
+                info.removeAttribute("data-i18n");
+
             }
         }
 

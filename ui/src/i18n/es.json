@@ -96,8 +96,7 @@
     "save_changes": "Guardar Cambios",
     "delete_warning": "Esta acción no se puede deshacer.",
     "export": "Exportar",
-    "no_results": "No hay resultados",
-    "showing_results": "Mostrando {start}–{end} de {total}"
+    "no_results": "No hay resultados"
   },
   "businessunit_modal": {
     "code": "Código",

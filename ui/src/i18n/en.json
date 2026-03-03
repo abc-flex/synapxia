@@ -96,8 +96,7 @@
     "delete_confirmation": "Are you sure you want to delete record",
     "delete_warning": "This action cannot be undone.",
     "export": "Export",
-    "no_results": "No results",
-    "showing_results": "Showing {start}–{end} of {total}"
+    "no_results": "No results"
   },
   "businessunit_modal": {
     "code": "Code",

@@ -285,6 +285,24 @@ const triggerTextKey =
       if (openBtn) {
         event.preventDefault();
         open();
+        
+        // Preselect filter value for create mode
+        if (mode === "create") {
+          const filterKey = openBtn.dataset.filterKey;
+          if (filterKey) {
+            // Use requestAnimationFrame to ensure DOM is ready
+            requestAnimationFrame(() => {
+              const filterSelect = document.querySelector(`select[data-column-key="${filterKey}"]`);
+              if (filterSelect && filterSelect.value) {
+                const modalInput = modal.querySelector(`[name="${filterKey}"]`);
+                if (modalInput) {
+                  modalInput.value = filterSelect.value;
+                  modalInput.dispatchEvent(new Event("change", { bubbles: true }));
+                }
+              }
+            });
+          }
+        }
       }
 
       if (closeBtn) {

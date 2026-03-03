@@ -33,7 +33,7 @@ const {
   modalId = "crud-modal",
   mode = "create",
   entityName = "Item",
-  entityI18key = entityName.toLowerCase(),
+  entityI18key = entityName.replace(/([a-z])([A-Z])/g, '$1_$2').toLowerCase(),
   fields = [],
   initialValues = {},
   showTrigger = true,

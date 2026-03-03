@@ -82,7 +82,7 @@ const fieldKeys = tableFields.map((f) => f.key);
     />
 
     <div
-      id="itemslist-data"
+      id="list_item-data"
       data-rows={encodeURIComponent(JSON.stringify(data))}
       data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
       class="hidden"
@@ -94,7 +94,7 @@ const fieldKeys = tableFields.map((f) => f.key);
       import { initCrudPage, openEditModal, openDeleteModal } from "/scripts/crudClient.js";
 
       initCrudPage({
-        dataId: "itemslist-data",
+        dataId: "list_item-data",
         editModalId: "list_item-edit-modal",
         deleteModalId: "list_item-delete-modal",
       });

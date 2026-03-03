@@ -4,7 +4,6 @@ import Breadcrumb from "../../components/core/Breadcrumb.astro";
 import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
-import { getNavigationData } from "@/lib/navigation";
 import { getLists } from "@/lib/lists";
 import { getModules } from "@/lib/modules";
 import { getListItemsbyList } from "@/lib/list_items";
@@ -37,9 +36,6 @@ try {
 // Fetch items_list from API for select field
 let types: any[] = [];
 types = await getListItemsbyList('LIST_TYPE');
-
-const title = "SynapxIA";
-const { primaryNav, itemsNav } = getNavigationData();
 
 
 const columns = [
@@ -74,7 +70,7 @@ const tableFields = [
 const fieldKeys = tableFields.map((f) => f.key);
 ---
 
-<BaseLayout title={title} navModules={primaryNav} navOptions={itemsNav}>
+<BaseLayout>
   {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
   
   <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">

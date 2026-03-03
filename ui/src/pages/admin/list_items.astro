@@ -4,7 +4,6 @@ import Breadcrumb from "../../components/core/Breadcrumb.astro";
 import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
-import { getNavigationData } from "@/lib/navigation";
 import { getListItems } from "@/lib/list_items";
 
 // Fetch list_items from API
@@ -20,9 +19,6 @@ try {
   // Fallback to empty array to still render the page
   list_items = [];
 }
-
-const title = "SynapxIA";
-const { primaryNav, itemsNav } = getNavigationData();
 
 const columns = [
   { key: "sort_order", label: "#", visible: true },
@@ -50,7 +46,7 @@ const tableFields = [
 const fieldKeys = tableFields.map((f) => f.key);
 ---
 
-<BaseLayout title={title} navModules={primaryNav} navOptions={itemsNav}>
+<BaseLayout>
   {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
 
   <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">

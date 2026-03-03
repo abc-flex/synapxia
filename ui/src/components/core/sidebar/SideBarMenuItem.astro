@@ -18,10 +18,7 @@ const hasChildren = options.length > 0;
     >
       <summary class="menu-item group menu-item-inactive list-none cursor-pointer select-none">
         <span class="h-6 w-6 text-gray-100 bg-color-gray-100 dark:bg-gray-800 flex items-center justify-center rounded-md mr-3">
-          <img
-            src={module.icon}
-            alt=""
-          />
+          <img src={module.icon} alt="" />
         </span>
 
         <span class="menu-item-text" data-i18n={`modules.${module.code}`}>
@@ -50,7 +47,7 @@ const hasChildren = options.length > 0;
           {options.map((option) => (
             <li>
               <a
-                href={option.path || '#'}
+                href={option.path || "#"}
                 class="menu-dropdown-item group menu-dropdown-item-inactive"
               >
                 <span data-i18n={`menu_options.${option.code.toLowerCase()}`}>
@@ -63,7 +60,7 @@ const hasChildren = options.length > 0;
       </div>
     </details>
   ) : (
-    <a href={module.path || '#'} class="menu-item group menu-item-inactive">
+    <a href={module.path || "#"} class="menu-item group menu-item-inactive">
       <img
         src={module.icon}
         alt=""

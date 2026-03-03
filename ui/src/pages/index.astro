@@ -1,12 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { getNavigationData } from "@/lib/navigation";
-
-const title = "SynapxIA";
-const { primaryNav, itemsNav } = getNavigationData();
-
 ---
-<BaseLayout title={title} navModules={primaryNav} navOptions={itemsNav}>
+<BaseLayout>
   <div class="rounded-2xl border border-dashed border-slate-200 bg-white/70 p-10 text-center shadow-sm">
     <p class="text-sm uppercase tracking-[0.2em] text-slate-400">TailAdmin</p>
     <h1 class="mt-3 text-3xl font-bold text-slate-900">Astro Integration Starter</h1>

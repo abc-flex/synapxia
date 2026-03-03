@@ -280,6 +280,27 @@ export function initAdvancedTable(
         });
     }
 
+    /* ======================
+       EDIT/DELETE ACTIONS
+    ====================== */
+    // Event delegation for edit and delete buttons within this table
+    table.addEventListener("click", (e) => {
+        const button = (e.target as HTMLElement).closest("[data-action]") as HTMLElement;
+        if (!button) return;
+
+        const action = button.dataset.action;
+        const id = button.dataset.id;
+
+        if (action && id) {
+            // Dispatch custom event for CRUD operations
+            document.dispatchEvent(
+                new CustomEvent("datatable-action", {
+                    detail: { action, id },
+                })
+            );
+        }
+    });
+
     // 🔹 Aplicar filtros iniciales después de renderizar
     applyFilters();
 

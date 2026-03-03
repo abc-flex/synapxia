@@ -6,6 +6,7 @@ import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
 import { getUsers } from "@/lib/users";
 import { getBusinessUnits } from "@/lib/business_units";
+import { getRoles } from "@/lib/roles";
 
 // Fetch users from API
 let users: any[] = [];
@@ -32,6 +33,18 @@ try {
   business_units = [];
 }
 
+// Fetch roles from API for select field
+let roles: any[] = [];
+try {
+  const apiRoles = await getRoles();
+  roles = apiRoles;
+} catch (error) {
+  console.error('Failed to fetch roles:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch roles from API';
+  // Fallback to empty array to still render the page
+  roles = [];
+}
+
 const columns = [
   { key: "business_unit", label: "Business_Unit" },
   { key: "name", label: "Name" },
@@ -39,16 +52,27 @@ const columns = [
   { key: "menu_role", label: "Menu_Role" },
 ];
 const data = users.map((user) => ({
-  id: `${user.id}:${user.path}`,
+  id: user.id,
   name: `${user.first_name} ${user.last_name}`,
   username: user.username,
+  email: user.email,
+  first_name: user.first_name,
+  last_name: user.last_name,
   menu_role: user.menu_role,
   business_unit: user.business_unit,
+  is_active: user.is_active,
 }));
 
-const optionFields = [
+const userFields = [
+  { key: "username", label: "Username", required: true, placeholder: "john.doe" },
+  { key: "email", label: "Email", type: "email" as const, required: true, placeholder: "john@example.com" },
+  { key: "password", label: "Password", type: "text" as const, required: true, placeholder: "********" },
+  { key: "first_name", label: "First Name", required: true, placeholder: "John" },
+  { key: "last_name", label: "Last Name", required: true, placeholder: "Doe" },
+  { key: "menu_role", label: "Menu Role", type: "select" as const, options: roles, required: true },
+  { key: "business_unit", label: "Business Unit", type: "select" as const, options: business_units, required: true },
 ];
-const fieldKeys = optionFields.map((f) => f.key);
+const fieldKeys = userFields.map((f) => f.key);
 ---
 
 <BaseLayout>
@@ -68,21 +92,21 @@ const fieldKeys = optionFields.map((f) => f.key);
       mode="create"
       modalId="user-create-modal"
       entityName="User"
-      fields={optionFields}
+      fields={userFields}
       showTrigger={false}
     />
     <CrudModal
       mode="edit"
       modalId="user-edit-modal"
       entityName="User"
-      fields={optionFields}
+      fields={userFields.filter(f => f.key !== 'password')}
       showTrigger={false}
     />
     <CrudModal
       mode="delete"
       modalId="user-delete-modal"
       entityName="User"
-      fields={optionFields}
+      fields={userFields}
       showTrigger={false}
     />
 
@@ -97,10 +121,87 @@ const fieldKeys = optionFields.map((f) => f.key);
 
     <script type="module">
       import { initCrudPage } from "/scripts/crudClient.js";
+      import {
+        createUser,
+        updateUser,
+        deleteUser,
+      } from "/src/lib/users";
+
       initCrudPage({
         dataId: "users-data",
         editModalId: "user-edit-modal",
         deleteModalId: "user-delete-modal",
+      });
+
+      // Helper function to show toast notifications
+      function showToast(message, variant = "info") {
+        const toast = document.createElement("div");
+        toast.className = `fixed top-4 right-4 z-50 max-w-md p-4 rounded-lg border shadow-lg transition-all duration-300 ${
+          variant === "error"
+            ? "bg-red-50 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+            : "bg-green-50 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+        }`;
+        toast.innerHTML = `
+          <div class="flex items-start gap-3">
+            <div class="flex-1 text-sm font-medium">${message}</div>
+            <button type="button" class="text-gray-400 hover:text-gray-600" onclick="this.parentElement.parentElement.remove()">✕</button>
+          </div>
+        `;
+        document.body.appendChild(toast);
+
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          toast.style.transform = "translateX(100%)";
+          setTimeout(() => toast.remove(), 300);
+        }, 5000);
+      }
+
+      // Handle CRUD form submissions
+      document.addEventListener("crud-submit", async (e) => {
+        const { modalId, mode, data } = e.detail;
+
+        try {
+          if (mode === "create") {
+            // Create new user
+            await createUser({
+              username: data.username,
+              email: data.email,
+              password: data.password,
+              first_name: data.first_name,
+              last_name: data.last_name,
+              menu_role: data.menu_role,
+              business_unit: data.business_unit,
+              is_active: data.is_active !== false,
+            });
+
+            showToast("User created successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          } else if (mode === "edit") {
+            // Update existing user (id is numeric)
+            await updateUser(Number(data.id), {
+              username: data.username,
+              email: data.email,
+              first_name: data.first_name,
+              last_name: data.last_name,
+              menu_role: data.menu_role,
+              business_unit: data.business_unit,
+              is_active: data.is_active !== false,
+            });
+
+            showToast("User updated successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          } else if (mode === "delete") {
+            // Delete user
+            await deleteUser(Number(data.id));
+
+            showToast("User deleted successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          }
+        } catch (error) {
+          console.error("CRUD operation failed:", error);
+          showToast(error.message || "An error occurred", "error");
+        }
       });
     </script>
 

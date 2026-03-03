@@ -94,7 +94,8 @@
     "entries": "entradas",
     "save": "Guardar",
     "save_changes": "Guardar Cambios",
-    "delete_warning": "Esta acción no se puede deshacer."
+    "delete_warning": "Esta acción no se puede deshacer.",
+    "export": "Exportar"
   },
   "businessunit_modal": {
     "code": "Código",

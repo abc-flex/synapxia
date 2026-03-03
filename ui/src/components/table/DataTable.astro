@@ -182,19 +182,19 @@ const {
                     <span class="dot">•</span>
                   )}
                   <button
-                    class="p-1 text-blue-600 hover:bg-blue-100 rounded edit-btn"
+                    class="p-1 hover:bg-blue-100 rounded edit-btn"
                     data-id={row.id}
                     data-action="edit"
                     data-modal-open={`${i18Item}-edit-modal`}
                     data-i18n-title={`${i18Item}_modal.edit`}
                     title={t(locale, `${i18Item}_modal.edit`)}
                   >
-            <span class="w-5 h-5 inline-block">
-  <Fragment set:html={editSvg} />
-</span>
+                    <span class="w-5 h-5 inline-block">
+                      <Fragment set:html={editSvg} />
+                    </span>
                   </button>
                   <button
-                    class="p-1 text-red-600 hover:bg-red-100 rounded delete-btn"
+                    class="p-1 hover:bg-red-100 rounded delete-btn"
                     data-id={row.id}
                     data-action="delete"
                     data-modal-open={`${i18Item}-delete-modal`}

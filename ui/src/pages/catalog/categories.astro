@@ -14,8 +14,11 @@ try {
   const apiCategories = await getCategories();
   categories = apiCategories;
 } catch (error) {
-  console.error('Failed to fetch categories:', error);
-  errorMessage = error instanceof Error ? error.message : 'Failed to fetch categories from API';
+  console.error("Failed to fetch categories:", error);
+  errorMessage =
+    error instanceof Error
+      ? error.message
+      : "Failed to fetch categories from API";
   // Fallback to empty array to still render the page
   categories = [];
 }
@@ -40,7 +43,7 @@ const tableFields = [
   {
     key: "description",
     label: "Description",
-    type: "textarea" as const,  
+    type: "textarea" as const,
     required: false,
     placeholder: "Optional details of category",
   },

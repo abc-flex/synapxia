@@ -94,7 +94,8 @@
     "save": "Save",
     "save_changes": "Save Changes",
     "delete_confirmation": "Are you sure you want to delete record",
-    "delete_warning": "This action cannot be undone."
+    "delete_warning": "This action cannot be undone.",
+    "export": "Export"
   },
   "businessunit_modal": {
     "code": "Code",

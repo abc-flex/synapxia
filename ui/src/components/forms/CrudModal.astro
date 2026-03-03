@@ -110,6 +110,9 @@ const triggerText =
     </div>
 
     <div class="space-y-4 px-5 py-4">
+      {/* Hidden field to store record ID for edit/delete operations */}
+      <input type="hidden" name="id" id={`${modalId}-id`} value="" />
+
       {
         isDelete ? (
           <div
@@ -261,7 +264,7 @@ const triggerText =
   </form>
 </dialog>
 
-<script define:vars={{ modalId }}>
+<script define:vars={{ modalId, mode }}>
   (() => {
     if (typeof window === "undefined") return;
 
@@ -307,5 +310,47 @@ const triggerText =
       e.preventDefault();
       close();
     });
+
+    // ✅ Form submission handler
+    const form = modal.querySelector("form");
+    if (form) {
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        // Extract form data
+        const formData = new FormData(form);
+        const data = {};
+
+        for (const [key, value] of formData.entries()) {
+          const input = form.querySelector(`[name="${key}"]`);
+          if (input && input.type === "checkbox") {
+            data[key] = input.checked;
+          } else if (input && input.type === "number") {
+            data[key] = value ? Number(value) : null;
+          } else {
+            data[key] = value;
+          }
+        }
+
+        // Store the original ID if present (for edit/delete)
+        const idInput = form.querySelector('[name="id"]');
+        if (idInput) {
+          data.id = idInput.value;
+        }
+
+        // Dispatch custom event with form data
+        document.dispatchEvent(
+          new CustomEvent("crud-submit", {
+            detail: {
+              modalId,
+              mode,
+              data,
+            },
+          }),
+        );
+
+        close();
+      });
+    }
   })();
 </script>

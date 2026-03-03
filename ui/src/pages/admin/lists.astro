@@ -39,10 +39,10 @@ types = await getListItemsbyList('LIST_TYPE');
 
 
 const columns = [
-  { key: "module", label: "Module", visible: true },
-  { key: "code", label: "Code", visible: true },
-  { key: "name", label: "Name", visible: true },
-  { key: "type", label: "Type", visible: true },
+  { key: "module", label: "list_modal.module", visible: true },
+  { key: "code", label: "list_modal.code", visible: true },
+  { key: "name", label: "list_modal.name", visible: true },
+  { key: "type", label: "list_modal.type", visible: true },
 ];
 const data = lists.map((item) => ({
   id: item.code,
@@ -63,13 +63,13 @@ const tableFields: Array<{
   type?: "text" | "textarea" | "select" | "email" | "number" | "checkbox";
   options?: any[];
 }> = [
-  { key: "code", label: "Code", required: true, placeholder: "e.g. STATUS" },
-  { key: "name", label: "Name", required: true, placeholder: "e.g. List statuses for..." },
-  { key: "type", label: "Type", type: "select" as const, options: types, required: true },
-  { key: "module", label: "Module", type: "select" as const, options: modules, required: false },
+  { key: "code", label: "list_modal.code", required: true, placeholder: "e.g. STATUS" },
+  { key: "name", label: "list_modal.name", required: true, placeholder: "e.g. List statuses for..." },
+  { key: "type", label: "list_modal.type", type: "select" as const, options: types, required: true },
+  { key: "module", label: "list_modal.module", type: "select" as const, options: modules, required: false },
   {
     key: "description",
-    label: "Description",
+    label: "list_modal.description",
     type: "textarea" as const,
     placeholder: "Optional details of list",
   },
@@ -88,6 +88,7 @@ const fieldKeys = tableFields.map((f) => f.key);
       homeLink="/"
       moduleNameKey="modules.ADMIN"
       pageNameKey="menu_options.lists"
+      pageTitleKey="menu_options.lists"
     />
 
     <CrudModal

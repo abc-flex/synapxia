@@ -35,11 +35,11 @@ try {
 }
 
 const columns = [
-  { key: "sort_order", label: "#" },
-  { key: "module", label: "Module" },
-  { key: "code", label: "Code" },
-  { key: "name", label: "Name" },
-  { key: "path", label: "Path" },
+  { key: "sort_order", label: "option_modal.sort_order" },
+  { key: "module", label: "list_modal.module" },
+  { key: "code", label: "option_modal.code" },
+  { key: "name", label: "option_modal.name" },
+  { key: "path", label: "option_modal.path" },
 ];
 const data = options.map((option) => ({
   id: `${option.module}:${option.code}`,
@@ -53,17 +53,17 @@ const data = options.map((option) => ({
 const optionFields = [
   {
     key: "module",
-    label: "Module",
+    label: "list_modal.module",
     type: "select" as const,
     options: modules,
     required: true,
   },
-  { key: "code", label: "Code", required: true, placeholder: "e.g. business_units" },
-  { key: "name", label: "Name", required: true, placeholder: "e.g. Business Units" },
-  { key: "path", label: "Path", required: true, placeholder: "/admin/business_units" },
+  { key: "code", label: "option_modal.code", required: true, placeholder: "e.g. business_units" },
+  { key: "name", label: "option_modal.name", required: true, placeholder: "e.g. Business Units" },
+  { key: "path", label: "option_modal.path", required: true, placeholder: "/admin/business_units" },
   {
     key: "sort_order",
-    label: "Sort Order",
+    label: "option_modal.sort_order",
     type: "number" as const,
     placeholder: "10",
   },
@@ -82,6 +82,7 @@ const fieldKeys = optionFields.map((f) => f.key);
       homeLink="/"
       moduleNameKey="modules.ADMIN"
       pageNameKey="menu_options.options"
+      pageTitleKey="menu_options.options"
     />
 
     <CrudModal

@@ -46,10 +46,10 @@ try {
 }
 
 const columns = [
-  { key: "business_unit", label: "Business_Unit" },
-  { key: "name", label: "Name" },
-  { key: "username", label: "Username" },
-  { key: "menu_role", label: "Menu_Role" },
+  { key: "business_unit", label: "user_modal.business_unit" },
+  { key: "name", label: "user_modal.first_name" },
+  { key: "username", label: "user_modal.username" },
+  { key: "menu_role", label: "user_modal.menu_role" },
 ];
 const data = users.map((user) => ({
   id: user.id,
@@ -64,13 +64,13 @@ const data = users.map((user) => ({
 }));
 
 const userFields = [
-  { key: "username", label: "Username", required: true, placeholder: "john.doe" },
-  { key: "email", label: "Email", type: "email" as const, required: true, placeholder: "john@example.com" },
-  { key: "password", label: "Password", type: "text" as const, required: true, placeholder: "********" },
-  { key: "first_name", label: "First Name", required: true, placeholder: "John" },
-  { key: "last_name", label: "Last Name", required: true, placeholder: "Doe" },
-  { key: "menu_role", label: "Menu Role", type: "select" as const, options: roles, required: true },
-  { key: "business_unit", label: "Business Unit", type: "select" as const, options: business_units, required: true },
+  { key: "username", label: "user_modal.username", required: true, placeholder: "john.doe" },
+  { key: "email", label: "user_modal.email", type: "email" as const, required: true, placeholder: "john@example.com" },
+  { key: "password", label: "user_modal.password", type: "text" as const, required: true, placeholder: "********" },
+  { key: "first_name", label: "user_modal.first_name", required: true, placeholder: "John" },
+  { key: "last_name", label: "user_modal.last_name", required: true, placeholder: "Doe" },
+  { key: "menu_role", label: "user_modal.menu_role", type: "select" as const, options: roles, required: true },
+  { key: "business_unit", label: "user_modal.business_unit", type: "select" as const, options: business_units, required: true },
 ];
 const fieldKeys = userFields.map((f) => f.key);
 ---
@@ -86,6 +86,7 @@ const fieldKeys = userFields.map((f) => f.key);
       homeLink="/"
       moduleNameKey="modules.ADMIN"
       pageNameKey="menu_options.users"
+      pageTitleKey="menu_options.users"
     />
 
     <CrudModal

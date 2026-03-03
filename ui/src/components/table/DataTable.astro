@@ -1,7 +1,4 @@
 ---
-import { t, type Locale } from "@/i18n";
-import { getLocale } from "@/utils/getLocale";
-
 import editSvg from "@/images/icons/edit.svg?raw";
 import deleteSvg from "@/images/icons/delete.svg?raw";
 import listSvg from "@/images/icons/list-bullet.svg?raw";
@@ -9,8 +6,6 @@ import downloadSvg from "@/images/icons/arrow-down-tray.svg?raw";
 import leftSvg from "@/images/icons/chevron-left.svg?raw";
 import rightSvg from "@/images/icons/chevron-right.svg?raw";
 import infoSvg from "@/images/icons/information-circle.svg?raw";
-
-const locale = getLocale(Astro) as Locale;
 
 const {
   columns = [],
@@ -36,7 +31,8 @@ const {
         <a
           href={masterPage}
           class="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-gray-100"
-          title={t(locale, `${mdItem}_modal.many_title`)}
+          data-i18n-title={`${mdItem}_modal.many_title`}
+          title=""
         >
           <span class="w-5 h-5 inline-block">
           <Fragment set:html={leftSvg} />
@@ -53,8 +49,8 @@ const {
             title=""
           >
             <span class="text-lg">+</span>
-            <span data-i18n-title={`${i18Item}_modal.one_title`}>
-              {t(locale, `${i18Item}_modal.one_title`)}
+            <span data-i18n={`${i18Item}_modal.one_title`}>
+              {`${i18Item}_modal.one_title`}
             </span>
           </button>
         )
@@ -81,7 +77,8 @@ const {
       <input
         id={`${tableId}-search`}
         type="search"
-        placeholder={t(locale, "data_table.search")}
+        placeholder="data_table.search"
+        data-i18n-placeholder="data_table.search"
         class="w-56 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm
                focus:border-indigo-500 focus:ring-indigo-500"
       />
@@ -94,7 +91,7 @@ const {
         <span class="w-5 h-5 inline-block">
           <Fragment set:html={downloadSvg} />
         </span>
-        <span data-i18n="data_table.export">{t(locale, "data_table.export")}</span>
+        <span data-i18n="data_table.export">data_table.export</span>
       </button>
 
       <div
@@ -149,11 +146,11 @@ const {
         <tr>
           {
             columns.map((col) => (
-              <th class="px-2 py-1 font-semibold tracking-wide">{col.label}</th>
+              <th class="px-2 py-1 font-semibold tracking-wide" data-i18n={col.label}>{col.label}</th>
             ))
           }
-          <th class="px-4 py-4 text-right">
-            {t(locale, "data_table.actions")}
+          <th class="px-4 py-4 text-right" data-i18n="data_table.actions">
+            data_table.actions
           </th>
         </tr>
       </thead>
@@ -173,7 +170,7 @@ const {
                       href={detailPage + "?" + i18Item + "=" + row.id}
                       class="detail-btn action-btn"
                       data-i18n-title={`${mdItem}_modal.many_title`}
-                      title={t(locale, `${mdItem}_modal.many_title`)}
+                      title=""
                     >
                       <span class="w-5 h-5 inline-block">
                         <Fragment set:html={listSvg} />
@@ -187,7 +184,7 @@ const {
                     data-action="edit"
                     data-modal-open={`${i18Item}-edit-modal`}
                     data-i18n-title={`${i18Item}_modal.edit`}
-                    title={t(locale, `${i18Item}_modal.edit`)}
+                    title=""
                   >
                     <span class="w-5 h-5 inline-block">
                       <Fragment set:html={editSvg} />
@@ -199,7 +196,7 @@ const {
                     data-action="delete"
                     data-modal-open={`${i18Item}-delete-modal`}
                     data-i18n-title={`${i18Item}_modal.delete`}
-                    title={t(locale, `${i18Item}_modal.delete`)}
+                    title=""
                   >
                   <span class="w-5 h-5 inline-block">
                     <Fragment set:html={deleteSvg} />
@@ -265,8 +262,8 @@ const {
         </span>
       </div>
       <div>
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-            {t(locale, `${i18Item}_modal.empty_message`)}                    
+        <p class="text-sm text-gray-500 dark:text-gray-400" data-i18n={`${i18Item}_modal.empty_message`}>
+            {`${i18Item}_modal.empty_message`}
           </p>
       </div>
     </div>

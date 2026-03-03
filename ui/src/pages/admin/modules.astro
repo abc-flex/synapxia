@@ -21,9 +21,9 @@ try {
 }
 
 const columns = [
-  { key: "code", label: "Code", visible: true },
-  { key: "name", label: "Name", visible: true },
-  { key: "sort_order", label: "#", visible: true },
+  { key: "code", label: "module_modal.code", visible: true },
+  { key: "name", label: "module_modal.name", visible: true },
+  { key: "sort_order", label: "module_modal.sort_order", visible: true },
 ];
 const data = modules.map((item) => ({
   id: item.code,
@@ -36,18 +36,18 @@ const data = modules.map((item) => ({
 }));
 
 const moduleFields = [
-  { key: "code", label: "Code", required: true, placeholder: "e.g. ADMIN" },
-  { key: "name", label: "Name", required: true, placeholder: "Administration" },
+  { key: "code", label: "module_modal.code", required: true, placeholder: "e.g. ADMIN" },
+  { key: "name", label: "module_modal.name", required: true, placeholder: "Administration" },
   {
     key: "sort_order",
-    label: "Sort Order",
+    label: "module_modal.sort_order",
     type: "number" as const,
     placeholder: "10",
   },
-  { key: "icon", label: "Icon Path", placeholder: "Heroicon path" },
+  { key: "icon", label: "module_modal.icon", placeholder: "Heroicon path" },
   {
     key: "description",
-    label: "Description",
+    label: "module_modal.description",
     type: "textarea" as const,
     placeholder: "Optional details",
   },
@@ -66,6 +66,7 @@ const fieldKeys = moduleFields.map((f) => f.key);
       homeLink="/"
       moduleNameKey="modules.ADMIN"
       pageNameKey="menu_options.modules"
+      pageTitleKey="menu_options.modules"
     />
 
     <CrudModal

@@ -1,9 +1,4 @@
 ---
-import { t } from "@/i18n";
-import { getLocale } from "@/utils/getLocale";
-
-const locale = getLocale(Astro);
-
 interface FieldOption {
   label?: string;
   value?: string;
@@ -50,25 +45,25 @@ const isDelete = mode === "delete";
 const isEdit = mode === "edit";
 const isCreate = mode === "create";
 
-const title = isCreate
-  ? t(locale, `${entityI18key}_modal.add_new`)
+const titleKey = isCreate
+  ? `${entityI18key}_modal.add_new`
   : isEdit
-    ? t(locale, `${entityI18key}_modal.edit`)
-    : t(locale, `${entityI18key}_modal.delete`);
-const primaryAction =
+    ? `${entityI18key}_modal.edit`
+    : `${entityI18key}_modal.delete`;
+const primaryActionKey =
   actionLabel ||
   (isCreate
-    ? t(locale, "crud_modal.save")
+    ? "crud_modal.save"
     : isEdit
-      ? t(locale, "crud_modal.save_changes")
-      : t(locale, `${entityI18key}_modal.delete`));
-const triggerText =
+      ? "crud_modal.save_changes"
+      : `${entityI18key}_modal.delete`);
+const triggerTextKey =
   triggerLabel ||
   (isCreate
-    ? t(locale, `${entityI18key}_modal.add_new`)
+    ? `${entityI18key}_modal.add_new`
     : isEdit
-      ? t(locale, `${entityI18key}_modal.edit`)
-      : t(locale, `${entityI18key}_modal.delete`));
+      ? `${entityI18key}_modal.edit`
+      : `${entityI18key}_modal.delete`);
 ---
 
 {
@@ -82,7 +77,7 @@ const triggerText =
         <span class="text-lg leading-none">
           {isDelete ? "✕" : isEdit ? "✎" : "+"}
         </span>
-        <span>{triggerText}</span>
+        <span data-i18n={triggerTextKey}>{triggerTextKey}</span>
       </button>
     </div>
   ) : null
@@ -96,14 +91,15 @@ const triggerText =
     <div
       class="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-gray-800"
     >
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-        {title}
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white" data-i18n={titleKey}>
+        {titleKey}
       </h2>
       <button
         type="button"
         class="p-1 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
         data-modal-close={modalId}
-        aria-label={t(locale, "crud_modal.close")}
+        aria-label="crud_modal.close"
+        data-i18n-aria-label="crud_modal.close"
       >
         ✕
       </button>
@@ -121,11 +117,11 @@ const triggerText =
             role="alert"
           >
             <p class="text-sm text-gray-700 dark:text-gray-300">
-              {t(locale, "crud_modal.delete_confirmation")}{" "}
+              <span data-i18n="crud_modal.delete_confirmation">crud_modal.delete_confirmation</span>{" "}
               {entityName.toLowerCase()}?
               <strong class="block">
                 {"* "}
-                {t(locale, "crud_modal.delete_warning")}
+                <span data-i18n="crud_modal.delete_warning">crud_modal.delete_warning</span>
               </strong>
             </p>
           </div>
@@ -145,7 +141,7 @@ const triggerText =
                   class="text-sm font-medium text-gray-700 dark:text-gray-300"
                 >
                   {field.required && <span class="text-red-500">*</span>}
-                  {field.label}
+                  <span data-i18n={field.label}>{field.label}</span>
                 </label>
                 <textarea
                   id={inputId}
@@ -163,6 +159,7 @@ const triggerText =
           }
 
           if (field.type === "select") {
+            const selectLabel = (field.label || field.name || "").toLowerCase();
             return (
               <div class="space-y-1" key={field.key}>
                 <label
@@ -170,7 +167,7 @@ const triggerText =
                   class="text-sm font-medium text-gray-700 dark:text-gray-300"
                 >
                   {field.required && <span class="text-red-500">*</span>}
-                  {field.label || field.name}
+                  <span data-i18n={field.label || field.name}>{field.label || field.name}</span>
                 </label>
                 <select
                   id={inputId}
@@ -179,9 +176,8 @@ const triggerText =
                   disabled={disabled}
                   class={`h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white/90 ${disabled ? "opacity-60" : ""}`}
                 >
-                  <option value="">
-                    --- Select{" "}
-                    {field.label.toLowerCase() || field.name.toLowerCase()} ---
+                  <option value="" data-i18n-prefix="crud_modal.select" data-i18n-suffix={field.label}>
+                    --- Select {selectLabel} ---
                   </option>
                   {(field.options || []).map((opt) => (
                     <option
@@ -212,7 +208,7 @@ const triggerText =
                   class="text-sm font-medium text-gray-700 dark:text-gray-300"
                 >
                   {field.required && <span class="text-red-500">*</span>}
-                  {field.label}
+                  <span data-i18n={field.label}>{field.label}</span>
                 </label>
               </div>
             );
@@ -226,7 +222,7 @@ const triggerText =
                 class="text-sm font-medium text-gray-700 dark:text-gray-300"
               >
                 {field.required && <span class="text-red-500">*</span>}
-                {field.label}
+                <span data-i18n={field.label}>{field.label}</span>
               </label>
               <input
                 id={inputId}
@@ -251,14 +247,16 @@ const triggerText =
         type="button"
         class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
         data-modal-close={modalId}
+        data-i18n="crud_modal.cancel"
       >
-        {t(locale, "crud_modal.cancel")}
+        crud_modal.cancel
       </button>
       <button
         type="submit"
         class={`rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-sm transition focus:outline-none focus:ring-2 ${isDelete ? "bg-red-600 hover:bg-red-700 focus:ring-red-200 dark:bg-red-500 dark:hover:bg-red-400 dark:focus:ring-red-800" : "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-200 dark:bg-indigo-500 dark:hover:bg-indigo-400 dark:focus:ring-indigo-800"}`}
+        data-i18n={primaryActionKey}
       >
-        {primaryAction}
+        {primaryActionKey}
       </button>
     </div>
   </form>

@@ -1,9 +1,5 @@
 ---
-import { t } from "@/i18n";
-import { getLocale } from "@/utils/getLocale";
 import ChevronRight from "@/images/icons/chevron-right.svg?raw";
-
-const locale = getLocale(Astro);
 
 export interface Props {
   moduleName?: string;
@@ -12,6 +8,7 @@ export interface Props {
   homeLink?: string;
   moduleNameKey?: string;
   pageNameKey?: string;
+  pageTitleKey?: string;
 }
 
 const {
@@ -21,12 +18,13 @@ const {
   homeLink = "/",
   moduleNameKey,
   pageNameKey,
+  pageTitleKey,
 } = Astro.props as Props;
 ---
 
 <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
-  <h2 class="text-xl font-semibold text-gray-800 dark:text-white/90">
-    {pageTitle}
+  <h2 class="text-xl font-semibold text-gray-800 dark:text-white/90" data-i18n={pageTitleKey || pageNameKey}>
+    {pageTitleKey || pageNameKey || pageTitle}
   </h2>
 
   <nav>
@@ -36,8 +34,7 @@ const {
           class="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400"
           href={homeLink}
         >
-          <span data-i18n="breadcrumb.home">{t(locale, "breadcrumb.home")}</span
-          >
+          <span data-i18n="breadcrumb.home">breadcrumb.home</span>
           <span class="h-4 w-4 stroke-current">
             <Fragment set:html={ChevronRight} />
           </span>
@@ -47,14 +44,14 @@ const {
         <a
           class="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400"
         >
-          <span data-i18n={moduleNameKey}>{moduleName}</span>
+          <span data-i18n={moduleNameKey}>{moduleNameKey || moduleName}</span>
           <span class="h-4 w-4 stroke-current">
             <Fragment set:html={ChevronRight} />
           </span>
         </a>
       </li>
       <li class="text-sm text-gray-800 dark:text-white/90">
-        <span data-i18n={pageNameKey}>{pageName}</span>
+        <span data-i18n={pageNameKey}>{pageNameKey || pageName}</span>
       </li>
     </ol>
   </nav>

@@ -19,6 +19,6 @@ const getNestedValue = (obj: any, path: string): string => {
   return path.split('.').reduce((current, key) => current?.[key], obj) ?? path;
 }
 
-export const t = (locale: Locale, key: string): string => {
-  return getNestedValue(translations[locale], key) ?? getNestedValue(translations.en, key);
+export const t = (locale: Locale | string, key: string): string => {
+  return getNestedValue(translations[locale as Locale], key);
 }

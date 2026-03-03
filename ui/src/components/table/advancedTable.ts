@@ -224,10 +224,19 @@ export function initAdvancedTable(
         // 🔹 Info
         const info = document.getElementById(`${tableId}-pagination-info`);
         if (info) {
-            info.textContent =
-                total === 0
-                    ? "No results"
-                    : `Showing ${start + 1}–${Math.min(end, total)} of ${total}`;
+            if (total === 0) {
+                info.textContent = "data_table.no_results";
+                info.setAttribute("data-i18n", "data_table.no_results");
+                info.removeAttribute("data-start");
+                info.removeAttribute("data-end");
+                info.removeAttribute("data-total");
+            } else {
+                info.textContent = "data_table.showing_results";
+                info.setAttribute("data-i18n", "data_table.showing_results");
+                info.setAttribute("data-start", String(start + 1));
+                info.setAttribute("data-end", String(Math.min(end, total)));
+                info.setAttribute("data-total", String(total));
+            }
         }
 
         // 🔹 Pages

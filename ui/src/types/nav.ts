@@ -8,4 +8,5 @@ export interface NavOption {
   module: string;
   name: string;
   path: string;
+  icon?: string;
 }

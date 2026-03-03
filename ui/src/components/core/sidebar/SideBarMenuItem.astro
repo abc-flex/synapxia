@@ -21,6 +21,7 @@ function getIcon(icon: string) {
 }
 
 const iconSvg = getIcon(module.icon);
+const chevronIcon = getIcon("chevron-down");
 ---
 
 {
@@ -30,7 +31,7 @@ const iconSvg = getIcon(module.icon);
       aria-label={`${module.name} menu`}
     >
       <summary class="menu-item group menu-item-inactive list-none cursor-pointer select-none">
-        <span class="h-6 w-6 text-gray-800 bg-color-gray-100 dark:text-gray-100 flex items-center justify-center rounded-md mr-3">
+        <span class=" text-gray-800 bg-color-gray-100 dark:text-gray-100 flex items-center justify-center rounded-md mr-1">
           <span class="w-5 h-5 inline-block">
             <Fragment set:html={iconSvg} />
           </span>
@@ -40,31 +41,20 @@ const iconSvg = getIcon(module.icon);
           {module.name}
         </span>
 
-        <svg
-          class="menu-item-arrow stroke-current"
-          width="20"
-          height="20"
-          viewBox="0 0 20 20"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M4.79175 7.39584L10.0001 12.6042L15.2084 7.39585"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
+        <span class="menu-item-arrow stroke-current w-5 h-5 inline-block">
+          <Fragment set:html={chevronIcon} />
+        </span>
       </summary>
 
       <div class="overflow-hidden transform translate">
-        <ul class="flex flex-col gap-1 mt-2 menu-dropdown pl-12">
+        <ul class="flex flex-col gap-1 mt-2 menu-dropdown pl-3">
           {options.map((option) => (
             <li>
               <a
                 href={option.path || "#"}
                 class="menu-dropdown-item group menu-dropdown-item-inactive"
               >
+                <span class="w-1 h-1 inline-block mr-2 bg-current rounded-full"></span>
                 <span data-i18n={`menu_options.${option.code.toLowerCase()}`}>
                   {option.name}
                 </span>
@@ -76,10 +66,12 @@ const iconSvg = getIcon(module.icon);
     </details>
   ) : (
     <a href={module.path || "#"} class="menu-item group menu-item-inactive">
-      <span class="w-5 h-5 inline-block">
+      <span class="w-5 h-5 inline-block mr-1">
         <Fragment set:html={iconSvg} />
       </span>
-      <span class="menu-item-text">{module.name}</span>
+      <span class="menu-item-text" data-i18n={`modules.${module.code}`}>
+        {module.name}
+      </span>
     </a>
   )
 }

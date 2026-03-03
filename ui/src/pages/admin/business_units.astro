@@ -25,10 +25,10 @@ let types: any[] = [];
 types = await getListItemsbyList('BIZ_UNIT_TYPE');
 
 const columns = [
-  { key: "code", label: "Code" },
-  { key: "name", label: "Name" },
-  { key: "type", label: "Type" },
-  { key: "parent", label: "Parent" },
+  { key: "code", label: "businessunit_modal.code" },
+  { key: "name", label: "businessunit_modal.name" },
+  { key: "type", label: "businessunit_modal.type" },
+  { key: "parent", label: "businessunit_modal.parent" },
 ];
 const data = business_units.map((item) => ({
   id: item.code,
@@ -42,14 +42,14 @@ const data = business_units.map((item) => ({
   updated_at: item.updated_at,
 }));
 const tableFields = [
-  { key: "code", label: "Code", required: true, placeholder: "e.g. ADMIN" },
-  { key: "name", label: "Name", required: true, placeholder: "e.g. Administration" },
-  { key: "type", label: "Type", type: "select" as const, options: types, required: false },
-  { key: "parent", label: "Parent", required: false },
+  { key: "code", label: "businessunit_modal.code", required: true, placeholder: "e.g. ADMIN" },
+  { key: "name", label: "businessunit_modal.name", required: true, placeholder: "e.g. Administration" },
+  { key: "type", label: "businessunit_modal.type", type: "select" as const, options: types, required: false },
+  { key: "parent", label: "businessunit_modal.parent", required: false },
   {
     key: "description",
-    label: "Description",
-    type: "textarea" as const,  
+    label: "businessunit_modal.description",
+    type: "textarea" as const,
     placeholder: "Optional details of business unit",
   },
 ];
@@ -68,6 +68,7 @@ const fieldKeys = tableFields.map((f) => f.key);
       homeLink="/"
       moduleNameKey="modules.ADMIN"
       pageNameKey="menu_options.business_units"
+      pageTitleKey="menu_options.business_units"
     />
     <!-- Breadcrumb End -->
 

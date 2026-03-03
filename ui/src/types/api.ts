@@ -38,6 +38,154 @@ export interface OptionUpdate {
   is_active?: boolean;
 }
 
+// Role types
+export interface Role {
+  code: string;
+  name: string;
+  description?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface RoleCreate {
+  code: string;
+  name: string;
+  description?: string;
+  is_active?: boolean;
+}
+
+export interface RoleUpdate {
+  name?: string;
+  description?: string;
+  is_active?: boolean;
+}
+
+// List types
+export interface List {
+  id?: number;
+  module: string;
+  code: string;
+  name: string;
+  type: string;
+  description?: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ListCreate {
+  module: string;
+  code: string;
+  name: string;
+  type: string;
+  description?: string;
+  is_active?: boolean;
+}
+
+export interface ListUpdate {
+  name?: string;
+  type?: string;
+  description?: string;
+  is_active?: boolean;
+}
+
+// Module types
+export interface Module {
+  code: string;
+  name: string;
+  description?: string;
+  sort_order: number;
+  icon?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface ModuleCreate {
+  code: string;
+  name: string;
+  description?: string;
+  sort_order?: number;
+  icon?: string;
+  is_active?: boolean;
+}
+
+export interface ModuleUpdate {
+  name?: string;
+  description?: string;
+  sort_order?: number;
+  icon?: string;
+  is_active?: boolean;
+}
+
+// User types
+export interface User {
+  id?: number;
+  username: string;
+  email: string;
+  password_hash: string;
+  first_name: string;
+  last_name: string;
+  menu_role: string;
+  business_unit: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  last_login_at?: string;
+}
+
+export interface UserCreate {
+  username: string;
+  email: string;
+  password: string;
+  first_name: string;
+  last_name: string;
+  menu_role: string;
+  business_unit: string;
+  is_active?: boolean;
+}
+
+export interface UserUpdate {
+  username?: string;
+  email?: string;
+  password?: string;
+  first_name?: string;
+  last_name?: string;
+  menu_role?: string;
+  business_unit?: string;
+  is_active?: boolean;
+}
+
+// BusinessUnit types
+export interface BusinessUnit {
+  code: string;
+  name: string;
+  description?: string;
+  type: string;
+  parent: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface BusinessUnitCreate {
+  code: string;
+  name: string;
+  description?: string;
+  type: string;
+  parent: string;
+  is_active?: boolean;
+}
+
+export interface BusinessUnitUpdate {
+  name?: string;
+  description?: string;
+  type?: string;
+  parent?: string;
+  is_active?: boolean;
+}
+
 // Generic API Error
 export interface ApiError {
   detail: string;

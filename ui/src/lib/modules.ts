@@ -4,7 +4,7 @@
  */
 
 import { apiGet, apiPost, apiPut, apiDelete, buildQueryString } from './api';
-import type { Module } from '../types/module';
+import type { Module, ModuleCreate, ModuleUpdate } from '../types/api';
 
 /**
  * Fetch all modules with optional pagination
@@ -24,4 +24,32 @@ export async function getModules(skip: number = 0, limit: number = 100): Promise
  */
 export async function getModule(code: string): Promise<Module> {
   return apiGet<Module>(`/api/modules/${encodeURIComponent(code)}`);
+}
+
+/**
+ * Create a new module
+ * @param data - Module data to create
+ * @returns Promise with created module
+ */
+export async function createModule(data: ModuleCreate): Promise<Module> {
+  return apiPost<Module, ModuleCreate>('/api/modules/', data);
+}
+
+/**
+ * Update an existing module
+ * @param code - Module code to update
+ * @param data - Module data to update
+ * @returns Promise with updated module
+ */
+export async function updateModule(code: string, data: ModuleUpdate): Promise<Module> {
+  return apiPut<Module, ModuleUpdate>(`/api/modules/${encodeURIComponent(code)}`, data);
+}
+
+/**
+ * Delete a module by its code
+ * @param code - Module code to delete
+ * @returns Promise with void
+ */
+export async function deleteModule(code: string): Promise<void> {
+  return apiDelete<void>(`/api/modules/${encodeURIComponent(code)}`);
 }

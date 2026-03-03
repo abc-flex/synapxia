@@ -4,7 +4,7 @@
  */
 
 import { apiGet, apiPost, apiPut, apiDelete, buildQueryString } from './api';
-import type { BusinessUnit } from '../types/business_unit';
+import type { BusinessUnit, BusinessUnitCreate, BusinessUnitUpdate } from '../types/api';
 
 /**
  * Fetch all business_units with optional pagination
@@ -24,4 +24,32 @@ export async function getBusinessUnits(skip: number = 0, limit: number = 100): P
  */
 export async function getBusinessUnit(code: string): Promise<BusinessUnit> {
   return apiGet<BusinessUnit>(`/api/business_units/${encodeURIComponent(code)}`);
+}
+
+/**
+ * Create a new business unit
+ * @param data - Business unit data to create
+ * @returns Promise with created business unit
+ */
+export async function createBusinessUnit(data: BusinessUnitCreate): Promise<BusinessUnit> {
+  return apiPost<BusinessUnit, BusinessUnitCreate>('/api/business_units/', data);
+}
+
+/**
+ * Update an existing business unit
+ * @param code - Business unit code to update
+ * @param data - Business unit data to update
+ * @returns Promise with updated business unit
+ */
+export async function updateBusinessUnit(code: string, data: BusinessUnitUpdate): Promise<BusinessUnit> {
+  return apiPut<BusinessUnit, BusinessUnitUpdate>(`/api/business_units/${encodeURIComponent(code)}`, data);
+}
+
+/**
+ * Delete a business unit by its code
+ * @param code - Business unit code to delete
+ * @returns Promise with void
+ */
+export async function deleteBusinessUnit(code: string): Promise<void> {
+  return apiDelete<void>(`/api/business_units/${encodeURIComponent(code)}`);
 }

@@ -4,7 +4,7 @@
  */
 
 import { apiGet, apiPost, apiPut, apiDelete, buildQueryString } from './api';
-import type { Role } from '../types/role';
+import type { Role, RoleCreate, RoleUpdate } from '../types/api';
 
 /**
  * Fetch all roles with optional pagination
@@ -24,4 +24,32 @@ export async function getRoles(skip: number = 0, limit: number = 100): Promise<R
  */
 export async function getRole(code: string): Promise<Role> {
   return apiGet<Role>(`/api/roles/${encodeURIComponent(code)}`);
+}
+
+/**
+ * Create a new role
+ * @param data - Role data to create
+ * @returns Promise with created role
+ */
+export async function createRole(data: RoleCreate): Promise<Role> {
+  return apiPost<Role, RoleCreate>('/api/roles/', data);
+}
+
+/**
+ * Update an existing role
+ * @param code - Role code to update
+ * @param data - Role data to update
+ * @returns Promise with updated role
+ */
+export async function updateRole(code: string, data: RoleUpdate): Promise<Role> {
+  return apiPut<Role, RoleUpdate>(`/api/roles/${encodeURIComponent(code)}`, data);
+}
+
+/**
+ * Delete a role by its code
+ * @param code - Role code to delete
+ * @returns Promise with void
+ */
+export async function deleteRole(code: string): Promise<void> {
+  return apiDelete<void>(`/api/roles/${encodeURIComponent(code)}`);
 }

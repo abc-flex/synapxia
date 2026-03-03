@@ -4,7 +4,7 @@
  */
 
 import { apiGet, apiPost, apiPut, apiDelete, buildQueryString } from './api';
-import type { User } from '../types/users';
+import type { User, UserCreate, UserUpdate } from '../types/api';
 
 // Interface for select options with value and label
 export interface UserSelectOption {
@@ -51,4 +51,32 @@ export async function getUsersByRole(role_code: string, skip: number = 0, limit:
  */
 export async function getUser(id: number): Promise<User> {
   return apiGet<User>(`/api/users/${encodeURIComponent(id)}`);
+}
+
+/**
+ * Create a new user
+ * @param data - User data to create
+ * @returns Promise with created user
+ */
+export async function createUser(data: UserCreate): Promise<User> {
+  return apiPost<User, UserCreate>('/api/users/', data);
+}
+
+/**
+ * Update an existing user
+ * @param id - User id to update
+ * @param data - User data to update
+ * @returns Promise with updated user
+ */
+export async function updateUser(id: number, data: UserUpdate): Promise<User> {
+  return apiPut<User, UserUpdate>(`/api/users/${encodeURIComponent(id)}`, data);
+}
+
+/**
+ * Delete a user by its id
+ * @param id - User id to delete
+ * @returns Promise with void
+ */
+export async function deleteUser(id: number): Promise<void> {
+  return apiDelete<void>(`/api/users/${encodeURIComponent(id)}`);
 }

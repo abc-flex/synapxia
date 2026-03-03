@@ -4,7 +4,7 @@
  */
 
 import { apiGet, apiPost, apiPut, apiDelete, buildQueryString } from './api';
-import type { List } from '../types/list';
+import type { List, ListCreate, ListUpdate } from '../types/api';
 
 /**
  * Fetch all lists with optional pagination
@@ -24,4 +24,32 @@ export async function getLists(skip: number = 0, limit: number = 100): Promise<L
  */
 export async function getList(code: string): Promise<List> {
   return apiGet<List>(`/api/lists/${encodeURIComponent(code)}`);
+}
+
+/**
+ * Create a new list
+ * @param data - List data to create
+ * @returns Promise with created list
+ */
+export async function createList(data: ListCreate): Promise<List> {
+  return apiPost<List, ListCreate>('/api/lists/', data);
+}
+
+/**
+ * Update an existing list
+ * @param code - List code to update
+ * @param data - List data to update
+ * @returns Promise with updated list
+ */
+export async function updateList(code: string, data: ListUpdate): Promise<List> {
+  return apiPut<List, ListUpdate>(`/api/lists/${encodeURIComponent(code)}`, data);
+}
+
+/**
+ * Delete a list by its code
+ * @param code - List code to delete
+ * @returns Promise with void
+ */
+export async function deleteList(code: string): Promise<void> {
+  return apiDelete<void>(`/api/lists/${encodeURIComponent(code)}`);
 }

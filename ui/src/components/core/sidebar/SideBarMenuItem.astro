@@ -8,6 +8,19 @@ interface Props {
 
 const { module, options = [] } = Astro.props as Props;
 const hasChildren = options.length > 0;
+
+const icons = import.meta.glob("/src/images/icons/*.svg", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+}) as Record<string, string>;
+
+function getIcon(icon: string) {
+  if (icon.startsWith("/src/")) return icons[icon] ?? "";
+  return icons[`/src/images/icons/${icon}.svg`] ?? "";
+}
+
+const iconSvg = getIcon(module.icon);
 ---
 
 {
@@ -17,8 +30,10 @@ const hasChildren = options.length > 0;
       aria-label={`${module.name} menu`}
     >
       <summary class="menu-item group menu-item-inactive list-none cursor-pointer select-none">
-        <span class="h-6 w-6 text-gray-100 bg-color-gray-100 dark:bg-gray-800 flex items-center justify-center rounded-md mr-3">
-          <img src={module.icon} alt="" />
+        <span class="h-6 w-6 text-gray-800 bg-color-gray-100 dark:text-gray-100 flex items-center justify-center rounded-md mr-3">
+          <span class="w-5 h-5 inline-block">
+            <Fragment set:html={iconSvg} />
+          </span>
         </span>
 
         <span class="menu-item-text" data-i18n={`modules.${module.code}`}>
@@ -61,11 +76,9 @@ const hasChildren = options.length > 0;
     </details>
   ) : (
     <a href={module.path || "#"} class="menu-item group menu-item-inactive">
-      <img
-        src={module.icon}
-        alt=""
-        class="h-5 w-5 text-gray-500 dark:text-gray-400"
-      />
+      <span class="w-5 h-5 inline-block">
+        <Fragment set:html={iconSvg} />
+      </span>
       <span class="menu-item-text">{module.name}</span>
     </a>
   )

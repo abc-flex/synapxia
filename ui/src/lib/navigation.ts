@@ -24,7 +24,7 @@ export function getNavigationData() {
   const primaryNav: NavModule[] = modules.map((module) => ({
     code: module.code,
     name: module.name,
-    icon: `/icons/${module.icon}.svg`,
+    icon: module.icon,
   }));
 
   const itemsNav: NavOption[] = options.map((option) => ({

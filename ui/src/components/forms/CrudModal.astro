@@ -67,8 +67,8 @@ const triggerText =
   (isCreate
     ? t(locale, `${entityI18key}_modal.add_new`)
     : isEdit
-    ? t(locale, `${entityI18key}_modal.edit`)
-    : t(locale, `${entityI18key}_modal.delete`));
+      ? t(locale, `${entityI18key}_modal.edit`)
+      : t(locale, `${entityI18key}_modal.delete`));
 ---
 
 {
@@ -112,13 +112,18 @@ const triggerText =
     <div class="space-y-4 px-5 py-4">
       {
         isDelete ? (
-          <div id="toast-danger"
+          <div
+            id="toast-danger"
             class="flex w-full items-center rounded-lg bg-red-50 p-2 text-red-800 border border-red-200 dark:bg-gray-800 dark:text-red-400 dark:border-red-800"
             role="alert"
-          >            
+          >
             <p class="text-sm text-gray-700 dark:text-gray-300">
-              {t(locale, "crud_modal.delete_confirmation")} {entityName.toLowerCase()}?
-              <strong class="block">{"* "}{t(locale, "crud_modal.delete_warning")}</strong>
+              {t(locale, "crud_modal.delete_confirmation")}{" "}
+              {entityName.toLowerCase()}?
+              <strong class="block">
+                {"* "}
+                {t(locale, "crud_modal.delete_warning")}
+              </strong>
             </p>
           </div>
         ) : null
@@ -171,9 +176,15 @@ const triggerText =
                   disabled={disabled}
                   class={`h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white/90 ${disabled ? "opacity-60" : ""}`}
                 >
-                  <option value="">--- Select {field.label.toLowerCase() || field.name.toLowerCase()} ---</option>
+                  <option value="">
+                    --- Select{" "}
+                    {field.label.toLowerCase() || field.name.toLowerCase()} ---
+                  </option>
                   {(field.options || []).map((opt) => (
-                    <option value={opt.value||opt.code} selected={opt.value === value || opt.code === value}>
+                    <option
+                      value={opt.value || opt.code}
+                      selected={opt.value === value || opt.code === value}
+                    >
                       {opt.label || opt.name}
                     </option>
                   ))}

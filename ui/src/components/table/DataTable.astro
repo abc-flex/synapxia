@@ -1,8 +1,16 @@
 ---
-import { t } from "@/i18n";
+import { t, type Locale } from "@/i18n";
 import { getLocale } from "@/utils/getLocale";
 
-const locale = getLocale(Astro);
+import editSvg from "@/images/icons/edit.svg?raw";
+import deleteSvg from "@/images/icons/delete.svg?raw";
+import listSvg from "@/images/icons/list-bullet.svg?raw";
+import downloadSvg from "@/images/icons/arrow-down-tray.svg?raw";
+import leftSvg from "@/images/icons/chevron-left.svg?raw";
+import rightSvg from "@/images/icons/chevron-right.svg?raw";
+import infoSvg from "@/images/icons/information-circle.svg?raw";
+
+const locale = getLocale(Astro) as Locale;
 
 const {
   columns = [],
@@ -30,11 +38,9 @@ const {
           class="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-gray-100"
           title={t(locale, `${mdItem}_modal.many_title`)}
         >
-          <img
-            src="/src/images/icons/arrow-uturn-left.svg"
-            alt=""
-            class="w-5 h-5"
-          />
+          <span class="w-5 h-5 inline-block">
+          <Fragment set:html={leftSvg} />
+        </span>
         </a>
       )}
       {
@@ -48,7 +54,7 @@ const {
           >
             <span class="text-lg">+</span>
             <span data-i18n-title={`${i18Item}_modal.one_title`}>
-              {t(locale, `${i18Item}_modal.one_title`)}                    
+              {t(locale, `${i18Item}_modal.one_title`)}
             </span>
           </button>
         )
@@ -85,7 +91,10 @@ const {
         type="button"
         class="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-gray-100"
       >
-        <img src="/src/images/icons/arrow-down-tray.svg" class="w-5 h-5" />
+        <span class="w-5 h-5 inline-block">
+          <Fragment set:html={downloadSvg} />
+        </span>
+        <span data-i18n="data_table.export">{t(locale, "data_table.export")}</span>
       </button>
 
       <div
@@ -166,11 +175,9 @@ const {
                       data-i18n-title={`${mdItem}_modal.many_title`}
                       title={t(locale, `${mdItem}_modal.many_title`)}
                     >
-                      <img
-                        src="/src/images/icons/list-bullet.svg"
-                        alt=""
-                        class="w-5 h-5"
-                      />
+                      <span class="w-5 h-5 inline-block">
+                        <Fragment set:html={listSvg} />
+                      </span>
                     </a>
                     <span class="dot">•</span>
                   )}
@@ -180,13 +187,11 @@ const {
                     data-action="edit"
                     data-modal-open={`${i18Item}-edit-modal`}
                     data-i18n-title={`${i18Item}_modal.edit`}
-                    title={t(locale, `${i18Item}_modal.edit`)}                    
+                    title={t(locale, `${i18Item}_modal.edit`)}
                   >
-                    <img
-                      src="/src/images/icons/edit.svg"
-                      alt=""
-                      class="w-5 h-5"
-                    />
+            <span class="w-5 h-5 inline-block">
+  <Fragment set:html={editSvg} />
+</span>
                   </button>
                   <button
                     class="p-1 text-red-600 hover:bg-red-100 rounded delete-btn"
@@ -194,13 +199,11 @@ const {
                     data-action="delete"
                     data-modal-open={`${i18Item}-delete-modal`}
                     data-i18n-title={`${i18Item}_modal.delete`}
-                    title={t(locale, `${i18Item}_modal.delete`)}                    
+                    title={t(locale, `${i18Item}_modal.delete`)}
                   >
-                    <img
-                      src="/src/images/icons/delete.svg"
-                      alt=""
-                      class="w-5 h-5"
-                    />
+                  <span class="w-5 h-5 inline-block">
+                    <Fragment set:html={deleteSvg} />
+                  </span>
                   </button>
                 </div>
               </td>
@@ -234,14 +237,18 @@ const {
         id={`${tableId}-prev`}
         class="px-1 py-1 text-sm border rounded hover:bg-gray-100"
       >
-        <img src="/src/images/icons/chevron-left.svg" alt="" class="w-5 h-5" />
+        <span class="w-5 h-5 inline-block">
+          <Fragment set:html={leftSvg} />
+        </span>
       </button>
       <div id={`${tableId}-pages`} class="flex items-center gap-1"></div>
       <button
         id={`${tableId}-next`}
         class="px-1 py-1 text-sm border rounded hover:bg-gray-100"
       >
-        <img src="/src/images/icons/chevron-right.svg" alt="" class="w-5 h-5" />
+        <span class="w-5 h-5 inline-block">
+          <Fragment set:html={rightSvg} />
+        </span>
       </button>
     </div>
   </div>
@@ -252,7 +259,9 @@ const {
     <div class="flex items-center gap-3">
       <div class="-mt-0.5 text-blue-light-500">
         <span class="h-6 w-6 text-gray-100 bg-color-gray-100 dark:bg-gray-800 flex items-center justify-center rounded-md mr-0">
-          <img src="/src/images/icons/information-circle.svg" alt=""/>
+          <span class="w-5 h-5 inline-block">
+          <Fragment set:html={infoSvg} />
+        </span>
         </span>
       </div>
       <div>

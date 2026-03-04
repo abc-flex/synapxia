@@ -6,41 +6,41 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 from sqlalchemy.exc import IntegrityError
 
-from ..internal.models import List, ListCreate, ListUpdate, Module
+from ..internal.models import List as ListModel, ListCreate, ListUpdate, Module
 from ..internal.dependencies import get_db_session
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/lists", tags=["lists"])
 
 
-@router.get("/", response_model=List[List])
-def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[List]:
+@router.get("/", response_model=List[ListModel])
+def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[ListModel]:
     """
     List all lists with pagination (*Only active lists).
 
     - **skip**: Number of records to skip (default: 0)
     - **limit**: Maximum number of records to return (default: 100)
     """
-    lists = session.exec(select(List).where(List.is_active == True).offset(skip).limit(limit).
-                         order_by(List.name)).all()
+    lists = session.exec(select(ListModel).where(ListModel.is_active == True).offset(skip).limit(limit).
+                         order_by(ListModel.name)).all()
     return lists
 
 
-@router.get("/{code}", response_model=List)
-def get(code: str, session: Session = Depends(get_db_session)) -> List:
+@router.get("/{code}", response_model=ListModel)
+def get(code: str, session: Session = Depends(get_db_session)) -> ListModel:
     """
     Get a list by its code.
 
     - **code**: Unique list code
     """
-    list_item = session.get(List, code)
+    list_item = session.get(ListModel, code)
     if not list_item:
         raise HTTPException(status_code=404, detail="List not found")
     return list_item
 
 
-@router.post("/", response_model=List, status_code=201)
-def create(list_data: ListCreate, session: Session = Depends(get_db_session)) -> List:
+@router.post("/", response_model=ListModel, status_code=201)
+def create(list_data: ListCreate, session: Session = Depends(get_db_session)) -> ListModel:
     """
     Create a new list.
 
@@ -52,7 +52,7 @@ def create(list_data: ListCreate, session: Session = Depends(get_db_session)) ->
     - **is_active**: Active/inactive status (default: True)
     """
     # Validate that the code does not exist
-    existing = session.get(List, list_data.code)
+    existing = session.get(ListModel, list_data.code)
     if existing:
         raise HTTPException(
             status_code=409,
@@ -69,7 +69,7 @@ def create(list_data: ListCreate, session: Session = Depends(get_db_session)) ->
             )
 
     try:
-        db = List.model_validate(list_data)
+        db = ListModel.model_validate(list_data)
         session.add(db)
         session.commit()
         session.refresh(db)
@@ -84,15 +84,15 @@ def create(list_data: ListCreate, session: Session = Depends(get_db_session)) ->
         )
 
 
-@router.put("/{code}", response_model=List)
-def update(code: str, list_update: ListUpdate, session: Session = Depends(get_db_session)) -> List:
+@router.put("/{code}", response_model=ListModel)
+def update(code: str, list_update: ListUpdate, session: Session = Depends(get_db_session)) -> ListModel:
     """
     Update an existing list.
 
     - **code**: Unique list code to update
     - Only provided fields are updated
     """
-    list_item = session.get(List, code)
+    list_item = session.get(ListModel, code)
     if not list_item:
         raise HTTPException(status_code=404, detail="List not found")
 
@@ -119,8 +119,8 @@ def update(code: str, list_update: ListUpdate, session: Session = Depends(get_db
     return list_item
 
 
-@router.delete("/{code}", response_model=List, status_code=200)
-def delete(code: str, session: Session = Depends(get_db_session)) -> List:
+@router.delete("/{code}", response_model=ListModel, status_code=200)
+def delete(code: str, session: Session = Depends(get_db_session)) -> ListModel:
     """
     Delete a list (logical delete).
 
@@ -128,7 +128,7 @@ def delete(code: str, session: Session = Depends(get_db_session)) -> List:
 
     - **code**: Unique list code to delete
     """
-    list_item = session.get(List, code)
+    list_item = session.get(ListModel, code)
     if not list_item:
         raise HTTPException(status_code=404, detail="List not found")
 

@@ -270,11 +270,11 @@ const triggerTextKey =
     if (!modal) return;
 
     const open = () => {
-      if (!modal.hasAttribute("open")) modal.showModal();
+      if (!modal.open) modal.showModal();
     };
 
     const close = () => {
-      if (modal.hasAttribute("open")) modal.close();
+      if (modal.open) modal.close();
     };
 
     // ✅ DELEGACIÓN GLOBAL (CLAVE)

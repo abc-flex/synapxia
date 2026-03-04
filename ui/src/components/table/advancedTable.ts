@@ -109,13 +109,16 @@ export function initAdvancedTable(
        UTIL
     ====================== */
     function getColumnIndex(key: string): number {
+        // First try to match by data-column-key attribute
         const headers = table.querySelectorAll("thead th");
         for (let i = 0; i < headers.length; i++) {
-            if (headers[i].textContent?.trim().toLowerCase() === key.toLowerCase()) {
+            if (headers[i].getAttribute("data-column-key") === key) {
                 return i;
             }
         }
-        return -1;
+        // Fallback: match by column position in the columns array
+        const columnIndex = columns.findIndex(col => col.key === key);
+        return columnIndex !== -1 ? columnIndex : -1;
     }
 
     /* ======================

@@ -13,8 +13,67 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/privileges", tags=["privileges"])
 
 
+@router.get("/", response_model=List[Privilege])
+def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[Privilege]:
+    """
+    List all privileges with pagination (*Only active privileges).
+
+    - **skip**: Number of records to skip (default: 0)
+    - **limit**: Maximum number of records to return (default: 100)
+    """
+    privileges = session.exec(select(Privilege).where(Privilege.is_active == True).offset(skip).limit(limit).
+                              order_by(Privilege.role, Privilege.module, Privilege.option)).all()
+    return privileges
+
+
+@router.get("/role/{role_code}", response_model=List[Privilege])
+def get_by_role(
+    role_code: str, 
+    session: Session = Depends(get_db_session)
+) -> List[Privilege]:
+    """
+    Get all privileges for a specific role.
+    
+    - **role_code**: Role code to filter by
+    """
+    # Validar primero si la lista existe (opcional, pero recomendado por integridad)
+    role_exists = session.get(Role, role_code)
+    if not role_exists:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"Role with code '{role_code}' does not exist"
+        )
+    items = session.exec(
+        select(Privilege)
+        .where(Privilege.role == role_code)
+        .order_by(Privilege.module, Privilege.option)
+    ).all()
+    return items
+
+
+@router.get("/{role_code}/{module_code}/{option_code}", response_model=Privilege)
+def get(role_code: str, module_code: str, option_code: str, session: Session = Depends(get_db_session)) -> Privilege:
+    """
+    Get a privilege by its role, module and option.
+
+    - **role_code**: Role code
+    - **module_code**: Module code
+    - **option_code**: Option code
+    """
+    privilege = session.exec(
+        select(Privilege).where(
+            Privilege.role == role_code,
+            Privilege.module == module_code,
+            Privilege.option == option_code
+        )
+    ).first()
+    if not privilege:
+        raise HTTPException(status_code=404, detail="Privilege not found")
+    return privilege
+
+
 @router.post("/", response_model=Privilege, status_code=201)
-def create_privilege(privilege: PrivilegeCreate, session: Session = Depends(get_db_session)) -> Privilege:
+def create(privilege: PrivilegeCreate, session: Session = Depends(get_db_session)) -> Privilege:
     """
     Create a new privilege.
 
@@ -46,27 +105,27 @@ def create_privilege(privilege: PrivilegeCreate, session: Session = Depends(get_
         )
 
     # Validate that the privilege does not already exist
-    existing_privilege = session.exec(
+    existing = session.exec(
         select(Privilege).where(
             Privilege.role == privilege.role,
             Privilege.module == privilege.module,
             Privilege.option == privilege.option
         )
     ).first()
-    if existing_privilege:
+    if existing:
         raise HTTPException(
             status_code=409,
             detail=f"Privilege with role '{privilege.role}', module '{privilege.module}' and option '{privilege.option}' already exists"
         )
 
     try:
-        db_privilege = Privilege.model_validate(privilege)
-        session.add(db_privilege)
+        db = Privilege.model_validate(privilege)
+        session.add(db)
         session.commit()
-        session.refresh(db_privilege)
+        session.refresh(db)
         logger.info(
             f"Privilege created: {privilege.role}/{privilege.module}/{privilege.option}")
-        return db_privilege
+        return db
     except IntegrityError as e:
         session.rollback()
         logger.error(
@@ -77,67 +136,8 @@ def create_privilege(privilege: PrivilegeCreate, session: Session = Depends(get_
         )
 
 
-@router.get("/", response_model=List[Privilege])
-def list_privileges(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[Privilege]:
-    """
-    List all privileges with pagination.
-
-    - **skip**: Number of records to skip (default: 0)
-    - **limit**: Maximum number of records to return (default: 100)
-    """
-    privileges = session.exec(select(Privilege).offset(skip).limit(
-        limit).order_by(Privilege.role, Privilege.module, Privilege.option)).all()
-    return privileges
-
-
-@router.get("/{role_code}/{module_code}/{option_code}", response_model=Privilege)
-def get_privilege(role_code: str, module_code: str, option_code: str, session: Session = Depends(get_db_session)) -> Privilege:
-    """
-    Get a privilege by its role, module and option.
-
-    - **role_code**: Role code
-    - **module_code**: Module code
-    - **option_code**: Option code
-    """
-    privilege = session.exec(
-        select(Privilege).where(
-            Privilege.role == role_code,
-            Privilege.module == module_code,
-            Privilege.option == option_code
-        )
-    ).first()
-    if not privilege:
-        raise HTTPException(status_code=404, detail="Privilege not found")
-    return privilege
-
-
-@router.get("/{role_code}", response_model=List[Privilege])
-def get_privileges_by_role(
-    role_code: str, 
-    session: Session = Depends(get_db_session)
-) -> List[Privilege]:
-    """
-    Get all privileges for a specific role.
-    
-    - **role_code**: Role code to filter by
-    """
-    # Validar primero si la lista existe (opcional, pero recomendado por integridad)
-    role_exists = session.get(Role, role_code)
-    if not role_exists:
-        raise HTTPException(
-            status_code=404, 
-            detail=f"Role with code '{role_code}' does not exist"
-        )
-    items = session.exec(
-        select(Privilege)
-        .where(Privilege.role == role_code)
-        .order_by(Privilege.module, Privilege.option)
-    ).all()
-    return items
-
-
 @router.put("/{role_code}/{module_code}/{option_code}", response_model=Privilege)
-def update_privilege(
+def update(
     role_code: str, module_code: str, option_code: str, privilege_update: PrivilegeUpdate, session: Session = Depends(get_db_session)
 ) -> Privilege:
     """
@@ -173,7 +173,7 @@ def update_privilege(
 
 
 @router.delete("/{role_code}/{module_code}/{option_code}", response_model=Privilege, status_code=200)
-def delete_privilege(role_code: str, module_code: str, option_code: str, session: Session = Depends(get_db_session)) -> Privilege:
+def delete(role_code: str, module_code: str, option_code: str, session: Session = Depends(get_db_session)) -> Privilege:
     """
     Delete a privilege (logical delete).
 

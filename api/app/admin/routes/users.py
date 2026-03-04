@@ -1,27 +1,95 @@
 import logging
 from typing import List
 from datetime import datetime
-from pydantic import BaseModel
 
 from fastapi import APIRouter, HTTPException, Depends
-from sqlmodel import Session, select
+from sqlmodel import Session, select, SQLModel
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func, literal
 
 from ..internal.models import User, UserCreate, UserUpdate, Role, BusinessUnit
 from ..internal.dependencies import get_db_session
-
-class UserSelectOption(BaseModel):
-    """Model for user select options"""
-    value: int
+SQLModel
+#Model for user select options
+class UserBasic(SQLModel):
+    value: str
     label: str
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/users", tags=["users"])
 
 
+@router.get("/select", response_model=List[UserBasic])
+def get_list(session: Session = Depends(get_db_session)) -> List[UserBasic]:
+    """
+    Returns a users list optimized for selects with value (id) and label (full name). 
+    Only active users.
+    """
+    statement = (
+        select(
+            User.id, 
+            func.concat(User.first_name, literal(" "), User.last_name).label("full_name")
+        )
+        .where(User.is_active == True)
+        .order_by(User.first_name, User.last_name)
+    )
+    results = session.exec(statement).all()
+    return [UserBasic(value=row[0], label=row[1]) for row in results]
+
+
+@router.get("/", response_model=List[User])
+def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[User]:
+    """
+    List all users with pagination (*Only active users). 
+
+    - **skip**: Number of records to skip (default: 0)
+    - **limit**: Maximum number of records to return (default: 100)
+    """
+    users = session.exec(select(User).where(User.is_active == True).offset(skip).limit(limit).
+                         order_by(User.username)).all()
+    return users
+
+
+@router.get("/role/{role_code}", response_model=List[User])
+def get_by_role(
+    role_code: str, 
+    session: Session = Depends(get_db_session)
+) -> List[User]:
+    """
+    Get all users from a specific role.
+    
+    - **role_code**: role code to filter users
+    """
+    # Validate if role exists (optional)
+    role_exists = session.get(Role, role_code)
+    if not role_exists:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"Role with code '{role_code}' does not exist"
+        )
+    users = session.exec(
+        select(User)
+        .where(User.menu_role == role_code)
+        .order_by(User.username)
+    ).all()
+    return users
+
+
+@router.get("/{id}", response_model=User)
+def get(id: int, session: Session = Depends(get_db_session)) -> User:
+    """
+    Get a user by their ID.
+
+    - **id**: Unique user ID
+    """
+    user = session.get(User, id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+
 @router.post("/", response_model=User, status_code=201)
-def create_user(user: UserCreate, session: Session = Depends(get_db_session)) -> User:
+def create(user: UserCreate, session: Session = Depends(get_db_session)) -> User:
     """
     Create a new user.
 
@@ -35,9 +103,9 @@ def create_user(user: UserCreate, session: Session = Depends(get_db_session)) ->
     - **is_active**: Active/inactive status (default: True)
     """
     # Validate that the username does not exist
-    existing_user = session.exec(select(User).where(
+    existing = session.exec(select(User).where(
         User.username == user.username)).first()
-    if existing_user:
+    if existing:
         raise HTTPException(
             status_code=409,
             detail=f"User with username '{user.username}' already exists"
@@ -69,12 +137,12 @@ def create_user(user: UserCreate, session: Session = Depends(get_db_session)) ->
         )
 
     try:
-        db_user = User.model_validate(user)
-        session.add(db_user)
+        db = User.model_validate(user)
+        session.add(db)
         session.commit()
-        session.refresh(db_user)
+        session.refresh(db)
         logger.info(f"User created: {user.username}")
-        return db_user
+        return db
     except IntegrityError as e:
         session.rollback()
         logger.error(f"Integrity error creating user {user.username}: {e}")
@@ -84,84 +152,15 @@ def create_user(user: UserCreate, session: Session = Depends(get_db_session)) ->
         )
 
 
-@router.get("/select", response_model=List[UserSelectOption])
-def list_users_for_select(session: Session = Depends(get_db_session)) -> List[UserSelectOption]:
-    """
-    Returns a users list optimized for selects with value (id) and label (full name). 
-    Only active users.
-    """
-    statement = (
-        select(
-            User.id, 
-            func.concat(User.first_name, literal(" "), User.last_name).label("full_name")
-        )
-        .where(User.is_active == True)
-        .order_by(User.first_name, User.last_name)
-    )
-    results = session.exec(statement).all()
-    return [UserSelectOption(value=row[0], label=row[1]) for row in results]
-
-
-@router.get("/", response_model=List[User])
-def list_users(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[User]:
-    """
-    List all users with pagination.
-
-    - **skip**: Number of records to skip (default: 0)
-    - **limit**: Maximum number of records to return (default: 100)
-    """
-    users = session.exec(select(User).offset(
-        skip).limit(limit).order_by(User.username)).all()
-    return users
-
-
-@router.get("/role/{role_code}", response_model=List[User])
-def get_users_by_role(
-    role_code: str, 
-    session: Session = Depends(get_db_session)
-) -> List[User]:
-    """
-    Get all users from a specific role.
-    
-    - **role_code**: role code to filter users
-    """
-    # Validate if role exists (optional)
-    role_exists = session.get(Role, role_code)
-    if not role_exists:
-        raise HTTPException(
-            status_code=404, 
-            detail=f"Role with code '{role_code}' does not exist"
-        )
-    users = session.exec(
-        select(User)
-        .where(User.menu_role == role_code)
-        .order_by(User.username)
-    ).all()
-    return users
-
-
-@router.get("/{user_id}", response_model=User)
-def get_user(user_id: int, session: Session = Depends(get_db_session)) -> User:
-    """
-    Get a user by their ID.
-
-    - **user_id**: Unique user ID
-    """
-    user = session.get(User, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
-
-
-@router.put("/{user_id}", response_model=User)
-def update_user(user_id: int, user_update: UserUpdate, session: Session = Depends(get_db_session)) -> User:
+@router.put("/{id}", response_model=User)
+def update(id: int, user_update: UserUpdate, session: Session = Depends(get_db_session)) -> User:
     """
     Update an existing user.
 
-    - **user_id**: Unique user ID to update
+    - **id**: Unique user ID to update
     - Only provided fields are updated
     """
-    user = session.get(User, user_id)
+    user = session.get(User, id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -203,20 +202,20 @@ def update_user(user_id: int, user_update: UserUpdate, session: Session = Depend
     session.add(user)
     session.commit()
     session.refresh(user)
-    logger.info(f"User updated: {user_id}")
+    logger.info(f"User updated: {id}")
     return user
 
 
-@router.delete("/{user_id}", response_model=User, status_code=200)
-def delete_user(user_id: int, session: Session = Depends(get_db_session)) -> User:
+@router.delete("/{id}", response_model=User, status_code=200)
+def delete(id: int, session: Session = Depends(get_db_session)) -> User:
     """
     Delete a user (logical delete).
 
     Performs a logical delete by setting is_active=False instead of deleting the record.
 
-    - **user_id**: Unique user ID to delete
+    - **id**: Unique user ID to delete
     """
-    user = session.get(User, user_id)
+    user = session.get(User, id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -224,7 +223,7 @@ def delete_user(user_id: int, session: Session = Depends(get_db_session)) -> Use
     if not user.is_active:
         raise HTTPException(
             status_code=400,
-            detail=f"User with id '{user_id}' is already inactive"
+            detail=f"User with id '{id}' is already inactive"
         )
 
     # Logical delete: update is_active to False
@@ -234,5 +233,5 @@ def delete_user(user_id: int, session: Session = Depends(get_db_session)) -> Use
     session.add(user)
     session.commit()
     session.refresh(user)
-    logger.info(f"User deactivated (logical delete): {user_id}")
+    logger.info(f"User deactivated (logical delete): {id}")
     return user

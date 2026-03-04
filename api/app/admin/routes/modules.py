@@ -3,7 +3,7 @@ from typing import List
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Depends
-from sqlmodel import Session, select
+from sqlmodel import Session, select, SQLModel
 from sqlalchemy.exc import IntegrityError
 
 from ..internal.models import Module, ModuleCreate, ModuleUpdate
@@ -12,9 +12,56 @@ from ..internal.dependencies import get_db_session
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/modules", tags=["modules"])
 
+#Model for module select options
+class ModuleBasic(SQLModel):
+    value: str
+    label: str
+
+@router.get("/select", response_model=List[ModuleBasic])
+def get_list(session: Session = Depends(get_db_session)) -> List[ModuleBasic]:
+    """
+    Returns a modules list optimized for selects with value (code) and label (name). 
+    Only active modules.
+    """
+    statement = (
+        select(
+            Module.code.label("value"), 
+            Module.name.label("label")
+        )
+        .where(Module.is_active == True)
+        .order_by(Module.name)
+    )
+    return session.exec(statement).all()
+
+
+@router.get("/", response_model=List[Module])
+def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[Module]:
+    """
+    List all modules with pagination (*Only active modules).
+
+    - **skip**: Number of records to skip (default: 0)
+    - **limit**: Maximum number of records to return (default: 100)
+    """
+    modules = session.exec(select(Module).where(Module.is_active == True).offset(skip).limit(limit).
+                           order_by(Module.sort_order, Module.name)).all()
+    return modules
+
+
+@router.get("/{code}", response_model=Module)
+def get(code: str, session: Session = Depends(get_db_session)) -> Module:
+    """
+    Get a module by its code.
+
+    - **code**: Unique module code
+    """
+    module = session.get(Module, code)
+    if not module:
+        raise HTTPException(status_code=404, detail="Module not found")
+    return module
+
 
 @router.post("/", response_model=Module, status_code=201)
-def create_module(module: ModuleCreate, session: Session = Depends(get_db_session)) -> Module:
+def create(module: ModuleCreate, session: Session = Depends(get_db_session)) -> Module:
     """
     Create a new module.
 
@@ -49,41 +96,15 @@ def create_module(module: ModuleCreate, session: Session = Depends(get_db_sessio
         )
 
 
-@router.get("/", response_model=List[Module])
-def list_modules(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[Module]:
-    """
-    List all modules with pagination.
-
-    - **skip**: Number of records to skip (default: 0)
-    - **limit**: Maximum number of records to return (default: 100)
-    """
-    modules = session.exec(select(Module).offset(skip).limit(
-        limit).order_by(Module.sort_order, Module.name)).all()
-    return modules
-
-
-@router.get("/{module_code}", response_model=Module)
-def get_module(module_code: str, session: Session = Depends(get_db_session)) -> Module:
-    """
-    Get a module by its code.
-
-    - **module_code**: Unique module code
-    """
-    module = session.get(Module, module_code)
-    if not module:
-        raise HTTPException(status_code=404, detail="Module not found")
-    return module
-
-
-@router.put("/{module_code}", response_model=Module)
-def update_module(module_code: str, module_update: ModuleUpdate, session: Session = Depends(get_db_session)) -> Module:
+@router.put("/{code}", response_model=Module)
+def update(code: str, module_update: ModuleUpdate, session: Session = Depends(get_db_session)) -> Module:
     """
     Update an existing module.
 
-    - **module_code**: Unique module code to update
+    - **code**: Unique module code to update
     - Only provided fields are updated
     """
-    module = session.get(Module, module_code)
+    module = session.get(Module, code)
     if not module:
         raise HTTPException(status_code=404, detail="Module not found")
 
@@ -97,20 +118,20 @@ def update_module(module_code: str, module_update: ModuleUpdate, session: Sessio
     session.add(module)
     session.commit()
     session.refresh(module)
-    logger.info(f"Module updated: {module_code}")
+    logger.info(f"Module updated: {code}")
     return module
 
 
-@router.delete("/{module_code}", response_model=Module, status_code=200)
-def delete_module(module_code: str, session: Session = Depends(get_db_session)) -> Module:
+@router.delete("/{code}", response_model=Module, status_code=200)
+def delete(code: str, session: Session = Depends(get_db_session)) -> Module:
     """
     Delete a module (logical delete).
 
     Performs a logical delete by setting is_active=False instead of deleting the record.
 
-    - **module_code**: Unique module code to delete
+    - **code**: Unique module code to delete
     """
-    module = session.get(Module, module_code)
+    module = session.get(Module, code)
     if not module:
         raise HTTPException(status_code=404, detail="Module not found")
 
@@ -118,7 +139,7 @@ def delete_module(module_code: str, session: Session = Depends(get_db_session)) 
     if not module.is_active:
         raise HTTPException(
             status_code=400,
-            detail=f"Module with code '{module_code}' is already inactive"
+            detail=f"Module with code '{code}' is already inactive"
         )
 
     # Logical delete: update is_active to False
@@ -128,5 +149,5 @@ def delete_module(module_code: str, session: Session = Depends(get_db_session)) 
     session.add(module)
     session.commit()
     session.refresh(module)
-    logger.info(f"Module deactivated (logical delete): {module_code}")
+    logger.info(f"Module deactivated (logical delete): {code}")
     return module

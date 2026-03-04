@@ -13,8 +13,38 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/options", tags=["options"])
 
 
+@router.get("/", response_model=List[Option])
+def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[Option]:
+    """
+    List all options with pagination (*Only active options).
+
+    - **skip**: Number of records to skip (default: 0)
+    - **limit**: Maximum number of records to return (default: 100)
+    """
+    options = session.exec(select(Option).where(Option.is_active == True).offset(skip).limit(limit).
+                           order_by(Option.module, Option.sort_order, Option.name)).all()
+    return options
+
+
+@router.get("/{module_code}/{code}", response_model=Option)
+def get(module_code: str, code: str, session: Session = Depends(get_db_session)) -> Option:
+    """
+    Get an option by its module and code.
+
+    - **module_code**: Module code
+    - **code**: Option code
+    """
+    option = session.exec(
+        select(Option).where(Option.module ==
+                             module_code, Option.code == code)
+    ).first()
+    if not option:
+        raise HTTPException(status_code=404, detail="Option not found")
+    return option
+
+
 @router.post("/", response_model=Option, status_code=201)
-def create_option(option: OptionCreate, session: Session = Depends(get_db_session)) -> Option:
+def create(option: OptionCreate, session: Session = Depends(get_db_session)) -> Option:
     """
     Create a new option.
 
@@ -37,25 +67,25 @@ def create_option(option: OptionCreate, session: Session = Depends(get_db_sessio
         )
 
     # Validate that the option does not already exist
-    existing_option = session.exec(
+    existing = session.exec(
         select(Option).where(
             Option.module == option.module,
             Option.code == option.code
         )
     ).first()
-    if existing_option:
+    if existing:
         raise HTTPException(
             status_code=409,
             detail=f"Option with module '{option.module}' and code '{option.code}' already exists"
         )
 
     try:
-        db_option = Option.model_validate(option)
-        session.add(db_option)
+        db = Option.model_validate(option)
+        session.add(db)
         session.commit()
-        session.refresh(db_option)
+        session.refresh(db)
         logger.info(f"Option created: {option.module}/{option.code}")
-        return db_option
+        return db
     except IntegrityError as e:
         session.rollback()
         logger.error(
@@ -66,50 +96,20 @@ def create_option(option: OptionCreate, session: Session = Depends(get_db_sessio
         )
 
 
-@router.get("/", response_model=List[Option])
-def list_options(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[Option]:
-    """
-    List all options with pagination.
-
-    - **skip**: Number of records to skip (default: 0)
-    - **limit**: Maximum number of records to return (default: 100)
-    """
-    options = session.exec(select(Option).offset(skip).limit(
-        limit).order_by(Option.module, Option.sort_order, Option.name)).all()
-    return options
-
-
-@router.get("/{module_code}/{option_code}", response_model=Option)
-def get_option(module_code: str, option_code: str, session: Session = Depends(get_db_session)) -> Option:
-    """
-    Get an option by its module and code.
-
-    - **module_code**: Module code
-    - **option_code**: Option code
-    """
-    option = session.exec(
-        select(Option).where(Option.module ==
-                             module_code, Option.code == option_code)
-    ).first()
-    if not option:
-        raise HTTPException(status_code=404, detail="Option not found")
-    return option
-
-
-@router.put("/{module_code}/{option_code}", response_model=Option)
-def update_option(
-    module_code: str, option_code: str, option_update: OptionUpdate, session: Session = Depends(get_db_session)
+@router.put("/{module_code}/{code}", response_model=Option)
+def update(
+    module_code: str, code: str, option_update: OptionUpdate, session: Session = Depends(get_db_session)
 ) -> Option:
     """
     Update an existing option.
 
     - **module_code**: Module code
-    - **option_code**: Option code
+    - **code**: Option code
     - Only provided fields are updated
     """
     option = session.exec(
         select(Option).where(Option.module ==
-                             module_code, Option.code == option_code)
+                             module_code, Option.code == code)
     ).first()
     if not option:
         raise HTTPException(status_code=404, detail="Option not found")
@@ -124,23 +124,23 @@ def update_option(
     session.add(option)
     session.commit()
     session.refresh(option)
-    logger.info(f"Option updated: {module_code}/{option_code}")
+    logger.info(f"Option updated: {module_code}/{code}")
     return option
 
 
-@router.delete("/{module_code}/{option_code}", response_model=Option, status_code=200)
-def delete_option(module_code: str, option_code: str, session: Session = Depends(get_db_session)) -> Option:
+@router.delete("/{module_code}/{code}", response_model=Option, status_code=200)
+def delete(module_code: str, code: str, session: Session = Depends(get_db_session)) -> Option:
     """
     Delete an option (logical delete).
 
     Performs a logical delete by setting is_active=False instead of deleting the record.
 
     - **module_code**: Module code
-    - **option_code**: Option code
+    - **code**: Option code
     """
     option = session.exec(
         select(Option).where(Option.module ==
-                             module_code, Option.code == option_code)
+                             module_code, Option.code == code)
     ).first()
     if not option:
         raise HTTPException(status_code=404, detail="Option not found")
@@ -149,7 +149,7 @@ def delete_option(module_code: str, option_code: str, session: Session = Depends
     if not option.is_active:
         raise HTTPException(
             status_code=400,
-            detail=f"Option with module '{module_code}' and code '{option_code}' is already inactive"
+            detail=f"Option with module '{module_code}' and code '{code}' is already inactive"
         )
 
     # Logical delete: update is_active to False
@@ -160,5 +160,5 @@ def delete_option(module_code: str, option_code: str, session: Session = Depends
     session.commit()
     session.refresh(option)
     logger.info(
-        f"Option deactivated (logical delete): {module_code}/{option_code}")
+        f"Option deactivated (logical delete): {module_code}/{code}")
     return option

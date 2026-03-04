@@ -6,15 +6,41 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 from sqlalchemy.exc import IntegrityError
 
-from ..internal.models import List as ListModel, ListCreate, ListUpdate, Module
+from ..internal.models import List, ListCreate, ListUpdate, Module
 from ..internal.dependencies import get_db_session
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/lists", tags=["lists"])
 
 
-@router.post("/", response_model=ListModel, status_code=201)
-def create_list(list_data: ListCreate, session: Session = Depends(get_db_session)) -> ListModel:
+@router.get("/", response_model=List[List])
+def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[List]:
+    """
+    List all lists with pagination (*Only active lists).
+
+    - **skip**: Number of records to skip (default: 0)
+    - **limit**: Maximum number of records to return (default: 100)
+    """
+    lists = session.exec(select(List).where(List.is_active == True).offset(skip).limit(limit).
+                         order_by(List.name)).all()
+    return lists
+
+
+@router.get("/{code}", response_model=List)
+def get(code: str, session: Session = Depends(get_db_session)) -> List:
+    """
+    Get a list by its code.
+
+    - **code**: Unique list code
+    """
+    list_item = session.get(List, code)
+    if not list_item:
+        raise HTTPException(status_code=404, detail="List not found")
+    return list_item
+
+
+@router.post("/", response_model=List, status_code=201)
+def create(list_data: ListCreate, session: Session = Depends(get_db_session)) -> List:
     """
     Create a new list.
 
@@ -26,8 +52,8 @@ def create_list(list_data: ListCreate, session: Session = Depends(get_db_session
     - **is_active**: Active/inactive status (default: True)
     """
     # Validate that the code does not exist
-    existing_list = session.get(ListModel, list_data.code)
-    if existing_list:
+    existing = session.get(List, list_data.code)
+    if existing:
         raise HTTPException(
             status_code=409,
             detail=f"List with code '{list_data.code}' already exists"
@@ -43,12 +69,12 @@ def create_list(list_data: ListCreate, session: Session = Depends(get_db_session
             )
 
     try:
-        db_list = ListModel.model_validate(list_data)
-        session.add(db_list)
+        db = List.model_validate(list_data)
+        session.add(db)
         session.commit()
-        session.refresh(db_list)
+        session.refresh(db)
         logger.info(f"List created: {list_data.code}")
-        return db_list
+        return db
     except IntegrityError as e:
         session.rollback()
         logger.error(f"Integrity error creating list {list_data.code}: {e}")
@@ -58,41 +84,15 @@ def create_list(list_data: ListCreate, session: Session = Depends(get_db_session
         )
 
 
-@router.get("/", response_model=List[ListModel])
-def list_lists(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[ListModel]:
-    """
-    List all lists with pagination.
-
-    - **skip**: Number of records to skip (default: 0)
-    - **limit**: Maximum number of records to return (default: 100)
-    """
-    lists = session.exec(select(ListModel).offset(
-        skip).limit(limit).order_by(ListModel.name)).all()
-    return lists
-
-
-@router.get("/{list_code}", response_model=ListModel)
-def get_list(list_code: str, session: Session = Depends(get_db_session)) -> ListModel:
-    """
-    Get a list by its code.
-
-    - **list_code**: Unique list code
-    """
-    list_item = session.get(ListModel, list_code)
-    if not list_item:
-        raise HTTPException(status_code=404, detail="List not found")
-    return list_item
-
-
-@router.put("/{list_code}", response_model=ListModel)
-def update_list(list_code: str, list_update: ListUpdate, session: Session = Depends(get_db_session)) -> ListModel:
+@router.put("/{code}", response_model=List)
+def update(code: str, list_update: ListUpdate, session: Session = Depends(get_db_session)) -> List:
     """
     Update an existing list.
 
-    - **list_code**: Unique list code to update
+    - **code**: Unique list code to update
     - Only provided fields are updated
     """
-    list_item = session.get(ListModel, list_code)
+    list_item = session.get(List, code)
     if not list_item:
         raise HTTPException(status_code=404, detail="List not found")
 
@@ -115,20 +115,20 @@ def update_list(list_code: str, list_update: ListUpdate, session: Session = Depe
     session.add(list_item)
     session.commit()
     session.refresh(list_item)
-    logger.info(f"List updated: {list_code}")
+    logger.info(f"List updated: {code}")
     return list_item
 
 
-@router.delete("/{list_code}", response_model=ListModel, status_code=200)
-def delete_list(list_code: str, session: Session = Depends(get_db_session)) -> ListModel:
+@router.delete("/{code}", response_model=List, status_code=200)
+def delete(code: str, session: Session = Depends(get_db_session)) -> List:
     """
     Delete a list (logical delete).
 
     Performs a logical delete by setting is_active=False instead of deleting the record.
 
-    - **list_code**: Unique list code to delete
+    - **code**: Unique list code to delete
     """
-    list_item = session.get(ListModel, list_code)
+    list_item = session.get(List, code)
     if not list_item:
         raise HTTPException(status_code=404, detail="List not found")
 
@@ -136,7 +136,7 @@ def delete_list(list_code: str, session: Session = Depends(get_db_session)) -> L
     if not list_item.is_active:
         raise HTTPException(
             status_code=400,
-            detail=f"List with code '{list_code}' is already inactive"
+            detail=f"List with code '{code}' is already inactive"
         )
 
     # Logical delete: update is_active to False
@@ -146,5 +146,5 @@ def delete_list(list_code: str, session: Session = Depends(get_db_session)) -> L
     session.add(list_item)
     session.commit()
     session.refresh(list_item)
-    logger.info(f"List deactivated (logical delete): {list_code}")
+    logger.info(f"List deactivated (logical delete): {code}")
     return list_item

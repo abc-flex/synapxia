@@ -13,8 +13,38 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/roles", tags=["roles"])
 
 
+@router.get("/", response_model=List[Role])
+def get_all(
+    skip: int = 0,
+    limit: int = 100,
+    session: Session = Depends(get_db_session),
+) -> List[Role]:
+    """
+    List all roles actives with pagination (*Only active roles).
+
+    - **skip**: Number of records to skip (default: 0)
+    - **limit**: Maximum number of records to return (default: 100)
+    """
+    roles = session.exec(select(Role).where(Role.is_active == True).offset(skip).limit(limit).
+                         order_by(Role.name)).all()
+    return roles
+
+
+@router.get("/{code}", response_model=Role)
+def get(code: str, session: Session = Depends(get_db_session)) -> Role:
+    """
+    Get a role by its code.
+
+    - **code**: Unique role code
+    """
+    role = session.get(Role, code)
+    if not role:
+        raise HTTPException(status_code=404, detail="Role not found")
+    return role
+
+
 @router.post("/", response_model=Role, status_code=201)
-def create_role(
+def create(
     role: RoleCreate, session: Session = Depends(get_db_session)
 ) -> Role:
     """
@@ -26,20 +56,20 @@ def create_role(
     - **is_active**: Active/inactive status (default: True)
     """
     # Validate that the code does not exist
-    existing_role = session.get(Role, role.code)
-    if existing_role:
+    existing = session.get(Role, role.code)
+    if existing:
         raise HTTPException(
             status_code=409,
             detail=f"Role with code '{role.code}' already exists"
         )
 
     try:
-        db_role = Role.model_validate(role)
-        session.add(db_role)
+        db = Role.model_validate(role)
+        session.add(db)
         session.commit()
-        session.refresh(db_role)
+        session.refresh(db)
         logger.info(f"Role created: {role.code}")
-        return db_role
+        return db
     except IntegrityError as e:
         session.rollback()
         logger.error(f"Integrity error creating role {role.code}: {e}")
@@ -49,47 +79,17 @@ def create_role(
         )
 
 
-@router.get("/", response_model=List[Role])
-def list_roles(
-    skip: int = 0,
-    limit: int = 100,
-    session: Session = Depends(get_db_session),
-) -> List[Role]:
-    """
-    List all roles with pagination.
-
-    - **skip**: Number of records to skip (default: 0)
-    - **limit**: Maximum number of records to return (default: 100)
-    """
-    roles = session.exec(select(Role).offset(
-        skip).limit(limit).order_by(Role.name)).all()
-    return roles
-
-
-@router.get("/{role_code}", response_model=Role)
-def get_role(role_code: str, session: Session = Depends(get_db_session)) -> Role:
-    """
-    Get a role by its code.
-
-    - **role_code**: Unique role code
-    """
-    role = session.get(Role, role_code)
-    if not role:
-        raise HTTPException(status_code=404, detail="Role not found")
-    return role
-
-
-@router.put("/{role_code}", response_model=Role)
-def update_role(
-    role_code: str, role_update: RoleUpdate, session: Session = Depends(get_db_session)
+@router.put("/{code}", response_model=Role)
+def update(
+    code: str, role_update: RoleUpdate, session: Session = Depends(get_db_session)
 ) -> Role:
     """
     Update an existing role.
 
-    - **role_code**: Unique role code to update
+    - **code**: Unique role code to update
     - Only provided fields are updated
     """
-    role = session.get(Role, role_code)
+    role = session.get(Role, code)
     if not role:
         raise HTTPException(status_code=404, detail="Role not found")
 
@@ -103,20 +103,20 @@ def update_role(
     session.add(role)
     session.commit()
     session.refresh(role)
-    logger.info(f"Role updated: {role_code}")
+    logger.info(f"Role updated: {code}")
     return role
 
 
-@router.delete("/{role_code}", response_model=Role, status_code=200)
-def delete_role(role_code: str, session: Session = Depends(get_db_session)) -> Role:
+@router.delete("/{code}", response_model=Role, status_code=200)
+def delete(code: str, session: Session = Depends(get_db_session)) -> Role:
     """
     Delete a role (logical delete).
 
     Performs a logical delete by setting is_active=False instead of deleting the record.
 
-    - **role_code**: Unique role code to delete
+    - **code**: Unique role code to delete
     """
-    role = session.get(Role, role_code)
+    role = session.get(Role, code)
     if not role:
         raise HTTPException(status_code=404, detail="Role not found")
 
@@ -124,7 +124,7 @@ def delete_role(role_code: str, session: Session = Depends(get_db_session)) -> R
     if not role.is_active:
         raise HTTPException(
             status_code=400,
-            detail=f"Role with code '{role_code}' is already inactive"
+            detail=f"Role with code '{code}' is already inactive"
         )
 
     # Logical delete: update is_active to False
@@ -134,5 +134,5 @@ def delete_role(role_code: str, session: Session = Depends(get_db_session)) -> R
     session.add(role)
     session.commit()
     session.refresh(role)
-    logger.info(f"Role deactivated (logical delete): {role_code}")
+    logger.info(f"Role deactivated (logical delete): {code}")
     return role

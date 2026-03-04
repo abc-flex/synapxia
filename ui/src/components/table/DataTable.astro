@@ -6,6 +6,10 @@ import downloadSvg from "@/images/icons/arrow-down-tray.svg?raw";
 import leftSvg from "@/images/icons/chevron-left.svg?raw";
 import rightSvg from "@/images/icons/chevron-right.svg?raw";
 import infoSvg from "@/images/icons/information-circle.svg?raw";
+import csvSvg from "@/images/icons/file-csv.svg?raw";
+import jsonSvg from "@/images/icons/file-json.svg?raw";
+import txtSvg from "@/images/icons/file-txt.svg?raw";
+import sqlSvg from "@/images/icons/file-sql.svg?raw";
 
 const {
   columns = [],
@@ -103,30 +107,46 @@ const {
           <li>
             <button
               data-export="csv"
-              class="block w-full px-4 py-2 hover:bg-gray-100"
-              >Export CSV</button
+              class="flex items-center gap-3 w-full px-4 py-2 hover:bg-gray-100"
             >
+              <p data-i18n="data_table.export_csv">data_table.export_csv</p>
+              <span class="w-4 h-4 inline-block flex-shrink-0">
+                <Fragment set:html={csvSvg} />
+              </span>
+            </button>
           </li>
           <li>
             <button
               data-export="json"
-              class="block w-full px-4 py-2 hover:bg-gray-100"
-              >Export JSON</button
-            >
+              class="flex items-center gap-3 w-full px-4 py-2 hover:bg-gray-100"
+              >
+              <p data-i18n="data_table.export_json">data_table.export_json</p>
+              <span class="w-4 h-4 inline-block flex-shrink-0">
+                <Fragment set:html={jsonSvg} />
+              </span>
+            </button>
           </li>
           <li>
             <button
               data-export="txt"
-              class="block w-full px-4 py-2 hover:bg-gray-100"
-              >Export TXT</button
-            >
+              class="flex items-center gap-3 w-full px-4 py-2 hover:bg-gray-100"
+              >
+              <p data-i18n="data_table.export_txt">data_table.export_txt</p>
+              <span class="w-4 h-4 inline-block flex-shrink-0">
+                <Fragment set:html={txtSvg} />
+              </span>
+            </button>
           </li>
           <li>
             <button
               data-export="sql"
-              class="block w-full px-4 py-2 hover:bg-gray-100"
-              >Export SQL</button
+              class="flex items-center gap-3 w-full px-4 py-2 hover:bg-gray-100"
             >
+              <p data-i18n="data_table.export_sql">data_table.export_sql</p>
+              <span class="w-4 h-4 inline-block flex-shrink-0">
+                <Fragment set:html={sqlSvg} />
+              </span>
+            </button>
           </li>
         </ul>
       </div>
@@ -147,7 +167,7 @@ const {
         <tr>
           {
             columns.map((col) => (
-              <th class="px-2 py-1 font-semibold tracking-wide" data-i18n={col.label}>{col.label}</th>
+              <th class="px-2 py-1 font-semibold tracking-wide" data-i18n={col.label} data-column-key={col.key}>{col.label}</th>
             ))
           }
           <th class="px-4 py-4 text-right" data-i18n="data_table.actions">

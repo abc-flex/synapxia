@@ -26,7 +26,7 @@ export async function getListItems(skip: number = 0, limit: number = 100): Promi
  */
 export async function getListItemsbyList(list_code: string, skip: number = 0, limit: number = 100): Promise<ListItem[]> {
   const queryString = buildQueryString({ skip, limit });
-  return apiGet<ListItem[]>(`/api/list_items/${list_code}${queryString}`);
+  return apiGet<ListItem[]>(`/api/list_items/list/${list_code}${queryString}`);
 }
 
 /**

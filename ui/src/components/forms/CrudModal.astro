@@ -129,7 +129,7 @@ const triggerTextKey =
       }
       {
         fields.map((field) => {
-          const value = initialValues?.[field.key];
+          const value = initialValues?.[field.key] || "";
           const disabled = isDelete || field.disabled;
           const inputId = `${modalId}-${field.key}`;
 
@@ -176,7 +176,7 @@ const triggerTextKey =
                   disabled={disabled}
                   class={`h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white/90 ${disabled ? "opacity-60" : ""}`}
                 >
-                  <option value="" data-i18n={`crud_modal.select`}></option>
+                  <option value="" data-i18n={`crud_modal.select`} selected={!value}></option>
                   {(field.options || []).map((opt) => (
                     <option
                       value={opt.value || opt.code}

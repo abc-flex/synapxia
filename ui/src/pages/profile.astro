@@ -1,0 +1,297 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Breadcrumb from "../components/core/Breadcrumb.astro";
+
+// Mock user data - replace with actual API call
+const user = {
+  id: 1,
+  firstName: "Musharof",
+  lastName: "Chowdhury",
+  role: "Team Manager",
+  location: "Arizona, United States",
+  email: "randomuser@pinjo.com",
+  phone: "+09 363 398 46",
+  bio: "Team Manager",
+  avatar: "https://via.placeholder.com/100",
+};
+---
+
+<BaseLayout>
+  <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
+    <Breadcrumb
+      pageName="Profile"
+      pageTitle="Profile"
+      homeLink="/"
+      pageNameKey="menu_options.profile"
+      pageTitleKey="menu_options.profile"
+    />
+
+    <div class="space-y-6">
+      {/* Profile Header Card */}
+      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <div class="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-center gap-4">
+            {/* Avatar */}
+            <div class="h-24 w-24 flex-shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600">
+              <img
+                src={user.avatar}
+                alt={`${user.firstName} ${user.lastName}`}
+                class="h-full w-full object-cover"
+              />
+            </div>
+
+            {/* User Info */}
+            <div>
+              <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                {user.firstName} {user.lastName}
+              </h1>
+              <p class="text-sm text-gray-600 dark:text-gray-400">
+                {user.role}
+              </p>
+              <p class="text-sm text-gray-500 dark:text-gray-500">
+                {user.location}
+              </p>
+            </div>
+          </div>
+
+          {/* Edit Button */}
+          <button
+            id="edit-profile-btn"
+            type="button"
+            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+            data-i18n="profile_page.edit"
+          >
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+            </svg>
+            <span>profile_page.edit</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Personal Information Section */}
+      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <div class="mb-6 flex items-center justify-between">
+          <h2 class="text-lg font-bold text-gray-900 dark:text-white" data-i18n="profile_page.personal_information">
+            profile_page.personal_information
+          </h2>
+          <button
+            id="edit-personal-btn"
+            type="button"
+            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+            data-i18n="profile_page.edit"
+          >
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+            </svg>
+            <span>profile_page.edit</span>
+          </button>
+        </div>
+
+        {/* Display View */}
+        <div id="view-mode" class="space-y-6">
+          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            {/* First Name */}
+            <div>
+              <label class="block text-sm font-medium text-gray-600 dark:text-gray-400" data-i18n="profile_page.first_name">
+                profile_page.first_name
+              </label>
+              <p class="mt-2 text-gray-900 dark:text-white">
+                {user.firstName}
+              </p>
+            </div>
+
+            {/* Last Name */}
+            <div>
+              <label class="block text-sm font-medium text-gray-600 dark:text-gray-400" data-i18n="profile_page.last_name">
+                profile_page.last_name
+              </label>
+              <p class="mt-2 text-gray-900 dark:text-white">
+                {user.lastName}
+              </p>
+            </div>
+
+            {/* Email */}
+            <div>
+              <label class="block text-sm font-medium text-gray-600 dark:text-gray-400" data-i18n="profile_page.email_address">
+                profile_page.email_address
+              </label>
+              <p class="mt-2 text-gray-900 dark:text-white">
+                {user.email}
+              </p>
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label class="block text-sm font-medium text-gray-600 dark:text-gray-400" data-i18n="profile_page.phone">
+                profile_page.phone
+              </label>
+              <p class="mt-2 text-gray-900 dark:text-white">
+                {user.phone}
+              </p>
+            </div>
+          </div>
+
+          {/* Bio */}
+          <div>
+            <label class="block text-sm font-medium text-gray-600 dark:text-gray-400" data-i18n="profile_page.bio">
+              profile_page.bio
+            </label>
+            <p class="mt-2 text-gray-900 dark:text-white">
+              {user.bio}
+            </p>
+          </div>
+        </div>
+
+        {/* Edit View */}
+        <form id="edit-form" class="hidden space-y-6">
+          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            {/* First Name */}
+            <div>
+              <label for="firstName" class="block text-sm font-medium text-gray-700 dark:text-gray-300" data-i18n="profile_page.first_name">
+                profile_page.first_name <span class="text-red-500">*</span>
+              </label>
+              <input
+                id="firstName"
+                name="firstName"
+                type="text"
+                value={user.firstName}
+                required
+                class="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white/90"
+              />
+            </div>
+
+            {/* Last Name */}
+            <div>
+              <label for="lastName" class="block text-sm font-medium text-gray-700 dark:text-gray-300" data-i18n="profile_page.last_name">
+                profile_page.last_name <span class="text-red-500">*</span>
+              </label>
+              <input
+                id="lastName"
+                name="lastName"
+                type="text"
+                value={user.lastName}
+                required
+                class="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white/90"
+              />
+            </div>
+
+            {/* Email */}
+            <div>
+              <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300" data-i18n="profile_page.email_address">
+                profile_page.email_address <span class="text-red-500">*</span>
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                value={user.email}
+                required
+                class="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white/90"
+              />
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label for="phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300" data-i18n="profile_page.phone">
+                profile_page.phone
+              </label>
+              <input
+                id="phone"
+                name="phone"
+                type="tel"
+                value={user.phone}
+                class="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white/90"
+              />
+            </div>
+          </div>
+
+          {/* Bio */}
+          <div>
+            <label for="bio" class="block text-sm font-medium text-gray-700 dark:text-gray-300" data-i18n="profile_page.bio">
+              profile_page.bio
+            </label>
+            <textarea
+              id="bio"
+              name="bio"
+              rows={3}
+              class="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white/90"
+            >
+              {user.bio}
+            </textarea>
+          </div>
+
+          {/* Form Actions */}
+          <div class="flex items-center justify-end gap-3 border-t border-gray-100 pt-6 dark:border-gray-800">
+            <button
+              type="button"
+              id="cancel-edit-btn"
+              class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+              data-i18n="profile_page.cancel"
+            >
+              profile_page.cancel
+            </button>
+            <button
+              type="submit"
+              class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:bg-indigo-500 dark:hover:bg-indigo-400 dark:focus:ring-indigo-800"
+              data-i18n="profile_page.save_changes"
+            >
+              profile_page.save_changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const viewMode = document.getElementById("view-mode");
+    const editForm = document.getElementById("edit-form");
+    const editPersonalBtn = document.getElementById("edit-personal-btn");
+    const cancelEditBtn = document.getElementById("cancel-edit-btn");
+    const submitEditBtn = document.querySelector("#edit-form button[type='submit']");
+
+    // Show edit mode
+    editPersonalBtn?.addEventListener("click", () => {
+      viewMode?.classList.add("hidden");
+      editForm?.classList.remove("hidden");
+    });
+
+    // Show view mode
+    cancelEditBtn?.addEventListener("click", () => {
+      viewMode?.classList.remove("hidden");
+      editForm?.classList.add("hidden");
+    });
+
+    // Handle form submission
+    editForm?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData(editForm);
+      const data = Object.fromEntries(formData);
+
+      try {
+        // Replace with your actual API endpoint
+        // const response = await fetch('/api/profile', {
+        //   method: 'PUT',
+        //   headers: { 'Content-Type': 'application/json' },
+        //   body: JSON.stringify(data),
+        // });
+
+        // if (response.ok) {
+        //   // Update display mode with new data
+        //   viewMode?.classList.remove("hidden");
+        //   editForm?.classList.add("hidden");
+        //   // Show success toast
+        // }
+
+        // For now, just toggle back to view mode
+        console.log("Profile updated:", data);
+        viewMode?.classList.remove("hidden");
+        editForm?.classList.add("hidden");
+      } catch (error) {
+        console.error("Error updating profile:", error);
+      }
+    });
+  </script>
+</BaseLayout>

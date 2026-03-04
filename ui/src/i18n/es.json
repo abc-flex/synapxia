@@ -32,6 +32,7 @@
     "WORKFLOWS": "Procesos"
   },
   "menu_options": {
+    "profile": "Perfil",
     "business_units": "Unidades de Negocio",
     "roles": "Roles",
     "privileges": "Rol: Privilegios",
@@ -255,6 +256,20 @@
     "edit": "Editar Asignación",
     "delete": "Eliminar Asignación",
     "empty_message": "No se encontraron Asignaciones",
-    "delete_confirmation": "¿Está seguro de que desea eliminar esta Asignación?"
-  }
+    "delete_confirmation": "¿Está seguro de que desea eliminar esta Asignación?"  },
+  "profile_page": {
+    "title": "Perfil",
+    "personal_information": "Información Personal",
+    "first_name": "Nombre",
+    "last_name": "Apellido",
+    "email_address": "Dirección de Correo",
+    "phone": "Teléfono",
+    "bio": "Biografía",
+    "edit": "Editar",
+    "save_changes": "Guardar Cambios",
+    "cancel": "Cancelar",
+    "role": "Rol",
+    "location": "Ubicación",
+    "profile_updated": "¡Perfil actualizado exitosamente!",
+    "update_error": "Error al actualizar el perfil. Intente de nuevo."  }
 }

@@ -32,6 +32,7 @@
     "WORKFLOWS": "Processes"
   },
   "menu_options": {
+    "profile": "Profile",
     "business_units": "Business Units",
     "roles": "Roles",
     "privileges": "Roles: Privileges",
@@ -256,5 +257,21 @@
     "delete": "Delete Assignment",
     "empty_message": "No Assignments found",
     "delete_confirmation": "Are you sure you want to delete this Assignment"
+  },
+  "profile_page": {
+    "title": "Profile",
+    "personal_information": "Personal Information",
+    "first_name": "First Name",
+    "last_name": "Last Name",
+    "email_address": "Email Address",
+    "phone": "Phone",
+    "bio": "Bio",
+    "edit": "Edit",
+    "save_changes": "Save Changes",
+    "cancel": "Cancel",
+    "role": "Role",
+    "location": "Location",
+    "profile_updated": "Profile updated successfully!",
+    "update_error": "Error updating profile. Please try again."
   }
 }

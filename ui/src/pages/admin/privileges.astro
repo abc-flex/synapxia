@@ -5,6 +5,7 @@ import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
 import { getPrivileges } from "@/lib/privileges";
+import { getRoles } from "@/lib/roles";
 
 // Fetch privileges from API
 let privileges: any[] = [];
@@ -18,6 +19,18 @@ try {
   errorMessage = error instanceof Error ? error.message : 'Failed to fetch privileges from API';
   // Fallback to empty array to still render the page
   privileges = [];
+}
+
+// Fetch roles from API for select field
+let roles: any[] = [];
+try {
+  const apiRoles = await getRoles();
+  roles = apiRoles;
+} catch (error) {
+  console.error('Failed to fetch roles:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch roles from API';
+  // Fallback to empty array to still render the page
+  roles = [];
 }
 
 const columns = [
@@ -106,6 +119,7 @@ const fieldKeys = tableFields.map((f) => f.key);
           tableId="privileges"
           i18Item="privilege"
           columnFilter="role"
+          filterOptions={roles}
           masterPage="/admin/roles"
           mdItem="role"
         />

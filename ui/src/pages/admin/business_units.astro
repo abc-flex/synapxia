@@ -25,11 +25,18 @@ let types: any[] = [];
 types = await getListItemsbyList('BIZ_UNIT_TYPE');
 
 const columns = [
-  { key: "code", label: "businessunit_modal.code" },
-  { key: "name", label: "businessunit_modal.name" },
-  { key: "type", label: "businessunit_modal.type" },
-  { key: "parent", label: "businessunit_modal.parent" },
+  { key: "code", label: "business_unit_modal.code" },
+  { key: "name", label: "business_unit_modal.name" },
+  { key: "type", label: "business_unit_modal.type" },
+  { key: "parent", label: "business_unit_modal.parent" },
 ];
+
+// Fetch business_units for select field
+const units = business_units.map((item) => ({
+  value: item.code,
+  name: item.name,
+}));
+
 const data = business_units.map((item) => ({
   id: item.code,
   code: item.code,
@@ -42,13 +49,13 @@ const data = business_units.map((item) => ({
   updated_at: item.updated_at,
 }));
 const tableFields = [
-  { key: "code", label: "businessunit_modal.code", required: true, placeholder: "e.g. ADMIN" },
-  { key: "name", label: "businessunit_modal.name", required: true, placeholder: "e.g. Administration" },
-  { key: "type", label: "businessunit_modal.type", type: "select" as const, options: types, required: false },
-  { key: "parent", label: "businessunit_modal.parent", required: false },
+  { key: "code", label: "business_unit_modal.code", required: true, placeholder: "e.g. ADMIN" },
+  { key: "name", label: "business_unit_modal.name", required: true, placeholder: "e.g. Administration" },
+  { key: "type", label: "business_unit_modal.type", type: "select" as const, options: types, required: false },
+  { key: "parent", label: "business_unit_modal.parent", type: "select" as const, options: units, required: false },
   {
     key: "description",
-    label: "businessunit_modal.description",
+    label: "business_unit_modal.description",
     type: "textarea" as const,
     placeholder: "Optional details of business unit",
   },
@@ -74,21 +81,21 @@ const fieldKeys = tableFields.map((f) => f.key);
 
     <CrudModal
       mode="create"
-      modalId="businessunit-create-modal"
+      modalId="business_unit-create-modal"
       entityName="BusinessUnit"
       fields={tableFields}
       showTrigger={false}
     />
     <CrudModal
       mode="edit"
-      modalId="businessunit-edit-modal"
+      modalId="business_unit-edit-modal"
       entityName="BusinessUnit"
       fields={tableFields}
       showTrigger={false}
     />
     <CrudModal
       mode="delete"
-      modalId="businessunit-delete-modal"
+      modalId="business_unit-delete-modal"
       entityName="BusinessUnit"
       fields={tableFields}
       showTrigger={false}
@@ -113,8 +120,8 @@ const fieldKeys = tableFields.map((f) => f.key);
 
       initCrudPage({
         dataId: "business_units-data",
-        editModalId: "businessunit-edit-modal",
-        deleteModalId: "businessunit-delete-modal",
+        editModalId: "business_unit-edit-modal",
+        deleteModalId: "business_unit-delete-modal",
       });
 
       // Helper function to show toast notifications
@@ -192,7 +199,7 @@ const fieldKeys = tableFields.map((f) => f.key);
           columns={columns}
           data={data}
           tableId="business_units"
-          i18Item="businessunit"
+          i18Item="business_unit"
         />
         <!-- ====== Table End -->
       </div>

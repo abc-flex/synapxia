@@ -107,45 +107,45 @@ const {
           <li>
             <button
               data-export="csv"
-              class="flex items-center gap-3 w-full px-4 py-2 hover:bg-gray-100"
+              class="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100"
             >
-              <p data-i18n="data_table.export_csv">data_table.export_csv</p>
               <span class="w-4 h-4 inline-block flex-shrink-0">
                 <Fragment set:html={csvSvg} />
               </span>
+              <p data-i18n="data_table.export_csv">data_table.export_csv</p>
             </button>
           </li>
           <li>
             <button
               data-export="json"
-              class="flex items-center gap-3 w-full px-4 py-2 hover:bg-gray-100"
+              class="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100"
               >
-              <p data-i18n="data_table.export_json">data_table.export_json</p>
               <span class="w-4 h-4 inline-block flex-shrink-0">
                 <Fragment set:html={jsonSvg} />
               </span>
+              <p data-i18n="data_table.export_json">data_table.export_json</p>
             </button>
           </li>
           <li>
             <button
               data-export="txt"
-              class="flex items-center gap-3 w-full px-4 py-2 hover:bg-gray-100"
+              class="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100"
               >
-              <p data-i18n="data_table.export_txt">data_table.export_txt</p>
-              <span class="w-4 h-4 inline-block flex-shrink-0">
+              <span class="w-4 h-4 inline-block flex-shrink-0 color-gray-500">
                 <Fragment set:html={txtSvg} />
               </span>
+              <p data-i18n="data_table.export_txt">data_table.export_txt</p>
             </button>
           </li>
           <li>
             <button
               data-export="sql"
-              class="flex items-center gap-3 w-full px-4 py-2 hover:bg-gray-100"
+              class="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100"
             >
-              <p data-i18n="data_table.export_sql">data_table.export_sql</p>
               <span class="w-4 h-4 inline-block flex-shrink-0">
                 <Fragment set:html={sqlSvg} />
               </span>
+              <p data-i18n="data_table.export_sql">data_table.export_sql</p>
             </button>
           </li>
         </ul>

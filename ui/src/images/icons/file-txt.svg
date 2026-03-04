@@ -1,8 +1,8 @@
 <svg viewBox="-4 0 64 64" xmlns="http://www.w3.org/2000/svg">
   <style>
     :root {
-      --txt-primary: #F9CA06;
-      --txt-secondary: #F7BC04;
+      --txt-primary: #78766c;
+      --txt-secondary: #454441;
       --txt-text: #fff
     }
   </style>

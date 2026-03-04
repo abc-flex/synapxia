@@ -34,8 +34,10 @@
   "menu_options": {
     "business_units": "Business Units",
     "roles": "Roles",
+    "privileges": "Roles: Privileges",
     "users": "Users",
     "lists": "Lists",
+    "list_items": "Lists: List Items",
     "modules": "Modules",
     "options": "Options",
     "categories": "Categories",
@@ -61,8 +63,7 @@
     "agents": "Agents",
     "units": "Units",
     "ai_flows": "AI Flows",
-    "n8n": "n8n",
-    "list_items": "List Items"
+    "n8n": "n8n"
   },
   "crud_modal": {
     "add": "Add",
@@ -72,6 +73,7 @@
     "save_changes": "Save Changes",
     "cancel": "Cancel",
     "close": "Close",
+    "select": "Choose an option",
     "delete_confirmation": "Are you sure you want to delete this",
     "delete_warning": "This action cannot be undone."
   },
@@ -99,7 +101,7 @@
     "export": "Export",
     "no_results": "No results"
   },
-  "businessunit_modal": {
+  "business_unit_modal": {
     "code": "Code",
     "name": "Name",
     "description": "Description",
@@ -107,6 +109,7 @@
     "parent": "Parent",
     "one_title": "Business Unit",
     "many_title": "Business Units",
+    "filter_title": "All Business Units",
     "add_new": "New Business Unit",
     "edit": "Edit Business Unit",
     "delete": "Delete Business Unit",

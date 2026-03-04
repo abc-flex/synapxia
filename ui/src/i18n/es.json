@@ -34,8 +34,10 @@
   "menu_options": {
     "business_units": "Unidades de Negocio",
     "roles": "Roles",
+    "privileges": "Rol: Privilegios",
     "users": "Usuarios",
     "lists": "Listas",
+    "list_items": "Listas: Items de Lista",
     "modules": "Módulos",
     "options": "Opciones",
     "categories": "Categorías",
@@ -61,8 +63,7 @@
     "agents": "Agentes",
     "units": "Unidades",
     "ai_flows": "Flujos de IA",
-    "n8n": "n8n",
-    "list_items": "Items de Lista"
+    "n8n": "n8n"
   },
   "crud_modal": {
     "add": "Agregar",
@@ -72,6 +73,7 @@
     "save_changes": "Guardar Cambios",
     "cancel": "Cancelar",
     "close": "Cerrar",
+    "select": "Elige una opción",
     "delete_confirmation": "¿Está seguro de que desea eliminar este",
     "delete_warning": "Esta acción no se puede deshacer."
   },
@@ -99,7 +101,7 @@
     "export": "Exportar",
     "no_results": "No hay resultados"
   },
-  "businessunit_modal": {
+  "business_unit_modal": {
     "code": "Código",
     "name": "Nombre",
     "description": "Descripción",
@@ -107,6 +109,7 @@
     "parent": "Padre",
     "one_title": "Unidad de Negocio",
     "many_title": "Unidades de Negocio",
+    "filter_title": "Todas las Unidades de Negocio",
     "add_new": "Nueva Unidad de Negocio",
     "edit": "Editar Unidad de Negocio",
     "delete": "Eliminar Unidad de Negocio",

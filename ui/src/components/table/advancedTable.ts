@@ -59,31 +59,13 @@ export function initAdvancedTable(
     if (filterSelect) {
         filterKey = filterSelect.dataset.columnKey ?? null;
 
-        // 🔹 Valores únicos desde data
-        if (filterKey) {
-            const uniqueValues = Array.from(
-                new Set(
-                    data
-                        .map(row => row[filterKey!])
-                        .filter(v => v !== null && v !== undefined)
-                )
-            ).sort();
-
-            uniqueValues.forEach(value => {
-                const option = document.createElement("option");
-                option.value = String(value);
-                option.textContent = String(value);
-                filterSelect.appendChild(option);
-            });
-
-            // 🔹 Obtener valor inicial desde URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const filterParam = columnFilter
-                ? urlParams.get(columnFilter)
-                : null;
-            if (filterParam) {
-                filterSelect.value = filterParam;
-            }
+        // 🔹 Obtener valor inicial desde URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const filterParam = columnFilter
+            ? urlParams.get(columnFilter)
+            : null;
+        if (filterParam) {
+            filterSelect.value = filterParam;
         }
 
         filterSelect.addEventListener("change", () => {

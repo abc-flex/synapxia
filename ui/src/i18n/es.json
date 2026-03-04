@@ -271,5 +271,21 @@
     "role": "Rol",
     "location": "Ubicación",
     "profile_updated": "¡Perfil actualizado exitosamente!",
-    "update_error": "Error al actualizar el perfil. Intente de nuevo."  }
+    "update_error": "Error al actualizar el perfil. Intente de nuevo."
+  },
+  "login_page": {
+    "title": "Inicia Sesión",
+    "welcome": "Bienvenido",
+    "password": "Contraseña",
+    "remember_me": "Recuérdame",
+    "forgot_password": "¿Olvidaste tu contraseña?",
+    "sign_in": "Inicia Sesión",
+    "or": "O",
+    "no_account": "¿No tienes cuenta?",
+    "sign_up": "Registrarse",
+    "email_required": "El correo es requerido",
+    "password_required": "La contraseña es requerida",
+    "login_error": "Correo o contraseña inválidos",
+    "login_success": "¡Sesión iniciada exitosamente!"
+  }
 }

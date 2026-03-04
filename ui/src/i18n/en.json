@@ -273,5 +273,20 @@
     "location": "Location",
     "profile_updated": "Profile updated successfully!",
     "update_error": "Error updating profile. Please try again."
+  },
+  "login_page": {
+    "title": "Sign In",
+    "welcome": "Welcome Back",
+    "password": "Password",
+    "remember_me": "Remember me",
+    "forgot_password": "Forgot password?",
+    "sign_in": "Sign In",
+    "or": "OR",
+    "no_account": "Don't have an account?",
+    "sign_up": "Sign up",
+    "email_required": "Email is required",
+    "password_required": "Password is required",
+    "login_error": "Invalid email or password",
+    "login_success": "Login successful!"
   }
 }

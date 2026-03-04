@@ -83,6 +83,11 @@ import SearchBar from "./SearchBar.astro";
           name={userName}
           email={userEmail}
           avatarUrl={userAvatarUrl}
+          menuItems={[
+            { label: "account_menu.edit_profile", href: "/profile" },
+            { label: "account_menu.account_settings" },
+            { label: "account_menu.support" },
+          ]}
         />
       </div>
     </div>

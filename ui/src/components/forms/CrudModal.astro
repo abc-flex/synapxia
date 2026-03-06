@@ -268,7 +268,20 @@ const triggerTextKey =
     if (!modal) return;
 
     const open = () => {
-      if (!modal.open) modal.showModal();
+      if (!modal.open) {
+        // Reset form fields in create mode
+        if (mode === "create") {
+          const form = modal.querySelector("form");
+          if (form) {
+            form.reset();
+            const idInput = form.querySelector('[name="id"]');
+            if (idInput) {
+              idInput.value = "";
+            }
+          }
+        }
+        modal.showModal();
+      }
     };
 
     const close = () => {

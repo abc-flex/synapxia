@@ -33,7 +33,7 @@ export async function getAssignmentsbyList(list_code: string, skip: number = 0, 
  * Fetch a single assignment by its id
  * @param id - Unique assignment id
  * @returns Promise with assignment data
- */im
+ */
 export async function getAssignment(id: number): Promise<Assignment> {
   return apiGet<Assignment>(`/api/assignments/${id}`);
 }

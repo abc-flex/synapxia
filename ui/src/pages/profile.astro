@@ -28,11 +28,17 @@ const user = {
 
     <div class="space-y-6">
       {/* Profile Header Card */}
-      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <div class="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
+      <div
+        class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+      >
+        <div
+          class="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between"
+        >
           <div class="flex items-center gap-4">
             {/* Avatar */}
-            <div class="h-24 w-24 flex-shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600">
+            <div
+              class="h-24 w-24 flex-shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600"
+            >
               <img
                 src={user.avatar}
                 alt={`${user.firstName} ${user.lastName}`}
@@ -43,7 +49,8 @@ const user = {
             {/* User Info */}
             <div>
               <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-                {user.firstName} {user.lastName}
+                {user.firstName}
+                {user.lastName}
               </h1>
               <p class="text-sm text-gray-600 dark:text-gray-400">
                 {user.role}
@@ -61,8 +68,18 @@ const user = {
             class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
             data-i18n="profile_page.edit"
           >
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+            <svg
+              class="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              ></path>
             </svg>
             <span>profile_page.edit</span>
           </button>
@@ -70,9 +87,14 @@ const user = {
       </div>
 
       {/* Personal Information Section */}
-      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+      <div
+        class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+      >
         <div class="mb-6 flex items-center justify-between">
-          <h2 class="text-lg font-bold text-gray-900 dark:text-white" data-i18n="profile_page.personal_information">
+          <h2
+            class="text-lg font-bold text-gray-900 dark:text-white"
+            data-i18n="profile_page.personal_information"
+          >
             profile_page.personal_information
           </h2>
           <button
@@ -81,8 +103,18 @@ const user = {
             class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
             data-i18n="profile_page.edit"
           >
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+            <svg
+              class="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              ></path>
             </svg>
             <span>profile_page.edit</span>
           </button>
@@ -93,7 +125,10 @@ const user = {
           <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
             {/* First Name */}
             <div>
-              <label class="block text-sm font-medium text-gray-600 dark:text-gray-400" data-i18n="profile_page.first_name">
+              <label
+                class="block text-sm font-medium text-gray-600 dark:text-gray-400"
+                data-i18n="profile_page.first_name"
+              >
                 profile_page.first_name
               </label>
               <p class="mt-2 text-gray-900 dark:text-white">
@@ -103,7 +138,10 @@ const user = {
 
             {/* Last Name */}
             <div>
-              <label class="block text-sm font-medium text-gray-600 dark:text-gray-400" data-i18n="profile_page.last_name">
+              <label
+                class="block text-sm font-medium text-gray-600 dark:text-gray-400"
+                data-i18n="profile_page.last_name"
+              >
                 profile_page.last_name
               </label>
               <p class="mt-2 text-gray-900 dark:text-white">
@@ -113,7 +151,10 @@ const user = {
 
             {/* Email */}
             <div>
-              <label class="block text-sm font-medium text-gray-600 dark:text-gray-400" data-i18n="profile_page.email_address">
+              <label
+                class="block text-sm font-medium text-gray-600 dark:text-gray-400"
+                data-i18n="profile_page.email_address"
+              >
                 profile_page.email_address
               </label>
               <p class="mt-2 text-gray-900 dark:text-white">
@@ -123,7 +164,10 @@ const user = {
 
             {/* Phone */}
             <div>
-              <label class="block text-sm font-medium text-gray-600 dark:text-gray-400" data-i18n="profile_page.phone">
+              <label
+                class="block text-sm font-medium text-gray-600 dark:text-gray-400"
+                data-i18n="profile_page.phone"
+              >
                 profile_page.phone
               </label>
               <p class="mt-2 text-gray-900 dark:text-white">
@@ -134,7 +178,10 @@ const user = {
 
           {/* Bio */}
           <div>
-            <label class="block text-sm font-medium text-gray-600 dark:text-gray-400" data-i18n="profile_page.bio">
+            <label
+              class="block text-sm font-medium text-gray-600 dark:text-gray-400"
+              data-i18n="profile_page.bio"
+            >
               profile_page.bio
             </label>
             <p class="mt-2 text-gray-900 dark:text-white">
@@ -148,7 +195,11 @@ const user = {
           <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
             {/* First Name */}
             <div>
-              <label for="firstName" class="block text-sm font-medium text-gray-700 dark:text-gray-300" data-i18n="profile_page.first_name">
+              <label
+                for="firstName"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                data-i18n="profile_page.first_name"
+              >
                 profile_page.first_name <span class="text-red-500">*</span>
               </label>
               <input
@@ -163,7 +214,11 @@ const user = {
 
             {/* Last Name */}
             <div>
-              <label for="lastName" class="block text-sm font-medium text-gray-700 dark:text-gray-300" data-i18n="profile_page.last_name">
+              <label
+                for="lastName"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                data-i18n="profile_page.last_name"
+              >
                 profile_page.last_name <span class="text-red-500">*</span>
               </label>
               <input
@@ -178,7 +233,11 @@ const user = {
 
             {/* Email */}
             <div>
-              <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300" data-i18n="profile_page.email_address">
+              <label
+                for="email"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                data-i18n="profile_page.email_address"
+              >
                 profile_page.email_address <span class="text-red-500">*</span>
               </label>
               <input
@@ -193,7 +252,11 @@ const user = {
 
             {/* Phone */}
             <div>
-              <label for="phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300" data-i18n="profile_page.phone">
+              <label
+                for="phone"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                data-i18n="profile_page.phone"
+              >
                 profile_page.phone
               </label>
               <input
@@ -208,7 +271,11 @@ const user = {
 
           {/* Bio */}
           <div>
-            <label for="bio" class="block text-sm font-medium text-gray-700 dark:text-gray-300" data-i18n="profile_page.bio">
+            <label
+              for="bio"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              data-i18n="profile_page.bio"
+            >
               profile_page.bio
             </label>
             <textarea
@@ -222,7 +289,9 @@ const user = {
           </div>
 
           {/* Form Actions */}
-          <div class="flex items-center justify-end gap-3 border-t border-gray-100 pt-6 dark:border-gray-800">
+          <div
+            class="flex items-center justify-end gap-3 border-t border-gray-100 pt-6 dark:border-gray-800"
+          >
             <button
               type="button"
               id="cancel-edit-btn"
@@ -249,7 +318,9 @@ const user = {
     const editForm = document.getElementById("edit-form");
     const editPersonalBtn = document.getElementById("edit-personal-btn");
     const cancelEditBtn = document.getElementById("cancel-edit-btn");
-    const submitEditBtn = document.querySelector("#edit-form button[type='submit']");
+    const submitEditBtn = document.querySelector(
+      "#edit-form button[type='submit']",
+    );
 
     // Show edit mode
     editPersonalBtn?.addEventListener("click", () => {

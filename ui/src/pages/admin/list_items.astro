@@ -5,6 +5,7 @@ import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
 import { getListItems } from "@/lib/list_items";
+import { getLists } from "@/lib/lists";
 
 // Fetch list_items from API
 let list_items: any[] = [];
@@ -18,6 +19,18 @@ try {
   errorMessage = error instanceof Error ? error.message : 'Failed to fetch list_items from API';
   // Fallback to empty array to still render the page
   list_items = [];
+}
+
+// Fetch lists from API for select field
+let lists: any[] = [];
+try {
+  const apiLists = await getLists();
+  lists = apiLists;
+} catch (error) {
+  console.error('Failed to fetch lists:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch lists from API';
+  // Fallback to empty array to still render the page
+  lists = [];
 }
 
 const columns = [
@@ -108,6 +121,7 @@ const fieldKeys = tableFields.map((f) => f.key);
           tableId="items_list"
           i18Item="list_item"
           columnFilter="list"
+          filterOptions={lists}
           masterPage="/admin/lists"
           mdItem="list"
         />

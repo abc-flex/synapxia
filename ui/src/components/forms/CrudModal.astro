@@ -355,7 +355,13 @@ const triggerTextKey =
           } else if (input && input.type === "number") {
             data[key] = value ? Number(value) : null;
           } else {
-            data[key] = value;
+            // If field is not required and value is empty, set to null
+            const isRequired = input?.hasAttribute("required");
+            if (!isRequired && !value) {
+              data[key] = null;
+            } else {
+              data[key] = value;
+            }
           }
         }
 

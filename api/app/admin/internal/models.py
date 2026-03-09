@@ -205,6 +205,7 @@ class UserBase(SQLModel):
     menu_role: str = Field(max_length=50, foreign_key="roles.code")
     business_unit: str = Field(max_length=50, foreign_key="units.code")
     is_active: bool = Field(default=True)
+    is_superuser: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
     last_login_at: Optional[datetime] = None
@@ -214,9 +215,11 @@ class User(UserBase, table=True):
     __tablename__ = "users"
     id: Optional[int] = Field(default=None, primary_key=True)
 
+
 class UserSelect(UserBase):
     id: int
     name: str
+
 
 class UserCreate(SQLModel):
     username: str = Field(max_length=50, description="Unique username")
@@ -245,6 +248,8 @@ class UserUpdate(SQLModel):
         default=None, max_length=50, description="Business_Unit code")
     is_active: Optional[bool] = Field(
         default=None, description="Indicates if the user is active")
+    is_superuser: Optional[bool] = Field(
+        default=None, description="Indicates if the user is a superuser")
     last_login_at: Optional[datetime] = Field(
         default=None, description="Last login date")
 

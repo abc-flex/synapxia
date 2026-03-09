@@ -81,6 +81,7 @@ CREATE TABLE users (
     menu_role      VARCHAR(50)   NOT NULL,
     business_unit  VARCHAR(50)   NOT NULL,
     is_active      BOOLEAN       NOT NULL DEFAULT TRUE,
+    is_superuser   BOOLEAN       NOT NULL DEFAULT FALSE,
     created_at     TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     updated_at     TIMESTAMPTZ,
     last_login_at  TIMESTAMPTZ,

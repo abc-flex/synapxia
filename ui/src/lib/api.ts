@@ -4,6 +4,7 @@
  */
 
 import type { ApiError } from '../types/list';
+import { getToken } from './auth';
 
 // Get API base URL from environment variables
 // Use PUBLIC_ prefix for client-side access
@@ -25,6 +26,19 @@ if (!API_BASE_URL) {
 }
 
 /**
+ * Get authorization headers if token exists
+ */
+function getAuthHeaders(): Record<string, string> {
+  const token = getToken();
+  if (token) {
+    return {
+      Authorization: `Bearer ${token}`,
+    };
+  }
+  return {};
+}
+
+/**
  * Generic GET request handler
  * @param route - API route (e.g., "/api/lists", "/api/modules")
  * @param init - Optional fetch configuration
@@ -39,6 +53,7 @@ export async function apiGet<T>(route: string, init?: RequestInit): Promise<T> {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
+        ...getAuthHeaders(),
         ...(init?.headers ?? {}),
       },
     });
@@ -84,6 +99,7 @@ export async function apiPost<T, D = any>(route: string, data: D, init?: Request
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
+        ...getAuthHeaders(),
         ...(init?.headers ?? {}),
       },
       body: JSON.stringify(data),
@@ -130,6 +146,7 @@ export async function apiPut<T, D = any>(route: string, data: D, init?: RequestI
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
+        ...getAuthHeaders(),
         ...(init?.headers ?? {}),
       },
       body: JSON.stringify(data),
@@ -174,6 +191,7 @@ export async function apiDelete<T = void>(route: string, init?: RequestInit): Pr
       method: 'DELETE',
       headers: {
         'Accept': 'application/json',
+        ...getAuthHeaders(),
         ...(init?.headers ?? {}),
       },
     });

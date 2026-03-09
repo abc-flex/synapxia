@@ -120,6 +120,20 @@ export interface ModuleUpdate {
 }
 
 // User types
+export interface UserRead {
+  id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  menu_role: string;
+  business_unit: string;
+  is_active: boolean;
+  is_superuser: boolean;
+  created_at: string;
+  last_login_at?: string;
+}
+
 export interface User {
   id?: number;
   username: string;
@@ -155,6 +169,22 @@ export interface UserUpdate {
   menu_role?: string;
   business_unit?: string;
   is_active?: boolean;
+}
+
+// Authentication types
+export interface LoginResponse {
+  access_token: string;
+  token_type: string;
+  user: UserRead;
+}
+
+export interface ChangePasswordRequest {
+  old_password: string;
+  new_password: string;
+}
+
+export interface ChangePasswordResponse {
+  message: string;
 }
 
 // BusinessUnit types

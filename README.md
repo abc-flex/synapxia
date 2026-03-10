@@ -10,9 +10,9 @@ This is a client-side UI demo for the SinapxIA Assignments Dashboard. The applic
 
 - **Dashboard Grid**: Displays employees organized by role (rows) and team (columns)
 - **Color-Coded Avatars**: Visual representation of metric levels
-  - 🟢 Green: High performance
-  - 🟡 Yellow: Medium performance
-  - 🔴 Red: Low performance
+  - 🟢 Green: High performance.
+  - 🟡 Yellow: Medium performance.
+  - 🔴 Red: Low performance.
 - **Interactive Modals**: Click on any avatar to view detailed information
 - **Dimension Selector**: Switch between different metrics (AI Adoption, Vacation, English Level)
 - **Internationalization**: Support for English and Spanish languages

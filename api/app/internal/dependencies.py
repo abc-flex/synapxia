@@ -29,14 +29,32 @@ DB_CONFIG = {
     "port": os.getenv("DB_PORT", "5432"),
 }
 
+# Validate required environment variables
+_missing_vars = [k for k, v in DB_CONFIG.items() if not v and k != "password"]
+if _missing_vars:
+    logger.error(
+        f"❌ Missing required database environment variables: {', '.join(_missing_vars)}\n"
+        f"Please set: DB_HOST, DB_SCHEMA, DB_USER, DB_PASSWORD, DB_PORT"
+    )
+
 DATABASE_URL = (
     f"postgresql://{DB_CONFIG['user']}:{DB_CONFIG['password']}"
     f"@{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}"
 )
 
+# Log connection string (without password)
+safe_url = DATABASE_URL.replace(DB_CONFIG['password'], '***')
+logger.info(f"📊 Database URL: {safe_url}")
+
 # Configure SQL echo only in development
 echo_sql = os.getenv("APP_ENV", "development") == "development"
-engine = create_engine(DATABASE_URL, echo=echo_sql)
+
+try:
+    engine = create_engine(DATABASE_URL, echo=echo_sql, pool_pre_ping=True)
+    logger.info("✅ SQLAlchemy engine created successfully")
+except Exception as e:
+    logger.error(f"❌ Failed to create engine: {e}")
+    raise
 
 
 # ==================== Database Connection Functions ====================
@@ -95,20 +113,38 @@ def get_db_session():
     Raises:
         HTTPException: 500 error if database error occurs
     """
-    session = Session(engine)
+    try:
+        session = Session(engine)
+    except Exception as e:
+        error_msg = str(e)
+        logger.error(f"❌ Failed to create database session: {error_msg}")
+
+        # Check for common connection issues
+        if "could not connect" in error_msg.lower():
+            detail = f"Cannot connect to database at {DB_CONFIG['host']}:{DB_CONFIG['port']}"
+        elif "authentication failed" in error_msg.lower():
+            detail = "Database authentication failed - check DB_USER and DB_PASSWORD"
+        elif "database" in error_msg.lower() and "does not exist" in error_msg.lower():
+            detail = f"Database '{DB_CONFIG['database']}' does not exist"
+        else:
+            detail = f"Database connection failed: {error_msg}"
+
+        raise HTTPException(status_code=503, detail=detail)
+
     try:
         yield session
         session.commit()
     except SQLAlchemyError as e:
         session.rollback()
-        logger.error(f"Database error: {e}")
+        error_msg = str(e)
+        logger.error(f"❌ Database error during query: {error_msg}")
         raise HTTPException(
             status_code=500,
             detail="Database error occurred"
         )
     except Exception as e:
         session.rollback()
-        logger.error(f"Unexpected error: {e}")
+        logger.error(f"❌ Unexpected error: {e}")
         raise
     finally:
         session.close()

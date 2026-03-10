@@ -42,7 +42,8 @@ import "../styles/globals.css";
         <div
           id="error-message"
           class="hidden mb-4 p-3 bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-200 rounded-lg text-sm"
-        ></div>
+        >
+        </div>
 
         {/* Loading State */}
         <div
@@ -51,7 +52,8 @@ import "../styles/globals.css";
         >
           <div
             class="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"
-          ></div>
+          >
+          </div>
         </div>
 
         <form id="login-form" class="space-y-6">
@@ -172,52 +174,75 @@ import "../styles/globals.css";
     </div>
 
     <script>
-      import { login } from '@/lib/auth';
+      import { login } from "@/lib/auth";
 
-      const loginForm = document.getElementById('login-form');
-      const errorMessage = document.getElementById('error-message');
-      const loadingSpinner = document.getElementById('loading-spinner');
+      const loginForm = document.getElementById(
+        "login-form",
+      ) as HTMLFormElement;
+      const errorMessage = document.getElementById("error-message");
+      const loadingSpinner = document.getElementById("loading-spinner");
+      const submitButton = loginForm?.querySelector(
+        'button[type="submit"]',
+      ) as HTMLButtonElement;
+      let isSubmitting = false;
 
-      loginForm?.addEventListener('submit', async (e) => {
+      loginForm?.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        const username = (document.getElementById('username') as HTMLInputElement)?.value;
-        const password = (document.getElementById('password') as HTMLInputElement)?.value;
+        // Prevent double submissions
+        if (isSubmitting) return;
+        isSubmitting = true;
+
+        const username = (
+          document.getElementById("username") as HTMLInputElement
+        )?.value;
+        const password = (
+          document.getElementById("password") as HTMLInputElement
+        )?.value;
 
         if (!username || !password) {
-          showError('Username and password are required');
+          showError("Username and password are required");
+          isSubmitting = false;
           return;
         }
 
         try {
-          // Show loading spinner
+          // Show loading spinner and disable button
           if (loadingSpinner) {
-            loadingSpinner.classList.remove('hidden');
+            loadingSpinner.classList.remove("hidden");
+          }
+          if (submitButton) {
+            submitButton.disabled = true;
           }
 
           // Clear previous errors
           if (errorMessage) {
-            errorMessage.classList.add('hidden');
-            errorMessage.textContent = '';
+            errorMessage.classList.add("hidden");
+            errorMessage.textContent = "";
           }
 
           // Call login API
           const response = await login({ username, password });
 
           // Login successful
-          console.log('Login successful:', response.user.username);
-          
+          console.log("Login successful:", response.user.username);
+
           // Redirect to dashboard
-          window.location.href = '/dashboard';
+          window.location.href = "/dashboard";
         } catch (error) {
+          isSubmitting = false;
+
           if (loadingSpinner) {
-            loadingSpinner.classList.add('hidden');
+            loadingSpinner.classList.add("hidden");
+          }
+          if (submitButton) {
+            submitButton.disabled = false;
           }
 
           if (error instanceof Error) {
             showError(error.message);
           } else {
-            showError('Login failed: unknown error');
+            showError("Login failed: unknown error");
           }
         }
       });
@@ -225,7 +250,7 @@ import "../styles/globals.css";
       function showError(message: string) {
         if (errorMessage) {
           errorMessage.textContent = message;
-          errorMessage.classList.remove('hidden');
+          errorMessage.classList.remove("hidden");
         }
       }
     </script>

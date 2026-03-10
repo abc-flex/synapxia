@@ -246,13 +246,34 @@ import "../styles/globals.css";
       import { register } from '@/lib/auth';
       import type { UserCreate } from '@/types/api';
 
-      const signupForm = document.getElementById('signup-form');
+      const signupForm = document.getElementById('signup-form') as HTMLFormElement;
       const errorMessage = document.getElementById('error-message');
       const successMessage = document.getElementById('success-message');
       const loadingSpinner = document.getElementById('loading-spinner');
+      const passwordInput = document.getElementById('password') as HTMLInputElement;
+      const submitButton = signupForm?.querySelector('button[type="submit"]') as HTMLButtonElement;
+      let isSubmitting = false;
+
+      // Password strength validation
+      passwordInput?.addEventListener('input', (e) => {
+        const password = (e.target as HTMLInputElement).value;
+        
+        // Password must be at least 8 characters
+        if (password.length >= 8) {
+          (e.target as HTMLInputElement).classList.remove('border-red-500');
+          (e.target as HTMLInputElement).classList.add('border-green-500');
+        } else if (password.length > 0) {
+          (e.target as HTMLInputElement).classList.add('border-red-500');
+          (e.target as HTMLInputElement).classList.remove('border-green-500');
+        }
+      });
 
       signupForm?.addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        // Prevent double submissions
+        if (isSubmitting) return;
+        isSubmitting = true;
 
         const username = (document.getElementById('username') as HTMLInputElement)?.value;
         const email = (document.getElementById('email') as HTMLInputElement)?.value;
@@ -266,18 +287,38 @@ import "../styles/globals.css";
         // Validate inputs
         if (!username || !email || !first_name || !last_name || !menu_role || !business_unit || !password) {
           showError('All fields are required');
+          isSubmitting = false;
+          return;
+        }
+
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          showError('Please enter a valid email address');
+          isSubmitting = false;
+          return;
+        }
+
+        // Password length validation
+        if (password.length < 8) {
+          showError('Password must be at least 8 characters long');
+          isSubmitting = false;
           return;
         }
 
         if (password !== confirm_password) {
           showError('Passwords do not match');
+          isSubmitting = false;
           return;
         }
 
         try {
-          // Show loading spinner
+          // Show loading spinner and disable button
           if (loadingSpinner) {
             loadingSpinner.classList.remove('hidden');
+          }
+          if (submitButton) {
+            submitButton.disabled = true;
           }
 
           // Clear previous messages
@@ -314,8 +355,13 @@ import "../styles/globals.css";
             window.location.href = '/login';
           }, 2000);
         } catch (error) {
+          isSubmitting = false;
+          
           if (loadingSpinner) {
             loadingSpinner.classList.add('hidden');
+          }
+          if (submitButton) {
+            submitButton.disabled = false;
           }
 
           if (error instanceof Error) {

@@ -17,7 +17,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from ..admin.internal.models import User, Role, BusinessUnit
-from ..admin.internal.dependencies import get_db_session
+from ..internal import get_db_session
 from .schemas import UserRead, UserCreate, UserUpdate
 
 logger = logging.getLogger(__name__)

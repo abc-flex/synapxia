@@ -55,15 +55,8 @@ const data = lists.map((item) => ({
   created_at: item.created_at,
   updated_at: item.updated_at,
 }));
-const tableFields: Array<{
-  key: string;
-  label: string;
-  required?: boolean;
-  placeholder?: string;
-  type?: "text" | "textarea" | "select" | "email" | "number" | "checkbox";
-  options?: any[];
-}> = [
-  { key: "code", label: "list_modal.code", required: true, placeholder: "e.g. STATUS" },
+const tableFields= [
+  { key: "code", label: "list_modal.code", pk: true, required: true, placeholder: "e.g. STATUS" },
   { key: "name", label: "list_modal.name", required: true, placeholder: "e.g. List statuses for..." },
   { key: "type", label: "list_modal.type", type: "select" as const, options: types, required: true },
   { key: "module", label: "list_modal.module", type: "select" as const, options: modules, required: false },

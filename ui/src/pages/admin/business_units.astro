@@ -49,7 +49,7 @@ const data = business_units.map((item) => ({
   updated_at: item.updated_at,
 }));
 const tableFields = [
-  { key: "code", label: "business_unit_modal.code", required: true, placeholder: "e.g. ADMIN" },
+  { key: "code", label: "business_unit_modal.code", pk: true, required: true, placeholder: "e.g. ADMIN" },
   { key: "name", label: "business_unit_modal.name", required: true, placeholder: "e.g. Administration" },
   { key: "type", label: "business_unit_modal.type", type: "select" as const, options: types, required: false },
   { key: "parent", label: "business_unit_modal.parent", type: "select" as const, options: units, required: false },
@@ -58,6 +58,7 @@ const tableFields = [
     label: "business_unit_modal.description",
     type: "textarea" as const,
     placeholder: "Optional details of business unit",
+    required: false,
   },
 ];
 const fieldKeys = tableFields.map((f) => f.key);

@@ -3,61 +3,61 @@
  * Type definitions for API requests and responses
  */
 
-// Option types
-export interface Option {
-  module: string;
+// Module types
+export interface Module {
   code: string;
   name: string;
-  path?: string;
-  type: string;
+  description?: string;
   sort_order: number;
-  description?: string;
   icon?: string;
-  is_active: boolean;
-}
-
-export interface OptionCreate {
-  module: string;
-  code: string;
-  name: string;
-  path?: string;
-  type: string;
-  sort_order?: number;
-  description?: string;
-  icon?: string;
-  is_active?: boolean;
-}
-
-export interface OptionUpdate {
-  name?: string;
-  path?: string;
-  type?: string;
-  sort_order?: number;
-  description?: string;
-  icon?: string;
-  is_active?: boolean;
-}
-
-// Role types
-export interface Role {
-  code: string;
-  name: string;
-  description?: string;
   is_active: boolean;
   created_at: string;
   updated_at?: string;
 }
 
-export interface RoleCreate {
+export interface ModuleCreate {
   code: string;
   name: string;
   description?: string;
+  sort_order?: number;
+  icon?: string;
   is_active?: boolean;
 }
 
-export interface RoleUpdate {
+export interface ModuleUpdate {
   name?: string;
   description?: string;
+  sort_order?: number;
+  icon?: string;
+  is_active?: boolean;
+}
+
+// BusinessUnit types
+export interface BusinessUnit {
+  code: string;
+  name: string;
+  description?: string;
+  type: string;
+  parent: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface BusinessUnitCreate {
+  code: string;
+  name: string;
+  description?: string;
+  type: string;
+  parent: string;
+  is_active?: boolean;
+}
+
+export interface BusinessUnitUpdate {
+  name?: string;
+  description?: string;
+  type?: string;
+  parent?: string;
   is_active?: boolean;
 }
 
@@ -90,32 +90,51 @@ export interface ListUpdate {
   is_active?: boolean;
 }
 
-// Module types
-export interface Module {
+// ListItem types
+export interface ListItem  {
+  list: string;
+  value: string;
+  label: string;
+  sort_order: number;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ListItemCreate {
+  list: string;
+  value: string;
+  label: string;
+  sort_order: number;
+  is_active?: boolean;
+}
+
+export interface ListItemUpdate {
+  label?: string;
+  sort_order?: number;
+  is_active?: boolean;
+}
+
+// Role types
+export interface Role {
   code: string;
   name: string;
   description?: string;
-  sort_order: number;
-  icon?: string;
   is_active: boolean;
   created_at: string;
   updated_at?: string;
 }
 
-export interface ModuleCreate {
+export interface RoleCreate {
   code: string;
   name: string;
   description?: string;
-  sort_order?: number;
-  icon?: string;
   is_active?: boolean;
 }
 
-export interface ModuleUpdate {
+export interface RoleUpdate {
   name?: string;
   description?: string;
-  sort_order?: number;
-  icon?: string;
   is_active?: boolean;
 }
 
@@ -157,32 +176,62 @@ export interface UserUpdate {
   is_active?: boolean;
 }
 
-// BusinessUnit types
-export interface BusinessUnit {
+// Option types
+export interface Option {
+  module: string;
   code: string;
   name: string;
-  description?: string;
+  path?: string;
   type: string;
-  parent: string;
+  sort_order: number;
+  description?: string;
+  icon?: string;
   is_active: boolean;
-  created_at: string;
-  updated_at?: string;
 }
 
-export interface BusinessUnitCreate {
+export interface OptionCreate {
+  module: string;
   code: string;
   name: string;
-  description?: string;
+  path?: string;
   type: string;
-  parent: string;
+  sort_order?: number;
+  description?: string;
+  icon?: string;
   is_active?: boolean;
 }
 
-export interface BusinessUnitUpdate {
+export interface OptionUpdate {
   name?: string;
-  description?: string;
+  path?: string;
   type?: string;
-  parent?: string;
+  sort_order?: number;
+  description?: string;
+  icon?: string;
+  is_active?: boolean;
+}
+
+// Privilege types
+export interface Privilege {
+  role: string;
+  module: string;
+  option: string;
+  can_edit?: boolean;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PrivilegeCreate {
+  role: string;
+  module: string;
+  option: string;
+  can_edit?: boolean;
+  is_active?: boolean;
+}
+
+export interface PrivilegeUpdate {
+  can_edit?: boolean;
   is_active?: boolean;
 }
 

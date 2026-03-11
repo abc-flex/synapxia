@@ -11,6 +11,7 @@ interface Field {
   label: string;
   name?: string;
   type?: "text" | "textarea" | "select" | "email" | "number" | "checkbox";
+  pk?: boolean;
   required?: boolean;
   disabled?: boolean;
   placeholder?: string;
@@ -130,7 +131,11 @@ const triggerTextKey =
       {
         fields.map((field) => {
           const value = initialValues?.[field.key] || "";
-          const disabled = isDelete || field.disabled;
+          const fieldIsDelete = mode === "delete";
+          const fieldIsEdit = mode === "edit";
+          // For PK fields in edit mode: use readonly for text, disabled for select/textarea
+          const fieldIsReadonly = fieldIsEdit && field.pk && (field.type !== "select" && field.type !== "textarea" && field.type !== "checkbox");
+          const fieldDisabled = fieldIsDelete || field.disabled || (fieldIsEdit && field.pk && !fieldIsReadonly);
           const inputId = `${modalId}-${field.key}`;
 
           if (field.type === "textarea") {
@@ -142,15 +147,17 @@ const triggerTextKey =
                 >
                   {field.required && <span class="text-red-500">*</span>}
                   <span data-i18n={field.label}>{field.label}</span>
+                  {fieldIsReadonly && <span class="ml-2 text-xs text-gray-500">(readonly)</span>}
                 </label>
                 <textarea
                   id={inputId}
                   name={field.key}
                   rows={3}
                   required={field.required}
-                  disabled={disabled}
+                  disabled={fieldDisabled}
+                  readonly={fieldIsReadonly}
                   placeholder={field.placeholder}
-                  class={`w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white/90 dark:placeholder:text-white/30 ${disabled ? "opacity-60" : ""}`}
+                  class={`w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white/90 dark:placeholder:text-white/30 ${fieldDisabled || fieldIsReadonly ? "opacity-60" : ""}`}
                 >
                   {value}
                 </textarea>
@@ -168,13 +175,15 @@ const triggerTextKey =
                 >
                   {field.required && <span class="text-red-500">*</span>}
                   <span data-i18n={field.label || field.name}>{field.label || field.name}</span>
+                  {fieldIsReadonly && <span class="ml-2 text-xs text-gray-500">(readonly)</span>}
                 </label>
                 <select
                   id={inputId}
                   name={field.key}
                   required={field.required}
-                  disabled={disabled}
-                  class={`h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white/90 ${disabled ? "opacity-60" : ""}`}
+                  disabled={fieldDisabled}
+                  readonly={fieldIsReadonly}
+                  class={`h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white/90 ${fieldDisabled || fieldIsReadonly ? "opacity-60" : ""}`}
                 >
                   <option value="" data-i18n={`crud_modal.select`} selected={!value}></option>
                   {(field.options || []).map((opt) => (
@@ -198,7 +207,7 @@ const triggerTextKey =
                   name={field.key}
                   type="checkbox"
                   checked={Boolean(value)}
-                  disabled={disabled}
+                  disabled={fieldDisabled}
                   class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                 />
                 <label
@@ -221,16 +230,18 @@ const triggerTextKey =
               >
                 {field.required && <span class="text-red-500">*</span>}
                 <span data-i18n={field.label}>{field.label}</span>
+                {fieldIsReadonly && <span class="ml-2 text-xs text-gray-500">(readonly)</span>}
               </label>
               <input
                 id={inputId}
                 name={field.key}
                 type={inputType}
                 required={field.required}
-                disabled={disabled}
+                disabled={fieldDisabled}
+                readonly={fieldIsReadonly}
                 value={value ?? ""}
                 placeholder={field.placeholder}
-                class={`h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white/90 dark:placeholder:text-white/30 ${disabled ? "opacity-60" : ""}`}
+                class={`h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white/90 dark:placeholder:text-white/30 ${fieldDisabled || fieldIsReadonly ? "opacity-60" : ""}`}
               />
             </div>
           );
@@ -355,7 +366,13 @@ const triggerTextKey =
           } else if (input && input.type === "number") {
             data[key] = value ? Number(value) : null;
           } else {
-            data[key] = value;
+            // If field is not required and value is empty, set to null
+            const isRequired = input?.hasAttribute("required");
+            if (!isRequired && !value) {
+              data[key] = null;
+            } else {
+              data[key] = value;
+            }
           }
         }
 

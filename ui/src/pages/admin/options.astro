@@ -50,25 +50,21 @@ const data = options.map((option) => ({
   sort_order: option.sort_order,
 }));
 
-const optionFields = [
+const tableFields = [
   {
     key: "module",
     label: "list_modal.module",
     type: "select" as const,
     options: modules,
+    pk: true,
     required: true,
   },
-  { key: "code", label: "option_modal.code", required: true, placeholder: "e.g. business_units" },
+  { key: "code", label: "option_modal.code", pk: true, required: true, placeholder: "e.g. business_units" },
   { key: "name", label: "option_modal.name", required: true, placeholder: "e.g. Business Units" },
   { key: "path", label: "option_modal.path", required: true, placeholder: "/admin/business_units" },
-  {
-    key: "sort_order",
-    label: "option_modal.sort_order",
-    type: "number" as const,
-    placeholder: "10",
-  },
+  { key: "sort_order", label: "option_modal.sort_order", required: true, type: "number" as const, placeholder: "10" },
 ];
-const fieldKeys = optionFields.map((f) => f.key);
+const fieldKeys = tableFields.map((f) => f.key);
 ---
 
 <BaseLayout>
@@ -89,45 +85,21 @@ const fieldKeys = optionFields.map((f) => f.key);
       mode="create"
       modalId="option-create-modal"
       entityName="Option"
-      fields={optionFields}
+      fields={tableFields}
       showTrigger={false}
     />
     <CrudModal
       mode="edit"
       modalId="option-edit-modal"
       entityName="Option"
-      fields={[
-        {
-          key: "module",
-          label: "Module",
-          type: "select" as const,
-          options: modules,
-          required: true,
-          disabled: true, // Cannot change module in edit mode
-        },
-        {
-          key: "code",
-          label: "Code",
-          required: true,
-          placeholder: "e.g. business_units",
-          disabled: true, // Cannot change code in edit mode (primary key)
-        },
-        { key: "name", label: "Name", required: true, placeholder: "e.g. Business Units" },
-        { key: "path", label: "Path", required: true, placeholder: "/admin/business_units" },
-        {
-          key: "sort_order",
-          label: "Sort Order",
-          type: "number" as const,
-          placeholder: "10",
-        },
-      ]}
+      fields={tableFields}
       showTrigger={false}
     />
     <CrudModal
       mode="delete"
       modalId="option-delete-modal"
       entityName="Option"
-      fields={optionFields}
+      fields={tableFields}
       showTrigger={false}
     />
 

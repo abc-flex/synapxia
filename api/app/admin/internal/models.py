@@ -158,7 +158,7 @@ class BusinessUnitBase(SQLModel):
     type: Optional[str] = Field(
         default=None, max_length=50, sa_column_kwargs={"name": "type"})
     parent: Optional[str] = Field(
-        default=None, max_length=50, foreign_key="units.code", sa_column_kwargs={"name": "parent"})
+        default=None, max_length=50, foreign_key="business_units.code", sa_column_kwargs={"name": "parent"})
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
@@ -203,7 +203,7 @@ class UserBase(SQLModel):
     first_name: str = Field(max_length=100)
     last_name: str = Field(max_length=100)
     menu_role: str = Field(max_length=50, foreign_key="roles.code")
-    business_unit: str = Field(max_length=50, foreign_key="units.code")
+    business_unit: str = Field(max_length=50, foreign_key="business_units.code")
     is_active: bool = Field(default=True)
     is_superuser: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)

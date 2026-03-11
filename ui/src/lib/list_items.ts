@@ -4,7 +4,7 @@
  */
 
 import { apiGet, apiPost, apiPut, apiDelete, buildQueryString } from './api';
-import type { ListItem } from '../types/list_items';
+import type { ListItem, ListItemCreate, ListItemUpdate } from '../types/api';
 
 /**
  * Fetch all list_items with optional pagination
@@ -36,4 +36,35 @@ export async function getListItemsbyList(list_code: string, skip: number = 0, li
  */
 export async function getListItem(code: string): Promise<ListItem> {
   return apiGet<ListItem>(`/api/list_items/${encodeURIComponent(code)}`);
+}
+
+
+/**
+ * Create a new list item
+ * @param data - List item data to create
+ * @returns Promise with created list item
+ */
+export async function createListItem(data: ListItemCreate): Promise<ListItem> {
+  return apiPost<ListItem, ListItemCreate>('/api/list_items/', data);
+}
+
+/**
+ * Update an existing list item
+ * @param list_code - List code
+ * @param value - List item value
+ * @param data - List item data to update
+ * @returns Promise with updated list item
+ */
+export async function updateListItem(list_code: string, value: string, data: ListItemUpdate): Promise<ListItem> {
+  return apiPut<ListItem, ListItemUpdate>(`/api/list_items/${encodeURIComponent(list_code)}/${encodeURIComponent(value)}`, data);
+}
+
+/**
+ * Delete a list item by its list and value
+ * @param list_code - List code
+ * @param value - List item value
+ * @returns Promise with void
+ */
+export async function deleteListItem(list_code: string, value: string): Promise<void> {
+  return apiDelete<void>(`/api/list_items/${encodeURIComponent(list_code)}/${encodeURIComponent(value)}`);
 }

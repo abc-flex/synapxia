@@ -34,7 +34,7 @@ const data = roles.map((item) => ({
   updated_at: item.updated_at,
 }));
 const tableFields = [
-  { key: "code", label: "role_modal.code", required: true, placeholder: "e.g. ADMIN" },
+  { key: "code", label: "role_modal.code", pk: true, required: true, placeholder: "e.g. ADMIN" },
   { key: "name", label: "role_modal.name", required: true, placeholder: "e.g. Administration" },
   {
     key: "description",

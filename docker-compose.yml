@@ -10,6 +10,11 @@ services:
       - POSTGRES_DB=${DB_SCHEMA}
     ports:
       - 5432:5432
+    volumes:
+      # Mount SQL migration files for automatic execution on startup
+      - ./db/sql:/docker-entrypoint-initdb.d
+      # Persist database data
+      - synapxia-db-volume:/var/lib/postgresql/data
     networks:
       - synapxia-network
     healthcheck:
@@ -26,6 +31,23 @@ services:
     environment:
       - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
       - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
+      # Database connection variables for server auto-registration
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_SCHEMA=${DB_SCHEMA}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      # Auto-configuration settings
+      - PGADMIN_CONFIG_ENHANCED_IAM_AUTHENTICATION=False
+      - PGADMIN_CONFIG_CONSOLE_LOG_LEVEL=10
+      # Server auto-registration (synapxia-db server)
+      - SERVER_MAINTENANCE_ON_STARTUP=true
+    volumes:
+      # Mount template for server configuration
+      - ./pgadmin-servers.json.template:/pgadmin-servers.json.template:ro
+      # Mount custom entrypoint script
+      - ./pgadmin-entrypoint.sh:/custom-entrypoint.sh:ro
+    entrypoint: /bin/bash /custom-entrypoint.sh
     depends_on:
       - db
     networks:
@@ -77,6 +99,10 @@ services:
       - /app/node_modules
     working_dir: /app
     entrypoint: bun run dev
+
+volumes:
+  synapxia-db-volume:
+    driver: local
 
 networks:
   synapxia-network:

@@ -3,6 +3,8 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from .auth import routes as auth_routes
+
 from .admin.routes import health as admin_health_router
 from .admin.routes import roles as roles_router
 from .admin.routes import modules as modules_router
@@ -41,6 +43,10 @@ app = FastAPI(
     version="1.0.0",
     description="API for AI adoption management - System for Insight, Adoption, Practice & eXpansion through Intelligent Agents",
     openapi_tags=[
+        {
+            "name": "authentication",
+            "description": "User authentication endpoints (login, register, profile)",
+        },
         {
             "name": "health",
             "description": "Health check endpoints",
@@ -139,6 +145,9 @@ app.add_middleware(
 )
 
 # Include routers
+# Authentication module (must be first)
+app.include_router(auth_routes.router)
+
 # Administration module
 app.include_router(admin_health_router.router)
 app.include_router(roles_router.router)

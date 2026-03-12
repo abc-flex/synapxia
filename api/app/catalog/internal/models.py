@@ -42,46 +42,42 @@ class CategoryUpdate(SQLModel):
     is_active: Optional[bool] = Field(
         default=None, description="Indicates if the category is active")
 
-# Characteristics Models
+# Features Models
 
 
-class CharacteristicBase(SQLModel):
+class FeatureBase(SQLModel):
     code: str = Field(max_length=50, primary_key=True)
     name: str = Field(max_length=100)
     description: Optional[str] = Field(default=None, max_length=500)
     type: str = Field(max_length=100)
-    status: str = Field(max_length=100)
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
 
 
-class Characteristic(CharacteristicBase, table=True):
-    __tablename__ = "characteristics"
+class Feature(FeatureBase, table=True):
+    __tablename__ = "features"
 
 
-class CharacteristicCreate(SQLModel):
-    code: str = Field(max_length=50, description="Unique characteristic code")
-    name: str = Field(max_length=100, description="Characteristic name")
+class FeatureCreate(SQLModel):
+    code: str = Field(max_length=50, description="Unique feature code")
+    name: str = Field(max_length=100, description="Feature name")
     description: Optional[str] = Field(
-        default=None, max_length=500, description="Characteristic description")
-    type: str = Field(max_length=100, description="Characteristic type")
-    status: str = Field(max_length=100, description="Characteristic status")
+        default=None, max_length=500, description="Feature description")
+    type: str = Field(max_length=100, description="Feature type")
     is_active: Optional[bool] = Field(
-        default=True, description="Indicates if the characteristic is active")
+        default=True, description="Indicates if the feature is active")
 
 
-class CharacteristicUpdate(SQLModel):
+class FeatureUpdate(SQLModel):
     name: Optional[str] = Field(
-        default=None, max_length=100, description="Characteristic name")
+        default=None, max_length=100, description="Feature name")
     description: Optional[str] = Field(
-        default=None, max_length=500, description="Characteristic description")
+        default=None, max_length=500, description="Feature description")
     type: Optional[str] = Field(
-        default=None, max_length=100, description="Characteristic type")
-    status: Optional[str] = Field(
-        default=None, max_length=100, description="Characteristic status")
+        default=None, max_length=100, description="Feature type")
     is_active: Optional[bool] = Field(
-        default=None, description="Indicates if the characteristic is active")
+        default=None, description="Indicates if the feature is active")
 
 # Assets Models
 
@@ -157,8 +153,8 @@ class AssetUpdate(SQLModel):
 class CharacterizationBase(SQLModel):
     asset: str = Field(sa_column=Column(
         'asset', String, ForeignKey('assets.code'), primary_key=True))
-    characteristic: str = Field(sa_column=Column(
-        'characteristic', String, ForeignKey('characteristics.code'), primary_key=True))
+    feature: str = Field(sa_column=Column(
+        'feature', String, ForeignKey('features.code'), primary_key=True))
     value: str = Field(max_length=500)
     details: Optional[str] = Field(default=None, max_length=500)
     is_active: bool = Field(default=True)
@@ -172,8 +168,8 @@ class Characterization(CharacterizationBase, table=True):
 
 class CharacterizationCreate(SQLModel):
     asset: str = Field(max_length=50, description="Asset code")
-    characteristic: str = Field(
-        max_length=50, description="Characteristic code")
+    feature: str = Field(
+        max_length=50, description="Feature code")
     value: str = Field(max_length=500, description="Characterization value")
     details: Optional[str] = Field(
         default=None, max_length=500, description="Additional details")

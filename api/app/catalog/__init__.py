@@ -1,2 +1,2 @@
-"""Digital Assets module - Categories, Characteristics, Assets, Characterizations, Favorites, Actions, Asset Relations"""
+"""Digital Assets module - Categories, Features, Assets, Characterizations, Favorites, Actions, Asset Relations"""
 

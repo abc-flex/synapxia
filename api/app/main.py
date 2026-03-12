@@ -14,7 +14,7 @@ from .admin.routes import options as options_router
 from .admin.routes import privileges as privileges_router
 
 from .catalog.routes import categories as categories_router
-from .catalog.routes import characteristics as characteristics_router
+from .catalog.routes import features as features_router
 from .catalog.routes import assets as assets_router
 from .catalog.routes import characterizations as characterizations_router
 from .catalog.routes import favorites as favorites_router
@@ -82,8 +82,8 @@ app = FastAPI(
             "description": "Category management operations",
         },
         {
-            "name": "characteristics",
-            "description": "Characteristic management operations",
+            "name": "features",
+            "description": "Feature management operations",
         },
         {
             "name": "assets",
@@ -152,7 +152,7 @@ app.include_router(privileges_router.router)
 
 # Catalog module (Digital Assets)
 app.include_router(categories_router.router)
-app.include_router(characteristics_router.router)
+app.include_router(features_router.router)
 app.include_router(assets_router.router)
 app.include_router(characterizations_router.router)
 app.include_router(favorites_router.router)
@@ -209,7 +209,7 @@ def read_root() -> dict:
             },
             "catalog": {
                 "categories": "/api/categories",
-                "characteristics": "/api/characteristics",
+                "features": "/api/features",
                 "assets": "/api/assets",
                 "characterizations": "/api/characterizations",
                 "favorites": "/api/favorites",

@@ -1,0 +1,133 @@
+import logging
+from typing import List
+from datetime import datetime
+
+from fastapi import APIRouter, HTTPException, Depends
+from sqlmodel import Session, select
+from sqlalchemy.exc import IntegrityError
+
+from ..internal.models import Feature, FeatureCreate, FeatureUpdate
+from ..internal.dependencies import get_db_session
+
+logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/api/features", tags=["features"])
+
+
+@router.get("/", response_model=List[Feature])
+def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[Feature]:
+    """
+    List all features with pagination (*Only active features).
+
+    - **skip**: Number of records to skip (default: 0)
+    - **limit**: Maximum number of records to return (default: 100)
+    """
+    features = session.exec(select(Feature).offset(
+        skip).limit(limit).order_by(Feature.name)).all()
+    return features
+
+
+@router.get("/{feature_code}", response_model=Feature)
+def get_feature(feature_code: str, session: Session = Depends(get_db_session)) -> Feature:
+    """
+    Get a feature by its code.
+
+    - **feature_code**: Unique feature code
+    """
+    feature = session.get(Feature, feature_code)
+    if not feature:
+        raise HTTPException(status_code=404, detail="Feature not found")
+    return feature
+
+
+@router.post("/", response_model=Feature, status_code=201)
+def create_feature(feature: FeatureCreate, session: Session = Depends(get_db_session)) -> Feature:
+    """
+    Create a new feature.
+
+    - **code**: Unique feature code (required)
+    - **name**: Feature name (required)
+    - **type**: Feature type (required)
+    - **description**: Optional description
+    - **is_active**: Active/inactive status (default: True)
+    """
+    # Validate that the code does not exist
+    existing_feature = session.get(Feature, feature.code)
+    if existing_feature:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Feature with code '{feature.code}' already exists"
+        )
+
+    try:
+        db_feature = Feature.model_validate(feature)
+        session.add(db_feature)
+        session.commit()
+        session.refresh(db_feature)
+        logger.info(f"Feature created: {feature.code}")
+        return db_feature
+    except IntegrityError as e:
+        session.rollback()
+        logger.error(
+            f"Integrity error creating feature {feature.code}: {e}")
+        raise HTTPException(
+            status_code=409,
+            detail=f"Feature with code '{feature.code}' already exists"
+        )
+
+
+@router.put("/{feature_code}", response_model=Feature)
+def update_feature(feature_code: str, feature_update: FeatureUpdate, session: Session = Depends(get_db_session)) -> Feature:
+    """
+    Update an existing feature.
+
+    - **feature_code**: Unique feature code to update
+    - Only provided fields are updated
+    """
+    feature = session.get(Feature, feature_code)
+    if not feature:
+        raise HTTPException(status_code=404, detail="Feature not found")
+
+    update_data = feature_update.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(feature, key, value)
+
+    # Update timestamp
+    feature.updated_at = datetime.utcnow()
+
+    session.add(feature)
+    session.commit()
+    session.refresh(feature)
+    logger.info(f"Feature updated: {feature_code}")
+    return feature
+
+
+@router.delete("/{feature_code}", response_model=Feature, status_code=200)
+def delete_feature(feature_code: str, session: Session = Depends(get_db_session)) -> Feature:
+    """
+    Delete a feature (logical delete).
+
+    Performs a logical delete by setting is_active=False instead of deleting the record.
+
+    - **feature_code**: Unique feature code to delete
+    """
+    feature = session.get(Feature, feature_code)
+    if not feature:
+        raise HTTPException(status_code=404, detail="Feature not found")
+
+    # Check if already inactive
+    if not feature.is_active:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Feature with code '{feature_code}' is already inactive"
+        )
+
+    # Logical delete: update is_active to False
+    feature.is_active = False
+    feature.updated_at = datetime.utcnow()
+
+    session.add(feature)
+    session.commit()
+    session.refresh(feature)
+    logger.info(
+        f"Feature deactivated (logical delete): {feature_code}")
+    return feature

@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 from sqlalchemy.exc import IntegrityError
 
-from ..internal.models import Characterization, CharacterizationCreate, CharacterizationUpdate, Asset, Characteristic
+from ..internal.models import Characterization, CharacterizationCreate, CharacterizationUpdate, Asset, Feature
 from ..internal.dependencies import get_db_session
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ def create_characterization(characterization: CharacterizationCreate, session: S
     Create a new characterization.
 
     - **asset**: Asset code (required)
-    - **characteristic**: Characteristic code (required)
+    - **feature**: Feature code (required)
     - **value**: Characterization value (required)
     - **details**: Additional details (optional)
     - **is_active**: Active/inactive status (default: True)
@@ -32,26 +32,26 @@ def create_characterization(characterization: CharacterizationCreate, session: S
             detail=f"Asset with code '{characterization.asset}' does not exist"
         )
 
-    # Validate that the characteristic exists
-    characteristic = session.get(
-        Characteristic, characterization.characteristic)
-    if not characteristic:
+    # Validate that the feature exists
+    feature = session.get(
+        Feature, characterization.feature)
+    if not feature:
         raise HTTPException(
             status_code=400,
-            detail=f"Characteristic with code '{characterization.characteristic}' does not exist"
+            detail=f"Feature with code '{characterization.feature}' does not exist"
         )
 
     # Validate that the characterization doesn't already exist
     existing_char = session.exec(
         select(Characterization).where(
             Characterization.asset == characterization.asset,
-            Characterization.characteristic == characterization.characteristic
+            Characterization.feature == characterization.feature
         )
     ).first()
     if existing_char:
         raise HTTPException(
             status_code=409,
-            detail=f"Characterization with asset '{characterization.asset}' and characteristic '{characterization.characteristic}' already exists"
+            detail=f"Characterization with asset '{characterization.asset}' and feature '{characterization.feature}' already exists"
         )
 
     try:
@@ -60,15 +60,15 @@ def create_characterization(characterization: CharacterizationCreate, session: S
         session.commit()
         session.refresh(db_char)
         logger.info(
-            f"Characterization created: {characterization.asset}/{characterization.characteristic}")
+            f"Characterization created: {characterization.asset}/{characterization.feature}")
         return db_char
     except IntegrityError as e:
         session.rollback()
         logger.error(
-            f"Integrity error creating characterization {characterization.asset}/{characterization.characteristic}: {e}")
+            f"Integrity error creating characterization {characterization.asset}/{characterization.feature}: {e}")
         raise HTTPException(
             status_code=409,
-            detail=f"Characterization with asset '{characterization.asset}' and characteristic '{characterization.characteristic}' already exists"
+            detail=f"Characterization with asset '{characterization.asset}' and feature '{characterization.feature}' already exists"
         )
 
 
@@ -81,22 +81,22 @@ def list_characterizations(skip: int = 0, limit: int = 100, session: Session = D
     - **limit**: Maximum number of records to return (default: 100)
     """
     characterizations = session.exec(select(Characterization).offset(skip).limit(
-        limit).order_by(Characterization.asset, Characterization.characteristic)).all()
+        limit).order_by(Characterization.asset, Characterization.feature)).all()
     return characterizations
 
 
-@router.get("/{asset_code}/{characteristic_code}", response_model=Characterization)
-def get_characterization(asset_code: str, characteristic_code: str, session: Session = Depends(get_db_session)) -> Characterization:
+@router.get("/{asset_code}/{feature_code}", response_model=Characterization)
+def get_characterization(asset_code: str, feature_code: str, session: Session = Depends(get_db_session)) -> Characterization:
     """
-    Get a characterization by its asset and characteristic.
+    Get a characterization by its asset and feature.
 
     - **asset_code**: Asset code
-    - **characteristic_code**: Characteristic code
+    - **feature_code**: Feature code
     """
     characterization = session.exec(
         select(Characterization).where(
             Characterization.asset == asset_code,
-            Characterization.characteristic == characteristic_code
+            Characterization.feature == feature_code
         )
     ).first()
     if not characterization:
@@ -105,21 +105,21 @@ def get_characterization(asset_code: str, characteristic_code: str, session: Ses
     return characterization
 
 
-@router.put("/{asset_code}/{characteristic_code}", response_model=Characterization)
+@router.put("/{asset_code}/{feature_code}", response_model=Characterization)
 def update_characterization(
-    asset_code: str, characteristic_code: str, characterization_update: CharacterizationUpdate, session: Session = Depends(get_db_session)
+    asset_code: str, feature_code: str, characterization_update: CharacterizationUpdate, session: Session = Depends(get_db_session)
 ) -> Characterization:
     """
     Update an existing characterization.
 
     - **asset_code**: Asset code
-    - **characteristic_code**: Characteristic code
+    - **feature_code**: Feature code
     - Only provided fields are updated
     """
     characterization = session.exec(
         select(Characterization).where(
             Characterization.asset == asset_code,
-            Characterization.characteristic == characteristic_code
+            Characterization.feature == feature_code
         )
     ).first()
     if not characterization:
@@ -137,24 +137,24 @@ def update_characterization(
     session.commit()
     session.refresh(characterization)
     logger.info(
-        f"Characterization updated: {asset_code}/{characteristic_code}")
+        f"Characterization updated: {asset_code}/{feature_code}")
     return characterization
 
 
-@router.delete("/{asset_code}/{characteristic_code}", response_model=Characterization, status_code=200)
-def delete_characterization(asset_code: str, characteristic_code: str, session: Session = Depends(get_db_session)) -> Characterization:
+@router.delete("/{asset_code}/{feature_code}", response_model=Characterization, status_code=200)
+def delete_characterization(asset_code: str, feature_code: str, session: Session = Depends(get_db_session)) -> Characterization:
     """
     Delete a characterization (logical delete).
 
     Performs a logical delete by setting is_active=False instead of deleting the record.
 
     - **asset_code**: Asset code
-    - **characteristic_code**: Characteristic code
+    - **feature_code**: Feature code
     """
     characterization = session.exec(
         select(Characterization).where(
             Characterization.asset == asset_code,
-            Characterization.characteristic == characteristic_code
+            Characterization.feature == feature_code
         )
     ).first()
     if not characterization:
@@ -165,7 +165,7 @@ def delete_characterization(asset_code: str, characteristic_code: str, session: 
     if not characterization.is_active:
         raise HTTPException(
             status_code=400,
-            detail=f"Characterization with asset '{asset_code}' and characteristic '{characteristic_code}' is already inactive"
+            detail=f"Characterization with asset '{asset_code}' and feature '{feature_code}' is already inactive"
         )
 
     # Logical delete: update is_active to False
@@ -176,5 +176,5 @@ def delete_characterization(asset_code: str, characteristic_code: str, session: 
     session.commit()
     session.refresh(characterization)
     logger.info(
-        f"Characterization deactivated (logical delete): {asset_code}/{characteristic_code}")
+        f"Characterization deactivated (logical delete): {asset_code}/{feature_code}")
     return characterization

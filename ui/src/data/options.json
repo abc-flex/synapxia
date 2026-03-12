@@ -97,9 +97,9 @@
     "sort_order": 20,
     "created_at": "2026-01-13T03:05:33.391965Z",
     "updated_at": null,
-    "name": "Characteristics",
+    "name": "Features",
     "path": null,
-    "code": "CHARACTERISTICS",
+    "code": "FEATURES",
     "type": "FORM",
     "is_active": true
   },

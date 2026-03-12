@@ -235,6 +235,58 @@ export interface PrivilegeUpdate {
   is_active?: boolean;
 }
 
+// Category types
+export interface Category {
+  code: string;
+  name: string;
+  description?: string;
+  parent?: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CategoryCreate {
+  code: string;
+  name: string;
+  description?: string;
+  parent?: string;
+  is_active?: boolean;
+}
+
+export interface CategoryUpdate {
+  name?: string;
+  description?: string;
+  parent?: string;
+  is_active?: boolean;
+}
+
+// Feature types
+export interface Feature {
+  code: string;
+  name: string;
+  description?: string;
+  type: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface FeatureCreate {
+  code: string;
+  name: string;
+  description?: string;
+  type: string;
+  is_active?: boolean;
+}
+
+export interface FeatureUpdate {
+  name?: string;
+  description?: string;
+  type?: string;
+  is_active?: boolean;
+}
+
 // Generic API Error
 export interface ApiError {
   detail: string;

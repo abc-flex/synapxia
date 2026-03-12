@@ -42,7 +42,7 @@
     "modules": "Módulos",
     "options": "Opciones",
     "categories": "Categorías",
-    "characteristics": "Características",
+    "features": "Características",
     "assets": "Activos",
     "teams": "Equipos",
     "projects": "Proyectos",
@@ -229,6 +229,20 @@
     "delete": "Eliminar Categoría",
     "empty_message": "No se encontraron Categorías",
     "delete_confirmation": "¿Está seguro de que desea eliminar esta Categoría?"
+  },
+  "feature_modal": {
+    "code": "Código",
+    "name": "Nombre",
+    "description": "Descripción",
+    "type": "Tipo",
+    "one_title": "Característica",
+    "many_title": "Características",
+    "filter_title": "Todas las Características",
+    "add_new": "Nueva Característica",
+    "edit": "Editar Característica",
+    "delete": "Eliminar Característica",
+    "empty_message": "No se encontraron Características",
+    "delete_confirmation": "¿Está seguro de que desea eliminar esta Característica?"
   },
   "team_modal": {
     "code": "Código",

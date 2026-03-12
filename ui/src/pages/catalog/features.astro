@@ -4,51 +4,56 @@ import Breadcrumb from "../../components/core/Breadcrumb.astro";
 import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
-import { getCategories } from "@/lib/categories";
+import { getFeatures } from "@/lib/features";
+import { getListItemsbyList } from "@/lib/list_items";
 
-// Fetch categories from API
-let categories: any[] = [];
+// Fetch features from API
+let features: any[] = [];
 let errorMessage: string | null = null;
 try {
-  const apiCategories = await getCategories();
-  categories = apiCategories;
+  const apiFeatures = await getFeatures();
+  features = apiFeatures;
 } catch (error) {
-  console.error('Failed to fetch categories:', error);
-  errorMessage = error instanceof Error ? error.message : 'Failed to fetch categories from API';
+  console.error('Failed to fetch features:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch features from API';
   // Fallback to empty array to still render the page
-  categories = [];
+  features = [];
 }
-// Fetch categories for select field
+
+// Fetch items_list from API for select field
+let types: any[] = [];
+types = await getListItemsbyList('CHARS_TYPE');
+
 const columns = [
-  { key: "code", label: "category_modal.code" },
-  { key: "name", label: "category_modal.name" },
-  { key: "parent", label: "category_modal.parent" },
+  { key: "code", label: "feature_modal.code" },
+  { key: "name", label: "feature_modal.name" },
+  { key: "type", label: "feature_modal.type" },
 ];
 
-const categories_list = categories.map((item) => ({
+// Fetch features for select field
+const units = features.map((item) => ({
   value: item.code,
   name: item.name,
 }));
 
-const data = categories.map((item) => ({
+const data = features.map((item) => ({
   id: item.code,
   code: item.code,
   name: item.name,
   description: item.description,
-  parent: item.parent,
+  type: item.type,
   is_active: item.is_active,
   created_at: item.created_at,
   updated_at: item.updated_at,
 }));
 const tableFields = [
-  { key: "code", label: "category_modal.code", pk: true, required: true },
-  { key: "name", label: "category_modal.name", required: true },
-  { key: "parent", label: "category_modal.parent", type: "select" as const, options: categories_list, required: false },
+  { key: "code", label: "feature_modal.code", pk: true, required: true },
+  { key: "name", label: "feature_modal.name", required: true },
+  { key: "type", label: "feature_modal.type", type: "select" as const, options: types, required: false },
   {
     key: "description",
-    label: "category_modal.description",
+    label: "feature_modal.description",
     type: "textarea" as const,
-    placeholder: "Optional details of category",
     required: false,
   },
 ];
@@ -61,40 +66,40 @@ const fieldKeys = tableFields.map((f) => f.key);
   <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
     <!-- Breadcrumb Start -->
     <Breadcrumb
-      moduleName="Administration"
-      pageName="Categories"
-      pageTitle="Categories"
+      moduleName="Digital Assets"
+      pageName="Features"
+      pageTitle="Features"
       homeLink="/"
       moduleNameKey="modules.CATALOG"
-      pageNameKey="menu_options.categories"
-      pageTitleKey="menu_options.categories"
+      pageNameKey="menu_options.features"
+      pageTitleKey="menu_options.features"
     />
     <!-- Breadcrumb End -->
 
     <CrudModal
       mode="create"
-      modalId="category-create-modal"
-      entityName="Category"
+      modalId="feature-create-modal"
+      entityName="Feature"
       fields={tableFields}
       showTrigger={false}
     />
     <CrudModal
       mode="edit"
-      modalId="category-edit-modal"
-      entityName="Category"
+      modalId="feature-edit-modal"
+      entityName="Feature"
       fields={tableFields}
       showTrigger={false}
     />
     <CrudModal
       mode="delete"
-      modalId="category-delete-modal"
-      entityName="Category"
+      modalId="feature-delete-modal"
+      entityName="Feature"
       fields={tableFields}
       showTrigger={false}
     />
 
     <div
-      id="categories-data"
+      id="features-data"
       data-rows={encodeURIComponent(JSON.stringify(data))}
       data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
       class="hidden"
@@ -105,15 +110,15 @@ const fieldKeys = tableFields.map((f) => f.key);
     <script type="module">
       import { initCrudPage } from "/scripts/crudClient.js";
       import {
-        createCategory,
-        updateCategory,
-        deleteCategory,
-      } from "/src/lib/categories";
+        createFeature,
+        updateFeature,
+        deleteFeature,
+      } from "/src/lib/features";
 
       initCrudPage({
-        dataId: "categories-data",
-        editModalId: "category-edit-modal",
-        deleteModalId: "category-delete-modal",
+        dataId: "features-data",
+        editModalId: "feature-edit-modal",
+        deleteModalId: "feature-delete-modal",
       });
 
       // Helper function to show toast notifications
@@ -146,33 +151,35 @@ const fieldKeys = tableFields.map((f) => f.key);
 
         try {
           if (mode === "create") {
-            // Create new category
-            await createCategory({
+            // Create new feature
+            await createFeature({
               code: data.code,
               name: data.name,
               description: data.description,
+              type: data.type,
               parent: data.parent,
               is_active: data.is_active !== false,
             });
 
-            showToast("Category created successfully!");
+            showToast("Feature created successfully!");
             setTimeout(() => window.location.reload(), 1000);
           } else if (mode === "edit") {
-            // Update existing category
-            await updateCategory(data.id, {
+            // Update existing feature
+            await updateFeature(data.id, {
               name: data.name,
               description: data.description,
+              type: data.type,
               parent: data.parent,
               is_active: data.is_active !== false,
             });
 
-            showToast("Category updated successfully!");
+            showToast("Feature updated successfully!");
             setTimeout(() => window.location.reload(), 1000);
           } else if (mode === "delete") {
-            // Delete category
-            await deleteCategory(data.id);
+            // Delete feature
+            await deleteFeature(data.id);
 
-            showToast("Category deleted successfully!");
+            showToast("Feature deleted successfully!");
             setTimeout(() => window.location.reload(), 1000);
           }
         } catch (error) {
@@ -188,8 +195,8 @@ const fieldKeys = tableFields.map((f) => f.key);
         <DataTable
           columns={columns}
           data={data}
-          tableId="categories"
-          i18Item="category"
+          tableId="features"
+          i18Item="feature"
         />
         <!-- ====== Table End -->
       </div>

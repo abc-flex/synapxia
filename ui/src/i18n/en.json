@@ -259,6 +259,24 @@
     "empty_message": "No Teams found",
     "delete_confirmation": "Are you sure you want to delete this Team"
   },
+  "project_modal": {
+    "code": "Code",
+    "name": "Name",
+    "description": "Description",
+    "team": "Team",
+    "status": "Status",
+    "repo_url": "Repository URL",
+    "start_date": "Start Date",
+    "end_date": "End Date",
+    "one_title": "Project",
+    "many_title": "Projects",
+    "filter_title": "All Teams",
+    "add_new": "New Project",
+    "edit": "Edit Project",
+    "delete": "Delete Project",
+    "empty_message": "No Projects found",
+    "delete_confirmation": "Are you sure you want to delete this Project"
+  },
   "assignment_modal": {
     "id": "ID",
     "team": "Team",

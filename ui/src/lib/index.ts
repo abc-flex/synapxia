@@ -17,6 +17,7 @@ export {
 export * from './lists';
 export * from './modules';
 export * from './options';
+export * from './projects';
 
 // Re-export types
 export type * from '../types/api';

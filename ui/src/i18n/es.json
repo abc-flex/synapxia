@@ -259,6 +259,24 @@
     "empty_message": "No se encontraron Equipos",
     "delete_confirmation": "¿Está seguro de que desea eliminar este Equipo?"
   },
+  "project_modal": {
+    "code": "Código",
+    "name": "Nombre",
+    "description": "Descripción",
+    "team": "Equipo",
+    "status": "Estado",
+    "repo_url": "URL del Repositorio",
+    "start_date": "Fecha de Inicio",
+    "end_date": "Fecha de Fin",
+    "one_title": "Proyecto",
+    "many_title": "Proyectos",
+    "filter_title": "Todos los Equipos",
+    "add_new": "Nuevo Proyecto",
+    "edit": "Editar Proyecto",
+    "delete": "Eliminar Proyecto",
+    "empty_message": "No se encontraron Proyectos",
+    "delete_confirmation": "¿Está seguro de que desea eliminar este Proyecto?"
+  },
   "assignment_modal": {
     "id": "ID",
     "team": "Equipo",

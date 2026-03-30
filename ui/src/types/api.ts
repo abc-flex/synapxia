@@ -241,6 +241,44 @@ export interface OptionUpdate {
   is_active?: boolean;
 }
 
+// Project types
+export interface Project {
+  code: string;
+  name: string;
+  description?: string;
+  team?: string;
+  repo_url?: string;
+  status: string;
+  start_date?: string;
+  end_date?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface ProjectCreate {
+  code: string;
+  name: string;
+  description?: string;
+  team?: string;
+  repo_url?: string;
+  status: string;
+  start_date?: string;
+  end_date?: string;
+  is_active?: boolean;
+}
+
+export interface ProjectUpdate {
+  name?: string;
+  description?: string;
+  team?: string;
+  repo_url?: string;
+  status?: string;
+  start_date?: string;
+  end_date?: string;
+  is_active?: boolean;
+}
+
 // Privilege types
 export interface Privilege {
   role: string;

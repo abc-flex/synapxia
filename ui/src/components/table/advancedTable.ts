@@ -71,6 +71,11 @@ export function initAdvancedTable(
         filterSelect.addEventListener("change", () => {
             applyFilters();
         });
+
+        // Apply initial filter from URL param on page load
+        if (filterParam) {
+            applyFilters();
+        }
     }
 
     /* ======================

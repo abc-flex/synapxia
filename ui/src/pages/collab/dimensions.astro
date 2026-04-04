@@ -1,0 +1,223 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import DataTable from "../../components/table/DataTable.astro";
+import CrudModal from "../../components/forms/CrudModal.astro";
+import Toast from "../../components/Toast.astro";
+import { getDimensions } from "@/lib/dimensions";
+import { getLists } from "@/lib/lists";
+import { getListItemsbyList } from "@/lib/list_items";
+
+// Fetch dimensions from API
+let dimensions: any[] = [];
+let errorMessage: string | null = null;
+
+try {
+  const apiDimensions = await getDimensions();
+  dimensions = apiDimensions;
+} catch (error) {
+  console.error('Failed to fetch dimensions:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch dimensions from API';
+  dimensions = [];
+}
+
+// Fetch lists for scale select field
+let lists: any[] = [];
+try {
+  const apiLists = await getLists();
+  lists = apiLists;
+} catch (error) {
+  console.error('Failed to fetch lists:', error);
+  lists = [];
+}
+
+// Fetch DIMENSIONS_UNIT list items for unit select field
+let dimensionUnits: any[] = [];
+try {
+  const apiUnits = await getListItemsbyList("DIMENSIONS_UNIT");
+  dimensionUnits = apiUnits;
+} catch (error) {
+  console.error('Failed to fetch dimension units:', error);
+  dimensionUnits = [];
+}
+
+const columns = [
+  { key: "code", label: "dimension_modal.code" },
+  { key: "name", label: "dimension_modal.name" },
+  { key: "scale", label: "dimension_modal.scale" },
+  { key: "unit", label: "dimension_modal.unit" },
+];
+const data = dimensions.map((item) => ({
+  id: item.code,
+  code: item.code,
+  name: item.name,
+  description: item.description,
+  scale: item.scale,
+  unit: item.unit,
+  is_active: item.is_active,
+  created_at: item.created_at,
+  updated_at: item.updated_at,
+}));
+const tableFields = [
+  { key: "code", label: "dimension_modal.code", pk: true, required: true, placeholder: "e.g. CODE_QUALITY" },
+  { key: "name", label: "dimension_modal.name", required: true, placeholder: "e.g. Code Quality" },
+  {
+    key: "description",
+    label: "dimension_modal.description",
+    type: "textarea" as const,
+    placeholder: "Optional description",
+  },
+  {
+    key: "scale",
+    label: "dimension_modal.scale",
+    type: "select" as const,
+    options: lists,
+  },
+  {
+    key: "unit",
+    label: "dimension_modal.unit",
+    type: "select" as const,
+    options: dimensionUnits,
+  },
+];
+const fieldKeys = tableFields.map((f) => f.key);
+---
+
+<BaseLayout>
+  {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
+
+  <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
+    <!-- Breadcrumb Start -->
+    <Breadcrumb
+      moduleName="Collaboration"
+      pageName="Dimensions"
+      pageTitle="Dimensions"
+      homeLink="/"
+      moduleNameKey="modules.COLLAB"
+      pageNameKey="menu_options.dimensions"
+      pageTitleKey="menu_options.dimensions"
+    />
+    <!-- Breadcrumb End -->
+
+    <CrudModal
+      mode="create"
+      modalId="dimension-create-modal"
+      entityName="Dimension"
+      fields={tableFields}
+      showTrigger={false}
+    />
+    <CrudModal
+      mode="edit"
+      modalId="dimension-edit-modal"
+      entityName="Dimension"
+      fields={tableFields}
+      showTrigger={false}
+    />
+    <CrudModal
+      mode="delete"
+      modalId="dimension-delete-modal"
+      entityName="Dimension"
+      fields={tableFields}
+      showTrigger={false}
+    />
+
+    <div
+      id="dimensions-data"
+      data-rows={encodeURIComponent(JSON.stringify(data))}
+      data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
+      class="hidden"
+      aria-hidden="true"
+    >
+    </div>
+
+    <script type="module">
+      import { initCrudPage } from "/scripts/crudClient.js";
+      import {
+        createDimension,
+        updateDimension,
+        deleteDimension,
+      } from "/src/lib/dimensions";
+
+      initCrudPage({
+        dataId: "dimensions-data",
+        editModalId: "dimension-edit-modal",
+        deleteModalId: "dimension-delete-modal",
+      });
+
+      // Helper function to show toast notifications
+      function showToast(message, variant = "info") {
+        const toast = document.createElement("div");
+        toast.className = `fixed top-4 right-4 z-50 max-w-md p-4 rounded-lg border shadow-lg transition-all duration-300 ${
+          variant === "error"
+            ? "bg-red-50 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+            : "bg-green-50 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+        }`;
+        toast.innerHTML = `
+          <div class="flex items-start gap-3">
+            <div class="flex-1 text-sm font-medium">${message}</div>
+            <button type="button" class="text-gray-400 hover:text-gray-600" onclick="this.parentElement.parentElement.remove()">✕</button>
+          </div>
+        `;
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          toast.style.transform = "translateX(100%)";
+          setTimeout(() => toast.remove(), 300);
+        }, 5000);
+      }
+
+      // Handle CRUD form submissions
+      document.addEventListener("crud-submit", async (e) => {
+        const { modalId, mode, data } = e.detail;
+
+        try {
+          if (mode === "create") {
+            await createDimension({
+              code: data.code,
+              name: data.name,
+              description: data.description || undefined,
+              scale: data.scale || undefined,
+              unit: data.unit || undefined,
+              is_active: true,
+            });
+            showToast("Dimension created successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          } else if (mode === "edit") {
+            await updateDimension(data.id, {
+              name: data.name,
+              description: data.description || undefined,
+              scale: data.scale || undefined,
+              unit: data.unit || undefined,
+              is_active: data.is_active !== false,
+            });
+            showToast("Dimension updated successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          } else if (mode === "delete") {
+            await deleteDimension(data.id);
+            showToast("Dimension deleted successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          }
+        } catch (error) {
+          console.error("CRUD operation failed:", error);
+          showToast(error instanceof Error ? error.message : "An error occurred", "error");
+        }
+      });
+    </script>
+
+    <div class="space-y-5 sm:space-y-6">
+      <div class="space-y-5 sm:space-y-6">
+        <!-- ====== Table Start -->
+        <DataTable
+          columns={columns}
+          data={data}
+          tableId="dimensions"
+          i18Item="dimension"
+          detailPage="/collab/metrics"
+          mdItem="dimension"
+        />
+        <!-- ====== Table End -->
+      </div>
+    </div>
+  </div>
+</BaseLayout>

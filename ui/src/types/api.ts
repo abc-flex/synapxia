@@ -359,3 +359,61 @@ export interface FeatureUpdate {
 export interface ApiError {
   detail: string;
 }
+
+// Dimension types
+export interface Dimension {
+  code: string;
+  name: string;
+  description?: string;
+  scale?: string;
+  unit?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface DimensionCreate {
+  code: string;
+  name: string;
+  description?: string;
+  scale?: string;
+  unit?: string;
+  is_active?: boolean;
+}
+
+export interface DimensionUpdate {
+  name?: string;
+  description?: string;
+  scale?: string;
+  unit?: string;
+  is_active?: boolean;
+}
+
+// Metric types
+export interface Metric {
+  id: number;
+  dimension: string;
+  assignment: number;
+  value: string;
+  observation?: string;
+  measured_at: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface MetricCreate {
+  dimension: string;
+  assignment: number;
+  value: string;
+  observation?: string;
+  measured_at?: string;
+  is_active?: boolean;
+}
+
+export interface MetricUpdate {
+  value?: string;
+  observation?: string;
+  measured_at?: string;
+  is_active?: boolean;
+}

@@ -47,6 +47,7 @@
     "teams": "Teams",
     "projects": "Projects",
     "dimensions": "Dimensions",
+    "metrics": "Metrics",
     "dashboard": "Dashboard",
     "value_chain": "Value Chain",
     "map": "Map",
@@ -323,5 +324,35 @@
     "password_required": "Password is required",
     "login_error": "Invalid email or password",
     "login_success": "Login successful!"
+  },
+  "dimension_modal": {
+    "code": "Code",
+    "name": "Name",
+    "description": "Description",
+    "scale": "Scale",
+    "unit": "Unit",
+    "one_title": "Dimension",
+    "many_title": "Dimensions",
+    "filter_title": "All Dimensions",
+    "add_new": "New Dimension",
+    "edit": "Edit Dimension",
+    "delete": "Delete Dimension",
+    "empty_message": "No Dimensions found",
+    "delete_confirmation": "Are you sure you want to delete this Dimension"
+  },
+  "metric_modal": {
+    "dimension": "Dimension",
+    "assignment": "Assignment",
+    "value": "Value",
+    "observation": "Observation",
+    "measured_at": "Measured At",
+    "one_title": "Metric",
+    "many_title": "Metrics",
+    "filter_title": "All Dimensions",
+    "add_new": "New Metric",
+    "edit": "Edit Metric",
+    "delete": "Delete Metric",
+    "empty_message": "No Metrics found",
+    "delete_confirmation": "Are you sure you want to delete this Metric"
   }
 }

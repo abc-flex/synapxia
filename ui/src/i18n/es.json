@@ -322,5 +322,35 @@
     "password_required": "La contraseña es requerida",
     "login_error": "Correo o contraseña inválidos",
     "login_success": "¡Sesión iniciada exitosamente!"
+  },
+  "dimension_modal": {
+    "code": "Código",
+    "name": "Nombre",
+    "description": "Descripción",
+    "scale": "Escala",
+    "unit": "Unidad",
+    "one_title": "Dimensión",
+    "many_title": "Dimensiones",
+    "filter_title": "Todas las Dimensiones",
+    "add_new": "Nueva Dimensión",
+    "edit": "Editar Dimensión",
+    "delete": "Eliminar Dimensión",
+    "empty_message": "No se encontraron Dimensiones",
+    "delete_confirmation": "¿Está seguro de que desea eliminar esta Dimensión?"
+  },
+  "metric_modal": {
+    "dimension": "Dimensión",
+    "assignment": "Asignación",
+    "value": "Valor",
+    "observation": "Observación",
+    "measured_at": "Medido el",
+    "one_title": "Métrica",
+    "many_title": "Métricas",
+    "filter_title": "Todas las Dimensiones",
+    "add_new": "Nueva Métrica",
+    "edit": "Editar Métrica",
+    "delete": "Eliminar Métrica",
+    "empty_message": "No se encontraron Métricas",
+    "delete_confirmation": "¿Está seguro de que desea eliminar esta Métrica?"
   }
 }

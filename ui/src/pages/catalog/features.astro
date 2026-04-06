@@ -30,12 +30,6 @@ const columns = [
   { key: "type", label: "feature_modal.type" },
 ];
 
-// Fetch features for select field
-const units = features.map((item) => ({
-  value: item.code,
-  name: item.name,
-}));
-
 const data = features.map((item) => ({
   id: item.code,
   code: item.code,

@@ -21,26 +21,26 @@ def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_s
     - **skip**: Number of records to skip (default: 0)
     - **limit**: Maximum number of records to return (default: 100)
     """
-    features = session.exec(select(Feature).offset(
-        skip).limit(limit).order_by(Feature.name)).all()
+    features = session.exec(select(Feature).where(Feature.is_active == True).offset(skip).limit(limit).
+                            order_by(Feature.name)).all()
     return features
 
 
-@router.get("/{feature_code}", response_model=Feature)
-def get_feature(feature_code: str, session: Session = Depends(get_db_session)) -> Feature:
+@router.get("/{code}", response_model=Feature)
+def get_feature(code: str, session: Session = Depends(get_db_session)) -> Feature:
     """
     Get a feature by its code.
 
-    - **feature_code**: Unique feature code
+    - **code**: Unique feature code
     """
-    feature = session.get(Feature, feature_code)
+    feature = session.get(Feature, code)
     if not feature:
         raise HTTPException(status_code=404, detail="Feature not found")
     return feature
 
 
 @router.post("/", response_model=Feature, status_code=201)
-def create_feature(feature: FeatureCreate, session: Session = Depends(get_db_session)) -> Feature:
+def create(feature: FeatureCreate, session: Session = Depends(get_db_session)) -> Feature:
     """
     Create a new feature.
 
@@ -57,6 +57,10 @@ def create_feature(feature: FeatureCreate, session: Session = Depends(get_db_ses
             status_code=409,
             detail=f"Feature with code '{feature.code}' already exists"
         )
+
+    # If type is empty, "null" or "none", convert to None
+    if feature.type is not None and feature.type in ["", "null", "none"]: 
+        feature.type = None
 
     try:
         db_feature = Feature.model_validate(feature)
@@ -75,19 +79,24 @@ def create_feature(feature: FeatureCreate, session: Session = Depends(get_db_ses
         )
 
 
-@router.put("/{feature_code}", response_model=Feature)
-def update_feature(feature_code: str, feature_update: FeatureUpdate, session: Session = Depends(get_db_session)) -> Feature:
+@router.put("/{code}", response_model=Feature)
+def update(code: str, feature_update: FeatureUpdate, session: Session = Depends(get_db_session)) -> Feature:
     """
     Update an existing feature.
 
-    - **feature_code**: Unique feature code to update
+    - **code**: Unique feature code to update
     - Only provided fields are updated
     """
-    feature = session.get(Feature, feature_code)
+    feature = session.get(Feature, code)
     if not feature:
         raise HTTPException(status_code=404, detail="Feature not found")
 
     update_data = feature_update.model_dump(exclude_unset=True)
+    
+    # Validate type field - if type is empty, "null" or "none", convert to None
+    if "type" in update_data and update_data["type"] in ["", "null", "none"]:
+        update_data["type"] = None
+    
     for key, value in update_data.items():
         setattr(feature, key, value)
 
@@ -97,20 +106,20 @@ def update_feature(feature_code: str, feature_update: FeatureUpdate, session: Se
     session.add(feature)
     session.commit()
     session.refresh(feature)
-    logger.info(f"Feature updated: {feature_code}")
+    logger.info(f"Feature updated: {code}")
     return feature
 
 
-@router.delete("/{feature_code}", response_model=Feature, status_code=200)
-def delete_feature(feature_code: str, session: Session = Depends(get_db_session)) -> Feature:
+@router.delete("/{code}", response_model=Feature, status_code=200)
+def delete(code: str, session: Session = Depends(get_db_session)) -> Feature:
     """
     Delete a feature (logical delete).
 
     Performs a logical delete by setting is_active=False instead of deleting the record.
 
-    - **feature_code**: Unique feature code to delete
+    - **code**: Unique feature code to delete
     """
-    feature = session.get(Feature, feature_code)
+    feature = session.get(Feature, code)
     if not feature:
         raise HTTPException(status_code=404, detail="Feature not found")
 
@@ -118,7 +127,7 @@ def delete_feature(feature_code: str, session: Session = Depends(get_db_session)
     if not feature.is_active:
         raise HTTPException(
             status_code=400,
-            detail=f"Feature with code '{feature_code}' is already inactive"
+            detail=f"Feature with code '{code}' is already inactive"
         )
 
     # Logical delete: update is_active to False
@@ -129,5 +138,5 @@ def delete_feature(feature_code: str, session: Session = Depends(get_db_session)
     session.commit()
     session.refresh(feature)
     logger.info(
-        f"Feature deactivated (logical delete): {feature_code}")
+        f"Feature deactivated (logical delete): {code}")
     return feature

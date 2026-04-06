@@ -49,7 +49,7 @@ class FeatureBase(SQLModel):
     code: str = Field(max_length=50, primary_key=True)
     name: str = Field(max_length=100)
     description: Optional[str] = Field(default=None, max_length=500)
-    type: str = Field(max_length=100)
+    type: Optional[str] = Field(default=None, max_length=100)
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
@@ -64,7 +64,7 @@ class FeatureCreate(SQLModel):
     name: str = Field(max_length=100, description="Feature name")
     description: Optional[str] = Field(
         default=None, max_length=500, description="Feature description")
-    type: str = Field(max_length=100, description="Feature type")
+    type: Optional[str] = Field(default=None, max_length=100, description="Feature type")
     is_active: Optional[bool] = Field(
         default=True, description="Indicates if the feature is active")
 

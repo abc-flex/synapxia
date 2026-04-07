@@ -6,6 +6,12 @@
 import { apiGet, apiPost, apiPut, apiDelete, buildQueryString } from './api';
 import type { Team } from '../types/team';
 
+// Interface for select options with value and label
+export interface TeamSelectOption {
+  value: string;
+  label: string;
+}
+
 /**
  * Fetch all teams with optional pagination
  * @param skip - Number of records to skip (default: 0)
@@ -15,6 +21,15 @@ import type { Team } from '../types/team';
 export async function getTeams(skip: number = 0, limit: number = 100): Promise<Team[]> {
   const queryString = buildQueryString({ skip, limit });
   return apiGet<Team[]>(`/api/teams${queryString}`);
+}
+
+/**
+ * Fetch all teams optimized for select fields
+ * Returns only code and name of active teams
+ * @returns Promise with array of TeamSelectOption objects
+ */
+export async function getTeamsSelect(): Promise<TeamSelectOption[]> {
+  return apiGet<TeamSelectOption[]>(`/api/teams/select`);
 }
 
 /**

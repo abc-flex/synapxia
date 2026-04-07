@@ -36,13 +36,17 @@ try {
 const columns = [
   { key: "code", label: "Code", visible: true },
   { key: "name", label: "Name", visible: true },
-  { key: "lead", label: "Lead", visible: true },
+  { key: "lead_name", label: "Lead Name", visible: true },
 ];
 const data = teams.map((item) => ({
   id: item.code,
   code: item.code,
   name: item.name,
   lead: item.lead,
+  lead_name: users.find((u) => String(u.value) === String(item.lead))?.label || item.lead,
+  description: item.description,
+  chat_channel_url: item.chat_channel_url,
+  kanban_board_url: item.kanban_board_url,
 }));
 
 const teamFields = [
@@ -106,15 +110,79 @@ const fieldKeys = teamFields.map((f) => f.key);
     >
     </div>
 
-    <script type="module">
+     <script type="module">
       import { initCrudPage } from "/scripts/crudClient.js";
+      import {
+        createTeam,
+        updateTeam,
+        deleteTeam,
+      } from "/src/lib/teams";
+
       initCrudPage({
         dataId: "teams-data",
-        createModalId: "team-create-modal",
         editModalId: "team-edit-modal",
         deleteModalId: "team-delete-modal",
-        baseUrl: "/api/teams",
-        entityName: "team",
+      });
+
+      function showToast(message, variant = "info") {
+        const toast = document.createElement("div");
+        toast.className = `fixed top-4 right-4 z-50 max-w-md p-4 rounded-lg border shadow-lg transition-all duration-300 ${
+          variant === "error"
+            ? "bg-red-50 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+            : "bg-green-50 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+        }`;
+        toast.innerHTML = `
+          <div class="flex items-start gap-3">
+            <div class="flex-1 text-sm font-medium">${message}</div>
+            <button type="button" class="text-gray-400 hover:text-gray-600" onclick="this.parentElement.parentElement.remove()">✕</button>
+          </div>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          toast.style.transform = "translateX(100%)";
+          setTimeout(() => toast.remove(), 300);
+        }, 5000);
+      }
+
+      document.addEventListener("crud-submit", async (e) => {
+        const { mode, data } = e.detail;
+        try {
+          if (mode === "create") {
+            await createTeam({
+              code: data.code,
+              name: data.name,
+              lead: data.lead || undefined,
+              description: data.description || undefined,
+              chat_channel_url: data.chat_channel_url || undefined,
+              kanban_board_url: data.kanban_board_url || undefined,
+            });
+            showToast("Team created successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          } else if (mode === "edit") {
+            await updateTeam(data.id, {
+              name: data.name,
+              lead: data.lead || undefined,
+              description: data.description || undefined,
+              chat_channel_url: data.chat_channel_url || undefined,
+              kanban_board_url: data.kanban_board_url || undefined,
+            });
+            showToast("Team updated successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          } else if (mode === "delete") {
+            await deleteTeam(data.id);
+            showToast("Team deleted successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          }
+        } catch (error) {
+          console.error("CRUD operation failed:", error);
+          const msg = error?.message || "";
+          if (error?.status === 409 || msg.includes("409") || msg.includes("already exists")) {
+            showToast(`Team code '${data.code}' already exists`, "error");
+          } else {
+            showToast(msg || "An error occurred", "error");
+          }
+        }
       });
     </script>
 

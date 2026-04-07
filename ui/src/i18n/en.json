@@ -254,6 +254,7 @@
     "kanban_board_url": "Kanban Board URL",
     "one_title": "Team",
     "many_title": "Teams",
+    "filter_title": "All Teams",
     "add_new": "New Team",
     "edit": "Edit Team",
     "delete": "Delete Team",

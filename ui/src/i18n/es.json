@@ -253,6 +253,7 @@
     "kanban_board_url": "URL Tablero Kanban",
     "one_title": "Equipo",
     "many_title": "Equipos",
+    "filter_title": "Todos los Equipos",
     "add_new": "Nuevo Equipo",
     "edit": "Editar Equipo",
     "delete": "Eliminar Equipo",

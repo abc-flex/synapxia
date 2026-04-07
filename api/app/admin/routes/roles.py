@@ -25,8 +25,9 @@ def get_all(
     - **skip**: Number of records to skip (default: 0)
     - **limit**: Maximum number of records to return (default: 100)
     """
-    roles = session.exec(select(Role).where(Role.is_active == True).offset(skip).limit(limit).
-                         order_by(Role.name)).all()
+    roles = session.exec(select(Role).where(Role.is_active == True)
+                         .offset(skip).limit(limit)
+                         .order_by(Role.name)).all()
     return roles
 
 
@@ -40,6 +41,8 @@ def get(code: str, session: Session = Depends(get_db_session)) -> Role:
     role = session.get(Role, code)
     if not role:
         raise HTTPException(status_code=404, detail="Role not found")
+    elif not role.is_active:
+        raise HTTPException(status_code=400, detail=f"Role with code '{code}' is inactive")
     return role
 
 

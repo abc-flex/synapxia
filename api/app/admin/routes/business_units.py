@@ -42,8 +42,9 @@ def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_s
     - **skip**: Number of records to skip (default: 0)
     - **limit**: Maximum number of records to return (default: 100)
     """
-    business_units = session.exec(select(BusinessUnit).where(BusinessUnit.is_active == True).offset(
-        skip).limit(limit).order_by(BusinessUnit.name)).all()
+    business_units = session.exec(select(BusinessUnit).where(BusinessUnit.is_active == True)
+                                  .offset(skip).limit(limit)
+                                  .order_by(BusinessUnit.name)).all()
     return business_units
 
 
@@ -57,6 +58,8 @@ def get(code: str, session: Session = Depends(get_db_session)) -> BusinessUnit:
     business_unit = session.get(BusinessUnit, code)
     if not business_unit:
         raise HTTPException(status_code=404, detail="Business unit not found")
+    elif not business_unit.is_active:
+        raise HTTPException(status_code=400, detail=f"Business unit with code '{code}' is inactive")
     return business_unit
 
 

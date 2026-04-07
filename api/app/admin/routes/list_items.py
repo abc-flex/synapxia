@@ -21,7 +21,9 @@ def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_s
     - **skip**: Número de registros a saltar (default: 0)
     - **limit**: Número máximo de registros a retornar (default: 100)
     """
-    items = session.exec(select(ListItem).offset(skip).limit(limit).order_by(ListItem.list, ListItem.sort_order, ListItem.value)).all()
+    items = session.exec(select(ListItem).where(ListItem.is_active == True)
+                         .offset(skip).limit(limit)
+                         .order_by(ListItem.list, ListItem.sort_order, ListItem.value)).all()
     return items
 
 
@@ -60,6 +62,11 @@ def get(list_code: str, value: str, session: Session = Depends(get_db_session)) 
     item = session.exec(select(ListItem).where(ListItem.list == list_code, ListItem.value == value)).first()
     if not item:
         raise HTTPException(status_code=404, detail="List item not found")
+    elif not item.is_active:
+        raise HTTPException(
+            status_code=400,
+            detail=f"List item with list '{list_code}' and value '{value}' is inactive"
+        )
     return item
 
 

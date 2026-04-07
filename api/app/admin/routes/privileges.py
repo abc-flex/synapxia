@@ -21,8 +21,9 @@ def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_s
     - **skip**: Number of records to skip (default: 0)
     - **limit**: Maximum number of records to return (default: 100)
     """
-    privileges = session.exec(select(Privilege).where(Privilege.is_active == True).offset(skip).limit(limit).
-                              order_by(Privilege.role, Privilege.module, Privilege.option)).all()
+    privileges = session.exec(select(Privilege).where(Privilege.is_active == True)
+                              .offset(skip).limit(limit)
+                              .order_by(Privilege.role, Privilege.module, Privilege.option)).all()
     return privileges
 
 
@@ -69,6 +70,11 @@ def get(role_code: str, module_code: str, option_code: str, session: Session = D
     ).first()
     if not privilege:
         raise HTTPException(status_code=404, detail="Privilege not found")
+    elif not privilege.is_active:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Privilege with role '{role_code}', module '{module_code}' and option '{option_code}' is inactive"
+        )
     return privilege
 
 

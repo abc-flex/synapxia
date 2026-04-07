@@ -216,11 +216,6 @@ class User(UserBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
 
 
-class UserSelect(UserBase):
-    id: int
-    name: str
-
-
 class UserCreate(SQLModel):
     username: str = Field(max_length=50, description="Unique username")
     email: str = Field(max_length=100, description="Unique email address")

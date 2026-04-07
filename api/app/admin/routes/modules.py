@@ -42,8 +42,9 @@ def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_s
     - **skip**: Number of records to skip (default: 0)
     - **limit**: Maximum number of records to return (default: 100)
     """
-    modules = session.exec(select(Module).where(Module.is_active == True).offset(skip).limit(limit).
-                           order_by(Module.sort_order, Module.name)).all()
+    modules = session.exec(select(Module).where(Module.is_active == True)
+                           .offset(skip).limit(limit)
+                           .order_by(Module.sort_order, Module.name)).all()
     return modules
 
 
@@ -57,6 +58,8 @@ def get(code: str, session: Session = Depends(get_db_session)) -> Module:
     module = session.get(Module, code)
     if not module:
         raise HTTPException(status_code=404, detail="Module not found")
+    elif not module.is_active:
+        raise HTTPException(status_code=400, detail=f"Module with code '{code}' is inactive")
     return module
 
 

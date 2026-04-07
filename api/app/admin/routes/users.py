@@ -5,11 +5,11 @@ from datetime import datetime
 from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select, SQLModel
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import func, literal
+from sqlalchemy import func, literal, cast, String
 
 from ..internal.models import User, UserCreate, UserUpdate, Role, BusinessUnit
 from ..internal.dependencies import get_db_session
-SQLModel
+
 #Model for user select options
 class UserBasic(SQLModel):
     value: str
@@ -27,14 +27,13 @@ def get_list(session: Session = Depends(get_db_session)) -> List[UserBasic]:
     """
     statement = (
         select(
-            User.id, 
-            func.concat(User.first_name, literal(" "), User.last_name).label("full_name")
+            cast(User.id, String).label("value"), 
+            func.concat(User.first_name, literal(" "), User.last_name).label("label")
         )
         .where(User.is_active == True)
         .order_by(User.first_name, User.last_name)
     )
-    results = session.exec(statement).all()
-    return [UserBasic(value=row[0], label=row[1]) for row in results]
+    return session.exec(statement).all()
 
 
 @router.get("/", response_model=List[User])
@@ -85,6 +84,8 @@ def get(id: int, session: Session = Depends(get_db_session)) -> User:
     user = session.get(User, id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    if not user.is_active:
+        raise HTTPException(status_code=400, detail=f"User with id '{id}' is inactive")
     return user
 
 

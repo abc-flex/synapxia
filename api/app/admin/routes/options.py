@@ -21,8 +21,9 @@ def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_s
     - **skip**: Number of records to skip (default: 0)
     - **limit**: Maximum number of records to return (default: 100)
     """
-    options = session.exec(select(Option).where(Option.is_active == True).offset(skip).limit(limit).
-                           order_by(Option.module, Option.sort_order, Option.name)).all()
+    options = session.exec(select(Option).where(Option.is_active == True)
+                           .offset(skip).limit(limit)
+                           .order_by(Option.module, Option.sort_order, Option.name)).all()
     return options
 
 
@@ -40,6 +41,11 @@ def get(module_code: str, code: str, session: Session = Depends(get_db_session))
     ).first()
     if not option:
         raise HTTPException(status_code=404, detail="Option not found")
+    elif not option.is_active:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Option with module '{module_code}' and code '{code}' is inactive"
+        )
     return option
 
 

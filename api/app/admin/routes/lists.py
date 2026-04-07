@@ -21,8 +21,9 @@ def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_s
     - **skip**: Number of records to skip (default: 0)
     - **limit**: Maximum number of records to return (default: 100)
     """
-    lists = session.exec(select(ListModel).where(ListModel.is_active == True).offset(skip).limit(limit).
-                         order_by(ListModel.name)).all()
+    lists = session.exec(select(ListModel).where(ListModel.is_active == True)
+                         .offset(skip).limit(limit)
+                         .order_by(ListModel.name)).all()
     return lists
 
 
@@ -36,6 +37,8 @@ def get(code: str, session: Session = Depends(get_db_session)) -> ListModel:
     list_item = session.get(ListModel, code)
     if not list_item:
         raise HTTPException(status_code=404, detail="List not found")
+    elif not list_item.is_active:
+        raise HTTPException(status_code=400, detail=f"List with code '{code}' is inactive") 
     return list_item
 
 

@@ -13,8 +13,43 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/favorites", tags=["favorites"])
 
 
+@router.get("/", response_model=List[Favorite])
+def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[Favorite]:
+    """
+    List all favorites with pagination.
+
+    - **skip**: Number of records to skip (default: 0)
+    - **limit**: Maximum number of records to return (default: 100)
+    """
+    favorites = session.exec(select(Favorite).where(Favorite.is_active == True)
+                             .offset(skip).limit(limit)
+                             .order_by(Favorite.user_id, Favorite.asset)).all()
+    return favorites
+
+
+@router.get("/{user_id}/{asset_code}", response_model=Favorite)
+def get(user_id: int, asset_code: str, session: Session = Depends(get_db_session)) -> Favorite:
+    """
+    Get a favorite by its user and asset.
+
+    - **user_id**: User ID
+    - **asset_code**: Asset code
+    """
+    favorite = session.exec(
+        select(Favorite).where(
+            Favorite.user_id == user_id,
+            Favorite.asset == asset_code
+        )
+    ).first()
+    if not favorite:
+        raise HTTPException(status_code=404, detail="Favorite not found")
+    elif not favorite.is_active:
+        raise HTTPException(status_code=400, detail=f"Favorite with user_id '{user_id}' and asset '{asset_code}' is inactive")
+    return favorite
+
+
 @router.post("/", response_model=Favorite, status_code=201)
-def create_favorite(favorite: FavoriteCreate, session: Session = Depends(get_db_session)) -> Favorite:
+def create(favorite: FavoriteCreate, session: Session = Depends(get_db_session)) -> Favorite:
     """
     Create a new favorite.
 
@@ -31,25 +66,25 @@ def create_favorite(favorite: FavoriteCreate, session: Session = Depends(get_db_
         )
 
     # Validate that the favorite does not already exist
-    existing_favorite = session.exec(
+    existing = session.exec(
         select(Favorite).where(
             Favorite.user_id == favorite.user_id,
             Favorite.asset == favorite.asset
         )
     ).first()
-    if existing_favorite:
+    if existing:
         raise HTTPException(
             status_code=409,
             detail=f"Favorite with user_id '{favorite.user_id}' and asset '{favorite.asset}' already exists"
         )
 
     try:
-        db_favorite = Favorite.model_validate(favorite)
-        session.add(db_favorite)
+        db = Favorite.model_validate(favorite)
+        session.add(db)
         session.commit()
-        session.refresh(db_favorite)
+        session.refresh(db)
         logger.info(f"Favorite created: {favorite.user_id}/{favorite.asset}")
-        return db_favorite
+        return db
     except IntegrityError as e:
         session.rollback()
         logger.error(
@@ -60,40 +95,8 @@ def create_favorite(favorite: FavoriteCreate, session: Session = Depends(get_db_
         )
 
 
-@router.get("/", response_model=List[Favorite])
-def list_favorites(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[Favorite]:
-    """
-    List all favorites with pagination.
-
-    - **skip**: Number of records to skip (default: 0)
-    - **limit**: Maximum number of records to return (default: 100)
-    """
-    favorites = session.exec(select(Favorite).offset(skip).limit(
-        limit).order_by(Favorite.user_id, Favorite.asset)).all()
-    return favorites
-
-
-@router.get("/{user_id}/{asset_code}", response_model=Favorite)
-def get_favorite(user_id: int, asset_code: str, session: Session = Depends(get_db_session)) -> Favorite:
-    """
-    Get a favorite by its user and asset.
-
-    - **user_id**: User ID
-    - **asset_code**: Asset code
-    """
-    favorite = session.exec(
-        select(Favorite).where(
-            Favorite.user_id == user_id,
-            Favorite.asset == asset_code
-        )
-    ).first()
-    if not favorite:
-        raise HTTPException(status_code=404, detail="Favorite not found")
-    return favorite
-
-
 @router.put("/{user_id}/{asset_code}", response_model=Favorite)
-def update_favorite(
+def update(
     user_id: int, asset_code: str, favorite_update: FavoriteUpdate, session: Session = Depends(get_db_session)
 ) -> Favorite:
     """
@@ -127,7 +130,7 @@ def update_favorite(
 
 
 @router.delete("/{user_id}/{asset_code}", response_model=Favorite, status_code=200)
-def delete_favorite(user_id: int, asset_code: str, session: Session = Depends(get_db_session)) -> Favorite:
+def delete(user_id: int, asset_code: str, session: Session = Depends(get_db_session)) -> Favorite:
     """
     Delete a favorite (logical delete).
 

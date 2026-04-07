@@ -21,13 +21,14 @@ def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_s
     - **skip**: Number of records to skip (default: 0)
     - **limit**: Maximum number of records to return (default: 100)
     """
-    features = session.exec(select(Feature).where(Feature.is_active == True).offset(skip).limit(limit).
-                            order_by(Feature.name)).all()
+    features = session.exec(select(Feature).where(Feature.is_active == True)
+                            .offset(skip).limit(limit)
+                            .order_by(Feature.name)).all()
     return features
 
 
 @router.get("/{code}", response_model=Feature)
-def get_feature(code: str, session: Session = Depends(get_db_session)) -> Feature:
+def get(code: str, session: Session = Depends(get_db_session)) -> Feature:
     """
     Get a feature by its code.
 
@@ -36,6 +37,8 @@ def get_feature(code: str, session: Session = Depends(get_db_session)) -> Featur
     feature = session.get(Feature, code)
     if not feature:
         raise HTTPException(status_code=404, detail="Feature not found")
+    elif not feature.is_active:
+        raise HTTPException(status_code=400, detail=f"Feature with code '{code}' is inactive")
     return feature
 
 
@@ -51,8 +54,8 @@ def create(feature: FeatureCreate, session: Session = Depends(get_db_session)) -
     - **is_active**: Active/inactive status (default: True)
     """
     # Validate that the code does not exist
-    existing_feature = session.get(Feature, feature.code)
-    if existing_feature:
+    existing = session.get(Feature, feature.code)
+    if existing:
         raise HTTPException(
             status_code=409,
             detail=f"Feature with code '{feature.code}' already exists"
@@ -63,12 +66,12 @@ def create(feature: FeatureCreate, session: Session = Depends(get_db_session)) -
         feature.type = None
 
     try:
-        db_feature = Feature.model_validate(feature)
-        session.add(db_feature)
+        db = Feature.model_validate(feature)
+        session.add(db)
         session.commit()
-        session.refresh(db_feature)
+        session.refresh(db)
         logger.info(f"Feature created: {feature.code}")
-        return db_feature
+        return db
     except IntegrityError as e:
         session.rollback()
         logger.error(

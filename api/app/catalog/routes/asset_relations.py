@@ -13,8 +13,43 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/asset_relations", tags=["asset_relations"])
 
 
+@router.get("/", response_model=List[AssetRelation])
+def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[AssetRelation]:
+    """
+    List all asset relations with pagination.
+
+    - **skip**: Number of records to skip (default: 0)
+    - **limit**: Maximum number of records to return (default: 100)
+    """
+    relations = session.exec(select(AssetRelation).where(AssetRelation.is_active == True)
+                             .offset(skip).limit(limit)
+                             .order_by(AssetRelation.source, AssetRelation.target)).all()
+    return relations
+
+
+@router.get("/{source_code}/{target_code}", response_model=AssetRelation)
+def get(source_code: str, target_code: str, session: Session = Depends(get_db_session)) -> AssetRelation:
+    """
+    Get an asset relation by its source and target.
+
+    - **source_code**: Source asset code
+    - **target_code**: Target asset code
+    """
+    relation = session.exec(
+        select(AssetRelation).where(
+            AssetRelation.source == source_code,
+            AssetRelation.target == target_code
+        )
+    ).first()
+    if not relation:
+        raise HTTPException(status_code=404, detail="Asset relation not found")
+    elif not relation.is_active:
+        raise HTTPException(status_code=400, detail=f"Asset relation with source '{source_code}' and target '{target_code}' is inactive")
+    return relation
+
+
 @router.post("/", response_model=AssetRelation, status_code=201)
-def create_asset_relation(relation: AssetRelationCreate, session: Session = Depends(get_db_session)) -> AssetRelation:
+def create(relation: AssetRelationCreate, session: Session = Depends(get_db_session)) -> AssetRelation:
     """
     Create a new asset relation.
 
@@ -47,26 +82,26 @@ def create_asset_relation(relation: AssetRelationCreate, session: Session = Depe
         )
 
     # Validate that the relation does not already exist
-    existing_relation = session.exec(
+    existing = session.exec(
         select(AssetRelation).where(
             AssetRelation.source == relation.source,
             AssetRelation.target == relation.target
         )
     ).first()
-    if existing_relation:
+    if existing:
         raise HTTPException(
             status_code=409,
             detail=f"Asset relation with source '{relation.source}' and target '{relation.target}' already exists"
         )
 
     try:
-        db_relation = AssetRelation.model_validate(relation)
-        session.add(db_relation)
+        db = AssetRelation.model_validate(relation)
+        session.add(db)
         session.commit()
-        session.refresh(db_relation)
+        session.refresh(db)
         logger.info(
             f"Asset relation created: {relation.source} -> {relation.target}")
-        return db_relation
+        return db
     except IntegrityError as e:
         session.rollback()
         logger.error(
@@ -77,41 +112,9 @@ def create_asset_relation(relation: AssetRelationCreate, session: Session = Depe
         )
 
 
-@router.get("/", response_model=List[AssetRelation])
-def list_asset_relations(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[AssetRelation]:
-    """
-    List all asset relations with pagination.
-
-    - **skip**: Number of records to skip (default: 0)
-    - **limit**: Maximum number of records to return (default: 100)
-    """
-    relations = session.exec(select(AssetRelation).offset(skip).limit(
-        limit).order_by(AssetRelation.source, AssetRelation.target)).all()
-    return relations
-
-
-@router.get("/{source_code}/{target_code}", response_model=AssetRelation)
-def get_asset_relation(source_code: str, target_code: str, session: Session = Depends(get_db_session)) -> AssetRelation:
-    """
-    Get an asset relation by its source and target.
-
-    - **source_code**: Source asset code
-    - **target_code**: Target asset code
-    """
-    relation = session.exec(
-        select(AssetRelation).where(
-            AssetRelation.source == source_code,
-            AssetRelation.target == target_code
-        )
-    ).first()
-    if not relation:
-        raise HTTPException(status_code=404, detail="Asset relation not found")
-    return relation
-
-
 @router.put("/{source_code}/{target_code}", response_model=AssetRelation)
-def update_asset_relation(
-    source_code: str, target_code: str, relation_update: AssetRelationUpdate, session: Session = Depends(get_db_session)
+def update(
+    source_code: str, target_code: str, update: AssetRelationUpdate, session: Session = Depends(get_db_session)
 ) -> AssetRelation:
     """
     Update an existing asset relation.
@@ -129,7 +132,7 @@ def update_asset_relation(
     if not relation:
         raise HTTPException(status_code=404, detail="Asset relation not found")
 
-    update_data = relation_update.model_dump(exclude_unset=True)
+    update_data = update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(relation, key, value)
 
@@ -144,7 +147,7 @@ def update_asset_relation(
 
 
 @router.delete("/{source_code}/{target_code}", response_model=AssetRelation, status_code=200)
-def delete_asset_relation(source_code: str, target_code: str, session: Session = Depends(get_db_session)) -> AssetRelation:
+def delete(source_code: str, target_code: str, session: Session = Depends(get_db_session)) -> AssetRelation:
     """
     Delete an asset relation (logical delete).
 

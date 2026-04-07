@@ -14,8 +14,37 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/actions", tags=["actions"])
 
 
+@router.get("/", response_model=List[Action])
+def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[Action]:
+    """
+    List all actions with pagination.
+
+    - **skip**: Number of records to skip (default: 0)
+    - **limit**: Maximum number of records to return (default: 100)
+    """
+    actions = session.exec(select(Action).where(Action.is_active == True)
+                           .offset(skip).limit(limit)
+                           .order_by(Action.created_at.desc())).all()
+    return actions
+
+
+@router.get("/{id}", response_model=Action)
+def get(id: int, session: Session = Depends(get_db_session)) -> Action:
+    """
+    Get an action by its ID.
+
+    - **id**: Unique action ID
+    """
+    action = session.get(Action, id)
+    if not action:
+        raise HTTPException(status_code=404, detail="Action not found")
+    elif not action.is_active:
+        raise HTTPException(status_code=400, detail=f"Action with id '{id}' is inactive")
+    return action
+
+
 @router.post("/", response_model=Action, status_code=201)
-def create_action(action: ActionCreate, session: Session = Depends(get_db_session)) -> Action:
+def create(action: ActionCreate, session: Session = Depends(get_db_session)) -> Action:
     """
     Create a new action.
 
@@ -51,12 +80,12 @@ def create_action(action: ActionCreate, session: Session = Depends(get_db_sessio
         if action_data.get('details') and isinstance(action_data['details'], dict):
             action_data['details'] = json.dumps(action_data['details'])
 
-        db_action = Action.model_validate(action_data)
-        session.add(db_action)
+        db = Action.model_validate(action_data)
+        session.add(db)
         session.commit()
-        session.refresh(db_action)
-        logger.info(f"Action created: {db_action.id}")
-        return db_action
+        session.refresh(db)
+        logger.info(f"Action created: {db.id}")
+        return db
     except IntegrityError as e:
         session.rollback()
         logger.error(f"Integrity error creating action: {e}")
@@ -66,41 +95,15 @@ def create_action(action: ActionCreate, session: Session = Depends(get_db_sessio
         )
 
 
-@router.get("/", response_model=List[Action])
-def list_actions(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[Action]:
-    """
-    List all actions with pagination.
-
-    - **skip**: Number of records to skip (default: 0)
-    - **limit**: Maximum number of records to return (default: 100)
-    """
-    actions = session.exec(select(Action).offset(skip).limit(
-        limit).order_by(Action.created_at.desc())).all()
-    return actions
-
-
-@router.get("/{action_id}", response_model=Action)
-def get_action(action_id: int, session: Session = Depends(get_db_session)) -> Action:
-    """
-    Get an action by its ID.
-
-    - **action_id**: Unique action ID
-    """
-    action = session.get(Action, action_id)
-    if not action:
-        raise HTTPException(status_code=404, detail="Action not found")
-    return action
-
-
-@router.put("/{action_id}", response_model=Action)
-def update_action(action_id: int, action_update: ActionUpdate, session: Session = Depends(get_db_session)) -> Action:
+@router.put("/{id}", response_model=Action)
+def update(id: int, action_update: ActionUpdate, session: Session = Depends(get_db_session)) -> Action:
     """
     Update an existing action.
 
-    - **action_id**: Unique action ID to update
+    - **id**: Unique action ID to update
     - Only provided fields are updated
     """
-    action = session.get(Action, action_id)
+    action = session.get(Action, id)
     if not action:
         raise HTTPException(status_code=404, detail="Action not found")
 
@@ -127,20 +130,20 @@ def update_action(action_id: int, action_update: ActionUpdate, session: Session 
     session.add(action)
     session.commit()
     session.refresh(action)
-    logger.info(f"Action updated: {action_id}")
+    logger.info(f"Action updated: {id}")
     return action
 
 
-@router.delete("/{action_id}", response_model=Action, status_code=200)
-def delete_action(action_id: int, session: Session = Depends(get_db_session)) -> Action:
+@router.delete("/{id}", response_model=Action, status_code=200)
+def delete(id: int, session: Session = Depends(get_db_session)) -> Action:
     """
     Delete an action (logical delete).
 
     Performs a logical delete by setting is_active=False instead of removing the record.
 
-    - **action_id**: Unique action ID to delete
+    - **id**: Unique action ID to delete
     """
-    action = session.get(Action, action_id)
+    action = session.get(Action, id)
     if not action:
         raise HTTPException(status_code=404, detail="Action not found")
 
@@ -148,7 +151,7 @@ def delete_action(action_id: int, session: Session = Depends(get_db_session)) ->
     if not action.is_active:
         raise HTTPException(
             status_code=400,
-            detail=f"Action with id '{action_id}' is already inactive"
+            detail=f"Action with id '{id}' is already inactive"
         )
 
     # Logical delete: update is_active to False
@@ -158,5 +161,5 @@ def delete_action(action_id: int, session: Session = Depends(get_db_session)) ->
     session.add(action)
     session.commit()
     session.refresh(action)
-    logger.info(f"Action deactivated (logical delete): {action_id}")
+    logger.info(f"Action deactivated (logical delete): {id}")
     return action

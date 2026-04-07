@@ -13,8 +13,37 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/categories", tags=["categories"])
 
 
+@router.get("/", response_model=List[Category])
+def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[Category]:
+    """
+    List all categories with pagination.
+
+    - **skip**: Number of records to skip (default: 0)
+    - **limit**: Maximum number of records to return (default: 100)
+    """
+    categories = session.exec(select(Category).where(Category.is_active == True)
+                              .offset(skip).limit(limit)
+                              .order_by(Category.name)).all()
+    return categories
+
+
+@router.get("/{code}", response_model=Category)
+def get(code: str, session: Session = Depends(get_db_session)) -> Category:
+    """
+    Get a category by its code.
+
+    - **code**: Unique category code
+    """
+    category = session.get(Category, code)
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+    elif not category.is_active:
+        raise HTTPException(status_code=400, detail=f"Category with code '{code}' is inactive")
+    return category
+
+
 @router.post("/", response_model=Category, status_code=201)
-def create_category(category: CategoryCreate, session: Session = Depends(get_db_session)) -> Category:
+def create(category: CategoryCreate, session: Session = Depends(get_db_session)) -> Category:
     """
     Create a new category.
 
@@ -25,8 +54,8 @@ def create_category(category: CategoryCreate, session: Session = Depends(get_db_
     - **is_active**: Active/inactive status (default: True)
     """
     # Validate that the code does not exist
-    existing_category = session.get(Category, category.code)
-    if existing_category:
+    existing = session.get(Category, category.code)
+    if existing:
         raise HTTPException(
             status_code=409,
             detail=f"Category with code '{category.code}' already exists"
@@ -34,20 +63,20 @@ def create_category(category: CategoryCreate, session: Session = Depends(get_db_
 
     # Validate that the parent category exists if provided
     if category.parent:
-        parent_category = session.get(Category, category.parent)
-        if not parent_category:
+        parent = session.get(Category, category.parent)
+        if not parent:
             raise HTTPException(
                 status_code=400,
                 detail=f"Parent category with code '{category.parent}' does not exist"
             )
 
     try:
-        db_category = Category.model_validate(category)
-        session.add(db_category)
+        db = Category.model_validate(category)
+        session.add(db)
         session.commit()
-        session.refresh(db_category)
+        session.refresh(db)
         logger.info(f"Category created: {category.code}")
-        return db_category
+        return db
     except IntegrityError as e:
         session.rollback()
         logger.error(f"Integrity error creating category {category.code}: {e}")
@@ -57,54 +86,28 @@ def create_category(category: CategoryCreate, session: Session = Depends(get_db_
         )
 
 
-@router.get("/", response_model=List[Category])
-def list_categories(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[Category]:
-    """
-    List all categories with pagination.
-
-    - **skip**: Number of records to skip (default: 0)
-    - **limit**: Maximum number of records to return (default: 100)
-    """
-    categories = session.exec(select(Category).offset(
-        skip).limit(limit).order_by(Category.name)).all()
-    return categories
-
-
-@router.get("/{category_code}", response_model=Category)
-def get_category(category_code: str, session: Session = Depends(get_db_session)) -> Category:
-    """
-    Get a category by its code.
-
-    - **category_code**: Unique category code
-    """
-    category = session.get(Category, category_code)
-    if not category:
-        raise HTTPException(status_code=404, detail="Category not found")
-    return category
-
-
-@router.put("/{category_code}", response_model=Category)
-def update_category(category_code: str, category_update: CategoryUpdate, session: Session = Depends(get_db_session)) -> Category:
+@router.put("/{code}", response_model=Category)
+def update(code: str, update: CategoryUpdate, session: Session = Depends(get_db_session)) -> Category:
     """
     Update an existing category.
 
-    - **category_code**: Unique category code to update
+    - **code**: Unique category code to update
     - Only provided fields are updated
     """
-    category = session.get(Category, category_code)
+    category = session.get(Category, code)
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
 
     # Validate that the parent category exists if provided
-    if category_update.parent is not None:
-        parent_category = session.get(Category, category_update.parent)
-        if not parent_category:
+    if update.parent is not None:
+        parent = session.get(Category, update.parent)
+        if not parent:
             raise HTTPException(
                 status_code=400,
-                detail=f"Parent category with code '{category_update.parent}' does not exist"
+                detail=f"Parent category with code '{update.parent}' does not exist"
             )
 
-    update_data = category_update.model_dump(exclude_unset=True)
+    update_data = update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(category, key, value)
 
@@ -114,20 +117,20 @@ def update_category(category_code: str, category_update: CategoryUpdate, session
     session.add(category)
     session.commit()
     session.refresh(category)
-    logger.info(f"Category updated: {category_code}")
+    logger.info(f"Category updated: {code}")
     return category
 
 
-@router.delete("/{category_code}", response_model=Category, status_code=200)
-def delete_category(category_code: str, session: Session = Depends(get_db_session)) -> Category:
+@router.delete("/{code}", response_model=Category, status_code=200)
+def delete(code: str, session: Session = Depends(get_db_session)) -> Category:
     """
     Delete a category (logical delete).
 
     Performs a logical delete by setting is_active=False instead of deleting the record.
 
-    - **category_code**: Unique category code to delete
+    - **code**: Unique category code to delete
     """
-    category = session.get(Category, category_code)
+    category = session.get(Category, code)
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
 
@@ -135,7 +138,7 @@ def delete_category(category_code: str, session: Session = Depends(get_db_sessio
     if not category.is_active:
         raise HTTPException(
             status_code=400,
-            detail=f"Category with code '{category_code}' is already inactive"
+            detail=f"Category with code '{code}' is already inactive"
         )
 
     # Logical delete: update is_active to False
@@ -145,5 +148,5 @@ def delete_category(category_code: str, session: Session = Depends(get_db_sessio
     session.add(category)
     session.commit()
     session.refresh(category)
-    logger.info(f"Category deactivated (logical delete): {category_code}")
+    logger.info(f"Category deactivated (logical delete): {code}")
     return category

@@ -12,12 +12,16 @@ interface Props {
   modules?: NavModule[];
   options?: NavOption[];
   brandTitle?: string;
+  currentPath?: string;
+  currentModuleName?: string;
 }
 
 const {
   modules = [],
   options = [],
   brandTitle = "SynapxIA",
+  currentPath = "",
+  currentModuleName = "",
 } = Astro.props as Props;
 ---
 
@@ -64,6 +68,8 @@ const {
               <MenuItem
                 module={module}
                 options={options.filter((option) => option.module === module.code)}
+                currentPath={currentPath}
+                currentModuleName={currentModuleName}
               />
             </li>
             ))

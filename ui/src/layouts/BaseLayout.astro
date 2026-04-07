@@ -15,6 +15,13 @@ const {
 
 // Fetch navigation data once in the layout
 const { primaryNav, itemsNav } = getNavigationData();
+
+// Get current path for sidebar active state
+const currentPath = Astro.url.pathname;
+
+// Extract current module from path (first segment after /)
+const pathSegments = currentPath.split('/').filter(Boolean);
+const currentModuleName = pathSegments[0] || "";
 ---
 
 <!doctype html>
@@ -27,7 +34,7 @@ const { primaryNav, itemsNav } = getNavigationData();
   <body class="bg-slate-50 text-slate-900 dark:bg-gray-950 dark:text-white">
     <ClientTranslations />
     <div class="min-h-screen flex">
-      <SideBar modules={primaryNav} options={itemsNav} brandTitle={title} />
+      <SideBar modules={primaryNav} options={itemsNav} brandTitle={title} currentPath={currentPath} currentModuleName={currentModuleName} />
 
       <div class="flex-1 flex flex-col min-h-screen">
         <Header title={title} subtitle="Dashboard" />

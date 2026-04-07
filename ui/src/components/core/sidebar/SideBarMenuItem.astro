@@ -4,10 +4,13 @@ import { NavModule, NavOption } from "../../types/nav";
 interface Props {
   module: NavModule;
   options?: NavOption[];
+  currentPath?: string;
+  currentModuleName?: string;
 }
 
-const { module, options = [] } = Astro.props as Props;
+const { module, options = [], currentPath = "", currentModuleName = "" } = Astro.props as Props;
 const hasChildren = options.length > 0;
+const isModuleActive = module.code.toLowerCase() === currentModuleName.toLowerCase();
 
 const icons = import.meta.glob("/src/images/icons/*.svg", {
   query: "?raw",
@@ -29,8 +32,9 @@ const chevronIcon = getIcon("chevron-down");
     <details
       class="menu-item-container group"
       aria-label={`${module.name} menu`}
+      open={isModuleActive}
     >
-      <summary class="menu-item group menu-item-inactive list-none cursor-pointer select-none p-2">
+      <summary class={`menu-item group list-none cursor-pointer select-none p-2 ${isModuleActive ? 'menu-item-active' : 'menu-item-inactive'}`}>
         <span class=" text-gray-800 bg-color-gray-100 dark:text-gray-100 flex items-center justify-center rounded-md mr-1">
           <span class="w-5 h-5 inline-block">
             <Fragment set:html={iconSvg} />
@@ -52,7 +56,7 @@ const chevronIcon = getIcon("chevron-down");
             <li>
               <a
                 href={option.path || "#"}
-                class="menu-dropdown-item group menu-dropdown-item-inactive"
+                class={`menu-dropdown-item group ${option.path === currentPath ? 'menu-dropdown-item-active' : 'menu-dropdown-item-inactive'}`}
               >
                 <span class="w-1 h-1 inline-block mr-2 bg-current rounded-full" />
                 <span data-i18n={`menu_options.${option.code.toLowerCase()}`}>
@@ -65,7 +69,11 @@ const chevronIcon = getIcon("chevron-down");
       </div>
     </details>
   ) : (
-    <a href={module.path || "#"} class="menu-item group menu-item-inactive p-2">
+    <a 
+      href={module.path || "#"} 
+      class={`menu-item group p-2 ${isModuleActive ? 'menu-item-active' : 'menu-item-inactive'}`}
+      role="button"
+    >
       <span class="w-5 h-5 inline-block mr-1">
         <Fragment set:html={iconSvg} />
       </span>

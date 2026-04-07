@@ -14,8 +14,37 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/assignments", tags=["assignments"])
 
 
+@router.get("/", response_model=List[Assignment])
+def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[Assignment]:
+    """
+    List all assignments with pagination.
+
+    - **skip**: Number of records to skip (default: 0)
+    - **limit**: Maximum number of records to return (default: 100)
+    """
+    assignments = session.exec(select(Assignment).where(Assignment.is_active == True)
+                               .offset(skip).limit(limit)
+                               .order_by(Assignment.created_at.desc())).all()
+    return assignments
+
+
+@router.get("/{id}", response_model=Assignment)
+def get(id: int, session: Session = Depends(get_db_session)) -> Assignment:
+    """
+    Get an assignment by its ID.
+
+    - **id**: Unique assignment ID
+    """
+    assignment = session.get(Assignment, id)
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    elif not assignment.is_active:
+        raise HTTPException(status_code=400, detail=f"Assignment with id '{id}' is inactive")
+    return assignment
+
+
 @router.post("/", response_model=Assignment, status_code=201)
-def create_assignment(assignment: AssignmentCreate, session: Session = Depends(get_db_session)) -> Assignment:
+def create(assignment: AssignmentCreate, session: Session = Depends(get_db_session)) -> Assignment:
     """
     Create a new assignment.
 
@@ -45,17 +74,17 @@ def create_assignment(assignment: AssignmentCreate, session: Session = Depends(g
         )
 
     # Si no se proporciona valid_from, usar ahora
-    assignment_data = assignment.model_dump()
-    if not assignment_data.get('valid_from'):
-        assignment_data['valid_from'] = datetime.utcnow()
+    data = assignment.model_dump()
+    if not data.get('valid_from'):
+        data['valid_from'] = datetime.utcnow()
 
     try:
-        db_assignment = Assignment.model_validate(assignment_data)
-        session.add(db_assignment)
+        db = Assignment.model_validate(data)
+        session.add(db)
         session.commit()
-        session.refresh(db_assignment)
-        logger.info(f"Assignment created: {db_assignment.id}")
-        return db_assignment
+        session.refresh(db)
+        logger.info(f"Assignment created: {db.id}")
+        return db
     except IntegrityError as e:
         session.rollback()
         logger.error(f"Integrity error creating assignment: {e}")
@@ -65,63 +94,37 @@ def create_assignment(assignment: AssignmentCreate, session: Session = Depends(g
         )
 
 
-@router.get("/", response_model=List[Assignment])
-def list_assignments(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[Assignment]:
-    """
-    List all assignments with pagination.
-
-    - **skip**: Number of records to skip (default: 0)
-    - **limit**: Maximum number of records to return (default: 100)
-    """
-    assignments = session.exec(select(Assignment).offset(skip).limit(
-        limit).order_by(Assignment.created_at.desc())).all()
-    return assignments
-
-
-@router.get("/{assignment_id}", response_model=Assignment)
-def get_assignment(assignment_id: int, session: Session = Depends(get_db_session)) -> Assignment:
-    """
-    Get an assignment by its ID.
-
-    - **assignment_id**: Unique assignment ID
-    """
-    assignment = session.get(Assignment, assignment_id)
-    if not assignment:
-        raise HTTPException(status_code=404, detail="Assignment not found")
-    return assignment
-
-
-@router.put("/{assignment_id}", response_model=Assignment)
-def update_assignment(assignment_id: int, assignment_update: AssignmentUpdate, session: Session = Depends(get_db_session)) -> Assignment:
+@router.put("/{id}", response_model=Assignment)
+def update(id: int, update: AssignmentUpdate, session: Session = Depends(get_db_session)) -> Assignment:
     """
     Update an existing assignment.
 
-    - **assignment_id**: Unique assignment ID to update
+    - **id**: Unique assignment ID to update
     - Only provided fields are updated
     """
-    assignment = session.get(Assignment, assignment_id)
+    assignment = session.get(Assignment, id)
     if not assignment:
         raise HTTPException(status_code=404, detail="Assignment not found")
 
     # Validate that the team exists if provided
-    if assignment_update.team is not None:
-        team = session.get(Team, assignment_update.team)
+    if update.team is not None:
+        team = session.get(Team, update.team)
         if not team:
             raise HTTPException(
                 status_code=400,
-                detail=f"Team with code '{assignment_update.team}' does not exist"
+                detail=f"Team with code '{update.team}' does not exist"
             )
 
     # Validate that the role exists if provided
-    if assignment_update.role is not None:
-        role = session.get(Role, assignment_update.role)
+    if update.role is not None:
+        role = session.get(Role, update.role)
         if not role:
             raise HTTPException(
                 status_code=400,
-                detail=f"Role with code '{assignment_update.role}' does not exist"
+                detail=f"Role with code '{update.role}' does not exist"
             )
 
-    update_data = assignment_update.model_dump(exclude_unset=True)
+    update_data = update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(assignment, key, value)
 
@@ -131,20 +134,20 @@ def update_assignment(assignment_id: int, assignment_update: AssignmentUpdate, s
     session.add(assignment)
     session.commit()
     session.refresh(assignment)
-    logger.info(f"Assignment updated: {assignment_id}")
+    logger.info(f"Assignment updated: {id}")
     return assignment
 
 
-@router.delete("/{assignment_id}", response_model=Assignment, status_code=200)
-def delete_assignment(assignment_id: int, session: Session = Depends(get_db_session)) -> Assignment:
+@router.delete("/{id}", response_model=Assignment, status_code=200)
+def delete(id: int, session: Session = Depends(get_db_session)) -> Assignment:
     """
     Delete an assignment (logical delete).
 
     Performs a logical delete by setting is_active=False instead of deleting the record.
 
-    - **assignment_id**: Unique assignment ID to delete
+    - **id**: Unique assignment ID to delete
     """
-    assignment = session.get(Assignment, assignment_id)
+    assignment = session.get(Assignment, id)
     if not assignment:
         raise HTTPException(status_code=404, detail="Assignment not found")
 
@@ -152,7 +155,7 @@ def delete_assignment(assignment_id: int, session: Session = Depends(get_db_sess
     if not assignment.is_active:
         raise HTTPException(
             status_code=400,
-            detail=f"Assignment with id '{assignment_id}' is already inactive"
+            detail=f"Assignment with id '{id}' is already inactive"
         )
 
     # Logical delete: update is_active to False
@@ -162,5 +165,5 @@ def delete_assignment(assignment_id: int, session: Session = Depends(get_db_sess
     session.add(assignment)
     session.commit()
     session.refresh(assignment)
-    logger.info(f"Assignment deactivated (logical delete): {assignment_id}")
+    logger.info(f"Assignment deactivated (logical delete): {id}")
     return assignment

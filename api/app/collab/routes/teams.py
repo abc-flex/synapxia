@@ -3,7 +3,7 @@ from typing import List
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Depends
-from sqlmodel import Session, select
+from sqlmodel import Session, select, SQLModel
 from sqlalchemy.exc import IntegrityError
 
 from ..internal.models import Team, TeamCreate, TeamUpdate
@@ -12,9 +12,59 @@ from ..internal.dependencies import get_db_session
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/teams", tags=["teams"])
 
+#Model for teamm select options
+class TeamBasic(SQLModel):
+    value: str
+    label: str
+
+@router.get("/select", response_model=List[TeamBasic])
+def get_list(session: Session = Depends(get_db_session)) -> List[TeamBasic]:
+    """
+    Returns a teams list optimized for selects with value (code) and label (name). 
+    Only active teams.
+    """
+    statement = (
+        select(
+            Team.code.label("value"), 
+            Team.name.label("label")
+        )
+        .where(Team.is_active == True)
+        .order_by(Team.name)
+    )
+    return session.exec(statement).all()
+
+
+@router.get("/", response_model=List[Team])
+def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[Team]:
+    """
+    List all teams actives with pagination (*Only active teams).
+
+    - **skip**: Number of records to skip (default: 0)
+    - **limit**: Maximum number of records to return (default: 100)
+    """
+    teams = session.exec(select(Team).where(Team.is_active == True)
+                         .offset(skip).limit(limit)
+                         .order_by(Team.name)).all()
+    return teams
+
+
+@router.get("/{code}", response_model=Team)
+def get(code: str, session: Session = Depends(get_db_session)) -> Team:
+    """
+    Get a team by its code.
+
+    - **code**: Unique team code
+    """
+    team = session.get(Team, code)
+    if not team:
+        raise HTTPException(status_code=404, detail="Team not found")
+    if not team.is_active:
+        raise HTTPException(status_code=400, detail=f"Team with code '{code}' is inactive")
+    return team
+
 
 @router.post("/", response_model=Team, status_code=201)
-def create_team(team: TeamCreate, session: Session = Depends(get_db_session)) -> Team:
+def create(team: TeamCreate, session: Session = Depends(get_db_session)) -> Team:
     """
     Create a new team.
 
@@ -27,20 +77,20 @@ def create_team(team: TeamCreate, session: Session = Depends(get_db_session)) ->
     - **is_active**: Active/inactive status (default: True)
     """
     # Validate that the code does not exist
-    existing_team = session.get(Team, team.code)
-    if existing_team:
+    existing = session.get(Team, team.code)
+    if existing:
         raise HTTPException(
             status_code=409,
             detail=f"Team with code '{team.code}' already exists"
         )
 
     try:
-        db_team = Team.model_validate(team)
-        session.add(db_team)
+        db = Team.model_validate(team)
+        session.add(db)
         session.commit()
-        session.refresh(db_team)
+        session.refresh(db)
         logger.info(f"Team created: {team.code}")
-        return db_team
+        return db
     except IntegrityError as e:
         session.rollback()
         logger.error(f"Integrity error creating team {team.code}: {e}")
@@ -50,41 +100,15 @@ def create_team(team: TeamCreate, session: Session = Depends(get_db_session)) ->
         )
 
 
-@router.get("/", response_model=List[Team])
-def list_teams(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[Team]:
-    """
-    List all teams with pagination.
-
-    - **skip**: Number of records to skip (default: 0)
-    - **limit**: Maximum number of records to return (default: 100)
-    """
-    teams = session.exec(select(Team).offset(
-        skip).limit(limit).order_by(Team.name)).all()
-    return teams
-
-
-@router.get("/{team_code}", response_model=Team)
-def get_team(team_code: str, session: Session = Depends(get_db_session)) -> Team:
-    """
-    Get a team by its code.
-
-    - **team_code**: Unique team code
-    """
-    team = session.get(Team, team_code)
-    if not team:
-        raise HTTPException(status_code=404, detail="Team not found")
-    return team
-
-
-@router.put("/{team_code}", response_model=Team)
-def update_team(team_code: str, team_update: TeamUpdate, session: Session = Depends(get_db_session)) -> Team:
+@router.put("/{code}", response_model=Team)
+def update(code: str, team_update: TeamUpdate, session: Session = Depends(get_db_session)) -> Team:
     """
     Update an existing team.
 
-    - **team_code**: Unique team code to update
+    - **code**: Unique team code to update
     - Only provided fields are updated
     """
-    team = session.get(Team, team_code)
+    team = session.get(Team, code)
     if not team:
         raise HTTPException(status_code=404, detail="Team not found")
 
@@ -98,20 +122,20 @@ def update_team(team_code: str, team_update: TeamUpdate, session: Session = Depe
     session.add(team)
     session.commit()
     session.refresh(team)
-    logger.info(f"Team updated: {team_code}")
+    logger.info(f"Team updated: {code}")
     return team
 
 
-@router.delete("/{team_code}", response_model=Team, status_code=200)
-def delete_team(team_code: str, session: Session = Depends(get_db_session)) -> Team:
+@router.delete("/{code}", response_model=Team, status_code=200)
+def delete(code: str, session: Session = Depends(get_db_session)) -> Team:
     """
     Delete a team (logical delete).
 
     Performs a logical delete by setting is_active=False instead of deleting the record.
 
-    - **team_code**: Unique team code to delete
+    - **code**: Unique team code to delete
     """
-    team = session.get(Team, team_code)
+    team = session.get(Team, code)
     if not team:
         raise HTTPException(status_code=404, detail="Team not found")
 
@@ -119,7 +143,7 @@ def delete_team(team_code: str, session: Session = Depends(get_db_session)) -> T
     if not team.is_active:
         raise HTTPException(
             status_code=400,
-            detail=f"Team with code '{team_code}' is already inactive"
+            detail=f"Team with code '{code}' is already inactive"
         )
 
     # Logical delete: update is_active to False
@@ -129,5 +153,5 @@ def delete_team(team_code: str, session: Session = Depends(get_db_session)) -> T
     session.add(team)
     session.commit()
     session.refresh(team)
-    logger.info(f"Team deactivated (logical delete): {team_code}")
+    logger.info(f"Team deactivated (logical delete): {code}")
     return team

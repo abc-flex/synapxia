@@ -13,8 +13,37 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/metrics", tags=["metrics"])
 
 
+@router.get("/", response_model=List[Metric])
+def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[Metric]:
+    """
+    List all metrics with pagination.
+
+    - **skip**: Number of records to skip (default: 0)
+    - **limit**: Maximum number of records to return (default: 100)
+    """
+    metrics = session.exec(select(Metric).where(Metric.is_active == True)
+                           .offset(skip).limit(limit)
+                           .order_by(Metric.measured_at.desc())).all()
+    return metrics
+
+
+@router.get("/{id}", response_model=Metric)
+def get(id: int, session: Session = Depends(get_db_session)) -> Metric:
+    """
+    Get a metric by its ID.
+
+    - **id**: Unique metric ID
+    """
+    metric = session.get(Metric, id)
+    if not metric:
+        raise HTTPException(status_code=404, detail="Metric not found")
+    elif not metric.is_active:
+        raise HTTPException(status_code=400, detail=f"Metric with id '{id}' is inactive")
+    return metric
+
+
 @router.post("/", response_model=Metric, status_code=201)
-def create_metric(metric: MetricCreate, session: Session = Depends(get_db_session)) -> Metric:
+def create(metric: MetricCreate, session: Session = Depends(get_db_session)) -> Metric:
     """
     Create a new metric.
 
@@ -42,17 +71,17 @@ def create_metric(metric: MetricCreate, session: Session = Depends(get_db_sessio
         )
 
     # Si no se proporciona measured_at, usar ahora
-    metric_data = metric.model_dump()
-    if not metric_data.get('measured_at'):
-        metric_data['measured_at'] = datetime.utcnow()
+    data = metric.model_dump()
+    if not data.get('measured_at'):
+        data['measured_at'] = datetime.utcnow()
 
     try:
-        db_metric = Metric.model_validate(metric_data)
-        session.add(db_metric)
+        db = Metric.model_validate(data)
+        session.add(db)
         session.commit()
-        session.refresh(db_metric)
-        logger.info(f"Metric created: {db_metric.id}")
-        return db_metric
+        session.refresh(db)
+        logger.info(f"Metric created: {db.id}")
+        return db
     except IntegrityError as e:
         session.rollback()
         logger.error(f"Integrity error creating metric: {e}")
@@ -62,45 +91,19 @@ def create_metric(metric: MetricCreate, session: Session = Depends(get_db_sessio
         )
 
 
-@router.get("/", response_model=List[Metric])
-def list_metrics(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[Metric]:
-    """
-    List all metrics with pagination.
-
-    - **skip**: Number of records to skip (default: 0)
-    - **limit**: Maximum number of records to return (default: 100)
-    """
-    metrics = session.exec(select(Metric).offset(skip).limit(
-        limit).order_by(Metric.measured_at.desc())).all()
-    return metrics
-
-
-@router.get("/{metric_id}", response_model=Metric)
-def get_metric(metric_id: int, session: Session = Depends(get_db_session)) -> Metric:
-    """
-    Get a metric by its ID.
-
-    - **metric_id**: Unique metric ID
-    """
-    metric = session.get(Metric, metric_id)
-    if not metric:
-        raise HTTPException(status_code=404, detail="Metric not found")
-    return metric
-
-
-@router.put("/{metric_id}", response_model=Metric)
-def update_metric(metric_id: int, metric_update: MetricUpdate, session: Session = Depends(get_db_session)) -> Metric:
+@router.put("/{id}", response_model=Metric)
+def update(id: int, update: MetricUpdate, session: Session = Depends(get_db_session)) -> Metric:
     """
     Update an existing metric.
 
-    - **metric_id**: Unique metric ID to update
+    - **id**: Unique metric ID to update
     - Only provided fields are updated
     """
-    metric = session.get(Metric, metric_id)
+    metric = session.get(Metric, id)
     if not metric:
         raise HTTPException(status_code=404, detail="Metric not found")
 
-    update_data = metric_update.model_dump(exclude_unset=True)
+    update_data = update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(metric, key, value)
 
@@ -110,20 +113,20 @@ def update_metric(metric_id: int, metric_update: MetricUpdate, session: Session 
     session.add(metric)
     session.commit()
     session.refresh(metric)
-    logger.info(f"Metric updated: {metric_id}")
+    logger.info(f"Metric updated: {id}")
     return metric
 
 
-@router.delete("/{metric_id}", response_model=Metric, status_code=200)
-def delete_metric(metric_id: int, session: Session = Depends(get_db_session)) -> Metric:
+@router.delete("/{id}", response_model=Metric, status_code=200)
+def delete(id: int, session: Session = Depends(get_db_session)) -> Metric:
     """
     Delete a metric (logical delete).
 
     Performs a logical delete by setting is_active=False instead of deleting the record.
 
-    - **metric_id**: Unique metric ID to delete
+    - **id**: Unique metric ID to delete
     """
-    metric = session.get(Metric, metric_id)
+    metric = session.get(Metric, id)
     if not metric:
         raise HTTPException(status_code=404, detail="Metric not found")
 
@@ -131,7 +134,7 @@ def delete_metric(metric_id: int, session: Session = Depends(get_db_session)) ->
     if not metric.is_active:
         raise HTTPException(
             status_code=400,
-            detail=f"Metric with id '{metric_id}' is already inactive"
+            detail=f"Metric with id '{id}' is already inactive"
         )
 
     # Logical delete: update is_active to False
@@ -141,5 +144,5 @@ def delete_metric(metric_id: int, session: Session = Depends(get_db_session)) ->
     session.add(metric)
     session.commit()
     session.refresh(metric)
-    logger.info(f"Metric deactivated (logical delete): {metric_id}")
+    logger.info(f"Metric deactivated (logical delete): {id}")
     return metric

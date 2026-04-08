@@ -3,9 +3,12 @@ import { ui } from "@/i18n";
 export function initAdvancedTable(
     tableId: string,
     data: Record<string, any>[],
-    columns: { key: string; label: string }[],
+    allColumns: { key: string; label: string; visible?: boolean }[],
+    visibleColumns: { key: string; label: string; visible?: boolean }[] = [],
     columnFilter: string | null = null
 ) {
+    // Si visibleColumns no se pasa o está vacío, usar allColumns como fallback
+    const columns = visibleColumns.length > 0 ? visibleColumns : allColumns;
 
     let currentPage = 1;
     let perPage = 10;
@@ -85,8 +88,11 @@ export function initAdvancedTable(
         const searchTerm = searchInput?.value.toLowerCase() ?? "";
         const filterValue = filterSelect?.value ?? "";
 
-        tbody.querySelectorAll("tr").forEach(row => {
+        const rows = Array.from(tbody.querySelectorAll("tr")) as HTMLTableRowElement[];
+        
+        rows.forEach((row, rowIndex) => {
             let visible = true;
+            const rowData = data[rowIndex];
 
             // 🔍 Search global
             if (searchTerm) {
@@ -94,14 +100,10 @@ export function initAdvancedTable(
                 visible = visible && text.includes(searchTerm);
             }
 
-            // 🏷️ Filtro por columna
-            if (filterValue && filterKey) {
-                const cellIndex = getColumnIndex(filterKey);
-                if (cellIndex !== -1) {
-                    const cellText =
-                        row.children[cellIndex]?.textContent ?? "";
-                    visible = visible && cellText === filterValue;
-                }
+            // 🏷️ Filtro por columna (búsqueda en los datos, no en el DOM)
+            if (filterValue && filterKey && rowData) {
+                const cellValue = String(rowData[filterKey] ?? "");
+                visible = visible && cellValue === filterValue;
             }
 
             row.classList.toggle("hidden-by-filter", !visible);
@@ -273,20 +275,51 @@ export function initAdvancedTable(
                 pages.appendChild(btn);
             }
         }
+
+        // 🔹 Update prev/next button states
+        const prevBtn = document.getElementById(`${tableId}-prev`);
+        const nextBtn = document.getElementById(`${tableId}-next`);
+
+        if (prevBtn) {
+            if (currentPage === 1) {
+                prevBtn.disabled = true;
+                prevBtn.classList.add("opacity-50", "cursor-not-allowed");
+            } else {
+                prevBtn.disabled = false;
+                prevBtn.classList.remove("opacity-50", "cursor-not-allowed");
+            }
+        }
+
+        if (nextBtn) {
+            if (currentPage === totalPages) {
+                nextBtn.disabled = true;
+                nextBtn.classList.add("opacity-50", "cursor-not-allowed");
+            } else {
+                nextBtn.disabled = false;
+                nextBtn.classList.remove("opacity-50", "cursor-not-allowed");
+            }
+        }
     }
 
     document
         .getElementById(`${tableId}-prev`)
         ?.addEventListener("click", () => {
-            currentPage--;
-            renderPagination();
+            if (currentPage > 1) {
+                currentPage--;
+                renderPagination();
+            }
         });
 
     document
         .getElementById(`${tableId}-next`)
         ?.addEventListener("click", () => {
-            currentPage++;
-            renderPagination();
+            const totalPages = Math.ceil(
+                getVisibleRows().length / perPage
+            ) || 1;
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderPagination();
+            }
         });
 
     const perPageSelect = document.getElementById(

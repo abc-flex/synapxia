@@ -23,6 +23,9 @@ const {
   detailPage = null,
   mdItem = null,
 } = Astro.props;
+
+// Filtrar columnas visibles (ocultar si visible: false)
+const visibleColumns = columns.filter((col) => col.visible !== false);
 ---
 
 <div class="space-y-2">
@@ -172,7 +175,7 @@ const {
       >
         <tr>
           {
-            columns.map((col) => (
+            visibleColumns.map((col) => (
               <th class="px-2 py-1 font-semibold tracking-wide" data-i18n={col.label} data-column-key={col.key}>{col.label}</th>
             ))
           }
@@ -187,7 +190,7 @@ const {
         {
           data.map((row) => (
             <tr class="border-b">
-              {columns.map((col) => (
+              {visibleColumns.map((col) => (
                 <td class="px-2 py-1">{row[col.key]}</td>
               ))}
               <td class="actions-cell px-2 py-1 text-right space-x-0">
@@ -256,10 +259,10 @@ const {
     </select>
 
     <!-- Controls -->
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-1">
       <button
         id={`${tableId}-prev`}
-        class="px-1 py-1 text-sm border rounded hover:bg-gray-100"
+        class="h-8 w-8 px-0 py-0 text-sm border rounded flex items-center justify-center hover:bg-gray-100"
       >
         <span class="w-5 h-5 inline-block">
           <Fragment set:html={leftSvg} />
@@ -268,7 +271,7 @@ const {
       <div id={`${tableId}-pages`} class="flex items-center gap-1"></div>
       <button
         id={`${tableId}-next`}
-        class="px-1 py-1 text-sm border rounded hover:bg-gray-100"
+        class="h-8 w-8 px-0 py-0 text-sm border rounded flex items-center justify-center hover:bg-gray-100"
       >
         <span class="w-5 h-5 inline-block">
           <Fragment set:html={rightSvg} />
@@ -299,7 +302,7 @@ const {
 
 </div>
 
-<script type="module" define:vars={{ tableId, data, columns, columnFilter }}>
+<script type="module" define:vars={{ tableId, data, columns, visibleColumns, columnFilter }}>
   import { initAdvancedTable } from "/src/components/table/advancedTable";
-  initAdvancedTable(tableId, data, columns, columnFilter);
+  initAdvancedTable(tableId, data, columns, visibleColumns, columnFilter);
 </script>

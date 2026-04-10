@@ -33,6 +33,7 @@ const chevronIcon = getIcon("chevron-down");
       class="menu-item-container group"
       aria-label={`${module.name} menu`}
       open={isModuleActive}
+      data-menu-item
     >
       <summary class={`menu-item group list-none cursor-pointer select-none p-2 ${isModuleActive ? 'menu-item-active' : 'menu-item-inactive'}`}>
         <span class=" text-gray-800 bg-color-gray-100 dark:text-gray-100 flex items-center justify-center rounded-md mr-1">
@@ -83,3 +84,25 @@ const chevronIcon = getIcon("chevron-down");
     </a>
   )
 }
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const menuItems = document.querySelectorAll('[data-menu-item]');
+    
+    menuItems.forEach((menu) => {
+      menu.addEventListener('toggle', (event) => {
+        if (event.target.open) {
+          // Cerrar todos los demás menus hermanos
+          const parentContainer = event.target.closest('[data-sidebar-menu], .sidebar, nav') || event.target.parentElement;
+          const allMenus = parentContainer?.querySelectorAll('[data-menu-item]') || document.querySelectorAll('[data-menu-item]');
+          
+          allMenus.forEach((otherMenu) => {
+            if (otherMenu !== event.target && otherMenu.open) {
+              otherMenu.open = false;
+            }
+          });
+        }
+      });
+    });
+  });
+</script>

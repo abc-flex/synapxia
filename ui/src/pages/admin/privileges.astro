@@ -5,9 +5,9 @@ import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
 import { getPrivileges } from "@/lib/privileges";
-import { getRoles } from "@/lib/roles";
-import { getModules } from "@/lib/modules";
-import { getOptions } from "@/lib/options";
+import { getRolesSelect } from "@/lib/roles";
+import { getModulesSelect } from "@/lib/modules";
+import { getOptionsSelect } from "@/lib/options";
 
 
 // Fetch privileges from API
@@ -27,7 +27,7 @@ try {
 // Fetch roles from API for select field
 let roles: any[] = [];
 try {
-  const apiRoles = await getRoles();
+  const apiRoles = await getRolesSelect();
   roles = apiRoles;
 } catch (error) {
   console.error('Failed to fetch roles:', error);
@@ -39,7 +39,7 @@ try {
 // Fetch modules from API for select field
 let modules: any[] = [];
 try {
-  const apiModules = await getModules();
+  const apiModules = await getModulesSelect();
   modules = apiModules;
 } catch (error) {
   console.error('Failed to fetch modules:', error);
@@ -51,7 +51,7 @@ try {
 // Fetch options from API for select field
 let options: any[] = [];
 try {
-  const apiOptions = await getOptions();
+  const apiOptions = await getOptionsSelect();
   options = apiOptions;
 } catch (error) {
   console.error('Failed to fetch options:', error);
@@ -61,28 +61,34 @@ try {
 }
 
 const columns = [
-  { key: "role", label: "privilege_modal.role", visible: false},
-  { key: "module", label: "privilege_modal.module", visible: true },
-  { key: "option", label: "privilege_modal.option", visible: true },
-  { key: "can_edit", label: "privilege_modal.can_edit", visible: true },
+  { key: "role", label: "privilege_modal.role", visible: false },
+  { key: "role_name", label: "privilege_modal.role" },
+  { key: "module", label: "privilege_modal.module", visible: false },
+  { key: "module_name", label: "privilege_modal.module" },
+  { key: "option", label: "privilege_modal.option", visible: false },
+  { key: "option_name", label: "privilege_modal.option" },
+  { key: "can_edit", label: "privilege_modal.can_edit" },
 ];
 const data = privileges.map((item) => ({
   id: `${item.role}::${item.module}::${item.option}`,
   role: item.role,
+  role_name: roles.find((r) => String(r.value) === String(item.role))?.label || item.role,
   module: item.module,
+  module_name: modules.find((m) => String(m.value) === String(item.module))?.label || item.module,
   option: item.option,
+  option_name: options.find((o) => String(o.value) === String(item.option))?.label || item.option,
   can_edit: item.can_edit,
   is_active: item.is_active,
   created_at: item.created_at,
   updated_at: item.updated_at,
 }));
-const tableFields = [
+const formFields = [
   { key: "role", label: "privilege_modal.role", type: "select" as const, options: roles, pk: true, required: true },
   { key: "module", label: "privilege_modal.module", type: "select" as const, options: modules, pk: true, required: true },
   { key: "option", label: "privilege_modal.option", type: "select" as const, options: options, pk: true, required: true },
   { key: "can_edit", label: "privilege_modal.can_edit", type: "checkbox" as const },
 ];
-const fieldKeys = ["id", ...tableFields.map((f) => f.key)];
+const fieldKeys = ["id", ...formFields.map((f) => f.key)];
 ---
 
 <BaseLayout>
@@ -105,21 +111,21 @@ const fieldKeys = ["id", ...tableFields.map((f) => f.key)];
       mode="create"
       modalId="privilege-create-modal"
       entityName="Privilege"
-      fields={tableFields}
+      fields={formFields}
       showTrigger={false}
     />
     <CrudModal
       mode="edit"
       modalId="privilege-edit-modal"
       entityName="Privilege"
-      fields={tableFields}
+      fields={formFields}
       showTrigger={false}
     />
     <CrudModal
       mode="delete"
       modalId="privilege-delete-modal"
       entityName="Privilege"
-      fields={tableFields}
+      fields={formFields}
       showTrigger={false}
     />
 

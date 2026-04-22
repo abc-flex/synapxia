@@ -6,6 +6,12 @@
 import { apiGet, apiPost, apiPut, apiDelete, buildQueryString } from './api';
 import type { Option, OptionCreate, OptionUpdate } from '../types/api';
 
+// Interface for select options with value and label
+export interface OptionSelectOption {
+  value: string;
+  label: string;
+}
+
 /**
  * Fetch all options with optional pagination and filtering
  * @param module - Optional module code to filter by
@@ -20,6 +26,15 @@ export async function getOptions(module?: string, skip: number = 0, limit: numbe
   }
   const queryString = buildQueryString(params);
   return apiGet<Option[]>(`/api/options${queryString}`);
+}
+
+/**
+ * Fetch all options optimized for select fields
+ * Returns only code and name of active options
+ * @returns Promise with array of OptionSelectOption objects
+ */
+export async function getOptionsSelect(): Promise<OptionSelectOption[]> {
+  return apiGet<OptionSelectOption[]>(`/api/options/select`);
 }
 
 /**

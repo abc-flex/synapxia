@@ -6,6 +6,12 @@
 import { apiGet, apiPost, apiPut, apiDelete, buildQueryString } from './api';
 import type { Module, ModuleCreate, ModuleUpdate } from '../types/api';
 
+// Interface for select options with value and label
+export interface ModuleSelectOption {
+  value: string;
+  label: string;
+}
+
 /**
  * Fetch all modules with optional pagination
  * @param skip - Number of records to skip (default: 0)
@@ -15,6 +21,15 @@ import type { Module, ModuleCreate, ModuleUpdate } from '../types/api';
 export async function getModules(skip: number = 0, limit: number = 100): Promise<Module[]> {
   const queryString = buildQueryString({ skip, limit });
   return apiGet<Module[]>(`/api/modules${queryString}`);
+}
+
+/**
+ * Fetch all modules optimized for select fields
+ * Returns only code and name of active modules
+ * @returns Promise with array of ModuleSelectOption objects
+ */
+export async function getModulesSelect(): Promise<ModuleSelectOption[]> {
+  return apiGet<ModuleSelectOption[]>(`/api/modules/select`);
 }
 
 /**

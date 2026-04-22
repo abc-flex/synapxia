@@ -4,7 +4,7 @@
  */
 
 import { apiGet, apiPost, apiPut, apiDelete, buildQueryString } from './api';
-import type { Team } from '../types/team';
+import type { Team, TeamCreate, TeamUpdate } from '../types/api';
 
 // Interface for select options with value and label
 export interface TeamSelectOption {
@@ -40,28 +40,27 @@ export async function getTeamsSelect(): Promise<TeamSelectOption[]> {
 export async function getTeam(code: string): Promise<Team> {
   return apiGet<Team>(`/api/teams/${encodeURIComponent(code)}`);
 }
-
 /**
  * Create a new team
- * @param teamData - Team data to create
+ * @param data - Team data to create
  * @returns Promise with created team data
  */
-export async function createTeam(teamData: Partial<Team>): Promise<Team> {
-  return apiPost<Team, Partial<Team>>('/api/teams', teamData);
+export async function createTeam(data: TeamCreate): Promise<Team> {
+  return apiPost<Team, TeamCreate>('/api/teams/', data);
 }
 
 /**
  * Update an existing team
  * @param code - Team code to update
- * @param teamData - Updated team data
+ * @param data - Updated team data (partial)
  * @returns Promise with updated team data
  */
-export async function updateTeam(code: string, teamData: Partial<Team>): Promise<Team> {
-  return apiPut<Team, Partial<Team>>(`/api/teams/${encodeURIComponent(code)}`, teamData);
+export async function updateTeam(code: string, data: TeamUpdate): Promise<Team> {
+  return apiPut<Team, TeamUpdate>(`/api/teams/${encodeURIComponent(code)}`, data);
 }
 
 /**
- * Delete a team
+ * Logically delete a team (sets is_active to false)
  * @param code - Team code to delete
  * @returns Promise with deletion result
  */

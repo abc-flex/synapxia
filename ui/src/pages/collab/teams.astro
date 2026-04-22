@@ -34,9 +34,9 @@ try {
 }
 
 const columns = [
-  { key: "code", label: "Code", visible: true },
-  { key: "name", label: "Name", visible: true },
-  { key: "lead_name", label: "Lead Name", visible: true },
+  { key: "code", label: "team_modal.code", visible: true },
+  { key: "name", label: "team_modal.name", visible: true },
+  { key: "lead_name", label: "team_modal.lead", visible: true },
 ];
 const data = teams.map((item) => ({
   id: item.code,
@@ -49,21 +49,21 @@ const data = teams.map((item) => ({
   kanban_board_url: item.kanban_board_url,
 }));
 
-const teamFields = [
-  { key: "code", label: "Code", required: true, placeholder: "" },
-  { key: "name", label: "Name", required: true, placeholder: "" },
-  { key: "lead", label: "Lead", type: "select", options: users, required: false },
+const formFields = [  
+  { key: "code", label: "team_modal.code", required: true, placeholder: "" },
+  { key: "name", label: "team_modal.name", required: true, placeholder: "" },
+  { key: "lead", label: "team_modal.lead", type: "select", options: users, required: false },
   {
     key: "description",
-    label: "Description",
+    label: "team_modal.description",
     type: "textarea" as const,
     required: false,
     placeholder: ""
   },
-  { key: "chat_channel_url", label: "Chat Channel URL", type: "text", required: false },
-  { key: "kanban_board_url", label: "Kanban Board URL", type: "text", required: false },
+  { key: "chat_channel_url", label: "team_modal.chat_channel_url", type: "text", required: false },
+  { key: "kanban_board_url", label: "team_modal.kanban_board_url", type: "text", required: false },
 ];
-const fieldKeys = teamFields.map((f) => f.key);
+const fieldKeys = formFields.map((f) => f.key);
 ---
 
 <BaseLayout>
@@ -83,21 +83,21 @@ const fieldKeys = teamFields.map((f) => f.key);
       mode="create"
       modalId="team-create-modal"
       entityName="Team"
-      fields={teamFields}
+      fields={formFields}
       showTrigger={false}
     />
     <CrudModal
       mode="edit"
       modalId="team-edit-modal"
       entityName="Team"
-      fields={teamFields}
+      fields={formFields}
       showTrigger={false}
     />
     <CrudModal
       mode="delete"
       modalId="team-delete-modal"
       entityName="Team"
-      fields={teamFields}
+      fields={formFields}
       showTrigger={false}
     />
 

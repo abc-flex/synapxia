@@ -5,7 +5,7 @@ import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
 import { getLists } from "@/lib/lists";
-import { getModules } from "@/lib/modules";
+import { getModulesSelect } from "@/lib/modules";
 import { getListItemsbyList } from "@/lib/list_items";
 
 // Fetch lists from API
@@ -21,10 +21,10 @@ try {
   lists = [];
 }
 
-// Fetch modules from API for select field
+// Fetch modules for filter dropdown and form select
 let modules: any[] = [];
 try {
-  const apiModules = await getModules();
+  const apiModules = await getModulesSelect();
   modules = apiModules;
 } catch (error) {
   console.error('Failed to fetch modules:', error);
@@ -39,23 +39,27 @@ types = await getListItemsbyList('LIST_TYPE');
 
 
 const columns = [
-  { key: "module", label: "list_modal.module", visible: true },
   { key: "code", label: "list_modal.code", visible: true },
   { key: "name", label: "list_modal.name", visible: true },
-  { key: "type", label: "list_modal.type", visible: true },
+  { key: "type", label: "list_modal.type", visible: false },
+  { key: "type_label", label: "list_modal.type", visible: true },
+  { key: "module", label: "list_modal.module", visible: false },
+  { key: "module_name", label: "list_modal.module" },
 ];
 const data = lists.map((item) => ({
   id: item.code,
   module: item.module,
+  module_name: modules.find((m) => String(m.value) === String(item.module))?.label || item.module,
   code: item.code,
   name: item.name,
   type: item.type,  //references List_items where list='LIST_TYPE'
+  type_label: types.find((t) => String(t.value) === String(item.type))?.label || item.type,
   description: item.description,
   is_active: item.is_active,
   created_at: item.created_at,
   updated_at: item.updated_at,
 }));
-const tableFields= [
+const formFields= [
   { key: "code", label: "list_modal.code", pk: true, required: true, placeholder: "e.g. STATUS" },
   { key: "name", label: "list_modal.name", required: true, placeholder: "e.g. List statuses for..." },
   { key: "type", label: "list_modal.type", type: "select" as const, options: types, required: true },
@@ -67,7 +71,7 @@ const tableFields= [
     placeholder: "Optional details of list",
   },
 ];
-const fieldKeys = tableFields.map((f) => f.key);
+const fieldKeys = formFields.map((f) => f.key);
 ---
 
 <BaseLayout>
@@ -88,21 +92,21 @@ const fieldKeys = tableFields.map((f) => f.key);
       mode="create"
       modalId="list-create-modal"
       entityName="List"
-      fields={tableFields}
+      fields={formFields}
       showTrigger={false}
     />
     <CrudModal
       mode="edit"
       modalId="list-edit-modal"
       entityName="List"
-      fields={tableFields}
+      fields={formFields}
       showTrigger={false}
     />
     <CrudModal
       mode="delete"
       modalId="list-delete-modal"
       entityName="List"
-      fields={tableFields}
+      fields={formFields}
       showTrigger={false}
     />
 

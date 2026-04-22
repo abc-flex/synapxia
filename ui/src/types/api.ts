@@ -417,3 +417,74 @@ export interface MetricUpdate {
   measured_at?: string;
   is_active?: boolean;
 }
+
+// Team types
+export interface Team {
+  code: string;
+  name: string;
+  description?: string;
+  lead?: number;
+  chat_channel_url?: string;
+  kanban_board_url?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface TeamCreate {
+  code: string;
+  name: string;
+  description?: string;
+  lead?: number;
+  chat_channel_url?: string;
+  kanban_board_url?: string;
+  is_active?: boolean;
+}
+
+export interface TeamUpdate {
+  name?: string;
+  description?: string;
+  lead?: number;
+  chat_channel_url?: string;
+  kanban_board_url?: string;
+  is_active?: boolean;
+}
+
+// Assignment types
+export interface Assignment {
+  id?: number;
+  team: string;
+  user_id: number;
+  role: string;
+  observation?: string;
+  valid_from?: string;
+  valid_to?: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface AssignmentCreate {
+  id?: number;
+  team: string;
+  user_id: number;
+  role: string;
+  observation?: string;
+  valid_from?: string;
+  valid_to?: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface AssignmentUpdate {
+  team: string;
+  user_id: number;
+  role: string;
+  observation?: string;
+  valid_from?: string;
+  valid_to?: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}

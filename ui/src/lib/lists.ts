@@ -6,6 +6,12 @@
 import { apiGet, apiPost, apiPut, apiDelete, buildQueryString } from './api';
 import type { List, ListCreate, ListUpdate } from '../types/api';
 
+// Interface for select options with value and label
+export interface ListSelectOption {
+  value: string;
+  label: string;
+}
+
 /**
  * Fetch all lists with optional pagination
  * @param skip - Number of records to skip (default: 0)
@@ -15,6 +21,15 @@ import type { List, ListCreate, ListUpdate } from '../types/api';
 export async function getLists(skip: number = 0, limit: number = 100): Promise<List[]> {
   const queryString = buildQueryString({ skip, limit });
   return apiGet<List[]>(`/api/lists${queryString}`);
+}
+
+/**
+ * Fetch all lists optimized for select fields
+ * Returns only code and name of active lists
+ * @returns Promise with array of ListSelectOption objects
+ */
+export async function getListsSelect(): Promise<ListSelectOption[]> {
+  return apiGet<ListSelectOption[]>(`/api/lists/select`);
 }
 
 /**

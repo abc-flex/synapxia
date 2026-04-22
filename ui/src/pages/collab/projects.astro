@@ -5,7 +5,7 @@ import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
 import { getProjects } from "@/lib/projects";
-import { getTeams } from "@/lib/teams";
+import { getTeamsSelect } from "@/lib/teams";
 import { getListItemsbyList } from "@/lib/list_items";
 
 // Fetch projects from API
@@ -24,9 +24,12 @@ try {
 // Fetch teams for filter dropdown and form select
 let teams: any[] = [];
 try {
-  teams = await getTeams();
+  const apiTeams = await getTeamsSelect();
+  teams = apiTeams;
 } catch (error) {
-  console.error("Failed to fetch teams:", error);
+  console.error('Failed to fetch teams:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch teams from API';
+  // Fallback to empty array to still render the page
   teams = [];
 }
 
@@ -42,29 +45,32 @@ try {
 const columns = [
   { key: "code", label: "project_modal.code" },
   { key: "name", label: "project_modal.name" },
-  { key: "team", label: "project_modal.team" },
-  { key: "status", label: "project_modal.status" },
+  { key: "team", label: "project_modal.team", visible: false },
+  { key: "team_name", label: "project_modal.team" },
+  { key: "status_label", label: "project_modal.status" },
   { key: "start_date", label: "project_modal.start_date" },
   { key: "end_date", label: "project_modal.end_date" },
 ];
 
-const data = projects.map((project) => ({
-  id: project.code,
-  code: project.code,
-  name: project.name,
-  team: project.team,
-  status: project.status,
-  start_date: project.start_date,
-  end_date: project.end_date,
-  description: project.description,
-  repo_url: project.repo_url,
+const data = projects.map((item) => ({
+  id: item.code,
+  code: item.code,
+  name: item.name,
+  team: item.team,
+  status: item.status,
+  team_name: teams.find((t) => String(t.value) === String(item.team))?.label || item.team,
+  status_label: projectStatuses.find((s) => String(s.value) === String(item.status))?.label || item.status,
+  start_date: item.start_date ? new Date(item.start_date).toISOString().split('T')[0] : null,
+  end_date: item.end_date ? new Date(item.end_date).toISOString().split('T')[0] : null,
+  description: item.description,
+  repo_url: item.repo_url,
 }));
 
-const tableFields = [
+const formFields = [
   { key: "code", label: "project_modal.code", pk: true, required: true, placeholder: "e.g. BE-001" },
   { key: "name", label: "project_modal.name", required: true, placeholder: "e.g. Backend Auth Refactor" },
-  { key: "team", label: "project_modal.team", type: "select" as const, options: teams, required: false },
   { key: "status", label: "project_modal.status", type: "select" as const, options: projectStatuses, required: true },
+  { key: "team", label: "project_modal.team", type: "select" as const, options: teams, required: false },
   {
     key: "description",
     label: "project_modal.description",
@@ -76,7 +82,7 @@ const tableFields = [
   { key: "start_date", label: "project_modal.start_date", type: "text", required: false, placeholder: "YYYY-MM-DD" },
   { key: "end_date", label: "project_modal.end_date", type: "text", required: false, placeholder: "YYYY-MM-DD" },
 ];
-const fieldKeys = tableFields.map((f) => f.key);
+const fieldKeys = formFields.map((f) => f.key);
 ---
 
 <BaseLayout>
@@ -97,21 +103,21 @@ const fieldKeys = tableFields.map((f) => f.key);
       mode="create"
       modalId="project-create-modal"
       entityName="Project"
-      fields={tableFields}
+      fields={formFields}
       showTrigger={false}
     />
     <CrudModal
       mode="edit"
       modalId="project-edit-modal"
       entityName="Project"
-      fields={tableFields}
+      fields={formFields}
       showTrigger={false}
     />
     <CrudModal
       mode="delete"
       modalId="project-delete-modal"
       entityName="Project"
-      fields={tableFields}
+      fields={formFields}
       showTrigger={false}
     />
 
@@ -161,7 +167,6 @@ const fieldKeys = tableFields.map((f) => f.key);
 
       document.addEventListener("crud-submit", async (e) => {
         const { mode, data } = e.detail;
-
         try {
           if (mode === "create") {
             await createProject({

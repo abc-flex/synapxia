@@ -10,6 +10,7 @@ import csvSvg from "@/images/icons/file-csv.svg?raw";
 import jsonSvg from "@/images/icons/file-json.svg?raw";
 import txtSvg from "@/images/icons/file-txt.svg?raw";
 import sqlSvg from "@/images/icons/file-sql.svg?raw";
+import checkSvg from "@/images/icons/check.svg?raw";
 
 const {
   columns = [],
@@ -191,7 +192,15 @@ const visibleColumns = columns.filter((col) => col.visible !== false);
           data.map((row) => (
             <tr class="border-b">
               {visibleColumns.map((col) => (
-                <td class="px-2 py-1">{row[col.key]}</td>
+                <td class="px-2 py-1">
+                  {row[col.key] === true || row[col.key] === "true" ? (
+                    <span class="w-5 h-5 inline-block text-green-600">
+                      <Fragment set:html={checkSvg} />
+                    </span>
+                  ) : (
+                    row[col.key]
+                  )}
+                </td>
               ))}
               <td class="actions-cell px-2 py-1 text-right space-x-0">
                 <div class="actions-wrapper">

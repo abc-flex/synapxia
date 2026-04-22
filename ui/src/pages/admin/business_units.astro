@@ -27,8 +27,10 @@ types = await getListItemsbyList('BIZ_UNIT_TYPE');
 const columns = [
   { key: "code", label: "business_unit_modal.code" },
   { key: "name", label: "business_unit_modal.name" },
-  { key: "type", label: "business_unit_modal.type" },
-  { key: "parent", label: "business_unit_modal.parent" },
+  { key: "type", label: "business_unit_modal.type", visible: false },
+  { key: "type_name", label: "business_unit_modal.type" },
+  { key: "parent", label: "business_unit_modal.parent", visible: false },
+  { key: "parent_name", label: "business_unit_modal.parent" },
 ];
 
 // Fetch business_units for select field
@@ -43,12 +45,14 @@ const data = business_units.map((item) => ({
   name: item.name,
   description: item.description,
   type: item.type,
+  type_name: types.find((s) => String(s.value) === String(item.type))?.label || item.type,
   parent: item.parent,
+  parent_name: units.find((u) => u.value === item.parent)?.name || item.parent,
   is_active: item.is_active,
   created_at: item.created_at,
   updated_at: item.updated_at,
 }));
-const tableFields = [
+const formFields = [
   { key: "code", label: "business_unit_modal.code", pk: true, required: true, placeholder: "e.g. ADMIN" },
   { key: "name", label: "business_unit_modal.name", required: true, placeholder: "e.g. Administration" },
   { key: "type", label: "business_unit_modal.type", type: "select" as const, options: types, required: false },
@@ -61,7 +65,7 @@ const tableFields = [
     required: false,
   },
 ];
-const fieldKeys = tableFields.map((f) => f.key);
+const fieldKeys = formFields.map((f) => f.key);
 ---
 
 <BaseLayout>
@@ -84,21 +88,21 @@ const fieldKeys = tableFields.map((f) => f.key);
       mode="create"
       modalId="business_unit-create-modal"
       entityName="BusinessUnit"
-      fields={tableFields}
+      fields={formFields}
       showTrigger={false}
     />
     <CrudModal
       mode="edit"
       modalId="business_unit-edit-modal"
       entityName="BusinessUnit"
-      fields={tableFields}
+      fields={formFields}
       showTrigger={false}
     />
     <CrudModal
       mode="delete"
       modalId="business_unit-delete-modal"
       entityName="BusinessUnit"
-      fields={tableFields}
+      fields={formFields}
       showTrigger={false}
     />
 

@@ -3,7 +3,7 @@ from typing import List
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Depends
-from sqlmodel import Session, select
+from sqlmodel import Session, select, SQLModel
 from sqlalchemy.exc import IntegrityError
 
 from ..internal.models import List as ListModel, ListCreate, ListUpdate, Module
@@ -11,6 +11,27 @@ from ..internal.dependencies import get_db_session
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/lists", tags=["lists"])
+
+#Model for module select options
+class ListBasic(SQLModel):
+    value: str
+    label: str
+
+@router.get("/select", response_model=List[ListBasic])
+def get_list(session: Session = Depends(get_db_session)) -> List[ListBasic]:
+    """
+    Returns a lists list optimized for selects with value (code) and label (name). 
+    Only active lists.
+    """
+    statement = (
+        select(
+            ListModel.code.label("value"), 
+            ListModel.name.label("label")
+        )
+        .where(ListModel.is_active == True)
+        .order_by(ListModel.name)
+    )
+    return session.exec(statement).all()
 
 
 @router.get("/", response_model=List[ListModel])

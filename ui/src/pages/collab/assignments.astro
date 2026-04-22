@@ -84,7 +84,7 @@ const data = assignments.map((item) => ({
   valid_from: item.valid_from ? new Date(item.valid_from).toISOString().split('T')[0] : null,
   valid_to: item.valid_to ? new Date(item.valid_to).toISOString().split('T')[0] : null,
 }));
-const tableFields = [
+const formFields = [
   { key: "team", label: "assignment_modal.team", type: "select" as const, options: teams, required: false },
   { key: "user_id", label: "assignment_modal.user_id", type: "select" as const, options: users, required: true },
   { key: "role", label: "assignment_modal.role", type: "select" as const, options: roles, required: true },
@@ -92,7 +92,7 @@ const tableFields = [
   { key: "valid_from", label: "assignment_modal.valid_from", required: false },
   { key: "valid_to", label: "assignment_modal.valid_to", required: false },
 ];
-const fieldKeys = tableFields.map((f) => f.key);
+const fieldKeys = formFields.map((f) => f.key);
 ---
 
 <BaseLayout>
@@ -112,21 +112,21 @@ const fieldKeys = tableFields.map((f) => f.key);
       mode="create"
       modalId="assignment-create-modal"
       entityName="Assignment"
-      fields={tableFields}
+      fields={formFields}
       showTrigger={false}
     />
     <CrudModal
       mode="edit"
       modalId="assignment-edit-modal"
       entityName="Assignment"
-      fields={tableFields}
+      fields={formFields}
       showTrigger={false}
     />
     <CrudModal
       mode="delete"
       modalId="assignment-delete-modal"
       entityName="Assignment"
-      fields={tableFields}
+      fields={formFields}
       showTrigger={false}
     />
 

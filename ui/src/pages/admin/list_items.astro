@@ -5,7 +5,7 @@ import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
 import { getListItems } from "@/lib/list_items";
-import { getLists } from "@/lib/lists";
+import { getListsSelect } from "@/lib/lists";
 
 // Fetch list_items from API
 let list_items: any[] = [];
@@ -21,10 +21,10 @@ try {
   list_items = [];
 }
 
-// Fetch lists from API for select field
+// Fetch lists for filter dropdown and form select
 let lists: any[] = [];
 try {
-  const apiLists = await getLists();
+  const apiLists = await getListsSelect();
   lists = apiLists;
 } catch (error) {
   console.error('Failed to fetch lists:', error);
@@ -34,28 +34,30 @@ try {
 }
 
 const columns = [
-  { key: "sort_order", label: "#", visible: true },
-  { key: "list", label: "list_item_modal.list", visible: false},
-  { key: "value", label: "list_item_modal.value", visible: true },
-  { key: "label", label: "list_item_modal.label", visible: true },
+  { key: "sort_order", label: "#" },
+  { key: "value", label: "list_item_modal.value" },
+  { key: "label", label: "list_item_modal.label" },
+  { key: "list", label: "list_item_modal.list", visible: false },
+  { key: "list_name", label: "list_item_modal.list" },
 ];
 const data = list_items.map((item) => ({
   id: `${item.list}::${item.value}`,
-  list: item.list,
   value: item.value,
   label: item.label,
   sort_order: item.sort_order,
+  list: item.list,
+  list_name: lists.find((l) => l.value === item.list)?.label || item.list,
   is_active: item.is_active,
   created_at: item.created_at,
   updated_at: item.updated_at,
 }));
-const tableFields = [
+const formFields = [
   { key: "list", label: "list_item_modal.list", type: "select" as const, options: lists, pk: true, required: true },
   { key: "value", label: "list_item_modal.value", pk: true, required: true },
   { key: "label", label: "list_item_modal.label", required: true },
   { key: "sort_order", label: "option_modal.sort_order", type: "number" as const, required: true },
 ];
-const fieldKeys = tableFields.map((f) => f.key);
+const fieldKeys = formFields.map((f) => f.key);
 ---
 
 <BaseLayout>
@@ -75,21 +77,21 @@ const fieldKeys = tableFields.map((f) => f.key);
       mode="create"
       modalId="list_item-create-modal"
       entityName="ListItem"
-      fields={tableFields}
+      fields={formFields}
       showTrigger={false}
     />
     <CrudModal
       mode="edit"
       modalId="list_item-edit-modal"
       entityName="ListItem"
-      fields={tableFields}
+      fields={formFields}
       showTrigger={false}
     />
     <CrudModal
       mode="delete"
       modalId="list_item-delete-modal"
       entityName="ListItem"
-      fields={tableFields}
+      fields={formFields}
       showTrigger={false}
     />
 

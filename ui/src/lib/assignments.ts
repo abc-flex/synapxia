@@ -4,7 +4,7 @@
  */
 
 import { apiGet, apiPost, apiPut, apiDelete, buildQueryString } from './api';
-import type { Assignment } from '../types/assignments';
+import type { Assignment, AssignmentCreate, AssignmentUpdate } from '../types/api';
 
 /**
  * Fetch all assignments with optional pagination
@@ -36,4 +36,32 @@ export async function getAssignmentsbyList(list_code: string, skip: number = 0, 
  */
 export async function getAssignment(id: number): Promise<Assignment> {
   return apiGet<Assignment>(`/api/assignments/${id}`);
+}
+
+/**
+ * Create a new assignment
+ * @param data - Assignment data to create
+ * @returns Promise with created assignment data
+ */
+export async function createAssignment(data: AssignmentCreate): Promise<Assignment> {
+  return apiPost<Assignment, AssignmentCreate>('/api/assignments/', data);
+}
+
+/**
+ * Update an existing assignment
+ * @param code - Assignment code to update
+ * @param data - Updated assignment data (partial)
+ * @returns Promise with updated assignment data
+ */
+export async function updateAssignment(code: string, data: AssignmentUpdate): Promise<Assignment> {
+  return apiPut<Assignment, AssignmentUpdate>(`/api/assignments/${encodeURIComponent(code)}`, data);
+}
+
+/**
+ * Logically delete a assignment (sets is_active to false)
+ * @param code - Assignment code to delete
+ * @returns Promise with deletion result
+ */
+export async function deleteAssignment(code: string): Promise<void> {
+  return apiDelete<void>(`/api/assignments/${encodeURIComponent(code)}`);
 }

@@ -5,6 +5,9 @@ import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
 import { getAssignments } from "@/lib/assignments";
+import { getTeamsSelect } from "@/lib/teams";
+import { getRolesSelect } from "@/lib/roles";
+import { getUsersSelect } from "@/lib/users";
 
 // Fetch assignments from API
 let assignments: any[] = [];
@@ -20,30 +23,74 @@ try {
   assignments = [];
 }
 
+// Fetch teams for filter dropdown and form select
+let teams: any[] = [];
+try {
+  const apiTeams = await getTeamsSelect();
+  teams = apiTeams;
+} catch (error) {
+  console.error('Failed to fetch teams:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch teams from API';
+  // Fallback to empty array to still render the page
+  teams = [];
+}
+
+// Fetch roles for filter dropdown and form select
+let roles: any[] = [];
+try {
+  const apiRoles = await getRolesSelect();
+  roles = apiRoles;
+} catch (error) {
+  console.error('Failed to fetch roles:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch roles from API';
+  // Fallback to empty array to still render the page
+  roles = [];
+}
+
+// Fetch users for filter dropdown and form select
+let users: any[] = [];
+try {
+  const apiUsers = await getUsersSelect();
+  users = apiUsers;
+} catch (error) {
+  console.error('Failed to fetch users:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch users from API';
+  // Fallback to empty array to still render the page
+  users = [];
+}
+
+
 const columns = [
-  { key: "id", label: "#", visible: false },
-  { key: "team", label: "Team", visible: false},
-  { key: "user_id", label: "User", visible: true },
-  { key: "role", label: "Role", visible: true },
+  { key: "id", label: "assignment_modal.id", visible: true },
+  { key: "team", label: "assignment_modal.team", visible: false },
+  { key: "team_name", label: "assignment_modal.team" },
+  { key: "user_id", label: "assignment_modal.user_id", visible: false },
+  { key: "user_name", label: "assignment_modal.user_id" },
+  { key: "role", label: "assignment_modal.role", visible: false },
+  { key: "role_name", label: "assignment_modal.role"},
+  { key: "valid_from", label: "assignment_modal.valid_from" },
+  { key: "valid_to", label: "assignment_modal.valid_to" },
 ];
 
 const data = assignments.map((item) => ({
   id: item.id,
   team: item.team,
+  team_name: teams.find((t) => String(t.value) === String(item.team))?.label || item.team,
   user_id: item.user_id,
+  user_name: users.find((u) => String(u.value) === String(item.user_id))?.label || item.user_id,
   role: item.role,
+  role_name: roles.find((r) => String(r.value) === String(item.role))?.label || item.role,
   observation: item.observation,
-  valid_from: item.valid_from,
-  valid_to: item.valid_to,
+  valid_from: item.valid_from ? new Date(item.valid_from).toISOString().split('T')[0] : null,
+  valid_to: item.valid_to ? new Date(item.valid_to).toISOString().split('T')[0] : null,
 }));
 const tableFields = [
-  { key: "id", label: "ID", required: true },
-  { key: "team", label: "Team", required: true },
-  { key: "user_id", label: "User ID", required: true },
-  { key: "role", label: "Role", required: true },
-  { key: "observation", label: "Observation", required: false },
-  { key: "valid_from", label: "Valid From", required: false },
-  { key: "valid_to", label: "Valid To", required: false },
+  { key: "team", label: "assignment_modal.team", type: "select" as const, options: teams, required: false },
+  { key: "user_id", label: "assignment_modal.user_id", type: "select" as const, options: users, required: true },
+  { key: "role", label: "assignment_modal.role", type: "select" as const, options: roles, required: true },
+  { key: "observation", label: "assignment_modal.observation", required: false },
+  { key: "valid_from", label: "assignment_modal.valid_from", required: false },
+  { key: "valid_to", label: "assignment_modal.valid_to", required: false },
 ];
 const fieldKeys = tableFields.map((f) => f.key);
 ---
@@ -84,7 +131,7 @@ const fieldKeys = tableFields.map((f) => f.key);
     />
 
     <div
-      id="itemslist-data"
+      id="assignments-data"
       data-rows={encodeURIComponent(JSON.stringify(data))}
       data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
       class="hidden"
@@ -94,11 +141,79 @@ const fieldKeys = tableFields.map((f) => f.key);
 
     <script type="module">
       import { initCrudPage } from "/scripts/crudClient.js";
+      import {
+        createAssignment,
+        updateAssignment,
+        deleteAssignment,
+      } from "/src/lib/assignments";
 
       initCrudPage({
-        dataId: "itemslist-data",
+        dataId: "assignments-data",
         editModalId: "assignment-edit-modal",
         deleteModalId: "assignment-delete-modal",
+      });
+
+      function showToast(message, variant = "info") {
+        const toast = document.createElement("div");
+        toast.className = `fixed top-4 right-4 z-50 max-w-md p-4 rounded-lg border shadow-lg transition-all duration-300 ${
+          variant === "error"
+            ? "bg-red-50 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+            : "bg-green-50 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+        }`;
+        toast.innerHTML = `
+          <div class="flex items-start gap-3">
+            <div class="flex-1 text-sm font-medium">${message}</div>
+            <button type="button" class="text-gray-400 hover:text-gray-600" onclick="this.parentElement.parentElement.remove()">✕</button>
+          </div>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          toast.style.transform = "translateX(100%)";
+          setTimeout(() => toast.remove(), 300);
+        }, 5000);
+      }
+
+      document.addEventListener("crud-submit", async (e) => {
+        const { mode, data } = e.detail;
+        try {
+          if (mode === "create") {
+            await createAssignment({
+              id: data.id,
+              team: data.team || undefined,
+              user_id: data.user_id,
+              role: data.role,
+              observation: data.observation || undefined,
+              valid_from: data.valid_from,
+              valid_to: data.valid_to || undefined,
+            });
+            showToast("Assignment created successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          } else if (mode === "edit") {
+            await updateAssignment(data.id, {
+              team: data.team || undefined,
+              user_id: data.user_id,
+              role: data.role,
+              observation: data.observation || undefined,
+              valid_from: data.valid_from,
+              valid_to: data.valid_to || undefined,
+            });
+            showToast("Assignment updated successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          } else if (mode === "delete") {
+            await deleteAssignment(data.id);
+            showToast("Assignment deleted successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          }
+        } catch (error) {
+          console.error("CRUD operation failed:", error);
+          const msg = error?.message || "";
+          if (error?.status === 409 || msg.includes("409") || msg.includes("already exists")) {
+            showToast(`Assignment code '${data.code}' already exists`, "error");
+          } else {
+            showToast(msg || "An error occurred", "error");
+          }
+        }
       });
     </script>
 
@@ -110,6 +225,7 @@ const fieldKeys = tableFields.map((f) => f.key);
           tableId="assignments"
           i18Item="assignment"
           columnFilter="team"
+          filterOptions={teams}
           masterPage="/collab/teams"
           mdItem="team"
         />

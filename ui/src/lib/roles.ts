@@ -6,6 +6,12 @@
 import { apiGet, apiPost, apiPut, apiDelete, buildQueryString } from './api';
 import type { Role, RoleCreate, RoleUpdate } from '../types/api';
 
+// Interface for select options with value and label
+export interface RoleSelectOption {
+  value: string;
+  label: string;
+}
+
 /**
  * Fetch all roles with optional pagination
  * @param skip - Number of records to skip (default: 0)
@@ -15,6 +21,15 @@ import type { Role, RoleCreate, RoleUpdate } from '../types/api';
 export async function getRoles(skip: number = 0, limit: number = 100): Promise<Role[]> {
   const queryString = buildQueryString({ skip, limit });
   return apiGet<Role[]>(`/api/roles${queryString}`);
+}
+
+/**
+ * Fetch all roles optimized for select fields
+ * Returns only code and name of active teams
+ * @returns Promise with array of RoleSelectOption objects
+ */
+export async function getRolesSelect(): Promise<RoleSelectOption[]> {
+  return apiGet<RoleSelectOption[]>(`/api/roles/select`);
 }
 
 /**

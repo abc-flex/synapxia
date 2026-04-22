@@ -5,7 +5,7 @@ import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
 import { getDimensions } from "@/lib/dimensions";
-import { getLists } from "@/lib/lists";
+import { getListsSelect } from "@/lib/lists";
 import { getListItemsbyList } from "@/lib/list_items";
 
 // Fetch dimensions from API
@@ -22,13 +22,13 @@ try {
 }
 
 // Fetch lists for scale select field
-let lists: any[] = [];
+let dimensionScales: any[] = [];
 try {
-  const apiLists = await getLists();
-  lists = apiLists;
+  const apiLists = await getListsSelect();
+  dimensionScales = apiLists;
 } catch (error) {
   console.error('Failed to fetch lists:', error);
-  lists = [];
+  dimensionScales = [];
 }
 
 // Fetch DIMENSIONS_UNIT list items for unit select field
@@ -44,8 +44,8 @@ try {
 const columns = [
   { key: "code", label: "dimension_modal.code" },
   { key: "name", label: "dimension_modal.name" },
-  { key: "scale", label: "dimension_modal.scale" },
-  { key: "unit", label: "dimension_modal.unit" },
+  { key: "scale_label", label: "dimension_modal.scale" },
+  { key: "unit_label", label: "dimension_modal.unit" },
 ];
 const data = dimensions.map((item) => ({
   id: item.code,
@@ -53,12 +53,14 @@ const data = dimensions.map((item) => ({
   name: item.name,
   description: item.description,
   scale: item.scale,
+  scale_label: dimensionScales.find((s) => String(s.value) === String(item.scale))?.label || item.scale,
   unit: item.unit,
+  unit_label: dimensionUnits.find((u) => String(u.value) === String(item.unit))?.label || item.unit,
   is_active: item.is_active,
   created_at: item.created_at,
   updated_at: item.updated_at,
 }));
-const tableFields = [
+const formFields = [
   { key: "code", label: "dimension_modal.code", pk: true, required: true, placeholder: "e.g. CODE_QUALITY" },
   { key: "name", label: "dimension_modal.name", required: true, placeholder: "e.g. Code Quality" },
   {
@@ -71,7 +73,7 @@ const tableFields = [
     key: "scale",
     label: "dimension_modal.scale",
     type: "select" as const,
-    options: lists,
+    options: dimensionScales,
   },
   {
     key: "unit",
@@ -80,7 +82,7 @@ const tableFields = [
     options: dimensionUnits,
   },
 ];
-const fieldKeys = tableFields.map((f) => f.key);
+const fieldKeys = formFields.map((f) => f.key);
 ---
 
 <BaseLayout>
@@ -103,21 +105,21 @@ const fieldKeys = tableFields.map((f) => f.key);
       mode="create"
       modalId="dimension-create-modal"
       entityName="Dimension"
-      fields={tableFields}
+      fields={formFields}
       showTrigger={false}
     />
     <CrudModal
       mode="edit"
       modalId="dimension-edit-modal"
       entityName="Dimension"
-      fields={tableFields}
+      fields={formFields}
       showTrigger={false}
     />
     <CrudModal
       mode="delete"
       modalId="dimension-delete-modal"
       entityName="Dimension"
-      fields={tableFields}
+      fields={formFields}
       showTrigger={false}
     />
 
@@ -214,7 +216,7 @@ const fieldKeys = tableFields.map((f) => f.key);
           tableId="dimensions"
           i18Item="dimension"
           detailPage="/collab/metrics"
-          mdItem="dimension"
+          mdItem="metric"
         />
         <!-- ====== Table End -->
       </div>

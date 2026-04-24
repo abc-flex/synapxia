@@ -67,7 +67,7 @@ const data = users.map((user) => ({
   is_active: user.is_active,
 }));
 
-const userFields = [
+const formFields = [
   { key: "username", label: "user_modal.username", required: true, placeholder: "john.doe" },
   { key: "email", label: "user_modal.email", type: "email" as const, required: true, placeholder: "john@example.com" },
   { key: "password", label: "user_modal.password", type: "text" as const, required: true, placeholder: "********" },
@@ -76,7 +76,7 @@ const userFields = [
   { key: "menu_role", label: "user_modal.menu_role", type: "select" as const, options: roles, required: true },
   { key: "business_unit", label: "user_modal.business_unit", type: "select" as const, options: business_units, required: true },
 ];
-const fieldKeys = userFields.map((f) => f.key);
+const fieldKeys = formFields.map((f) => f.key);
 ---
 
 <BaseLayout>
@@ -97,21 +97,21 @@ const fieldKeys = userFields.map((f) => f.key);
       mode="create"
       modalId="user-create-modal"
       entityName="User"
-      fields={userFields}
+      fields={formFields}
       showTrigger={false}
     />
     <CrudModal
       mode="edit"
       modalId="user-edit-modal"
       entityName="User"
-      fields={userFields.filter(f => f.key !== 'password')}
+      fields={formFields.filter(f => f.key !== 'password')}
       showTrigger={false}
     />
     <CrudModal
       mode="delete"
       modalId="user-delete-modal"
       entityName="User"
-      fields={userFields}
+      fields={formFields}
       showTrigger={false}
     />
 

@@ -194,7 +194,7 @@ const visibleColumns = columns.filter((col) => col.visible !== false);
               {visibleColumns.map((col) => (
                 <td class="px-2 py-1">
                   {row[col.key] === true || row[col.key] === "true" ? (
-                    <span class="w-5 h-5 inline-block text-green-600">
+                    <span class="w-5 h-5 inline-block text-blue-600">
                       <Fragment set:html={checkSvg} />
                     </span>
                   ) : (

@@ -5,8 +5,8 @@ import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
 import { getUsers } from "@/lib/users";
-import { getBusinessUnits } from "@/lib/business_units";
-import { getRoles } from "@/lib/roles";
+import { getBusinessUnitsSelect } from "@/lib/business_units";
+import { getRolesSelect } from "@/lib/roles";
 
 // Fetch users from API
 let users: any[] = [];
@@ -21,10 +21,10 @@ try {
   users = [];
 }
 
-// Fetch business_units from API for select field
+// Fetch business_units for filter dropdown and form select
 let business_units: any[] = [];
 try {
-  const apiBusinessUnits = await getBusinessUnits();
+  const apiBusinessUnits = await getBusinessUnitsSelect();
   business_units = apiBusinessUnits;
 } catch (error) {
   console.error('Failed to fetch business_units:', error);
@@ -33,10 +33,10 @@ try {
   business_units = [];
 }
 
-// Fetch roles from API for select field
+// Fetch roles for filter dropdown and form select
 let roles: any[] = [];
 try {
-  const apiRoles = await getRoles();
+  const apiRoles = await getRolesSelect();
   roles = apiRoles;
 } catch (error) {
   console.error('Failed to fetch roles:', error);
@@ -46,10 +46,12 @@ try {
 }
 
 const columns = [
-  { key: "business_unit", label: "user_modal.business_unit" },
   { key: "name", label: "user_modal.first_name" },
   { key: "username", label: "user_modal.username" },
-  { key: "menu_role", label: "user_modal.menu_role" },
+  { key: "menu_role", label: "user_modal.menu_role", visible: false },
+  { key: "menu_role_name", label: "user_modal.menu_role" },
+  { key: "business_unit", label: "user_modal.business_unit", visible: false },
+  { key: "business_unit_name", label: "user_modal.business_unit" },
 ];
 const data = users.map((user) => ({
   id: user.id,
@@ -59,7 +61,9 @@ const data = users.map((user) => ({
   first_name: user.first_name,
   last_name: user.last_name,
   menu_role: user.menu_role,
+  menu_role_name: roles.find((r) => String(r.value) === String(user.menu_role))?.label || user.menu_role,
   business_unit: user.business_unit,
+  business_unit_name: business_units.find((bu) => String(bu.value) === String(user.business_unit))?.label || user.business_unit,
   is_active: user.is_active,
 }));
 

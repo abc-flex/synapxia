@@ -6,6 +6,21 @@
 import { apiGet, apiPost, apiPut, apiDelete, buildQueryString } from './api';
 import type { BusinessUnit, BusinessUnitCreate, BusinessUnitUpdate } from '../types/api';
 
+// Interface for select options with value and label
+export interface BusinessUnitSelectOption {
+  value: string;
+  label: string;
+}
+
+/**
+ * Fetch all business_units optimized for select fields
+ * Returns only code and name of active business_units
+ * @returns Promise with array of BusinessUnitSelectOption objects
+ */
+export async function getBusinessUnitsSelect(): Promise<BusinessUnitSelectOption[]> {
+  return apiGet<BusinessUnitSelectOption[]>(`/api/business_units/select`);
+}
+
 /**
  * Fetch all business_units with optional pagination
  * @param skip - Number of records to skip (default: 0)

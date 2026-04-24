@@ -8,7 +8,7 @@ import type { User, UserCreate, UserUpdate } from '../types/api';
 
 // Interface for select options with value and label
 export interface UserSelectOption {
-  value: number;
+  value: string;
   label: string;
 }
 

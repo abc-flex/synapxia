@@ -27,7 +27,8 @@ types = await getListItemsbyList('CHARS_TYPE');
 const columns = [
   { key: "code", label: "feature_modal.code" },
   { key: "name", label: "feature_modal.name" },
-  { key: "type", label: "feature_modal.type" },
+  { key: "type", label: "feature_modal.type", visible: false },
+  { key: "type_name", label: "feature_modal.type" },
 ];
 
 const data = features.map((item) => ({
@@ -36,11 +37,12 @@ const data = features.map((item) => ({
   name: item.name,
   description: item.description,
   type: item.type,
+  type_name: types.find((t) => t.value === item.type)?.label || item.type,
   is_active: item.is_active,
   created_at: item.created_at,
   updated_at: item.updated_at,
 }));
-const tableFields = [
+const formFields = [
   { key: "code", label: "feature_modal.code", pk: true, required: true },
   { key: "name", label: "feature_modal.name", required: true },
   { key: "type", label: "feature_modal.type", type: "select" as const, options: types, required: false },
@@ -51,7 +53,7 @@ const tableFields = [
     required: false,
   },
 ];
-const fieldKeys = tableFields.map((f) => f.key);
+const fieldKeys = formFields.map((f) => f.key);
 ---
 
 <BaseLayout>
@@ -74,21 +76,21 @@ const fieldKeys = tableFields.map((f) => f.key);
       mode="create"
       modalId="feature-create-modal"
       entityName="Feature"
-      fields={tableFields}
+      fields={formFields}
       showTrigger={false}
     />
     <CrudModal
       mode="edit"
       modalId="feature-edit-modal"
       entityName="Feature"
-      fields={tableFields}
+      fields={formFields}
       showTrigger={false}
     />
     <CrudModal
       mode="delete"
       modalId="feature-delete-modal"
       entityName="Feature"
-      fields={tableFields}
+      fields={formFields}
       showTrigger={false}
     />
 

@@ -1,0 +1,419 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import Toast from "../../components/Toast.astro";
+import assignmentsData from "@/data/assignments.json";
+
+// Get dimension query param for pre-filter
+const dimensionFilter = Astro.url.searchParams.get("dimension") || "";
+
+// Normalize and process assignments data
+interface Assignment {
+  name: string;
+  email: string;
+  role: string;
+  team: string;
+  metric: string;
+  date: string;
+  observation: string;
+}
+
+// Metric levels for normalization
+const METRIC_LEVELS = ["UNDEFINED", "NO_USAGE", "LOW", "MODERATE", "HIGH", "VERY_HIGH"];
+const LEGACY_METRIC_MAP: Record<string, string> = {
+  ALTO: "HIGH",
+  ALTA: "HIGH",
+  MEDIO: "MODERATE",
+  MEDIA: "MODERATE",
+  BAJO: "LOW",
+  BAJA: "LOW",
+};
+
+// Normalize metric value
+function normalizeMetricValue(metric: string): string {
+  if (!metric) return "NO_USAGE";
+  const candidate = metric.toString().trim().toUpperCase().replace(/\s+/g, "_");
+  if (METRIC_LEVELS.includes(candidate)) return candidate;
+  if (LEGACY_METRIC_MAP[candidate]) return LEGACY_METRIC_MAP[candidate];
+  return "NO_USAGE";
+}
+
+// Normalize assignments data
+const assignments: Assignment[] = assignmentsData.map((emp: any) => ({
+  ...emp,
+  metric: normalizeMetricValue(emp.metric),
+}));
+
+// Get unique dimensions
+const dimensions = [{ name: "Adopción GenAI para Devs" }, { name: "Adopción GenAI para QA" }];
+
+// Get unique roles and teams
+const assignmentsWithTeam = assignments.filter((emp) => emp.team && emp.team.trim() !== "");
+const assignmentsWithoutTeam = assignments.filter((emp) => !emp.team || emp.team.trim() === "");
+const roles = [...new Set(assignmentsWithTeam.map((emp) => emp.role))];
+const teams = [...new Set(assignmentsWithTeam.map((emp) => emp.team))].filter(Boolean);
+
+// Get initial assignments (without team filter for now)
+
+// Helper to get initials
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 3)
+    .toUpperCase();
+}
+
+// Helper to get employees by role and team
+function getEmployeesByRoleAndTeam(role: string, team: string, list: Assignment[]): Assignment[] {
+  return list.filter((emp) => emp.role === role && emp.team === team);
+}
+
+// Get metric color class
+function getMetricColorClass(metric: string): string {
+  const colorMap: Record<string, string> = {
+    UNDEFINED: "bg-slate-100 text-slate-700 border border-slate-300",
+    NO_USAGE: "bg-red-300 text-red-700 border border-red-500",
+    LOW: "bg-orange-300 text-orange-700 border border-orange-500",
+    MODERATE: "bg-yellow-200 text-yellow-700 border border-yellow-500",
+    HIGH: "bg-lime-300 text-lime-700 border border-lime-500",
+    VERY_HIGH: "bg-green-300 text-green-700 border border-green-500",
+  };
+  return colorMap[metric] || "bg-gray-400";
+}
+---
+
+<BaseLayout>
+  <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
+    <!-- Breadcrumb Start -->
+    <Breadcrumb
+      moduleName="Collaboration"
+      pageName="Assignments Dashboard"
+      pageTitle="Assigments Dashboard"
+      homeLink="/"
+      homeLink="/"
+      moduleNameKey="modules.COLLAB"
+      pageNameKey="menu_options.dashboard"
+      pageTitleKey="menu_options.dashboard"
+    />
+    <!-- Breadcrumb End -->
+
+    <div class="space-y-5 sm:space-y-6">
+      <!-- Page Title Section -->
+      <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <select
+          id="dimensionSelect"
+          class="px-4 py-2 border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition shadow-sm"
+        >
+          {dimensions.map((dim) => <option value={dim.name}>{dim.name}</option>)}
+        </select>
+      </div>
+
+      <!-- Dashboard Grid Section -->
+        <table class="w-full border-collapse text-sm min-w-[800px] datatable-dense">
+          <thead class="bg-gray-200 text-sm uppercase text-gray-700 border-b border-black">
+            <tr class="border-b border-slate-200">
+              <th class="text-white text-center px-2 py-3 font-semibold sticky top-0 z-10 border border-slate-200">
+                <span data-i18n="team_modal.one_title" class="uppercase">Team</span> &#11208;
+                <br> 
+                <span data-i18n="role_modal.one_title" class="uppercase">Role</span> &#11206;
+              </th>
+              {
+                teams.map((team) => (
+                  <th class="text-slate-900 px-4 py-3 font-semibold text-center border border-slate-200 sticky top-0 z-10">
+                    {team.toUpperCase()}
+                  </th>
+                ))
+              }
+            </tr>
+          </thead>
+          <tbody>
+            {
+              roles.map((role) => (
+                <tr class="border-b border-slate-200 hover:bg-slate-50">
+                  <td class="bg-gray-50 text-slate-900 text-center text-sm uppercase px-4 py-3 font-semibold border border-slate-200">
+                    {role}
+                  </td>
+                  {teams.map((team) => {
+                    const employees = getEmployeesByRoleAndTeam(role, team, assignmentsWithTeam);
+                    return (
+                      <td class="px-4 py-3 border border-slate-200 text-center">
+                        {employees.length > 0 && (
+                          <div class="flex flex-wrap gap-2 justify-center items-center min-h-[80px]">
+                            {employees.map((emp) => {
+                              const initials = getInitials(emp.name);
+                              const metricClass = getMetricColorClass(emp.metric);
+                              return (
+                                <div class="avatar-wrapper relative inline-block group">
+                                  <button
+                                    class={`avatar w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer transition-transform hover:scale-110 ${metricClass}`}
+                                    data-email={emp.email}
+                                    data-name={emp.name}
+                                  >
+                                    {initials}
+                                  </button>
+                                  <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 text-white text-xs px-3 py-2 rounded whitespace-nowrap z-50 pointer-events-none shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                    {emp.name}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))
+            }
+            <!-- Employees without team row -->
+            {
+              assignmentsWithoutTeam.length > 0 && (
+                <tr class="border-b border-slate-200">
+                  <td class="px-4 py-3 font-semibold border border-slate-200">
+                    --
+                  </td>
+                  <td colspan={teams.length} class="px-4 py-3 border border-slate-200">
+                    <div class="grid grid-cols-4 gap-4 md:grid-cols-6 lg:grid-cols-8 justify-items-center min-h-[120px]">
+                      {assignmentsWithoutTeam.map((emp) => {
+                        const initials = getInitials(emp.name);
+                        const metricClass = getMetricColorClass(emp.metric);
+                        return (
+                          <div class="flex flex-col items-center gap-2">
+                            <div class="avatar-wrapper relative inline-block group">
+                              <button
+                                class={`avatar w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer transition-transform hover:scale-110 ${metricClass}`}
+                                data-email={emp.email}
+                                data-name={emp.name}
+                              >
+                                {initials}
+                              </button>
+                              <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 text-white text-xs px-3 py-2 rounded whitespace-nowrap z-50 pointer-events-none shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                {emp.name}
+                              </div>
+                            </div>
+                            <span class="text-xs font-medium text-slate-600 max-w-[70px] text-center line-clamp-2">
+                              {emp.role}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </td>
+                </tr>
+              )
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for Assignment Details -->
+  <div id="assignmentModal" class="hidden fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center">
+    <div class="bg-white rounded-2xl p-8 w-[800px] max-w-5xl shadow-2xl border border-slate-200">
+      <div class="flex justify-between items-start mb-6">
+        <h3 id="modalAssignmentName" class="text-2xl font-bold text-gray-900"></h3>
+        <button id="closeModalBtn" class="text-gray-400 hover:text-gray-600 text-2xl transition">
+          ✕
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-gray-600 mb-1">Email:</label>
+          <span id="modalAssignmentEmail" class="text-slate-900"></span>
+        </div>
+        <div class="flex flex-col gap-4 md:flex-row md:gap-4">
+          <div class="flex-1">
+            <label class="block text-sm font-semibold text-gray-600 mb-1">Rol:</label>
+            <span id="modalAssignmentRole" class="text-slate-900"></span>
+          </div>
+          <div class="flex-1">
+            <label class="block text-sm font-semibold text-gray-600 mb-1">Equipo:</label>
+            <span id="modalAssignmentTeam" class="text-slate-900"></span>
+          </div>
+          <div class="flex-1">
+            <label class="block text-sm font-semibold text-gray-600 mb-1">Fecha:</label>
+            <span id="modalAssignmentDate" class="text-slate-900"></span>
+          </div>
+        </div>
+        <div>
+          <label for="modalMetricSelect" class="block text-sm font-semibold text-gray-600 mb-2">
+            Métrica actual:
+          </label>
+          <select
+            id="modalMetricSelect"
+            class="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition shadow-sm"
+          >
+            <option value="UNDEFINED">---</option>
+            <option value="NO_USAGE">No Usage</option>
+            <option value="LOW">Low</option>
+            <option value="MODERATE">Moderate</option>
+            <option value="HIGH">High</option>
+            <option value="VERY_HIGH">Very High</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-600 mb-1">Observación:</label>
+          <textarea
+            id="modalAssignmentObservation"
+            class="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition min-h-[120px] shadow-sm"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="flex gap-3 mt-8">
+        <button
+          id="saveMetricBtn"
+          class="flex-1 px-5 py-3 bg-blue-50 text-indigo-600 font-semibold rounded-2xl border border-blue-200 shadow-sm hover:border-indigo-300 hover:text-indigo-700 transition transform hover:-translate-y-0.5"
+        >
+          Guardar Métrica
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .avatar-tooltip {
+      @apply hidden;
+    }
+
+    .avatar-wrapper:hover .avatar-tooltip {
+      @apply block;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .animate-slideIn {
+      animation: slideIn 0.3s ease;
+    }
+  </style>
+
+  <script define:vars={{ assignments, METRIC_LEVELS }}>
+    // Application state
+    const STORAGE_KEY = "assignmentsData";
+    let currentAssignment = null;
+
+    // Initialize application
+    document.addEventListener("DOMContentLoaded", async () => {
+      setupEventListeners();
+      loadAssignmentsData();
+    });
+
+    // Load assignments from localStorage or use the provided data
+    function loadAssignmentsData() {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        window.assignmentsData = JSON.parse(stored);
+      } else {
+        window.assignmentsData = assignments;
+        persistAssignmentsData();
+      }
+    }
+
+    // Persist assignments to localStorage
+    function persistAssignmentsData() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(window.assignmentsData));
+    }
+
+    // Setup event listeners
+    function setupEventListeners() {
+      // Avatar buttons - open modal
+      document.querySelectorAll(".avatar").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          const email = btn.getAttribute("data-email");
+          openAssignmentModal(email);
+        });
+      });
+
+      // Modal close button
+      document.getElementById("closeModalBtn").addEventListener("click", closeModal);
+
+      // Modal backdrop click
+      document.getElementById("assignmentModal").addEventListener("click", (e) => {
+        if (e.target.id === "assignmentModal") {
+          closeModal();
+        }
+      });
+
+      // Save metric button
+      document.getElementById("saveMetricBtn").addEventListener("click", saveMetric);
+
+      // Dimension filter
+      document.getElementById("dimensionSelect").addEventListener("change", (e) => {
+        // Future: implement dimension-specific filtering
+        console.log("Dimension selected:", e.target.value);
+      });
+    }
+
+    // Open assignment modal
+    function openAssignmentModal(email) {
+      const assignment = window.assignmentsData.find((a) => a.email === email);
+      if (!assignment) return;
+
+      currentAssignment = assignment;
+
+      document.getElementById("modalAssignmentName").textContent = assignment.name;
+      document.getElementById("modalAssignmentEmail").textContent = assignment.email;
+      document.getElementById("modalAssignmentRole").textContent = assignment.role;
+      document.getElementById("modalAssignmentTeam").textContent = assignment.team || "-";
+      document.getElementById("modalAssignmentDate").textContent = assignment.date;
+      document.getElementById("modalAssignmentObservation").value = assignment.observation || "";
+      document.getElementById("modalMetricSelect").value = assignment.metric;
+
+      document.getElementById("assignmentModal").classList.remove("hidden");
+    }
+
+    // Close modal
+    function closeModal() {
+      document.getElementById("assignmentModal").classList.add("hidden");
+      currentAssignment = null;
+    }
+
+    // Save metric
+    function saveMetric() {
+      if (!currentAssignment) return;
+
+      const newMetric = document.getElementById("modalMetricSelect").value;
+      const newObservation = document.getElementById("modalAssignmentObservation").value;
+
+      const index = window.assignmentsData.findIndex((a) => a.email === currentAssignment.email);
+      if (index !== -1) {
+        window.assignmentsData[index].metric = newMetric;
+        window.assignmentsData[index].observation = newObservation;
+        persistAssignmentsData();
+
+        showNotification("Métrica actualizada correctamente");
+        closeModal();
+
+        // Reload to reflect changes
+        setTimeout(() => window.location.reload(), 1500);
+      }
+    }
+
+    // Show notification
+    function showNotification(message) {
+      const notification = document.createElement("div");
+      notification.className =
+        "fixed top-6 right-6 z-[1100] animate-slideIn bg-blue-50 text-blue-600 px-5 py-3 rounded-lg shadow-lg border border-blue-200 font-semibold";
+      notification.textContent = message;
+      document.body.appendChild(notification);
+
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+  </script>
+</BaseLayout>

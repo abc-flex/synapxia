@@ -150,6 +150,12 @@ ALTER TABLE list_items
     FOREIGN KEY (list)
     REFERENCES lists (code);
 
+-- item_translations.(list, value) → list_items.(list, value)
+ALTER TABLE item_translations
+    ADD CONSTRAINT fk_item_translations_list_items
+    FOREIGN KEY (list, value)
+    REFERENCES list_items (list, value);
+
 -- users.role → roles.code
 ALTER TABLE users
     ADD CONSTRAINT fk_users_roles

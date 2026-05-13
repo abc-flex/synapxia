@@ -1,70 +1,29 @@
 -- **********************************
--- ******* Table categories *********
--- **********************************
-
-INSERT INTO categories (code, name, description, parent) VALUES
-    ('AI_ASSETS', 'AI Assets', 'Category for all AI-related assets', NULL),
-    -- Classic AI and Machine Learning Models
-    ('CLASSIC_AI', 'Classic AI', 'Category for Classic AI assets', 'AI_ASSETS'),
-    ('ML_MODELS', 'Machine Learning Models', 'Category for Machine Learning Models', 'CLASSIC_AI'),
-    ('ALGORITHMS', 'Algorithms', 'Category for Algorithms', 'CLASSIC_AI'),
-    ('DATASETS', 'Datasets', 'Category for Datasets', 'CLASSIC_AI'),
-    -- Generative AI
-    ('GEN_AI', 'Generative AI', 'Category for Generative AI assets', 'AI_ASSETS'),
-    ('PROMPTS', 'Prompt', 'Category for Prompt', 'GEN_AI'),
-    ('MCPS', 'Model Context Protocol', 'Category for MCPs servers and clients definitions', 'GEN_AI'),
-    ('AGENTS', 'Agents', 'Category for AI Agents', 'GEN_AI'),
-    ('AI_FLOWS', 'AI Flows', 'Category for Generative AI Flows in N8n', 'GEN_AI'),
-    ('ASSISTANTS', 'Assistants aka GPTs', 'Category for AI Assistants in ChatGPT', 'GEN_AI');
-
--- **********************************
 -- ******* Table assets *************
 -- **********************************
 
-INSERT INTO assets (id, name, reference, description, type, category, status, visibility, tags) VALUES
+INSERT INTO assets (id, name, reference, description, category, status, visibility, tags) VALUES
     (1, 'Python Web Development Incremental Prompt', 'python-web-increment.prompt.md',
     'A prompt designed to guide AI in incrementally developing web applications using Python.',
-    'RESOURCE','PROMPTS', 'IN_USE', 'PUBLIC', '["python", "web", "development"]'),
-    (2, 'Python Web Developer Agent', 'python-web-dev.agent.md',
+    'PROMPTS', 'IN_USE', 'PUBLIC', '["python", "web", "development"]'),
+    (2, 'GitHub MCP Server', 'https://github.com/github/github-mcp-server/',
+    'An MCP providing services of the GitHub platform, such as code search, repository management and issue tracking.',
+    'MCPS', 'IN_USE', 'PUBLIC', '["github","mcp.server","ai-tools", "llm-tools", "developer tools"]'),
+    (3, 'Python Web Developer Agent', 'python-web-dev.agent.md',
     'An AI agent specialized in developing web applications using Python frameworks.',
-    'RESOURCE','AGENTS', 'IN_USE', 'PUBLIC', '["python", "web", "agent"]');
-
--- **********************************
--- ******* Table features ****
--- **********************************
-
-INSERT INTO features (code, name, type, description) VALUES
-    -- Features that are useful for any digital asset
-    ('PLATFORM', 'Digital asset platform', 'TECHNICAL',
-    'Platform for the execution, deployment or storage of the digital asset.'),
-    ('REPOSITORY', 'Asset repository', 'TECHNICAL',
-    'The repository where the digital asset is hosted.'),
-    ('LANGUAGE', 'Programming language', 'TECHNICAL',
-    'The programming language used in the digital asset.'),
-    ('FRAMEWORK', 'Web framework', 'TECHNICAL',
-    'The web framework used in the digital asset.'),
-    ('COMPLEXITY', 'Complexity level', 'GENERAL',
-    'The complexity level of the digital asset.'),
-
-    -- Features for Gen AI digital assets
-    ('SUGGESTED_MODEL', 'Suggested model', 'TECHNICAL',
-    'The AI model recommended for optimal performance of the digital asset.'),
-    ('PROMPT_TEMPLATE', 'Prompt template', 'TECHNICAL',
-    'The template structure used in the prompt to guide AI responses.'),
-    ('EXAMPLE_OUTPUT', 'Example output', 'USABILITY',
-    'Example output of the digital asset.');
+    'AGENTS', 'IN_USE', 'PUBLIC', '["python", "web", "agent"]');
 
 -- **********************************
 -- ***** Table characterizations ****
 -- **********************************
 
+-- ===== Features for Python Web Development Incremental Prompt =====
 INSERT INTO characterizations (asset, feature, value, detail) VALUES
-    -- Features for Python Web Development Incremental Prompt
-    (1, 'PLATFORM', 'VSCode', 'The development environment used for creating web applications.'),
-    (1, 'REPOSITORY', 'Github', 'https://github.com/juanbdo/prompt-engineering-lab/tree/main/ai-web-dev-incremental'),
-    (1, 'SUGGESTED_MODEL', 'GPT-4o', 'The AI model recommended for generating web application code.'),
-    (1, 'EXAMPLE_OUTPUT', 'An example of a simple web page generated using the prompt.', '<html>...</html>'),
-    (1, 'PROMPT_TEMPLATE', 'Incremental Development Template',
+(1, 'PLATFORM', 'VSCode', 'The development environment used for creating web applications.'),
+(1, 'SUGGESTED_MODEL', 'GPT-5', 'The AI model recommended for generating web application code.'),
+(1, 'SUGGESTED_TEMPERATURE', '0.2', 'The temperature setting recommended for generating web application code, where lower values result in more focused and deterministic outputs.'),
+(1, 'EXAMPLE_OUTPUT', 'An example of a simple web page generated using the prompt.', '<html>...</html>'),
+(1, 'PROMPT_TEMPLATE', 'Incremental Development Template',
 $$---
 description: 'Prompt para generar el incremento necesario tanto en el backend como en el frontend para implementar la funcionalidad descrita en una historia de usuario'
 name: python-web-increment
@@ -86,17 +45,49 @@ tools: ['edit', 'search', 'problems', 'changes', 'fetch', 'new']
 3. Evita generar nuevos estilos de código.
 4. Asegúrate de que el código generado siga las mejores prácticas de desarrollo en Python.
 5. Asegúrate de que el código generado sea compatible con las versiones de las librerías y frameworks utilizados en el proyecto.
+$$);
+
+-- ===== Features for GitHub MCP Server =====
+INSERT INTO characterizations (asset, feature, value, detail) VALUES
+(2, 'MODE', 'Remote', 'The mode of operation for the MCP, indicating that it is accessed remotely via API calls.'),
+(2, 'OVERVIEW', 'An MCP providing services of the GitHub platform, such as code search, repository management and issue tracking.', NULL),
+(2, 'TOOLS', 'List of tools provided by the MCP for interacting with GitHub services.', $$['Actions', 'Code Security', 'Context', 'Copilot', 'Dependabot', 'Discussions', 'Gists', 'Git', 'Issues', 'Labels', 'Notifications', 'Organizations', 'Projects', 'Pull Requests', 'Repositories', 'Secret Protection', 'Security Advisories', 'Stargazers' , 'Users']$$),
+(2, 'CONTENT', 'The content of the MCP includes the available endpoints, their functionalities, and any relevant documentation or resources for developers to effectively utilize the MCP.',
+$$# GitHub MCP Server
+The GitHub MCP Server connects AI tools directly to GitHub platform. This gives AI agents, assistants, and chatbots the ability to read repositories and code files, manage issues and PRs, analyze code, and automate workflows. All through natural language interactions.
+## Use Cases
+- Repository Management
+- Issue & PR Automation
+- CI/CD & Workflow Intelligence
+- Code Analysis
+- Team Collaboration
 $$),
-    -- Features for Python Web Developer Agent
-    (2, 'PLATFORM', 'VSCode', 'The platform where the AI agent operates.'),
-    (2, 'REPOSITORY', 'Github', 'https://github.com/juanbdo/prompt-engineering-lab/tree/main/ai-web-dev-agent'),
-    (2, 'SUGGESTED_MODEL', 'GPT-4o', 'The AI model recommended for generating web application code.'),
-    (2, 'EXAMPLE_OUTPUT', 'An example of a simple web page generated using the prompt.', '<html>...</html>'),
-    (2, 'PROMPT_TEMPLATE', 'Incremental Development Template',
+(2, 'SERVER_CONFIG', 'JSON for quick installation and configuration of the MCP in AI agents or tools.',
+$$
+{
+	"servers": {
+		"io.github.github/github-mcp-server": {
+			"type": "http",
+			"url": "https://api.githubcopilot.com/mcp/",
+			"gallery": "https://api.mcp.github.com",
+			"version": "0.33.0"
+		}
+	},
+	"inputs": []
+}
+$$);
+
+-- ===== Features for Python Web Developer Agent =====
+INSERT INTO characterizations (asset, feature, value, detail) VALUES
+(3, 'PLATFORM', 'VSCode', 'The platform where the AI agent operates.'),
+(3, 'SUGGESTED_MODEL', 'GPT-5', 'The AI model recommended for generating web application code.'),
+(3, 'SUGGESTED_TEMPERATURE', '0.2', 'The temperature setting recommended for generating web application code, where lower values result in more focused and deterministic outputs.'),
+(3, 'TOOLS', 'List of tools that agent can use.', $$['search/codebase', 'usages', 'problems', 'changes', 'edit/editFiles', 'search', 'new', 'runTasks']$$),
+(3, 'INSTRUCTIONS', 'Incremental Development Instructions',
 $$---
 description: 'Este agente customizado está diseñado para permitir al Desarrollador Python generar el backend y el frontend de una aplicación web utilizando una arquitectura de microservicios.'
 name: python-web-dev
-model: GPT-4o
+model: GPT-5
 handoffs:
   - label: Desplegar aplicación web en Python
     agent: python-web-deployer
@@ -133,31 +124,32 @@ El frontend usa Python con la versión 2.3.3 del framework Flask y necesita de l
 $$);
 
 -- **********************************
--- ****** Table asset_relations *****
+-- ****** Table related_assets ******
 -- **********************************
 
-INSERT INTO asset_relations (source, target, type) VALUES
-    (1, 2, 'DEPENDS_ON'),
-    (2, 1, 'USED_BY');
+INSERT INTO related_assets (source, target, type) VALUES
+    (1, 3, 'DEPENDS_ON'),
+    (2, 1, 'USED_BY'),
+    (3, 1, 'USED_BY');
 
 -- **********************************
 -- ******* Table actions ************
 -- **********************************
 
-INSERT INTO actions (id, asset, user_id, kind, type, content, parent) VALUES
-    (1, 1, 0, 'CONTRIBUTION', '3-PUBLICATION', NULL, NULL),
-    (2, 1, 0, 'CONTRIBUTION', '6-USAGE', NULL, NULL),
-    (3, 1, 0, 'CONTRIBUTION', '6-QUESTION', 'Is it possible to create the prompt and agent for a Django framework?', NULL),
-    (4, 1, 0, 'CONTRIBUTION', '6-ANSWER', 'Coming soon.', 3),
-    (5, 1, 0, 'CONTRIBUTION', '6-VOTE', 'POSITIVE', NULL),
-    (6, 1, 0, 'CONTRIBUTION', '6-COMMENT', 'This prompt and its related agent are great.', NULL),
-    (7, 2, 0, 'CONTRIBUTION', '3-PUBLICATION', NULL, NULL),
-    (8, 2, 0, 'CONTRIBUTION', '6-USAGE', NULL, NULL);
+INSERT INTO actions (id, asset, user_id, type, content, parent) VALUES
+    (1, 1, 0, '3-PUBLICATION', NULL, NULL),
+    (2, 1, 0, '6-USAGE', NULL, NULL),
+    (3, 1, 0, '6-QUESTION', 'Is it possible to create the prompt and agent for a Django framework?', NULL),
+    (4, 1, 0, '6-ANSWER', 'Coming soon.', 3),
+    (5, 1, 0, '6-VOTE', 'POSITIVE', NULL),
+    (6, 1, 0, '6-COMMENT', 'This prompt and its related agent are great.', NULL),
+    (7, 2, 0, '3-PUBLICATION', NULL, NULL),
+    (8, 2, 0, '6-USAGE', NULL, NULL);
 
 -- **********************************
--- ********* Table favorites ********
+-- ****** Table favorite_assets *****
 -- **********************************
 
-INSERT INTO favorites (user_id, asset) VALUES
+INSERT INTO favorite_assets (user_id, asset) VALUES
     (0, 1),
     (0, 2);

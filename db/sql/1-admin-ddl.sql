@@ -26,7 +26,7 @@ CREATE TABLE business_units (
     code        VARCHAR(50)  NOT NULL,
     name        VARCHAR(100) NOT NULL,
     description VARCHAR(500),
-    type        VARCHAR(100), -- references List_items where list='BIZ_UNIT_TYPE'
+    type        VARCHAR(100), -- references List_items.value where list='BIZ_UNIT_TYPE'
     parent      VARCHAR(50),
     is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
@@ -40,7 +40,7 @@ CREATE TABLE lists (
     name        VARCHAR(100) NOT NULL,
     description VARCHAR(500),
     module      VARCHAR(50),
-    type        VARCHAR(100) NOT NULL, -- references List_items where list='LIST_TYPE'
+    type        VARCHAR(100) NOT NULL, -- references List_items.value where list='LIST_TYPE'
     is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ,
@@ -57,6 +57,18 @@ CREATE TABLE list_items (
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ,
     CONSTRAINT pk_list_items PRIMARY KEY (list, value)
+);
+
+-- Table item_translations
+CREATE TABLE item_translations (
+    list        VARCHAR(50)  NOT NULL,
+    value       VARCHAR(100) NOT NULL,
+    lang        VARCHAR(10)  NOT NULL,
+    label       VARCHAR(200) NOT NULL,
+    is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
+    created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ,
+    CONSTRAINT pk_item_translations PRIMARY KEY (list, value, lang)
 );
 
 -- Table roles
@@ -80,8 +92,8 @@ CREATE TABLE users (
     last_name      VARCHAR(100)  NOT NULL,
     menu_role      VARCHAR(50)   NOT NULL,
     business_unit  VARCHAR(50)   NOT NULL,
-    is_active      BOOLEAN       NOT NULL DEFAULT TRUE,
     is_superuser   BOOLEAN       NOT NULL DEFAULT FALSE,
+    is_active      BOOLEAN       NOT NULL DEFAULT TRUE,
     created_at     TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     updated_at     TIMESTAMPTZ,
     last_login_at  TIMESTAMPTZ,
@@ -94,9 +106,9 @@ CREATE TABLE options (
     code        VARCHAR(50)  NOT NULL,
     name        VARCHAR(100) NOT NULL,
     description VARCHAR(500),
-    path        VARCHAR(500),
-    icon        VARCHAR(500),
-	type        VARCHAR(100) NOT NULL, -- references List_items where list='OPTION_TYPE'
+    path        TEXT,
+    icon        TEXT,
+	type        VARCHAR(100) NOT NULL, -- references List_items.value where list='OPTION_TYPE'
     sort_order  INT          NOT NULL DEFAULT 0,
     is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
@@ -173,64 +185,59 @@ ALTER TABLE privileges
 -- **********************************
 
 INSERT INTO modules (code, name, description, sort_order, icon) VALUES
-    ('ADMIN',
-     'Administration',
-     'Administration centralizes security, reference data and structural configuration of SynapxIA, ensuring consistent behavior across modules, user profiles and environments.',
-     10,'wrench-screwdriver'),
-    ('CATALOG',
-     'Digital Assets',
-     'Digital Assets manages the catalog, characterization and evolution of key digital assets, enabling reuse, governance and alignment with AI initiatives and business needs.',
-     20,'server-stack'),
-    ('COLLAB',
-     'Collaboration',
-     'Collaboration provides shared spaces, teams and structures so people can coordinate work, track progress and align around AI adoption initiatives across the organization.',
-     30,'user-group'),
-    ('GEN_AI',
-     'Generative AI',
-     'Generative AI groups the core GenAI capabilities of SynapxIA, including prompt galleries, MCP integrations, flows, models and agents to design and operate AI-powered solutions.',
-     40,'sparkles'),
-    ('INITS',
-     'GenAI Initiatives',
-     'AI Initiatives supports the full lifecycle of AI ideas and projects, from proposal and exploration to decision making, tracking and promotion into reusable assets.',
-     50,'ellipsis-horizontal-circle'),
-    ('INSIGHTS',
-     'GenAI Insights',
-     'GenAI Metrics consolidates KPIs, dashboards and reports that measure the adoption, usage and value of Generative AI across the organization and its processes.',
-     60,'presentation-chart-bar'),
-    ('WORKFLOWS',
-     'Processes',
-     'Processes maps the value chain and key process models of the organization, connecting them with AI initiatives, digital assets and GenAI metrics for continuous improvement.',
-     70,'share');
+    ('ADMIN', 'Administration',
+     'Administration centralizes the support capabilities required to operate SynapxIA, including roles, users, modules, privileges and core configuration elements that enable secure and consistent platform management.',
+     10, 'wrench-screwdriver'),
+    ('TAXO', 'Asset Taxonomy',
+     'Asset Taxonomy defines the classification framework used across SynapxIA, including categories, features, specifications and reference structures that support the organization, characterization and governance of digital and AI assets.',
+     20, 'tag'),
+    ('COLLAB', 'Collaboration',
+     'Collaboration provides the structures required to coordinate AI adoption work across the organization, including teams, projects, dimensions and shared collaboration elements for aligning people, initiatives and outcomes.',
+     30, 'user-group'),
+    ('LIB', 'Asset Library',
+     'Asset Library manages the reusable digital and AI asset repository of SynapxIA, including prompt galleries, MCP catalogs, agents and related assets that can be discovered, governed, reused and evolved.',
+     40, 'archive-box'),
+    ('INITS', 'Initiatives',
+     'Initiatives supports the lifecycle of AI adoption opportunities, including proposal registration, evaluation, tracking and promotion of selected initiatives into reusable organizational assets.',
+     50, 'rocket-launch'),
+    ('ANA', 'Analytics',
+     'Analytics consolidates the measurement and reporting capabilities of SynapxIA, enabling analysis by unit, team and return on investment to evaluate adoption, usage, impact and value generation.',
+     60, 'presentation-chart-bar'),
+    ('PROC', 'Processes',
+     'Processes maps the organizational process landscape, including value chains, process maps and process models that help connect business operations with AI opportunities, assets and measurable improvements.',
+     70, 'share');
 
 -- **********************************
 -- ***** Table lists/list_items *****
 -- **********************************
 
 -- ===== List: List Type =====
-INSERT INTO lists (code, name, description, type, module, is_active) VALUES (
+INSERT INTO lists (code, name, description, type, module) VALUES (
     'LIST_TYPE', 'List types for system configuration',
     'List that classifies the types of lists in two categories: List of Values and Scale.',
-    'LIST_OF_VALUES', 'ADMIN', TRUE);
-INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
-    ('LIST_TYPE', 'LIST_OF_VALUES', 'List of Values', 10, TRUE),
-    ('LIST_TYPE', 'SCALE', 'Scale', 20, TRUE);
+    'LIST_OF_VALUES', 'ADMIN');
+INSERT INTO list_items (list, value, label, sort_order) VALUES
+    ('LIST_TYPE', 'LIST_OF_VALUES', 'List of Values', 10),
+    ('LIST_TYPE', 'SCALE',          'Scale',          20),
+    ('LIST_TYPE', 'FEATURE',        'Feature',        30),
+    ('LIST_TYPE', 'CRITERIA',       'Criteria',       40);
 
 -- ===== List: Option Type =====
-INSERT INTO lists (code, name, description, type, module, is_active) VALUES (
+INSERT INTO lists (code, name, description, type, module) VALUES (
     'OPTION_TYPE', 'Option types for navigation items',
     'List that classifies application options by type, such as content pages, forms or reports.',
-    'LIST_OF_VALUES', 'ADMIN', TRUE);
-INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
-    ('OPTION_TYPE', 'CONTENT', 'Content', 10, TRUE),
-    ('OPTION_TYPE', 'FORM',    'Form',    20, TRUE),
-    ('OPTION_TYPE', 'REPORT',  'Report',  30, TRUE);
+    'LIST_OF_VALUES', 'ADMIN');
+INSERT INTO list_items (list, value, label, sort_order) VALUES
+    ('OPTION_TYPE', 'CONTENT', 'Content', 10),
+    ('OPTION_TYPE', 'FORM',    'Form',    20),
+    ('OPTION_TYPE', 'REPORT',  'Report',  30);
 
 -- ===== List: Business Unit Type =====
-INSERT INTO lists (code, name, description, type, module, is_active) VALUES (
+INSERT INTO lists (code, name, description, type, module) VALUES (
     'BIZ_UNIT_TYPE', 'Types of organizational units',
     'List that classifies the types of organizational units (e.g., Department, Business Unit, Chapter) available in SynapxIA.',
-    'LIST_OF_VALUES', 'ADMIN', TRUE);
-INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
-    ('BIZ_UNIT_TYPE', 'BUSINESS_UNIT','Business Unit', 10, TRUE),
-    ('BIZ_UNIT_TYPE', 'DEPARTMENT',   'Department',    20, TRUE),
-    ('BIZ_UNIT_TYPE', 'CHAPTER',      'Chapter',       30, TRUE);
+    'LIST_OF_VALUES', 'ADMIN');
+INSERT INTO list_items (list, value, label, sort_order) VALUES
+    ('BIZ_UNIT_TYPE', 'BUSINESS_UNIT','Business Unit', 10),
+    ('BIZ_UNIT_TYPE', 'DEPARTMENT',   'Department',    20),
+    ('BIZ_UNIT_TYPE', 'CHAPTER',      'Chapter',       30);

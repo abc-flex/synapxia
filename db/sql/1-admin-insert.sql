@@ -23,17 +23,14 @@ INSERT INTO options (module, code, name, description, sort_order, type, path) VA
      'Configure options within each module and their visibility.',
      60,'FORM','/admin/options');
 
--- ===== Module: CATALOG =====
+-- ===== Module: TAXO =====
 INSERT INTO options (module, code, name, description, sort_order, type, path) VALUES
-    ('CATALOG','CATEGORIES','Categories',
+    ('TAXO','CATEGORIES','Categories',
      'Define and maintain the taxonomy of digital asset categories.',
-     10,'FORM','/catalog/categories'),
-    ('CATALOG','CHARACTERISTICS','Characteristics',
+     10,'FORM','/taxo/categories'),
+    ('TAXO','FEATURES','Features',
      'Define metadata and attributes describing digital assets.',
-     20,'FORM','/catalog/characteristics'),
-    ('CATALOG','ASSETS','Assets',
-     'Inventory of digital assets linked to owners, initiatives and processes.',
-     30,'FORM','/catalog/assets');
+     20,'FORM','/taxo/features');
 
 -- ===== Module: COLLAB =====
 INSERT INTO options (module, code, name, description, sort_order, type, path) VALUES
@@ -50,68 +47,68 @@ INSERT INTO options (module, code, name, description, sort_order, type, path) VA
      'Dashboard to monitor tasks and collaboration workload.',
      40,'FORM','/collab/dashboard');
 
--- ===== Module: GEN_AI =====
+-- ===== Module: ASSET LIBRARY =====
 INSERT INTO options (module, code, name, description, sort_order, type, path) VALUES
-    ('GEN_AI','PROMPTS','Prompts',
+    ('LIB','ASSETS','Asset Repository',
+     'Inventory of digital assets linked to owners, initiatives and processes.',
+     10,'FORM','/lib/assets'),
+    ('LIB','PROMPTS','Prompt Gallery',
      'Curated gallery of reusable GenAI prompts.',
-     10,'FORM','/genai/prompts'),
-    ('GEN_AI','MCPS','MCPs',
-     'Repository of tools compatible with Model Context Protocol.',
-     20,'FORM','/genai/mcps'),
-    ('GEN_AI','RAG_APPS','RAG Apps',
-     'Configure and monitor RAG use cases.',
-     30,'FORM','/genai/rag_apps'),
-    ('GEN_AI','MODELS','Models',
+     20,'FORM','/lib/prompts'),
+    ('LIB','MCPS','MCP Directory',
+     'Curated directory of tools compatible with Model Context Protocol.',
+     30,'FORM','/lib/mcps'),
+    ('LIB','AGENTS','Agent Index',
+     'Index of AI agents with higher autonomy.',
+     40,'FORM','/lib/agents'),
+    ('LIB','FLOWS','Agentic Flows',
+     'Registry of agentic flows with multiple agents and MCP tools.',
+     50,'Form','/lib/agentic_flows'),
+    ('LIB','SKILLS','Skill Catalog',
+     'Curated catalog of reusable skills for AI agents.',
+     60,'FORM','/lib/skills'),
+    ('LIB','ASSISTANTS','Assistants',
+     'Index of assistants scope, tone and tools.',
+     70,'FORM','/lib/assistants'),
+    ('LIB','RAG_APPS','RAG Apps',
+     'Directory of Retrieval-Augmented Generation applications.',
+     80,'FORM','/lib/rag_apps'),
+    ('LIB','MODELS','Models',
      'Catalog of AI and ML models used in the platform.',
-     40,'FORM','/genai/models'),
-    ('GEN_AI','ASSISTANTS','Assistants',
-     'Define assistants scope, tone and tools.',
-     50,'FORM','/genai/assistants'),
-    ('GEN_AI','AGENTS','Agents',
-     'Design and govern AI agents with higher autonomy.',
-     60,'FORM','/genai/agents');
+     90,'FORM','/lib/models');
 
--- ===== Module: INITS =====
+-- ===== Module: INITIATIVES =====
 INSERT INTO options (module, code, name, description, sort_order, type, path) VALUES
     ('INITS','PROPOSAL','Proposal',
-     'Capture new GenAI initiative proposals.',
+     'Capture new initiative proposals.',
      10,'FORM','/inits/prompts'),
     ('INITS','EXPLORE','Explore',
      'Browse and analyze the initiative portfolio.',
-     20,'FORM','/inits/explore'),
-    ('INITS','PROMOTE','Promote',
-     'Convert mature initiatives into reusable assets.',
-     30,'FORM','/inits/promote');
+     20,'FORM','/inits/explore');
 
--- ===== Module: INSIGHTS =====
+-- ===== Module: ANALYTICS =====
 INSERT INTO options (module, code, name, description, sort_order, type, path) VALUES
-    ('INSIGHTS','KPIS','KPIs',
-     'Define and track performance indicators.',
-     10,'FORM','/insights/kpis'),
-    ('INSIGHTS','DASHBOARDS','Dashboards',
-     'Dashboards for adoption and impact analysis.',
-     20,'FORM','/insights/dashboards'),
-    ('INSIGHTS','REPORTS','Reports',
-     'Scheduled and on-demand GenAI reports.',
-     30,'FORM','/insights/reports');
+    ('ANA','BY_UNITS','Analytics by Unit',
+     'Analyze AI adoption and impact by organizational units.',
+     10,'FORM','/ana/by_units'),
+    ('ANA','BY_TEAMS','Analytics by Team',
+     'Analyze AI adoption and impact by teams.',
+     20,'FORM','/ana/by_teams'),
+    ('ANA','BY_ROLE','Analytics by Role',
+     'Analyze AI adoption and impact by user roles.',
+     30,'FORM','/ana/by_role');
 
--- ===== Module: WORKFLOWS =====
+-- ===== Module: PROCESSES =====
 INSERT INTO options (module, code, name, description, sort_order, type, path) VALUES
-    ('WORKFLOWS','VALUE_CHAIN','Value Chain',
+    ('PROC','VALUE_CHAIN','Value Chain',
      'Identify stages where AI can create impact.',
-     10,'FORM','/workflows/value_chain'),
-    ('WORKFLOWS','MAP','Process Map',
+     10,'FORM','/proc/value_chain'),
+    ('PROC','MAP','Process Map',
      'High-level process landscape representation.',
-     20,'FORM','/workflows/process_map'),
-    ('WORKFLOWS','MODELS','Process Models',
+     20,'FORM','/proc/process_map'),
+    ('PROC','MODELS','Process Models',
      'Document and relate detailed process models.',
-     30,'FORM','/workflows/process_models'),
-    ('WORKFLOWS','AI_FLOWS','AI Flows',
-     'Design multi-step AI-enabled workflows.',
-     40,'FORM','/workflows/ai_flows'),
-    ('WORKFLOWS','N8N','n8n',
-     'Document n8n-based integrations and automations.',
-     50,'FORM','/workflows/n8n');
+     30,'FORM','/proc/process_models');
 
 -- **********************************
 -- ********** Table: Roles **********
@@ -140,12 +137,16 @@ VALUES
 INSERT INTO privileges (role, module, option, can_edit)
 VALUES
     -- ADMIN
-    ('ADMINISTRATOR','ADMIN','UNITS',   TRUE),
-    ('ADMINISTRATOR','ADMIN','ROLES',   TRUE),
-    ('ADMINISTRATOR','ADMIN','USERS',   TRUE),
-    ('ADMINISTRATOR','ADMIN','LISTS',   TRUE),
-    ('ADMINISTRATOR','ADMIN','MODULES', TRUE),
-    ('ADMINISTRATOR','ADMIN','OPTIONS', TRUE),
+    ('ADMINISTRATOR','ADMIN','BUSINESS_UNITS', TRUE),
+    ('ADMINISTRATOR','ADMIN','ROLES',          TRUE),
+    ('ADMINISTRATOR','ADMIN','USERS',          TRUE),
+    ('ADMINISTRATOR','ADMIN','LISTS',          TRUE),
+    ('ADMINISTRATOR','ADMIN','MODULES',        TRUE),
+    ('ADMINISTRATOR','ADMIN','OPTIONS',        TRUE),
+
+    -- TAXO
+    ('ADMINISTRATOR','TAXO','CATEGORIES', TRUE),
+    ('ADMINISTRATOR','TAXO','FEATURES',   TRUE),
 
     -- COLLAB
     ('ADMINISTRATOR','COLLAB','TEAMS',      TRUE),
@@ -153,108 +154,106 @@ VALUES
     ('ADMINISTRATOR','COLLAB','DIMENSIONS', TRUE),
     ('ADMINISTRATOR','COLLAB','DASHBOARD',  TRUE),
 
-    -- GEN_AI
-    ('ADMINISTRATOR','GEN_AI','PROMPTS',    TRUE),
-    ('ADMINISTRATOR','GEN_AI','MCPS',       TRUE),
-    ('ADMINISTRATOR','GEN_AI','RAG_APPS',   TRUE),
-    ('ADMINISTRATOR','GEN_AI','MODELS',     TRUE),
-    ('ADMINISTRATOR','GEN_AI','ASSISTANTS', TRUE),
-    ('ADMINISTRATOR','GEN_AI','AGENTS',     TRUE),
+    -- LIB
+    ('ADMINISTRATOR','LIB','ASSETS',     TRUE),
+    ('ADMINISTRATOR','LIB','PROMPTS',    TRUE),
+    ('ADMINISTRATOR','LIB','MCPS',       TRUE),
+    ('ADMINISTRATOR','LIB','AGENTS',     TRUE),
+    ('ADMINISTRATOR','LIB','FLOWS',      TRUE),
+    ('ADMINISTRATOR','LIB','SKILLS',     TRUE),
+    ('ADMINISTRATOR','LIB','ASSISTANTS', TRUE),
+    ('ADMINISTRATOR','LIB','RAG_APPS',   TRUE),
+    ('ADMINISTRATOR','LIB','MODELS',     TRUE),
 
     -- INITS
     ('ADMINISTRATOR','INITS','PROPOSAL', TRUE),
     ('ADMINISTRATOR','INITS','EXPLORE',  TRUE),
-    ('ADMINISTRATOR','INITS','PROMOTE',  TRUE),
 
-    -- CATALOG
-    ('ADMINISTRATOR','CATALOG','CATEGORIES',      TRUE),
-    ('ADMINISTRATOR','CATALOG','CHARACTERISTICS', TRUE),
-    ('ADMINISTRATOR','CATALOG','ASSETS',          TRUE),
+    -- ANA
+    ('ADMINISTRATOR','ANA','BY_UNITS', TRUE),
+    ('ADMINISTRATOR','ANA','BY_TEAMS', TRUE),
+    ('ADMINISTRATOR','ANA','BY_ROLE',  TRUE),
 
-    -- INSIGHTS
-    ('ADMINISTRATOR','INSIGHTS','KPIS',       TRUE),
-    ('ADMINISTRATOR','INSIGHTS','DASHBOARDS', TRUE),
-    ('ADMINISTRATOR','INSIGHTS','REPORTS',    TRUE),
-
-    -- WORKFLOWS
-    ('ADMINISTRATOR','WORKFLOWS','VALUE_CHAIN', TRUE),
-    ('ADMINISTRATOR','WORKFLOWS','MAP',         TRUE),
-    ('ADMINISTRATOR','WORKFLOWS','MODELS',      TRUE),
-    ('ADMINISTRATOR','WORKFLOWS','AI_FLOWS',    TRUE),
-    ('ADMINISTRATOR','WORKFLOWS','N8N',         TRUE);
+    -- PROC
+    ('ADMINISTRATOR','PROC','VALUE_CHAIN', TRUE),
+    ('ADMINISTRATOR','PROC','MAP',         TRUE),
+    ('ADMINISTRATOR','PROC','MODELS',      TRUE);
 
 -- ===== Role: ADMINISTRATIVE =====
 INSERT INTO privileges (role, module, option, can_edit)
 VALUES
+    -- TAXO
+    ('ADMINISTRATIVE','TAXO','CATEGORIES', TRUE),
+    ('ADMINISTRATIVE','TAXO','FEATURES',   TRUE),
+
     -- COLLAB
     ('ADMINISTRATIVE','COLLAB','TEAMS',      TRUE),
     ('ADMINISTRATIVE','COLLAB','PROJECTS',   TRUE),
     ('ADMINISTRATIVE','COLLAB','DIMENSIONS', TRUE),
     ('ADMINISTRATIVE','COLLAB','DASHBOARD',  TRUE),
 
-    -- GEN_AI
-    ('ADMINISTRATIVE','GEN_AI','PROMPTS',    TRUE),
-    ('ADMINISTRATIVE','GEN_AI','MCPS',       TRUE),
-    ('ADMINISTRATIVE','GEN_AI','RAG_APPS',   TRUE),
-    ('ADMINISTRATIVE','GEN_AI','MODELS',     TRUE),
-    ('ADMINISTRATIVE','GEN_AI','ASSISTANTS', TRUE),
-    ('ADMINISTRATIVE','GEN_AI','AGENTS',     TRUE),
+    -- LIB
+    ('ADMINISTRATIVE','LIB','ASSETS',     TRUE),
+    ('ADMINISTRATIVE','LIB','PROMPTS',    TRUE),
+    ('ADMINISTRATIVE','LIB','MCPS',       TRUE),
+    ('ADMINISTRATIVE','LIB','AGENTS',     TRUE),
+    ('ADMINISTRATIVE','LIB','FLOWS',      TRUE),
+    ('ADMINISTRATIVE','LIB','SKILLS',     TRUE),
+    ('ADMINISTRATIVE','LIB','ASSISTANTS', TRUE),
+    ('ADMINISTRATIVE','LIB','RAG_APPS',   TRUE),
+    ('ADMINISTRATIVE','LIB','MODELS',     TRUE),
 
     -- INITS
     ('ADMINISTRATIVE','INITS','PROPOSAL', TRUE),
     ('ADMINISTRATIVE','INITS','EXPLORE',  TRUE),
-    ('ADMINISTRATIVE','INITS','PROMOTE',  TRUE),
 
-    -- CATALOG
-    ('ADMINISTRATIVE','CATALOG','CATEGORIES',      TRUE),
-    ('ADMINISTRATIVE','CATALOG','CHARACTERISTICS', TRUE),
-    ('ADMINISTRATIVE','CATALOG','ASSETS',          TRUE),
+    -- ANA
+    ('ADMINISTRATIVE','ANA','BY_UNITS', TRUE),
+    ('ADMINISTRATIVE','ANA','BY_TEAMS', TRUE),
+    ('ADMINISTRATIVE','ANA','BY_ROLE',  TRUE),
 
-    -- INSIGHTS
-    ('ADMINISTRATIVE','INSIGHTS','KPIS',       TRUE),
-    ('ADMINISTRATIVE','INSIGHTS','DASHBOARDS', TRUE),
-    ('ADMINISTRATIVE','INSIGHTS','REPORTS',    TRUE),
-
-    -- WORKFLOWS
-    ('ADMINISTRATIVE','WORKFLOWS','VALUE_CHAIN', TRUE),
-    ('ADMINISTRATIVE','WORKFLOWS','MAP',         TRUE),
-    ('ADMINISTRATIVE','WORKFLOWS','MODELS',      TRUE),
-    ('ADMINISTRATIVE','WORKFLOWS','AI_FLOWS',    TRUE),
-    ('ADMINISTRATIVE','WORKFLOWS','N8N',         TRUE);
+    -- PROC
+    ('ADMINISTRATIVE','PROC','VALUE_CHAIN', TRUE),
+    ('ADMINISTRATIVE','PROC','MAP',         TRUE),
+    ('ADMINISTRATIVE','PROC','MODELS',      TRUE);
 
 -- ===== Role: COLLABORATOR =====
 INSERT INTO privileges (role, module, option, can_edit)
 VALUES
+    -- TAXO (read-only)
+    ('COLLABORATOR','TAXO','CATEGORIES', FALSE),
+    ('COLLABORATOR','TAXO','FEATURES',   FALSE),
+
     -- COLLAB (read-only)
     ('COLLABORATOR','COLLAB','TEAMS',      FALSE),
     ('COLLABORATOR','COLLAB','PROJECTS',   FALSE),
     ('COLLABORATOR','COLLAB','DIMENSIONS', FALSE),
     ('COLLABORATOR','COLLAB','DASHBOARD',  FALSE),
 
-    -- GEN_AI (read-only)
-    ('COLLABORATOR','GEN_AI','PROMPTS',    FALSE),
-    ('COLLABORATOR','GEN_AI','MCPS',       FALSE),
-    ('COLLABORATOR','GEN_AI','RAG_APPS',   FALSE),
-    ('COLLABORATOR','GEN_AI','MODELS',     FALSE),
-    ('COLLABORATOR','GEN_AI','ASSISTANTS', FALSE),
-    ('COLLABORATOR','GEN_AI','AGENTS',     FALSE),
+    -- LIB (read-only)
+    ('COLLABORATOR','LIB','ASSETS',     FALSE),
+    ('COLLABORATOR','LIB','PROMPTS',    FALSE),
+    ('COLLABORATOR','LIB','MCPS',       FALSE),
+    ('COLLABORATOR','LIB','AGENTS',     FALSE),
+    ('COLLABORATOR','LIB','FLOWS',      FALSE),
+    ('COLLABORATOR','LIB','SKILLS',     FALSE),
+    ('COLLABORATOR','LIB','ASSISTANTS', FALSE),
+    ('COLLABORATOR','LIB','RAG_APPS',   FALSE),
+    ('COLLABORATOR','LIB','MODELS',     FALSE),
 
-    -- INITS
+    -- INITS (read-only)
     ('COLLABORATOR','INITS','PROPOSAL', TRUE),
     ('COLLABORATOR','INITS','EXPLORE',  FALSE),
-    ('COLLABORATOR','INITS','PROMOTE',  FALSE),
 
-    -- CATALOG (read-only)
-    ('COLLABORATOR','CATALOG','CATEGORIES',      FALSE),
-    ('COLLABORATOR','CATALOG','CHARACTERISTICS', FALSE),
-    ('COLLABORATOR','CATALOG','ASSETS',          FALSE),
+    -- ANA (read-only)
+    ('COLLABORATOR','ANA','BY_UNITS', FALSE),
+    ('COLLABORATOR','ANA','BY_TEAMS', FALSE),
+    ('COLLABORATOR','ANA','BY_ROLE',  FALSE),
 
-    -- WORKFLOWS (read-only)
-    ('COLLABORATOR','WORKFLOWS','VALUE_CHAIN', FALSE),
-    ('COLLABORATOR','WORKFLOWS','MAP',         FALSE),
-    ('COLLABORATOR','WORKFLOWS','MODELS',      FALSE),
-    ('COLLABORATOR','WORKFLOWS','AI_FLOWS',    FALSE),
-    ('COLLABORATOR','WORKFLOWS','N8N',         FALSE);
+    -- PROC (read-only)
+    ('COLLABORATOR','PROC','VALUE_CHAIN', FALSE),
+    ('COLLABORATOR','PROC','MAP',         FALSE),
+    ('COLLABORATOR','PROC','MODELS',      FALSE);
 
 -- **********************************
 -- ********** Table Units ***********
@@ -269,7 +268,7 @@ INSERT INTO business_units (code, name, description, type, parent, is_active) VA
 -- ********** Table Users ***********
 -- **********************************
 
-INSERT INTO users (id, username, email, password_hash, first_name, last_name, menu_role, business_unit, is_active) VALUES
+INSERT INTO users (id, username, email, password_hash, first_name, last_name, menu_role, business_unit, is_superuser, is_active) VALUES
    (0,
     'admin',
     'admin@synapxia.org',
@@ -279,4 +278,5 @@ INSERT INTO users (id, username, email, password_hash, first_name, last_name, me
     'Administrator',
     'ADMINISTRATOR',
     'GEN_AI',
+    TRUE,
     TRUE);

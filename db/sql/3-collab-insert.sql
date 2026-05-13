@@ -2,25 +2,25 @@
 -- ********** Table Roles ***********
 -- **********************************
 
-INSERT INTO roles (code, name, description, is_active) VALUES
-    ('BACK',  'Backend Developer',  'Responsible for server-side development, APIs, data access and integration with external services, ensuring performance, security and scalability.', TRUE),
-    ('FRONT', 'Frontend Developer', 'Responsible for user interface implementation, client-side logic and interaction patterns, ensuring usability, accessibility and a consistent user experience.', TRUE),
-    ('QA',    'QA Engineer',        'Responsible for designing and executing tests, validating quality criteria and helping prevent defects through automated and manual testing practices.', TRUE),
-    ('PO',    'Product Owner',      'Responsible for defining product vision and priorities, managing the backlog and collaborating with stakeholders to maximize delivered business value.', TRUE),
-    ('TL',    'Team Lead',          'Responsible for guiding the team technically and operationally, facilitating collaboration, removing blockers and aligning delivery with agreed objectives.', TRUE);
+INSERT INTO roles (code, name, description) VALUES
+    ('BACK',  'Backend Developer',  'Responsible for server-side development, APIs, data access and integration with external services, ensuring performance, security and scalability.'),
+    ('FRONT', 'Frontend Developer', 'Responsible for user interface implementation, client-side logic and interaction patterns, ensuring usability, accessibility and a consistent user experience.'),
+    ('QA',    'QA Engineer',        'Responsible for designing and executing tests, validating quality criteria and helping prevent defects through automated and manual testing practices.'),
+    ('PO',    'Product Owner',      'Responsible for defining product vision and priorities, managing the backlog and collaborating with stakeholders to maximize delivered business value.'),
+    ('TL',    'Team Lead',          'Responsible for guiding the team technically and operationally, facilitating collaboration, removing blockers and aligning delivery with agreed objectives.');
 
 
 -- **********************************
 -- ********** Table Teams ***********
 -- **********************************
 
-INSERT INTO teams (code, name, description, lead, chat_channel_url, kanban_board_url, is_active)
+INSERT INTO teams (code, name, description)
 VALUES
-    ('CORE',      'Core Engineering Squad',      'Multidisciplinary team in charge of building and maintaining shared platform components and technical foundations.', NULL, NULL, NULL, TRUE),
-    ('SUPPORT',   'Customer Support Solutions',  'Team focused on solutions that support customer-facing operations, incidents and service request workflows.',       NULL, NULL, NULL, TRUE),
-    ('OPS',       'Operations & Automation',     'Team dedicated to process optimization, automation and reliability of internal operational workflows.',          NULL, NULL, NULL, TRUE),
-    ('ANALYTICS', 'Analytics & Insights',        'Team responsible for analytical solutions, dashboards and data products that support decision-making.',          NULL, NULL, NULL, TRUE),
-    ('LAB',       'Innovation Lab',              'Exploratory team oriented to experiments, prototypes and proofs of concept for new ideas and technologies.',     NULL, NULL, NULL, TRUE);
+    ('CORE',      'Core Engineering Squad',      'Multidisciplinary team in charge of building and maintaining shared platform components and technical foundations.'),
+    ('SUPPORT',   'Customer Support Solutions',  'Team focused on solutions that support customer-facing operations, incidents and service request workflows.'),
+    ('OPS',       'Operations & Automation',     'Team dedicated to process optimization, automation and reliability of internal operational workflows.'),
+    ('ANALYTICS', 'Analytics & Insights',        'Team responsible for analytical solutions, dashboards and data products that support decision-making.'),
+    ('LAB',       'Innovation Lab',              'Exploratory team oriented to experiments, prototypes and proofs of concept for new ideas and technologies.');
 
 -- **********************************
 -- ********** Table Users ***********
@@ -133,7 +133,7 @@ VALUES
     -- CORE: users 1-12
     ('CORE', 1,  'TL'),
     ('CORE', 2,  'PO'),
-    ('CORE', 3,  'PO'),
+    (NULL, 3,  'PO'),
     ('CORE', 4,  'BACK'),
     ('CORE', 5,  'BACK'),
     ('CORE', 6,  'BACK'),
@@ -147,7 +147,7 @@ VALUES
     -- SUPPORT: users 13-24
     ('SUPPORT', 13, 'TL'),
     ('SUPPORT', 14, 'PO'),
-    ('SUPPORT', 15, 'PO'),
+    (NULL, 15, 'PO'),
     ('SUPPORT', 16, 'BACK'),
     ('SUPPORT', 17, 'BACK'),
     ('SUPPORT', 18, 'BACK'),
@@ -161,7 +161,7 @@ VALUES
     -- OPS: users 25-36
     ('OPS', 25, 'TL'),
     ('OPS', 26, 'PO'),
-    ('OPS', 27, 'PO'),
+    (NULL, 27, 'PO'),
     ('OPS', 28, 'BACK'),
     ('OPS', 29, 'BACK'),
     ('OPS', 30, 'BACK'),
@@ -184,7 +184,7 @@ VALUES
     ('ANALYTICS', 45, 'FRONT'),
     ('ANALYTICS', 46, 'QA'),
     ('ANALYTICS', 47, 'QA'),
-    ('ANALYTICS', 48, 'QA'),
+    (NULL, 48, 'QA'),
 
     -- LAB: users 49-60
     ('LAB', 49, 'TL'),
@@ -198,4 +198,4 @@ VALUES
     ('LAB', 57, 'FRONT'),
     ('LAB', 58, 'QA'),
     ('LAB', 59, 'QA'),
-    ('LAB', 60, 'QA');
+    (NULL, 60, 'QA');

@@ -148,6 +148,41 @@ class ListItemUpdate(SQLModel):
     is_active: Optional[bool] = Field(
         default=None, description="Indicates if the item is active")
 
+
+# ItemTranslations Models
+class ItemTranslationBase(SQLModel):
+    list: str = Field(sa_column=Column(
+        'list', String, ForeignKey('lists.code'), primary_key=True))
+    value: str = Field(sa_column=Column(
+        'value', String(100), primary_key=True))
+    lang: str = Field(sa_column=Column(
+        'lang', String(10), primary_key=True))
+    label: str = Field(max_length=200)
+    is_active: bool = Field(default=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = None
+
+
+class ItemTranslation(ItemTranslationBase, table=True):
+    __tablename__ = "item_translations"
+
+
+class ItemTranslationCreate(SQLModel):
+    list: str = Field(max_length=50, description="List code")
+    value: str = Field(max_length=100, description="Item value")
+    lang: str = Field(max_length=10, description="Language code")
+    label: str = Field(max_length=200, description="Translated label")
+    is_active: Optional[bool] = Field(
+        default=True, description="Indicates if the translation is active")
+
+
+class ItemTranslationUpdate(SQLModel):
+    label: Optional[str] = Field(
+        default=None, max_length=200, description="Translated label")
+    is_active: Optional[bool] = Field(
+        default=None, description="Indicates if the translation is active")
+
+
 # BusinessUnits Models
 
 

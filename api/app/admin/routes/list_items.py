@@ -1,12 +1,12 @@
 import logging
-from typing import List
+from typing import List, Dict, Any
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 from sqlalchemy.exc import IntegrityError
 
-from ..internal.models import ListItem, ListItemCreate, ListItemUpdate, List as ListModel
+from ..internal.models import ListItem, ListItemCreate, ListItemUpdate, List as ListModel, ItemTranslation
 from ..internal.dependencies import get_db_session
 
 logger = logging.getLogger(__name__)
@@ -68,6 +68,129 @@ def get(list_code: str, value: str, session: Session = Depends(get_db_session)) 
             detail=f"List item with list '{list_code}' and value '{value}' is inactive"
         )
     return item
+
+
+@router.get("/list/{list_code}/with-translations", response_model=List[Dict[str, Any]])
+def get_with_translations(
+    list_code: str,
+    session: Session = Depends(get_db_session)
+) -> List[Dict[str, Any]]:
+    """
+    Obtener todos los elementos de una lista con sus traducciones (maestro-detalle).
+    
+    - **list_code**: Código de la lista para filtrar
+    """
+    # Validar que la lista existe
+    list_exists = session.get(ListModel, list_code)
+    if not list_exists:
+        raise HTTPException(
+            status_code=404,
+            detail=f"List with code '{list_code}' does not exist"
+        )
+    
+    # Obtener todos los items activos
+    items = session.exec(
+        select(ListItem)
+        .where(ListItem.list == list_code, ListItem.is_active == True)
+        .order_by(ListItem.sort_order, ListItem.label)
+    ).all()
+    
+    # Construir respuesta con traducciones
+    result = []
+    for item in items:
+        # Obtener traducciones para este item
+        translations = session.exec(
+            select(ItemTranslation)
+            .where(
+                ItemTranslation.list == list_code,
+                ItemTranslation.value == item.value,
+                ItemTranslation.is_active == True
+            )
+            .order_by(ItemTranslation.lang)
+        ).all()
+        
+        # Construir lista de traducciones
+        translations_list = [
+            {
+                "lang": t.lang,
+                "label": t.label,
+                "is_active": t.is_active
+            }
+            for t in translations
+        ]
+        
+        # Agregar item con traducciones
+        result.append({
+            "list": item.list,
+            "value": item.value,
+            "label": item.label,
+            "sort_order": item.sort_order,
+            "is_active": item.is_active,
+            "created_at": item.created_at,
+            "updated_at": item.updated_at,
+            "translations": translations_list
+        })
+    
+    return result
+
+
+@router.get("/{list_code}/{value}/with-translations", response_model=Dict[str, Any])
+def get_single_with_translations(
+    list_code: str,
+    value: str,
+    session: Session = Depends(get_db_session)
+) -> Dict[str, Any]:
+    """
+    Obtener un elemento de lista con todas sus traducciones (maestro-detalle).
+    
+    - **list_code**: Código de la lista
+    - **value**: Valor del elemento
+    """
+    # Obtener el item
+    item = session.exec(
+        select(ListItem)
+        .where(ListItem.list == list_code, ListItem.value == value)
+    ).first()
+    
+    if not item:
+        raise HTTPException(status_code=404, detail="List item not found")
+    elif not item.is_active:
+        raise HTTPException(
+            status_code=400,
+            detail=f"List item with list '{list_code}' and value '{value}' is inactive"
+        )
+    
+    # Obtener traducciones para este item
+    translations = session.exec(
+        select(ItemTranslation)
+        .where(
+            ItemTranslation.list == list_code,
+            ItemTranslation.value == value,
+            ItemTranslation.is_active == True
+        )
+        .order_by(ItemTranslation.lang)
+    ).all()
+    
+    # Construir lista de traducciones
+    translations_list = [
+        {
+            "lang": t.lang,
+            "label": t.label,
+            "is_active": t.is_active
+        }
+        for t in translations
+    ]
+    
+    return {
+        "list": item.list,
+        "value": item.value,
+        "label": item.label,
+        "sort_order": item.sort_order,
+        "is_active": item.is_active,
+        "created_at": item.created_at,
+        "updated_at": item.updated_at,
+        "translations": translations_list
+    }
 
 
 @router.post("/", response_model=ListItem, status_code=201)

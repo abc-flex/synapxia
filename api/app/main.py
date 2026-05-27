@@ -10,6 +10,7 @@ from .admin.routes import roles as roles_router
 from .admin.routes import modules as modules_router
 from .admin.routes import lists as lists_router
 from .admin.routes import list_items as list_items_router
+from .admin.routes import item_translations as item_translations_router
 from .admin.routes import business_units as business_units_router
 from .admin.routes import users as users_router
 from .admin.routes import options as options_router
@@ -66,6 +67,10 @@ app = FastAPI(
         {
             "name": "list_items",
             "description": "List item management operations",
+        },
+        {
+            "name": "item_translations",
+            "description": "Item translation management operations",
         },
         {
             "name": "units",
@@ -154,6 +159,7 @@ app.include_router(roles_router.router)
 app.include_router(modules_router.router)
 app.include_router(lists_router.router)
 app.include_router(list_items_router.router)
+app.include_router(item_translations_router.router)
 app.include_router(business_units_router.router)
 app.include_router(users_router.router)
 app.include_router(options_router.router)

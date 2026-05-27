@@ -1,0 +1,274 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import DataTable from "../../components/table/DataTable.astro";
+import CrudModal from "../../components/forms/CrudModal.astro";
+import Toast from "../../components/Toast.astro";
+import { getAssets } from "@/lib/assets";
+import { getCategories } from "@/lib/categories";
+import { getBusinessUnits } from "@/lib/business_units";
+import { getTeams } from "@/lib/teams";
+import { getListItemsbyList } from "@/lib/list_items";
+
+// Fetch assets from API
+let assets: any[] = [];
+let errorMessage: string | null = null;
+
+try {
+  const apiLists = await getAssets();
+  assets = apiLists;
+} catch (error) {
+  console.error('Failed to fetch assets:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch assets from API';
+  // Fallback to empty array to still render the page
+  assets = [];
+}
+
+// Fetch items_list from API for select field
+let types: any[] = [];
+types = await getListItemsbyList('ASSET_TYPE');
+
+// Fetch items_list from API for select field (list IN['RESOURCE_STATUS', 'INITIATIVE_STATUS'])
+let status: any[] = [];
+status = await getListItemsbyList('RESOURCE_STATUS');
+
+// Fetch items_list from API for select field
+let visibilities: any[] = [];
+visibilities = await getListItemsbyList('VISIBILITY_LEVEL');
+
+// Fetch categories from API for select field
+let categories: any[] = [];
+try {
+  const apiCategories = await getCategories();
+  categories = apiCategories;
+} catch (error) {
+  console.error('Failed to fetch categories:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch categories from API';
+  // Fallback to empty array to still render the page
+  categories = [];
+}
+
+// Fetch business_units from API for select field
+let units: any[] = [];
+try {
+  const apiUnits = await getBusinessUnits();
+  units = apiUnits;
+} catch (error) {
+  console.error('Failed to fetch business_units:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch business_units from API';
+  // Fallback to empty array to still render the page
+  units = [];
+}
+
+// Fetch teams from API for select field
+let teams: any[] = [];
+try {
+  const apiTeams = await getTeams();
+  teams = apiTeams;
+} catch (error) {
+  console.error('Failed to fetch teams:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch teams from API';
+  // Fallback to empty array to still render the page
+  teams = [];
+}
+
+const columns = [
+  { key: "name", label: "asset_modal.name", visible: true},
+  { key: "type", label: "asset_modal.type", visible: true },
+  { key: "category", label: "asset_modal.category", visible: true },
+  { key: "status", label: "asset_modal.status", visible: true },
+];
+
+
+const data = assets.map((item) => ({
+  id: item.id,
+  name: item.name,
+  description: item.description,
+  type: item.type,
+  category: item.category,
+  reference: item.reference,
+  status: item.status,
+  visibility: item.visibility,
+  tags: item.tags,
+  detail: item.detail,
+  unit: item.unit,
+  team: item.team,
+  is_active: item.is_active,
+  created_at: item.created_at,
+  updated_at: item.updated_at,
+}));
+
+const tableFields = [
+  { key: "name", label: "asset_modal.name", required: true },
+  {
+    key: "description",
+    label: "feature_modal.description",
+    type: "textarea" as const,
+    required: false,
+  },
+  { key: "type", label: "asset_modal.type", type: "select" as const, options: types, required: true },
+  { key: "category", label: "asset_modal.category", type: "select" as const, options: categories, required: false },
+  { key: "reference", label: "asset_modal.reference", required: false },
+  { key: "status", label: "asset_modal.status", type: "select" as const, options: status, required: true },
+  { key: "visibility", label: "asset_modal.visibility", type: "select" as const, options: visibilities, required: true },
+  { key: "unit", label: "asset_modal.unit", type: "select" as const, options: units, required: false },
+  { key: "team", label: "asset_modal.team", type: "select" as const, options: teams, required: false },
+  { key: "tags", label: "asset_modal.tags", required: false },
+];
+const fieldKeys = ["id", ...tableFields.map((f) => f.key)];
+---
+
+<BaseLayout>
+  {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
+
+  <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
+    <!-- Breadcrumb Start -->
+    <Breadcrumb
+      moduleName="Digital Assets"
+      pageName="Assets"
+      pageTitle="Assets"
+      homeLink="/"
+      moduleNameKey="modules.CATALOG"
+      pageNameKey="menu_options.assets"
+      pageTitleKey="menu_options.assets"
+    />
+    <!-- Breadcrumb End -->
+
+    <CrudModal
+      mode="create"
+      modalId="asset-create-modal"
+      entityName="Asset"
+      fields={tableFields}
+      showTrigger={false}
+    />
+    <CrudModal
+      mode="edit"
+      modalId="asset-edit-modal"
+      entityName="Asset"
+      fields={tableFields}
+      showTrigger={false}
+    />
+    <CrudModal
+      mode="delete"
+      modalId="asset-delete-modal"
+      entityName="Asset"
+      fields={tableFields}
+      showTrigger={false}
+    />
+
+    <div
+      id="assets-data"
+      data-rows={encodeURIComponent(JSON.stringify(data))}
+      data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
+      class="hidden"
+      aria-hidden="true"
+    >
+    </div>
+
+    <script type="module">
+      import { initCrudPage } from "/scripts/crudClient.js";
+      import {
+        createAsset,
+        updateAsset,
+        deleteAsset,
+      } from "/src/lib/assets";
+
+      initCrudPage({
+        dataId: "assets-data",
+        editModalId: "asset-edit-modal",
+        deleteModalId: "asset-delete-modal",
+      });
+
+      // Helper function to show toast notifications
+      function showToast(message, variant = "info") {
+        const toast = document.createElement("div");
+        toast.className = `fixed top-4 right-4 z-50 max-w-md p-4 rounded-lg border shadow-lg transition-all duration-300 ${
+          variant === "error"
+            ? "bg-red-50 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+            : "bg-green-50 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+        }`;
+        toast.innerHTML = `
+          <div class="flex items-start gap-3">
+            <div class="flex-1 text-sm font-medium">${message}</div>
+            <button type="button" class="text-gray-400 hover:text-gray-600" onclick="this.parentElement.parentElement.remove()">✕</button>
+          </div>
+        `;
+        document.body.appendChild(toast);
+
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          toast.style.transform = "translateX(100%)";
+          setTimeout(() => toast.remove(), 300);
+        }, 5000);
+      }
+
+      // Handle CRUD form submissions
+      document.addEventListener("crud-submit", async (e) => {
+        const { modalId, mode, data } = e.detail;
+
+        try {
+          // Parse composite ID: "role::module::option"
+          const [role, module, option] = data.id.split("::");
+          if (mode === "create") {
+            // Create new asset
+            await createAsset({
+              name: data.name,
+              type: data.type,
+              description: data.description,
+              category: data.category,
+              reference: data.reference,
+              status: data.status,
+              visibility: data.visibility,
+              tags: data.tags,
+              detail: data.detail,
+              unit: data.unit,
+              team: data.team,
+              is_active: data.is_active !== false,
+            });
+            showToast("Asset created successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          } else if (mode === "edit") {
+            // Update existing asset
+            await updateAsset(id, {
+              name: data.name,
+              type: data.type,
+              description: data.description,
+              category: data.category,
+              reference: data.reference,
+              status: data.status,
+              visibility: data.visibility,
+              tags: data.tags,
+              detail: data.detail,
+              unit: data.unit,
+              team: data.team,
+              is_active: data.is_active !== false,
+            });
+            showToast("Asset updated successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          } else if (mode === "delete") {
+            await deleteAsset(id);
+            showToast("Asset deleted successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          }
+        } catch (error) {
+          console.error("CRUD operation failed:", error);
+          showToast(error instanceof Error ? error.message : "An error occurred", "error");
+        }
+      });
+    </script>
+
+    <div class="space-y-5 sm:space-y-6">
+      <div class="border-0 p-0">
+        <DataTable
+          columns={columns}
+          data={data}
+          tableId="assets"
+          i18Item="asset"
+          columnFilter="category"
+          filterOptions={categories}
+        />
+      </div>
+    </div>
+  </div>
+</BaseLayout>

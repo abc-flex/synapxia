@@ -4,21 +4,21 @@ import Breadcrumb from "../../components/core/Breadcrumb.astro";
 import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
-import { getListItems } from "@/lib/list_items";
+import { getItemTranslations } from "@/lib/item_translations";
 import { getListsSelect } from "@/lib/lists";
 
-// Fetch list_items from API
-let list_items: any[] = [];
+// Fetch item_translations from API
+let item_translations: any[] = [];
 let errorMessage: string | null = null;
 
 try {
-  const apiLists = await getListItems();
-  list_items = apiLists;
+  const apiLists = await getItemTranslations();
+  item_translations = apiLists;
 } catch (error) {
-  console.error('Failed to fetch list_items:', error);
-  errorMessage = error instanceof Error ? error.message : 'Failed to fetch list_items from API';
+  console.error('Failed to fetch item_translations:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch item_translations from API';
   // Fallback to empty array to still render the page
-  list_items = [];
+  item_translations = [];
 }
 
 // Fetch lists for filter dropdown and form select
@@ -40,7 +40,7 @@ const columns = [
   { key: "list", label: "list_item_modal.list", visible: false },
   { key: "list_name", label: "list_item_modal.list" },
 ];
-const data = list_items.map((item) => ({
+const data = item_translations.map((item) => ({
   id: `${item.list}::${item.value}`,
   value: item.value,
   label: item.label,
@@ -70,7 +70,7 @@ const fieldKeys = formFields.map((f) => f.key);
       pageTitle="Items Lists"
       homeLink="/"
       moduleNameKey="modules.ADMIN"
-      pageNameKey="menu_options.list_items"
+      pageNameKey="menu_options.item_translations"
     />
 
     <CrudModal
@@ -96,7 +96,7 @@ const fieldKeys = formFields.map((f) => f.key);
     />
 
     <div
-      id="list_items-data"
+      id="item_translations-data"
       data-rows={encodeURIComponent(JSON.stringify(data))}
       data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
       class="hidden"
@@ -110,10 +110,10 @@ const fieldKeys = formFields.map((f) => f.key);
         createListItem,
         updateListItem,
         deleteListItem,
-      } from "/src/lib/list_items";
+      } from "/src/lib/item_translations";
 
       initCrudPage({
-        dataId: "list_items-data",
+        dataId: "item_translations-data",
         editModalId: "list_item-edit-modal",
         deleteModalId: "list_item-delete-modal",
       });
@@ -192,8 +192,6 @@ const fieldKeys = formFields.map((f) => f.key);
           filterOptions={lists}
           masterPage="/admin/lists"
           mdItem="list"
-          detailPage="/admin/item_translations"
-          mdItem="item_translation"
         />
       </div>
     </div>

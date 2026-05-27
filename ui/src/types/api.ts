@@ -115,6 +115,31 @@ export interface ListItemUpdate {
   is_active?: boolean;
 }
 
+// ItemTranslation types
+export interface ItemTranslation  {
+  list: string;
+  value: string;
+  label: string;
+  sort_order: number;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ItemTranslationCreate {
+  list: string;
+  value: string;
+  label: string;
+  sort_order: number;
+  is_active?: boolean;
+}
+
+export interface ItemTranslationUpdate {
+  label?: string;
+  sort_order?: number;
+  is_active?: boolean;
+}
+
 // Role types
 export interface Role {
   code: string;

@@ -36,6 +36,8 @@
     "roles": "Roles",
     "users": "Usuarios",
     "lists": "Listas",
+    "list_items": "Elementos de Lista",
+    "item_translations": "Traducciones de Elemento de Lista",
     "modules": "Módulos",
     "options": "Opciones",
     "categories": "Categorías",

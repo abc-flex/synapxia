@@ -153,3 +153,12 @@ INSERT INTO actions (id, asset, user_id, type, content, parent) VALUES
 INSERT INTO favorite_assets (user_id, asset) VALUES
     (0, 1),
     (0, 2);
+
+-- **********************************
+-- **** Table asset_permissions *****
+-- **********************************
+
+INSERT INTO asset_permissions (asset, target_type, target_code, access_level) VALUES
+    (1, 'USER', '1', 'VIEW'),
+    (2, 'ROLE', 'TL', 'MANAGE');
+

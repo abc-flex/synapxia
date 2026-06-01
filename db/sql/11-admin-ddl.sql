@@ -71,15 +71,16 @@ CREATE TABLE item_translations (
     CONSTRAINT pk_item_translations PRIMARY KEY (list, value, lang)
 );
 
--- Table roles
-CREATE TABLE roles (
+-- Table profiles
+CREATE TABLE profiles (
     code        VARCHAR(50)  NOT NULL,
     name        VARCHAR(100) NOT NULL,
     description VARCHAR(500),
+    icon        TEXT,
     is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ,
-    CONSTRAINT pk_roles PRIMARY KEY (code)
+    CONSTRAINT pk_profiles PRIMARY KEY (code)
 );
 
 -- Table users
@@ -90,8 +91,8 @@ CREATE TABLE users (
     password_hash  VARCHAR(500)  NOT NULL,
     first_name     VARCHAR(100)  NOT NULL,
     last_name      VARCHAR(100)  NOT NULL,
-    menu_role      VARCHAR(50)   NOT NULL,
-    business_unit  VARCHAR(50)   NOT NULL,
+    profile        VARCHAR(50)   NOT NULL,
+    unit           VARCHAR(50)   NOT NULL,
     is_superuser   BOOLEAN       NOT NULL DEFAULT FALSE,
     is_active      BOOLEAN       NOT NULL DEFAULT TRUE,
     created_at     TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
@@ -156,16 +157,16 @@ ALTER TABLE item_translations
     FOREIGN KEY (list, value)
     REFERENCES list_items (list, value);
 
--- users.role → roles.code
+-- users.profile → profiles.code
 ALTER TABLE users
-    ADD CONSTRAINT fk_users_roles
-    FOREIGN KEY (menu_role)
+    ADD CONSTRAINT fk_users_profiles
+    FOREIGN KEY (profile)
     REFERENCES roles (code);
 
--- users.business_unit → business_units.code
+-- users.unit → business_units.code
 ALTER TABLE users
     ADD CONSTRAINT fk_users_business_units
-    FOREIGN KEY (business_unit)
+    FOREIGN KEY (unit)
     REFERENCES business_units (code);
 
 -- options.module → modules.code
@@ -174,11 +175,11 @@ ALTER TABLE options
     FOREIGN KEY (module)
     REFERENCES modules (code);
 
--- privileges.role → roles.code
+-- privileges.profile → profiles.code
 ALTER TABLE privileges
-    ADD CONSTRAINT fk_privileges_roles
-    FOREIGN KEY (role)
-    REFERENCES roles (code);
+    ADD CONSTRAINT fk_privileges_profiles
+    FOREIGN KEY (profile)
+    REFERENCES profiles (code);
 
 -- privileges.option → options.code
 ALTER TABLE privileges

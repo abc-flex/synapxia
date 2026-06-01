@@ -16,6 +16,18 @@ CREATE TABLE teams (
     CONSTRAINT pk_teams PRIMARY KEY (code)
 );
 
+-- Table roles
+CREATE TABLE roles (
+    code        VARCHAR(50)  NOT NULL,
+    name        VARCHAR(100) NOT NULL,
+    description VARCHAR(500),
+    icon        TEXT,
+    is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
+    created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ,
+    CONSTRAINT pk_roles PRIMARY KEY (code)
+);
+
 -- Table assignments
 CREATE TABLE assignments (
     id           BIGINT GENERATED ALWAYS AS IDENTITY,

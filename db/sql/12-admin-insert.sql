@@ -114,27 +114,27 @@ INSERT INTO options (module, code, name, description, sort_order, type, path) VA
 -- ********** Table: Roles **********
 -- **********************************
 
-INSERT INTO roles (code, name, description, is_active)
+INSERT INTO profiles (code, name, description, icon)
 VALUES
     ('ADMINISTRATOR',
      'Platform Administrator',
      'Full access to all modules and options in SynapxIA, including configuration, security and operational capabilities.',
-     TRUE),
+     'user-group'),
     ('ADMINISTRATIVE',
      'Operational Administrator',
      'Administrative role with full edit access to collaboration, Generative AI, AI initiatives, metrics, processes and digital assets, but without platform-level administration features.',
-     TRUE),
+     'user-group'),
     ('COLLABORATOR',
      'Standard Collaborator',
      'Operational user with read access to collaboration, Generative AI, AI initiatives, processes and digital assets, and edit rights only for AI initiative proposals.',
-     TRUE);
+     'user-group');
 
 -- **********************************
 -- ******** Table: Privileges ********
 -- **********************************
 
 -- ===== Role: ADMINISTRATOR =====
-INSERT INTO privileges (role, module, option, can_edit)
+INSERT INTO privileges (profile, module, option, can_edit)
 VALUES
     -- ADMIN
     ('ADMINISTRATOR','ADMIN','BUSINESS_UNITS', TRUE),
@@ -180,7 +180,7 @@ VALUES
     ('ADMINISTRATOR','PROC','MODELS',      TRUE);
 
 -- ===== Role: ADMINISTRATIVE =====
-INSERT INTO privileges (role, module, option, can_edit)
+INSERT INTO privileges (profile, module, option, can_edit)
 VALUES
     -- TAXO
     ('ADMINISTRATIVE','TAXO','CATEGORIES', TRUE),
@@ -218,7 +218,7 @@ VALUES
     ('ADMINISTRATIVE','PROC','MODELS',      TRUE);
 
 -- ===== Role: COLLABORATOR =====
-INSERT INTO privileges (role, module, option, can_edit)
+INSERT INTO privileges (profile, module, option, can_edit)
 VALUES
     -- TAXO (read-only)
     ('COLLABORATOR','TAXO','CATEGORIES', FALSE),
@@ -259,16 +259,16 @@ VALUES
 -- ********** Table Units ***********
 -- **********************************
 
-INSERT INTO business_units (code, name, description, type, parent, is_active) VALUES
-    ('CORP', 'Corporate', 'Corporate Unit', 'BUSINESS_UNIT', NULL, TRUE),
-    ('ENG', 'Engineering', 'Engineering Department', 'DEPARTMENT', 'CORP', TRUE),
-    ('GEN_AI', 'Generative AI', 'Generative AI', 'CHAPTER', 'ENG', TRUE);
+INSERT INTO business_units (code, name, description, type, parent) VALUES
+    ('CORP', 'Corporate', 'Corporate Unit', 'BUSINESS_UNIT', NULL),
+    ('ENG', 'Engineering', 'Engineering Department', 'DEPARTMENT', 'CORP'),
+    ('GEN_AI', 'Generative AI', 'Generative AI', 'CHAPTER', 'ENG');
 
 -- **********************************
 -- ********** Table Users ***********
 -- **********************************
 
-INSERT INTO users (id, username, email, password_hash, first_name, last_name, menu_role, business_unit, is_superuser, is_active) VALUES
+INSERT INTO users (id, username, email, password_hash, first_name, last_name, profile, unit, is_superuser) VALUES
    (0,
     'admin',
     'admin@synapxia.org',
@@ -278,5 +278,4 @@ INSERT INTO users (id, username, email, password_hash, first_name, last_name, me
     'Administrator',
     'ADMINISTRATOR',
     'GEN_AI',
-    TRUE,
     TRUE);

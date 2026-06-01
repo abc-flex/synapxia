@@ -2,6 +2,8 @@
 -- ******* Table categories *********
 -- **********************************
 
+-- Agregar íconos
+
 INSERT INTO categories (code, name, description, parent) VALUES
     ('AI_ASSETS', 'AI Assets', 'Category for all AI-related assets', NULL),
     -- Classic AI and Machine Learning Models

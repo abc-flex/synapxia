@@ -8,6 +8,7 @@ CREATE TABLE categories (
     name        VARCHAR(100) NOT NULL,
     description VARCHAR(500),
     parent      VARCHAR(50),
+    icon        TEXT,
     is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ,

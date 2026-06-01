@@ -109,8 +109,8 @@ INSERT INTO users (
     password_hash,
     first_name,
     last_name,
-    menu_role,
-    business_unit,
+    profile,
+    unit,
     is_active
 )
 SELECT

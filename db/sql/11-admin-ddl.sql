@@ -119,14 +119,14 @@ CREATE TABLE options (
 
 -- Table privileges
 CREATE TABLE privileges (
-    role        VARCHAR(50)  NOT NULL,
+    profile     VARCHAR(50)  NOT NULL,
     module      VARCHAR(50)  NOT NULL,
     option      VARCHAR(50)  NOT NULL,
     can_edit    BOOLEAN      NOT NULL DEFAULT TRUE,
     is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ,
-    CONSTRAINT pk_privileges PRIMARY KEY (role, module, option)
+    CONSTRAINT pk_privileges PRIMARY KEY (profile, module, option)
 );
 
 -- ****************************************
@@ -161,7 +161,7 @@ ALTER TABLE item_translations
 ALTER TABLE users
     ADD CONSTRAINT fk_users_profiles
     FOREIGN KEY (profile)
-    REFERENCES roles (code);
+    REFERENCES profiles (code);
 
 -- users.unit → business_units.code
 ALTER TABLE users
@@ -193,7 +193,7 @@ ALTER TABLE privileges
 
 INSERT INTO modules (code, name, description, sort_order, icon) VALUES
     ('ADMIN', 'Administration',
-     'Administration centralizes the support capabilities required to operate SynapxIA, including roles, users, modules, privileges and core configuration elements that enable secure and consistent platform management.',
+     'Administration centralizes the support capabilities required to operate SynapxIA, including profiles, users, modules, privileges and core configuration elements that enable secure and consistent platform management.',
      10, 'wrench-screwdriver'),
     ('TAXO', 'Asset Taxonomy',
      'Asset Taxonomy defines the classification framework used across SynapxIA, including categories, features, specifications and reference structures that support the organization, characterization and governance of digital and AI assets.',

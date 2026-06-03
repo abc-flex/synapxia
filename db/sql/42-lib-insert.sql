@@ -2,16 +2,16 @@
 -- ******* Table assets *************
 -- **********************************
 
-INSERT INTO assets (id, name, reference, description, category, status, visibility, tags) VALUES
+INSERT INTO assets (id, name, reference, description, category, status, tags) VALUES
     (1, 'Python Web Development Incremental Prompt', 'python-web-increment.prompt.md',
     'A prompt designed to guide AI in incrementally developing web applications using Python.',
-    'PROMPTS', 'IN_USE', 'PUBLIC', '["python", "web", "development"]'),
+    'PROMPTS', 'IN_USE', '["python", "web", "development"]'),
     (2, 'GitHub MCP Server', 'https://github.com/github/github-mcp-server/',
     'An MCP providing services of the GitHub platform, such as code search, repository management and issue tracking.',
-    'MCPS', 'IN_USE', 'PUBLIC', '["github","mcp.server","ai-tools", "llm-tools", "developer tools"]'),
+    'MCPS', 'IN_USE', '["github","mcp.server","ai-tools", "llm-tools", "developer tools"]'),
     (3, 'Python Web Developer Agent', 'python-web-dev.agent.md',
     'An AI agent specialized in developing web applications using Python frameworks.',
-    'AGENTS', 'IN_USE', 'PUBLIC', '["python", "web", "agent"]');
+    'AGENTS', 'IN_USE', '["python", "web", "agent"]');
 
 -- **********************************
 -- ***** Table characterizations ****
@@ -159,6 +159,7 @@ INSERT INTO favorite_assets (user_id, asset) VALUES
 -- **********************************
 
 INSERT INTO asset_permissions (asset, target_type, target_code, access_level) VALUES
-    (1, 'USER', '1', 'VIEW'),
-    (2, 'ROLE', 'TL', 'MANAGE');
+    (1, 'USER', '10', 'VIEW'),
+    (2, 'ROLE', 'TL', 'MANAGE'),
+    (2, 'TEAM', 'CORE', 'VIEW');
 

@@ -7,11 +7,11 @@ INSERT INTO options (module, code, name, description, sort_order, type, path) VA
     ('ADMIN','BUSINESS_UNITS','Business Units',
      'Configuration area to define and maintain the types of organizational business units (e.g., Department, Business Unit, Chapter).',
      10,'FORM','/admin/business_units'),
-    ('ADMIN','ROLES','Roles',
-     'Define roles, responsibilities and access to modules and options.',
-     20,'FORM','/admin/roles'),
+    ('ADMIN','PROFILES','Profiles',
+     'Define profiles, responsibilities and access to modules and options.',
+     20,'FORM','/admin/profiles'),
     ('ADMIN','USERS','Users',
-     'Register, update and deactivate users and associate them with roles.',
+     'Register, update and deactivate users and associate them with profiles.',
      30,'FORM','/admin/users'),
     ('ADMIN','LISTS','Lists',
      'Manage configurable lists and catalogs used throughout the platform.',
@@ -34,18 +34,21 @@ INSERT INTO options (module, code, name, description, sort_order, type, path) VA
 
 -- ===== Module: COLLAB =====
 INSERT INTO options (module, code, name, description, sort_order, type, path) VALUES
+    ('COLLAB','ROLES','Roles',
+     'Define roles, responsibilities and access to collaboration features.',
+     10,'FORM','/collab/roles'),
     ('COLLAB','TEAMS','Teams',
      'Create and maintain cross-functional teams.',
-     10,'FORM','/collab/teams'),
+     20,'FORM','/collab/teams'),
     ('COLLAB','PROJECTS','Projects',
      'Register and follow AI-related projects or workstreams.',
-     20,'FORM','/collab/projects'),
+     30,'FORM','/collab/projects'),
     ('COLLAB','DIMENSIONS','Dimensions',
      'Define dimensions for segmentation and analysis.',
-     30,'FORM','/collab/dimensions'),
-    ('COLLAB','DASHBOARD','Dashboard',
+     40,'FORM','/collab/dimensions'),
+    ('COLLAB','DASHBOARD','Assignment Dashboard',
      'Dashboard to monitor tasks and collaboration workload.',
-     40,'FORM','/collab/dashboard');
+     50,'FORM','/collab/dashboard');
 
 -- ===== Module: ASSET LIBRARY =====
 INSERT INTO options (module, code, name, description, sort_order, type, path) VALUES

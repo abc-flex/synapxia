@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 from sqlalchemy.exc import IntegrityError
 
-from ..internal.models import Privilege, PrivilegeCreate, PrivilegeUpdate, Role, Option
+from ..internal.models import Privilege, PrivilegeCreate, PrivilegeUpdate, Profile, Option
 from ..internal.dependencies import get_db_session
 
 logger = logging.getLogger(__name__)
@@ -23,47 +23,47 @@ def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_s
     """
     privileges = session.exec(select(Privilege).where(Privilege.is_active == True)
                               .offset(skip).limit(limit)
-                              .order_by(Privilege.role, Privilege.module, Privilege.option)).all()
+                              .order_by(Privilege.profile, Privilege.module, Privilege.option)).all()
     return privileges
 
 
-@router.get("/role/{role_code}", response_model=List[Privilege])
-def get_by_role(
-    role_code: str, 
+@router.get("/profile/{profile_code}", response_model=List[Privilege])
+def get_by_profile(
+    profile_code: str, 
     session: Session = Depends(get_db_session)
 ) -> List[Privilege]:
     """
-    Get all privileges for a specific role.
+    Get all privileges for a specific profile.
     
-    - **role_code**: Role code to filter by
+    - **profile_code**: Profile code to filter by
     """
     # Validar primero si la lista existe (opcional, pero recomendado por integridad)
-    role_exists = session.get(Role, role_code)
-    if not role_exists:
+    profile_exists = session.get(Profile, profile_code)
+    if not profile_exists:
         raise HTTPException(
             status_code=404, 
-            detail=f"Role with code '{role_code}' does not exist"
+            detail=f"Profile with code '{profile_code}' does not exist"
         )
     items = session.exec(
         select(Privilege)
-        .where(Privilege.role == role_code)
+        .where(Privilege.profile == profile_code)
         .order_by(Privilege.module, Privilege.option)
     ).all()
     return items
 
 
-@router.get("/{role_code}/{module_code}/{option_code}", response_model=Privilege)
-def get(role_code: str, module_code: str, option_code: str, session: Session = Depends(get_db_session)) -> Privilege:
+@router.get("/{profile_code}/{module_code}/{option_code}", response_model=Privilege)
+def get(profile_code: str, module_code: str, option_code: str, session: Session = Depends(get_db_session)) -> Privilege:
     """
-    Get a privilege by its role, module and option.
+    Get a privilege by its profile, module and option.
 
-    - **role_code**: Role code
+    - **profile_code**: Profile code
     - **module_code**: Module code
     - **option_code**: Option code
     """
     privilege = session.exec(
         select(Privilege).where(
-            Privilege.role == role_code,
+            Privilege.profile == profile_code,
             Privilege.module == module_code,
             Privilege.option == option_code
         )
@@ -73,7 +73,7 @@ def get(role_code: str, module_code: str, option_code: str, session: Session = D
     elif not privilege.is_active:
         raise HTTPException(
             status_code=400,
-            detail=f"Privilege with role '{role_code}', module '{module_code}' and option '{option_code}' is inactive"
+            detail=f"Privilege with profile '{profile_code}', module '{module_code}' and option '{option_code}' is inactive"
         )
     return privilege
 
@@ -83,18 +83,18 @@ def create(privilege: PrivilegeCreate, session: Session = Depends(get_db_session
     """
     Create a new privilege.
 
-    - **role**: Role code (required)
+    - **profile**: Profile code (required)
     - **module**: Module code (required)
     - **option**: Option code (required)
     - **can_edit**: Indicates if can edit (default: True)
     - **is_active**: Active/inactive status (default: True)
     """
-    # Validate that the role exists
-    role = session.get(Role, privilege.role)
-    if not role:
+    # Validate that the profile exists
+    profile = session.get(Profile, privilege.profile)
+    if not profile:
         raise HTTPException(
             status_code=400,
-            detail=f"Role with code '{privilege.role}' does not exist"
+            detail=f"Profile with code '{privilege.profile}' does not exist"
         )
 
     # Validate that the option exists
@@ -113,7 +113,7 @@ def create(privilege: PrivilegeCreate, session: Session = Depends(get_db_session
     # Validate that the privilege does not already exist
     existing = session.exec(
         select(Privilege).where(
-            Privilege.role == privilege.role,
+            Privilege.profile == privilege.profile,
             Privilege.module == privilege.module,
             Privilege.option == privilege.option
         )
@@ -121,7 +121,7 @@ def create(privilege: PrivilegeCreate, session: Session = Depends(get_db_session
     if existing:
         raise HTTPException(
             status_code=409,
-            detail=f"Privilege with role '{privilege.role}', module '{privilege.module}' and option '{privilege.option}' already exists"
+            detail=f"Privilege with profile '{privilege.profile}', module '{privilege.module}' and option '{privilege.option}' already exists"
         )
 
     try:
@@ -130,33 +130,33 @@ def create(privilege: PrivilegeCreate, session: Session = Depends(get_db_session
         session.commit()
         session.refresh(db)
         logger.info(
-            f"Privilege created: {privilege.role}/{privilege.module}/{privilege.option}")
+            f"Privilege created: {privilege.profile}/{privilege.module}/{privilege.option}")
         return db
     except IntegrityError as e:
         session.rollback()
         logger.error(
-            f"Integrity error creating privilege {privilege.role}/{privilege.module}/{privilege.option}: {e}")
+            f"Integrity error creating privilege {privilege.profile}/{privilege.module}/{privilege.option}: {e}")
         raise HTTPException(
             status_code=409,
-            detail=f"Privilege with role '{privilege.role}', module '{privilege.module}' and option '{privilege.option}' already exists"
+            detail=f"Privilege with profile '{privilege.profile}', module '{privilege.module}' and option '{privilege.option}' already exists"
         )
 
 
-@router.put("/{role_code}/{module_code}/{option_code}", response_model=Privilege)
+@router.put("/{profile_code}/{module_code}/{option_code}", response_model=Privilege)
 def update(
-    role_code: str, module_code: str, option_code: str, privilege_update: PrivilegeUpdate, session: Session = Depends(get_db_session)
+    profile_code: str, module_code: str, option_code: str, privilege_update: PrivilegeUpdate, session: Session = Depends(get_db_session)
 ) -> Privilege:
     """
     Update an existing privilege.
 
-    - **role_code**: Role code
+    - **profile_code**: Profile code
     - **module_code**: Module code
     - **option_code**: Option code
     - Only provided fields are updated
     """
     privilege = session.exec(
         select(Privilege).where(
-            Privilege.role == role_code,
+            Privilege.profile == profile_code,
             Privilege.module == module_code,
             Privilege.option == option_code
         )
@@ -174,24 +174,24 @@ def update(
     session.add(privilege)
     session.commit()
     session.refresh(privilege)
-    logger.info(f"Privilege updated: {role_code}/{module_code}/{option_code}")
+    logger.info(f"Privilege updated: {profile_code}/{module_code}/{option_code}")
     return privilege
 
 
-@router.delete("/{role_code}/{module_code}/{option_code}", response_model=Privilege, status_code=200)
-def delete(role_code: str, module_code: str, option_code: str, session: Session = Depends(get_db_session)) -> Privilege:
+@router.delete("/{profile_code}/{module_code}/{option_code}", response_model=Privilege, status_code=200)
+def delete(profile_code: str, module_code: str, option_code: str, session: Session = Depends(get_db_session)) -> Privilege:
     """
     Delete a privilege (logical delete).
 
     Performs a logical delete by setting is_active=False instead of deleting the record.
 
-    - **role_code**: Role code
+    - **profile_code**: Profile code
     - **module_code**: Module code
     - **option_code**: Option code
     """
     privilege = session.exec(
         select(Privilege).where(
-            Privilege.role == role_code,
+            Privilege.profile == profile_code,
             Privilege.module == module_code,
             Privilege.option == option_code
         )
@@ -203,7 +203,7 @@ def delete(role_code: str, module_code: str, option_code: str, session: Session 
     if not privilege.is_active:
         raise HTTPException(
             status_code=400,
-            detail=f"Privilege with role '{role_code}', module '{module_code}' and option '{option_code}' is already inactive"
+            detail=f"Privilege with profile '{profile_code}', module '{module_code}' and option '{option_code}' is already inactive"
         )
 
     # Logical delete: update is_active to False
@@ -214,5 +214,5 @@ def delete(role_code: str, module_code: str, option_code: str, session: Session 
     session.commit()
     session.refresh(privilege)
     logger.info(
-        f"Privilege deactivated (logical delete): {role_code}/{module_code}/{option_code}")
+        f"Privilege deactivated (logical delete): {profile_code}/{module_code}/{option_code}")
     return privilege

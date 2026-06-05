@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .auth import routes as auth_routes
 
 from .admin.routes import health as admin_health_router
-from .admin.routes import roles as roles_router
+from .admin.routes import profiles as profiles_router
 from .admin.routes import modules as modules_router
 from .admin.routes import lists as lists_router
 from .admin.routes import list_items as list_items_router
@@ -29,6 +29,7 @@ from .collab.routes import assignments as assignments_router
 from .collab.routes import projects as projects_router
 from .collab.routes import dimensions as dimensions_router
 from .collab.routes import metrics as metrics_router
+from .collab.routes import roles as roles_router
 
 # Configure logging
 logging.basicConfig(
@@ -53,8 +54,8 @@ app = FastAPI(
             "description": "Health check endpoints",
         },
         {
-            "name": "roles",
-            "description": "Role management operations",
+            "name": "profiles",
+            "description": "Profile management operations",
         },
         {
             "name": "modules",
@@ -121,6 +122,10 @@ app = FastAPI(
             "description": "Team management operations",
         },
         {
+            "name": "roles",
+            "description": "Role management operations",
+        },
+        {
             "name": "assignments",
             "description": "Assignment management operations",
         },
@@ -155,7 +160,7 @@ app.include_router(auth_routes.router)
 
 # Administration module
 app.include_router(admin_health_router.router)
-app.include_router(roles_router.router)
+app.include_router(profiles_router.router)
 app.include_router(modules_router.router)
 app.include_router(lists_router.router)
 app.include_router(list_items_router.router)
@@ -176,6 +181,7 @@ app.include_router(asset_relations_router.router)
 
 # Collaboration module
 app.include_router(teams_router.router)
+app.include_router(roles_router.router)
 app.include_router(assignments_router.router)
 app.include_router(projects_router.router)
 app.include_router(dimensions_router.router)
@@ -213,7 +219,7 @@ def read_root() -> dict:
         "version": "1.0.0",
         "endpoints": {
             "admin": {
-                "roles": "/api/roles",
+                "profiles": "/api/profiles",
                 "modules": "/api/modules",
                 "lists": "/api/lists",
                 "list_items": "/api/list_items",
@@ -233,6 +239,7 @@ def read_root() -> dict:
             },
             "collab": {
                 "teams": "/api/teams",
+                "roles": "/api/roles",
                 "assignments": "/api/assignments",
                 "projects": "/api/projects",
                 "dimensions": "/api/dimensions",

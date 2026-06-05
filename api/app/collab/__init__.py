@@ -1,2 +1,2 @@
-"""Collaboration module - Teams, Projects, Assignments, Dimensions, Metrics"""
+"""Collaboration module - Teams, Roles, Projects, Assignments, Dimensions, Metrics"""
 

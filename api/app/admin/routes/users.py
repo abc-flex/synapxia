@@ -7,7 +7,7 @@ from sqlmodel import Session, select, SQLModel
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func, literal, cast, String
 
-from ..internal.models import User, UserCreate, UserUpdate, Role, BusinessUnit
+from ..internal.models import User, UserCreate, UserUpdate, Profile, BusinessUnit
 from ..internal.dependencies import get_db_session
 
 #Model for user select options
@@ -49,26 +49,26 @@ def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_s
     return users
 
 
-@router.get("/role/{role_code}", response_model=List[User])
-def get_by_role(
-    role_code: str, 
+@router.get("/profile/{profile_code}", response_model=List[User])
+def get_by_profile(
+    profile_code: str, 
     session: Session = Depends(get_db_session)
 ) -> List[User]:
     """
-    Get all users from a specific role.
+    Get all users from a specific profile.
     
-    - **role_code**: role code to filter users
+    - **profile_code**: profile code to filter users
     """
-    # Validate if role exists (optional)
-    role_exists = session.get(Role, role_code)
-    if not role_exists:
+    # Validate if profile exists (optional)
+    profile_exists = session.get(Profile, profile_code)
+    if not profile_exists:
         raise HTTPException(
             status_code=404, 
-            detail=f"Role with code '{role_code}' does not exist"
+            detail=f"Profile with code '{profile_code}' does not exist"
         )
     users = session.exec(
         select(User)
-        .where(User.menu_role == role_code)
+        .where(User.menu_profile == profile_code)
         .order_by(User.username)
     ).all()
     return users
@@ -99,7 +99,7 @@ def create(user: UserCreate, session: Session = Depends(get_db_session)) -> User
     - **password_hash**: Password hash (required)
     - **first_name**: First name (required)
     - **last_name**: Last name (required)
-    - **menu_role**: Role code (required)
+    - **menu_profile**: Profile code (required)
     - **business_unit**: Business unit code (required)
     - **is_active**: Active/inactive status (default: True)
     """
@@ -121,12 +121,12 @@ def create(user: UserCreate, session: Session = Depends(get_db_session)) -> User
             detail=f"User with email '{user.email}' already exists"
         )
 
-    # Validate that the role exists
-    role = session.get(Role, user.menu_role)
-    if not role:
+    # Validate that the profile exists
+    profile = session.get(Profile, user.menu_profile)
+    if not profile:
         raise HTTPException(
             status_code=400,
-            detail=f"Role with code '{user.menu_role}' does not exist"
+            detail=f"Profile with code '{user.menu_profile}' does not exist"
         )
 
     # Validate that the business_unit exists
@@ -175,13 +175,13 @@ def update(id: int, user_update: UserUpdate, session: Session = Depends(get_db_s
                 detail=f"User with email '{user_update.email}' already exists"
             )
 
-    # Validate that the role exists if provided
-    if user_update.menu_role is not None:
-        role = session.get(Role, user_update.menu_role)
-        if not role:
+    # Validate that the profile exists if provided
+    if user_update.menu_profile is not None:
+        profile = session.get(Profile, user_update.menu_profile)
+        if not profile:
             raise HTTPException(
                 status_code=400,
-                detail=f"Role with code '{user_update.menu_role}' does not exist"
+                detail=f"Profile with code '{user_update.menu_profile}' does not exist"
             )
 
     # Validate that the business_unit exists if provided

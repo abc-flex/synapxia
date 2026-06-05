@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
-from ..admin.internal.models import User, Role, BusinessUnit
+from ..admin.internal.models import User, Profile, BusinessUnit
 from ..internal import get_db_session
 from .schemas import UserRead, UserCreate, UserUpdate
 
@@ -201,7 +201,7 @@ def login(
             "email": user.email,
             "first_name": user.first_name,
             "last_name": user.last_name,
-            "menu_role": user.menu_role,
+            "menu_profile": user.menu_profile,
             "business_unit": user.business_unit,
         }
     }
@@ -217,7 +217,7 @@ def register(
 
     Validates:
     - Username and email are unique
-    - Role and business_unit exist
+    - Profile and business_unit exist
     """
     # Check username uniqueness
     existing_user = session.exec(
@@ -239,12 +239,12 @@ def register(
             detail=f"Email '{user_data.email}' already registered"
         )
 
-    # Validate role exists
-    role = session.get(Role, user_data.menu_role)
-    if not role:
+    # Validate profile exists
+    profile = session.get(Profile, user_data.menu_profile)
+    if not profile:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Role '{user_data.menu_role}' does not exist"
+            detail=f"Profile '{user_data.menu_profile}' does not exist"
         )
 
     # Validate business_unit exists
@@ -262,7 +262,7 @@ def register(
         password_hash=hash_password(user_data.password),
         first_name=user_data.first_name,
         last_name=user_data.last_name,
-        menu_role=user_data.menu_role,
+        menu_profile=user_data.menu_profile,
         business_unit=user_data.business_unit,
         is_active=True,
         is_superuser=False,

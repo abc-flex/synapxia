@@ -3,7 +3,7 @@ from typing import Optional, List
 from datetime import datetime
 
 
-class RoleBase(SQLModel):
+class ProfileBase(SQLModel):
     code: str = Field(max_length=50, primary_key=True)
     name: str = Field(max_length=100)
     description: Optional[str] = Field(default=None, max_length=255)
@@ -12,26 +12,26 @@ class RoleBase(SQLModel):
     updated_at: Optional[datetime] = None
 
 
-class Role(RoleBase, table=True):
-    __tablename__ = "roles"
+class Profile(ProfileBase, table=True):
+    __tablename__ = "profiles"
 
 
-class RoleCreate(SQLModel):
-    code: str = Field(max_length=50, description="Unique role code")
-    name: str = Field(max_length=100, description="Role name")
+class ProfileCreate(SQLModel):
+    code: str = Field(max_length=50, description="Unique profile code")
+    name: str = Field(max_length=100, description="Profile name")
     description: Optional[str] = Field(
-        default=None, max_length=255, description="Role description")
+        default=None, max_length=255, description="Profile description")
     is_active: Optional[bool] = Field(
-        default=True, description="Indicates if the role is active")
+        default=True, description="Indicates if the profile is active")
 
 
-class RoleUpdate(SQLModel):
+class ProfileUpdate(SQLModel):
     name: Optional[str] = Field(
-        default=None, max_length=100, description="Role name")
+        default=None, max_length=100, description="Profile name")
     description: Optional[str] = Field(
-        default=None, max_length=255, description="Role description")
+        default=None, max_length=255, description="Profile description")
     is_active: Optional[bool] = Field(
-        default=None, description="Indicates if the role is active")
+        default=None, description="Indicates if the profile is active")
 
 
 class ModuleBase(SQLModel):
@@ -237,7 +237,7 @@ class UserBase(SQLModel):
     password_hash: str = Field(max_length=500)
     first_name: str = Field(max_length=100)
     last_name: str = Field(max_length=100)
-    menu_role: str = Field(max_length=50, foreign_key="roles.code")
+    menu_profile: str = Field(max_length=50, foreign_key="profiles.code")
     business_unit: str = Field(max_length=50, foreign_key="business_units.code")
     is_active: bool = Field(default=True)
     is_superuser: bool = Field(default=False)
@@ -257,7 +257,7 @@ class UserCreate(SQLModel):
     password_hash: str = Field(max_length=500, description="Password hash")
     first_name: str = Field(max_length=100, description="First name")
     last_name: str = Field(max_length=100, description="Last name")
-    menu_role: str = Field(max_length=50, description="Role code")
+    menu_profile: str = Field(max_length=50, description="Profile code")
     business_unit: str = Field(max_length=50, description="Business_Unit code")
     is_active: Optional[bool] = Field(
         default=True, description="Indicates if the user is active")
@@ -272,8 +272,8 @@ class UserUpdate(SQLModel):
         default=None, max_length=100, description="First name")
     last_name: Optional[str] = Field(
         default=None, max_length=100, description="Last name")
-    menu_role: Optional[str] = Field(
-        default=None, max_length=50, description="Role code")
+    menu_profile: Optional[str] = Field(
+        default=None, max_length=50, description="Profile code")
     business_unit: Optional[str] = Field(
         default=None, max_length=50, description="Business_Unit code")
     is_active: Optional[bool] = Field(
@@ -341,8 +341,8 @@ class OptionUpdate(SQLModel):
 
 
 class PrivilegeBase(SQLModel):
-    role: str = Field(sa_column=Column(
-        'role', String, ForeignKey('roles.code'), primary_key=True))
+    profile: str = Field(sa_column=Column(
+        'profile', String, ForeignKey('profiles.code'), primary_key=True))
     module: str = Field(sa_column=Column(
         'module', String(50), primary_key=True))
     option: str = Field(sa_column=Column(
@@ -358,7 +358,7 @@ class Privilege(PrivilegeBase, table=True):
 
 
 class PrivilegeCreate(SQLModel):
-    role: str = Field(max_length=50, description="Role code")
+    profile: str = Field(max_length=50, description="Profile code")
     module: str = Field(max_length=50, description="Module code")
     option: str = Field(max_length=50, description="Option code")
     can_edit: Optional[bool] = Field(

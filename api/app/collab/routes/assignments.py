@@ -6,8 +6,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 from sqlalchemy.exc import IntegrityError
 
-from ..internal.models import Assignment, AssignmentCreate, AssignmentUpdate, Team
-from ...admin.internal.models import Role
+from ..internal.models import Assignment, AssignmentCreate, AssignmentUpdate, Team, Role
 from ..internal.dependencies import get_db_session
 
 logger = logging.getLogger(__name__)

@@ -11,7 +11,7 @@ This document describes the authentication system implemented using FastAPI-User
 ✅ **User Registration** - New user registration with validation
 ✅ **Login/Logout** - Standard authentication endpoints
 ✅ **Password Change** - Users can change their passwords
-✅ **Role-based Access** - Integration with existing role/privilege system
+✅ **Profile-based Access** - Integration with existing profile/privilege system
 ✅ **Superuser Support** - Admin users with elevated privileges
 ✅ **Last Login Tracking** - Automatic recording of last login timestamp
 
@@ -58,7 +58,7 @@ Login and get JWT access token.
     "email": "admin@synapxia.org",
     "first_name": "Platform",
     "last_name": "Administrator",
-    "menu_role": "ADMINISTRATOR",
+    "menu_profile": "ADMINISTRATOR",
     "business_unit": "GEN_AI"
   }
 }
@@ -75,7 +75,7 @@ Register a new user.
   "password": "SecurePass123!",
   "first_name": "John",
   "last_name": "Doe",
-  "menu_role": "COLLABORATOR",
+  "menu_profile": "COLLABORATOR",
   "business_unit": "ENG"
 }
 ```
@@ -88,7 +88,7 @@ Register a new user.
   "email": "john@example.com",
   "first_name": "John",
   "last_name": "Doe",
-  "menu_role": "COLLABORATOR",
+  "menu_profile": "COLLABORATOR",
   "business_unit": "ENG",
   "is_active": true,
   "is_superuser": false,
@@ -113,7 +113,7 @@ Authorization: Bearer <access_token>
   "email": "admin@synapxia.org",
   "first_name": "Platform",
   "last_name": "Administrator",
-  "menu_role": "ADMINISTRATOR",
+  "menu_profile": "ADMINISTRATOR",
   "business_unit": "GEN_AI",
   "is_active": true,
   "is_superuser": true,
@@ -177,7 +177,7 @@ curl -X POST "http://localhost:8000/api/auth/register" \
     "password": "SecurePass123!",
     "first_name": "New",
     "last_name": "User",
-    "menu_role": "COLLABORATOR",
+    "menu_profile": "COLLABORATOR",
     "business_unit": "ENG"
   }'
 ```
@@ -301,7 +301,7 @@ async def protected_endpoint(
     current_user: User = Depends(get_current_active_user)
 ):
     # User is authenticated
-    # Use current_user.menu_role and business_unit for authorization
+    # Use current_user.menu_profile and business_unit for authorization
     # Query privileges table for detailed access control
     return {"user": current_user.username}
 ```

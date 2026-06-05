@@ -1,2 +1,2 @@
-"""Administration module - Roles, Users, Modules, Lists, Options, Privileges"""
+"""Administration module - Profiles, Users, Modules, Lists, Options, Privileges"""
 

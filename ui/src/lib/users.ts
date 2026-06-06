@@ -34,14 +34,14 @@ export async function getUsersSelect(): Promise<UserSelectOption[]> {
 
 /**
  * Fetch all users by list with optional pagination
- * @param role_code - list code
+ * @param profile_code - list code
  * @param skip - Number of records to skip (default: 0)
  * @param limit - Maximum number of records to return (default: 100)
  * @returns Promise with array of users
  */
-export async function getUsersByRole(role_code: string, skip: number = 0, limit: number = 100): Promise<User[]> {
+export async function getUsersByProfile(profile_code: string, skip: number = 0, limit: number = 100): Promise<User[]> {
   const queryString = buildQueryString({ skip, limit });
-  return apiGet<User[]>(`/api/users/role/${role_code}${queryString}`);
+  return apiGet<User[]>(`/api/users/profile/${profile_code}${queryString}`);
 }
 
 /**

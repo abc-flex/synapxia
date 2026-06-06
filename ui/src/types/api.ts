@@ -140,8 +140,8 @@ export interface ItemTranslationUpdate {
   is_active?: boolean;
 }
 
-// Role types
-export interface Role {
+// Profile types
+export interface Profile {
   code: string;
   name: string;
   description?: string;
@@ -150,14 +150,14 @@ export interface Role {
   updated_at?: string;
 }
 
-export interface RoleCreate {
+export interface ProfileCreate {
   code: string;
   name: string;
   description?: string;
   is_active?: boolean;
 }
 
-export interface RoleUpdate {
+export interface ProfileUpdate {
   name?: string;
   description?: string;
   is_active?: boolean;
@@ -170,8 +170,8 @@ export interface UserRead {
   email: string;
   first_name: string;
   last_name: string;
-  menu_role: string;
-  business_unit: string;
+  profile: string;
+  unit: string;
   is_active: boolean;
   is_superuser: boolean;
   created_at: string;
@@ -185,8 +185,8 @@ export interface User {
   password_hash: string;
   first_name: string;
   last_name: string;
-  menu_role: string;
-  business_unit: string;
+  profile: string;
+  unit: string;
   is_active?: boolean;
   created_at?: string;
   updated_at?: string;
@@ -199,8 +199,8 @@ export interface UserCreate {
   password: string;
   first_name: string;
   last_name: string;
-  menu_role: string;
-  business_unit: string;
+  profile: string;
+  unit: string;
   is_active?: boolean;
 }
 
@@ -210,8 +210,8 @@ export interface UserUpdate {
   password?: string;
   first_name?: string;
   last_name?: string;
-  menu_role?: string;
-  business_unit?: string;
+  profile?: string;
+  unit?: string;
   is_active?: boolean;
 }
 
@@ -472,6 +472,29 @@ export interface TeamUpdate {
   lead?: number;
   chat_channel_url?: string;
   kanban_board_url?: string;
+  is_active?: boolean;
+}
+
+// Role types
+export interface Role {
+  code: string;
+  name: string;
+  description?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface RoleCreate {
+  code: string;
+  name: string;
+  description?: string;
+  is_active?: boolean;
+}
+
+export interface RoleUpdate {
+  name?: string;
+  description?: string;
   is_active?: boolean;
 }
 

@@ -26,14 +26,15 @@
     "ADMIN": "Administration",
     "TAXO": "Asset Taxonomy",
     "COLLAB": "Collaboration",
+    "LIB": "AI Library",
     "INITS": "Initiatives",
     "ANA": "Analytics",
     "PROC": "Processes"
   },
   "menu_options": {
-    "profile": "Profile",
     "business_units": "Business Units",
-    "roles": "Roles",
+    "profiles": "Profiles",
+    "privileges": "Privileges",
     "users": "Users",
     "lists": "Lists",
     "list_items": "List Items",
@@ -42,6 +43,7 @@
     "options": "Options",
     "categories": "Categories",
     "features": "Features",
+    "roles": "Roles",
     "teams": "Teams",
     "projects": "Projects",
     "dimensions": "Dimensions",
@@ -114,21 +116,26 @@
     "empty_message": "No Business Units found",
     "delete_confirmation": "Are you sure you want to delete this Business Unit"
   },
-  "role_modal": {
+  "unit_modal": {
+    "one_title": "Business Unit",
+    "many_title": "Business Units",
+    "filter_title": "All Business Units"
+  },
+  "profile_modal": {
     "code": "Code",
     "name": "Name",
     "description": "Description",
-    "one_title": "Role",
-    "many_title": "Roles",
-    "filter_title": "All Roles",
-    "add_new": "New Role",
-    "edit": "Edit Role",
-    "delete": "Delete Role",
-    "empty_message": "No Roles found",
-    "delete_confirmation": "Are you sure you want to delete this Role"
+    "one_title": "Profile",
+    "many_title": "Profiles",
+    "filter_title": "All Profiles",
+    "add_new": "New Profile",
+    "edit": "Edit Profile",
+    "delete": "Delete Profile",
+    "empty_message": "No Profiles found",
+    "delete_confirmation": "Are you sure you want to delete this Profile"
   },
   "privilege_modal": {
-    "role": "Role",
+    "profile": "Profile",
     "module": "Module",
     "option": "Option",
     "one_title": "Privilege",
@@ -146,8 +153,8 @@
     "password": "Password",
     "first_name": "First Name",
     "last_name": "Last Name",
-    "menu_role": "Menu Role",
-    "business_unit": "Business Unit",
+    "profile": "Profile",
+    "unit": "Business Unit",
     "one_title": "User",
     "many_title": "Users",
     "add_new": "New User",
@@ -178,11 +185,25 @@
     "sort_order": "Sort Order",
     "one_title": "List Item",
     "many_title": "List Items",
+    "filter_title": "All Items",
     "add_new": "New List Item",
     "edit": "Edit List Item",
     "delete": "Delete List Item",
     "empty_message": "No List Items found",
     "delete_confirmation": "Are you sure you want to delete this List Item"
+  },
+  "item_translation_modal": {
+    "list": "List",
+    "value": "Value",
+    "lang": "Language",
+    "label": "Label",
+    "one_title": "Item Translation",
+    "many_title": "Item Translations",
+    "add_new": "New Item Translation",
+    "edit": "Edit Item Translation",
+    "delete": "Delete Item Translation",
+    "empty_message": "No Item Translations found",
+    "delete_confirmation": "Are you sure you want to delete this Item Translation"
   },
   "module_modal": {
     "code": "Code",
@@ -241,6 +262,19 @@
     "delete": "Delete Feature",
     "empty_message": "No Features found",
     "delete_confirmation": "Are you sure you want to delete this Feature"
+  },
+  "role_modal": {
+    "code": "Code",
+    "name": "Name",
+    "description": "Description",
+    "one_title": "Role",
+    "many_title": "Roles",
+    "filter_title": "All Roles",
+    "add_new": "New Role",
+    "edit": "Edit Role",
+    "delete": "Delete Role",
+    "empty_message": "No Roles found",
+    "delete_confirmation": "Are you sure you want to delete this Role"
   },
   "team_modal": {
     "code": "Code",

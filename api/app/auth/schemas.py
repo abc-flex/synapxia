@@ -11,8 +11,8 @@ class UserRead(schemas.BaseUser[int]):
     email: str
     first_name: str
     last_name: str
-    menu_role: str
-    business_unit: str
+    profile: str
+    unit: str
     is_active: bool
     is_superuser: bool
     created_at: datetime
@@ -26,8 +26,8 @@ class UserCreate(schemas.BaseUserCreate):
     password: str
     first_name: str
     last_name: str
-    menu_role: str
-    business_unit: str
+    profile: str
+    unit: str
 
 
 class UserUpdate(schemas.BaseUserUpdate):
@@ -37,5 +37,5 @@ class UserUpdate(schemas.BaseUserUpdate):
     username: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
-    menu_role: Optional[str] = None
-    business_unit: Optional[str] = None
+    profile: Optional[str] = None
+    unit: Optional[str] = None

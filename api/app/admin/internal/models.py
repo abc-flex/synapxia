@@ -237,8 +237,8 @@ class UserBase(SQLModel):
     password_hash: str = Field(max_length=500)
     first_name: str = Field(max_length=100)
     last_name: str = Field(max_length=100)
-    menu_profile: str = Field(max_length=50, foreign_key="profiles.code")
-    business_unit: str = Field(max_length=50, foreign_key="business_units.code")
+    profile: str = Field(max_length=50, foreign_key="profiles.code")
+    unit: str = Field(max_length=50, foreign_key="business_units.code")
     is_active: bool = Field(default=True)
     is_superuser: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -257,8 +257,8 @@ class UserCreate(SQLModel):
     password_hash: str = Field(max_length=500, description="Password hash")
     first_name: str = Field(max_length=100, description="First name")
     last_name: str = Field(max_length=100, description="Last name")
-    menu_profile: str = Field(max_length=50, description="Profile code")
-    business_unit: str = Field(max_length=50, description="Business_Unit code")
+    profile: str = Field(max_length=50, description="Profile code")
+    unit: str = Field(max_length=50, description="Business_Unit code")
     is_active: Optional[bool] = Field(
         default=True, description="Indicates if the user is active")
 
@@ -272,9 +272,9 @@ class UserUpdate(SQLModel):
         default=None, max_length=100, description="First name")
     last_name: Optional[str] = Field(
         default=None, max_length=100, description="Last name")
-    menu_profile: Optional[str] = Field(
+    profile: Optional[str] = Field(
         default=None, max_length=50, description="Profile code")
-    business_unit: Optional[str] = Field(
+    unit: Optional[str] = Field(
         default=None, max_length=50, description="Business_Unit code")
     is_active: Optional[bool] = Field(
         default=None, description="Indicates if the user is active")

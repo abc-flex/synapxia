@@ -5,6 +5,7 @@ from datetime import datetime
 from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import case
 
 from ..internal.models import Category, CategoryCreate, CategoryUpdate
 from ..internal.dependencies import get_db_session
@@ -21,9 +22,23 @@ def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_s
     - **skip**: Number of records to skip (default: 0)
     - **limit**: Maximum number of records to return (default: 100)
     """
-    categories = session.exec(select(Category).where(Category.is_active == True)
-                              .offset(skip).limit(limit)
-                              .order_by(Category.name)).all()
+    categories = session.exec(
+        select(Category)
+        .where(Category.is_active == True)
+        .order_by(
+            # 1. Si es padre, el orden es su propio ID; si es hijo, es el ID del padre
+            # COALESCE(parent, code)
+            case((Category.parent == None, Category.code), else_=Category.parent),
+            
+            # 2. Asegura que los padres (NULL en parent) aparezcan antes que los hijos
+            (Category.parent != None),
+            
+            # 3. Orden alfabético final
+            Category.name
+        )
+        .offset(skip)
+        .limit(limit)
+    ).all() 
     return categories
 
 

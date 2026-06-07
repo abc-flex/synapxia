@@ -25,12 +25,15 @@ INSERT INTO options (module, code, name, description, sort_order, type, path) VA
 
 -- ===== Module: TAXO =====
 INSERT INTO options (module, code, name, description, sort_order, type, path) VALUES
-    ('TAXO','CATEGORIES','Categories',
-     'Define and maintain the taxonomy of digital asset categories.',
-     10,'FORM','/taxo/categories'),
     ('TAXO','FEATURES','Features',
      'Define metadata and attributes describing digital assets.',
-     20,'FORM','/taxo/features');
+     10,'FORM','/taxo/features'),
+    ('TAXO','CATEGORIES','Categories',
+     'Define and maintain the taxonomy of digital asset categories.',
+     20,'FORM','/taxo/categories'),
+    ('TAXO','TAXONOMY','View Taxonomy',
+     'View the hierarchical structure of the digital asset taxonomy.',
+     30,'FORM','/taxo/taxonomy');
 
 -- ===== Module: COLLAB =====
 INSERT INTO options (module, code, name, description, sort_order, type, path) VALUES
@@ -46,9 +49,9 @@ INSERT INTO options (module, code, name, description, sort_order, type, path) VA
     ('COLLAB','DIMENSIONS','Dimensions',
      'Define dimensions for segmentation and analysis.',
      40,'FORM','/collab/dimensions'),
-    ('COLLAB','DASHBOARD','Assignment Dashboard',
+    ('COLLAB','ASSIGNMENT','Assignment Dashboard',
      'Dashboard to monitor tasks and collaboration workload.',
-     50,'FORM','/collab/dashboard');
+     50,'FORM','/collab/assignment');
 
 -- ===== Module: ASSET LIBRARY =====
 INSERT INTO options (module, code, name, description, sort_order, type, path) VALUES
@@ -82,24 +85,24 @@ INSERT INTO options (module, code, name, description, sort_order, type, path) VA
 
 -- ===== Module: INITIATIVES =====
 INSERT INTO options (module, code, name, description, sort_order, type, path) VALUES
-    ('INITS','PROPOSAL','Proposal',
+    ('INITS','CRITERIAS','Criterias',
+     'Define criteria for evaluating initiative proposals.',
+     10,'FORM','/inits/criterias'),
+    ('INITS','PROPOSE','Propose',
      'Capture new initiative proposals.',
-     10,'FORM','/inits/prompts'),
+     20,'FORM','/inits/proposals'),
     ('INITS','EXPLORE','Explore',
      'Browse and analyze the initiative portfolio.',
-     20,'FORM','/inits/explore');
+     30,'FORM','/inits/explore');
 
 -- ===== Module: ANALYTICS =====
 INSERT INTO options (module, code, name, description, sort_order, type, path) VALUES
-    ('ANA','BY_UNITS','Analytics by Unit',
-     'Analyze AI adoption and impact by organizational units.',
-     10,'FORM','/ana/by_units'),
-    ('ANA','BY_TEAMS','Analytics by Team',
-     'Analyze AI adoption and impact by teams.',
-     20,'FORM','/ana/by_teams'),
-    ('ANA','BY_ROLE','Analytics by Role',
-     'Analyze AI adoption and impact by user roles.',
-     30,'FORM','/ana/by_role');
+    ('ANA','DASHBOARDS','Dashboard Catalog',
+     'Catalog of available dashboards.',
+     10,'FORM','/ana/dashboards'),
+    ('ANA','USAGE','Usage Metrics',
+     'Track and analyze the usage of dashboards.',
+     20,'FORM','/ana/usage');
 
 -- ===== Module: PROCESSES =====
 INSERT INTO options (module, code, name, description, sort_order, type, path) VALUES
@@ -114,7 +117,7 @@ INSERT INTO options (module, code, name, description, sort_order, type, path) VA
      30,'FORM','/proc/process_models');
 
 -- **********************************
--- ********** Table: Roles **********
+-- ******** Table: Profiles *********
 -- **********************************
 
 INSERT INTO profiles (code, name, description, icon)
@@ -136,12 +139,12 @@ VALUES
 -- ******** Table: Privileges ********
 -- **********************************
 
--- ===== Role: ADMINISTRATOR =====
+-- ===== Profile: ADMINISTRATOR =====
 INSERT INTO privileges (profile, module, option, can_edit)
 VALUES
     -- ADMIN
     ('ADMINISTRATOR','ADMIN','BUSINESS_UNITS', TRUE),
-    ('ADMINISTRATOR','ADMIN','ROLES',          TRUE),
+    ('ADMINISTRATOR','ADMIN','PROFILES',       TRUE),
     ('ADMINISTRATOR','ADMIN','USERS',          TRUE),
     ('ADMINISTRATOR','ADMIN','LISTS',          TRUE),
     ('ADMINISTRATOR','ADMIN','MODULES',        TRUE),
@@ -155,7 +158,7 @@ VALUES
     ('ADMINISTRATOR','COLLAB','TEAMS',      TRUE),
     ('ADMINISTRATOR','COLLAB','PROJECTS',   TRUE),
     ('ADMINISTRATOR','COLLAB','DIMENSIONS', TRUE),
-    ('ADMINISTRATOR','COLLAB','DASHBOARD',  TRUE),
+    ('ADMINISTRATOR','COLLAB','ASSIGNMENT',  TRUE),
 
     -- LIB
     ('ADMINISTRATOR','LIB','ASSETS',     TRUE),
@@ -169,7 +172,7 @@ VALUES
     ('ADMINISTRATOR','LIB','MODELS',     TRUE),
 
     -- INITS
-    ('ADMINISTRATOR','INITS','PROPOSAL', TRUE),
+    ('ADMINISTRATOR','INITS','PROPOSE', TRUE),
     ('ADMINISTRATOR','INITS','EXPLORE',  TRUE),
 
     -- ANA
@@ -182,7 +185,7 @@ VALUES
     ('ADMINISTRATOR','PROC','MAP',         TRUE),
     ('ADMINISTRATOR','PROC','MODELS',      TRUE);
 
--- ===== Role: ADMINISTRATIVE =====
+-- ===== Profile: ADMINISTRATIVE =====
 INSERT INTO privileges (profile, module, option, can_edit)
 VALUES
     -- TAXO
@@ -193,7 +196,7 @@ VALUES
     ('ADMINISTRATIVE','COLLAB','TEAMS',      TRUE),
     ('ADMINISTRATIVE','COLLAB','PROJECTS',   TRUE),
     ('ADMINISTRATIVE','COLLAB','DIMENSIONS', TRUE),
-    ('ADMINISTRATIVE','COLLAB','DASHBOARD',  TRUE),
+    ('ADMINISTRATIVE','COLLAB','ASSIGNMENT',  TRUE),
 
     -- LIB
     ('ADMINISTRATIVE','LIB','ASSETS',     TRUE),
@@ -207,7 +210,7 @@ VALUES
     ('ADMINISTRATIVE','LIB','MODELS',     TRUE),
 
     -- INITS
-    ('ADMINISTRATIVE','INITS','PROPOSAL', TRUE),
+    ('ADMINISTRATIVE','INITS','PROPOSE', TRUE),
     ('ADMINISTRATIVE','INITS','EXPLORE',  TRUE),
 
     -- ANA
@@ -220,7 +223,7 @@ VALUES
     ('ADMINISTRATIVE','PROC','MAP',         TRUE),
     ('ADMINISTRATIVE','PROC','MODELS',      TRUE);
 
--- ===== Role: COLLABORATOR =====
+-- ===== Profile: COLLABORATOR =====
 INSERT INTO privileges (profile, module, option, can_edit)
 VALUES
     -- TAXO (read-only)
@@ -231,7 +234,7 @@ VALUES
     ('COLLABORATOR','COLLAB','TEAMS',      FALSE),
     ('COLLABORATOR','COLLAB','PROJECTS',   FALSE),
     ('COLLABORATOR','COLLAB','DIMENSIONS', FALSE),
-    ('COLLABORATOR','COLLAB','DASHBOARD',  FALSE),
+    ('COLLABORATOR','COLLAB','ASSIGNMENT',  FALSE),
 
     -- LIB (read-only)
     ('COLLABORATOR','LIB','ASSETS',     FALSE),
@@ -245,7 +248,7 @@ VALUES
     ('COLLABORATOR','LIB','MODELS',     FALSE),
 
     -- INITS (read-only)
-    ('COLLABORATOR','INITS','PROPOSAL', TRUE),
+    ('COLLABORATOR','INITS','PROPOSE', TRUE),
     ('COLLABORATOR','INITS','EXPLORE',  FALSE),
 
     -- ANA (read-only)

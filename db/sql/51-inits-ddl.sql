@@ -164,63 +164,63 @@ ALTER TABLE related_inits
 -- **********************************
 
 -- ===== List: Asset Status for Initiatives =====
-INSERT INTO lists (code, name, description, type, module, is_active) VALUES (
+INSERT INTO lists (code, name, description, type, module) VALUES (
     'INITIATIVE_STATUS', 'List of initiative statuses for system configuration',
     'List that classifies the statuses of initiatives in SynapxIA.',
-    'LIST_OF_VALUES', 'INITS', TRUE);
-INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
-    ('INITIATIVE_STATUS', '1-ACTIVATED', '1-Activated', 10, TRUE),
-    ('INITIATIVE_STATUS', '2-ASSESSMENT', '2-Assessment', 20, TRUE),
-    ('INITIATIVE_STATUS', '3-ENGAGING', '3-Engaging', 30, TRUE),
-    ('INITIATIVE_STATUS', '4-DELIVERED', '4-Delivered', 40, TRUE),
-    ('INITIATIVE_STATUS', '5-EVOLVING', '5-Evolving', 50, TRUE);
+    'LIST_OF_VALUES', 'INITS');
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('INITIATIVE_STATUS', 'en', '1-ACTIVATED', '1-Activated', 10),
+    ('INITIATIVE_STATUS', 'en', '2-ASSESSMENT', '2-Assessment', 20),
+    ('INITIATIVE_STATUS', 'en', '3-ENGAGING', '3-Engaging', 30),
+    ('INITIATIVE_STATUS', 'en', '4-DELIVERED', '4-Delivered', 40),
+    ('INITIATIVE_STATUS', 'en', '5-EVOLVING', '5-Evolving', 50);
 
 -- ===== List: Expected Impact for Initiatives =====
-INSERT INTO lists (code, name, description, type, module, is_active) VALUES (
+INSERT INTO lists (code, name, description, type, module) VALUES (
     'EXPECTED_IMPACT', 'List of expected impacts for system configuration',
     'List that classifies the expected impacts of initiatives in SynapxIA.',
-    'LIST_OF_VALUES', 'INITS', TRUE);
-INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
-    ('EXPECTED_IMPACT', 'TIME_REDUCTION', 'Time Reduction', 10, TRUE),
-    ('EXPECTED_IMPACT', 'QUALITY_IMPROVEMENT', 'Quality Improvement', 20, TRUE),
-    ('EXPECTED_IMPACT', 'ERROR_REDUCTION', 'Error Reduction', 30, TRUE),
-    ('EXPECTED_IMPACT', 'DECISION_SUPPORT', 'Decision Support', 40, TRUE),
-    ('EXPECTED_IMPACT', 'IMPROVED_UX', 'Improved User Experience', 50, TRUE),
-    ('EXPECTED_IMPACT', 'COST_SAVINGS', 'Cost Savings', 60, TRUE),
-    ('EXPECTED_IMPACT', 'REVENUE_INCREASE', 'Revenue Increase', 70, TRUE),
-    ('EXPECTED_IMPACT', 'COMPLIANCE_ENHANCEMENT', 'Compliance Enhancement', 80, TRUE),
-    ('EXPECTED_IMPACT', 'RISK_REDUCTION', 'Risk Reduction', 90, TRUE),
-    ('EXPECTED_IMPACT', 'SCALABILITY_IMPROVEMENT', 'Scalability Improvement', 100, TRUE),
-    ('EXPECTED_IMPACT', 'INNOVATION', 'Innovation', 110, TRUE),
-    ('EXPECTED_IMPACT', 'OTHER', 'Other', 120, TRUE);
+    'LIST_OF_VALUES', 'INITS');
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('EXPECTED_IMPACT', 'en', 'TIME_REDUCTION', 'Time Reduction', 10),
+    ('EXPECTED_IMPACT', 'en', 'QUALITY_IMPROVEMENT', 'Quality Improvement', 20),
+    ('EXPECTED_IMPACT', 'en', 'ERROR_REDUCTION', 'Error Reduction', 30),
+    ('EXPECTED_IMPACT', 'en', 'DECISION_SUPPORT', 'Decision Support', 40),
+    ('EXPECTED_IMPACT', 'en', 'IMPROVED_UX', 'Improved User Experience', 50),
+    ('EXPECTED_IMPACT', 'en', 'COST_SAVINGS', 'Cost Savings', 60),
+    ('EXPECTED_IMPACT', 'en', 'REVENUE_INCREASE', 'Revenue Increase', 70),
+    ('EXPECTED_IMPACT', 'en', 'COMPLIANCE_ENHANCEMENT', 'Compliance Enhancement', 80),
+    ('EXPECTED_IMPACT', 'en', 'RISK_REDUCTION', 'Risk Reduction', 90),
+    ('EXPECTED_IMPACT', 'en', 'SCALABILITY_IMPROVEMENT', 'Scalability Improvement', 100),
+    ('EXPECTED_IMPACT', 'en', 'INNOVATION', 'Innovation', 110),
+    ('EXPECTED_IMPACT', 'en', 'OTHER', 'Other', 120);
 
 -- ===== List: Priority Level for Initiatives =====
-INSERT INTO lists (code, name, description, type, module, is_active) VALUES (
+INSERT INTO lists (code, name, description, type, module) VALUES (
     'PRIORITY_LEVEL', 'List of priority levels for system configuration',
     'List that classifies the priority levels of initiatives in SynapxIA.',
-    'LIST_OF_VALUES', 'INITS', TRUE);
-INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
-    ('PRIORITY_LEVEL', 'HIGH', 'High', 10, TRUE),
-    ('PRIORITY_LEVEL', 'MEDIUM', 'Medium', 20, TRUE),
-    ('PRIORITY_LEVEL', 'LOW', 'Low', 30, TRUE);
+    'LIST_OF_VALUES', 'INITS');
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('PRIORITY_LEVEL', 'en', 'HIGH', 'High', 10),
+    ('PRIORITY_LEVEL', 'en', 'MEDIUM', 'Medium', 20),
+    ('PRIORITY_LEVEL', 'en', 'LOW', 'Low', 30);
  
 -- ===== List: Action Type for Collaborations =====
-INSERT INTO lists (code, name, description, type, module, is_active) VALUES (
+INSERT INTO lists (code, name, description, type, module) VALUES (
     'COLLAB_TYPE', 'List of collaboration types for system configuration',
     'List that classifies the types of collaboration that users can perform on initiatives in SynapxIA.',
-    'LIST_OF_VALUES', 'INITS', TRUE);
-INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
-    ('COLLAB_TYPE', '1-ACTIVATION', '1-Activation', 10, TRUE),
-    ('COLLAB_TYPE', '2-ASSESSMENT', '2-Assessment', 20, TRUE),
-    ('COLLAB_TYPE', '3-EXPLORATION', '3-Exploration', 30, TRUE),
-    ('COLLAB_TYPE', '3-PROTOTYPING', '3-Prototyping', 33, TRUE),
-    ('COLLAB_TYPE', '3-IMPLEMENTATION', '3-Implementation', 36, TRUE),
-    ('COLLAB_TYPE', '4-ENABLEMENT', '4-Enablement', 40, TRUE),
-    ('COLLAB_TYPE', '5-IMPROVEMENT', '5-Improvement', 50, TRUE),
-    ('COLLAB_TYPE', '5-REFACTORING', '5-Refactoring', 52, TRUE),
-    ('COLLAB_TYPE', '5-EXPANSION', '5-Expansion', 54, TRUE),
-    ('COLLAB_TYPE', '5-VERSIONING', '5-Versioning', 56, TRUE),
-    ('COLLAB_TYPE', '5-DEPRECATION', '5-Deprecation', 58, TRUE);
+    'LIST_OF_VALUES', 'INITS');
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('COLLAB_TYPE', 'en', '1-ACTIVATION', '1-Activation', 10),
+    ('COLLAB_TYPE', 'en', '2-ASSESSMENT', '2-Assessment', 20),
+    ('COLLAB_TYPE', 'en', '3-EXPLORATION', '3-Exploration', 30),
+    ('COLLAB_TYPE', 'en', '3-PROTOTYPING', '3-Prototyping', 33),
+    ('COLLAB_TYPE', 'en', '3-IMPLEMENTATION', '3-Implementation', 36),
+    ('COLLAB_TYPE', 'en', '4-ENABLEMENT', '4-Enablement', 40),
+    ('COLLAB_TYPE', 'en', '5-IMPROVEMENT', '5-Improvement', 50),
+    ('COLLAB_TYPE', 'en', '5-REFACTORING', '5-Refactoring', 52),
+    ('COLLAB_TYPE', 'en', '5-EXPANSION', '5-Expansion', 54),
+    ('COLLAB_TYPE', 'en', '5-VERSIONING', '5-Versioning', 56),
+    ('COLLAB_TYPE', 'en', '5-DEPRECATION', '5-Deprecation', 58);
 
 -- **********************************
 -- ****** Lists for Criterias *******
@@ -235,67 +235,67 @@ INSERT INTO lists (code, name, description, module, type) VALUES
 ('SUSTAINABILITY', 'Sustainability and expected adoption level', 'Level of usage and adoption', 'INITS', 'CRITERIA');
 
 -- ===== 1. Clarity and maturity =====
-INSERT INTO list_items (list, value, label, sort_order) VALUES
-('CLARITY_MATURITY', '1', 'Exploratory or not yet well defined', 1),
-('CLARITY_MATURITY', '2', 'Partially defined and requires validation', 2),
-('CLARITY_MATURITY', '3', 'Scope and objectives are clearly defined', 3);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+('CLARITY_MATURITY', 'en', '1', 'Exploratory or not yet well defined', 1),
+('CLARITY_MATURITY', 'en', '2', 'Partially defined and requires validation', 2),
+('CLARITY_MATURITY', 'en', '3', 'Scope and objectives are clearly defined', 3);
 -- 1. Traducciones para Claridad y madurez
-INSERT INTO item_translations (list, value, lang, label) VALUES
-('CLARITY_MATURITY', '1', 'es', 'Exploratoria o aún no está bien definida'),
-('CLARITY_MATURITY', '2', 'es', 'Definida de forma parcial y requiere validación'),
-('CLARITY_MATURITY', '3', 'es', 'El alcance y los objetivos están claramente definidos');
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+('CLARITY_MATURITY', 'es', '1', 'Exploratoria o aún no está bien definida', 1),
+('CLARITY_MATURITY', 'es', '2', 'Definida de forma parcial y requiere validación', 2),
+('CLARITY_MATURITY', 'es', '3', 'El alcance y los objetivos están claramente definidos', 3);
 
 -- ===== 2. Support objective =====
-INSERT INTO list_items (list, value, label, sort_order) VALUES
-('SUPPORT_OBJECTIVE', '1', 'Requires guidance, training, recommendations, or templates', 1),
-('SUPPORT_OBJECTIVE', '2', 'Requires validating an idea through testing or prototyping', 2),
-('SUPPORT_OBJECTIVE', '3', 'Requires an operational solution for real use', 3);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+('SUPPORT_OBJECTIVE', 'en', '1', 'Requires guidance, training, recommendations, or templates', 1),
+('SUPPORT_OBJECTIVE', 'en', '2', 'Requires validating an idea through testing or prototyping', 2),
+('SUPPORT_OBJECTIVE', 'en', '3', 'Requires an operational solution for real use', 3);
 -- 2. Traducciones para Objetivo del acompañamiento
-INSERT INTO item_translations (list, value, lang, label) VALUES
-('SUPPORT_OBJECTIVE', '1', 'es', 'Requiere guía, formación, recomendaciones o plantillas'),
-('SUPPORT_OBJECTIVE', '2', 'es', 'Requiere validar una idea mediante prueba o prototipo'),
-('SUPPORT_OBJECTIVE', '3', 'es', 'Requiere una solución operativa para uso real');
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+('SUPPORT_OBJECTIVE', 'es', '1', 'Requiere guía, formación, recomendaciones o plantillas', 1),
+('SUPPORT_OBJECTIVE', 'es', '2', 'Requiere validar una idea mediante prueba o prototipo', 2),
+('SUPPORT_OBJECTIVE', 'es', '3', 'Requiere una solución operativa para uso real', 3);
 
 -- ===== 3. Technical complexity =====
-INSERT INTO list_items (list, value, label, sort_order) VALUES
-('COMPLEXITY', '1', 'Low; does not require complex design or significant process changes', 1),
-('COMPLEXITY', '2', 'Medium; requires designing and testing a functional solution', 2),
-('COMPLEXITY', '3', 'High; requires architecture, development, and significant process adjustments', 3);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+('COMPLEXITY', 'en', '1', 'Low; does not require complex design or significant process changes', 1),
+('COMPLEXITY', 'en', '2', 'Medium; requires designing and testing a functional solution', 2),
+('COMPLEXITY', 'en', '3', 'High; requires architecture, development, and significant process adjustments', 3);
 -- 3. Traducciones para Complejidad técnica
-INSERT INTO item_translations (list, value, lang, label) VALUES
-('COMPLEXITY', '1', 'es', 'Baja; no requiere diseño complejo ni cambios relevantes en el proceso'),
-('COMPLEXITY', '2', 'es', 'Media; requiere diseñar y probar una solución funcional'),
-('COMPLEXITY', '3', 'es', 'Alta; requiere arquitectura, desarrollo y ajustes relevantes en el proceso');
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+('COMPLEXITY', 'es', '1', 'Baja; no requiere diseño complejo ni cambios relevantes en el proceso', 1),
+('COMPLEXITY', 'es', '2', 'Media; requiere diseñar y probar una solución funcional', 2),
+('COMPLEXITY', 'es', '3', 'Alta; requiere arquitectura, desarrollo y ajustes relevantes en el proceso', 3);
 
 -- ===== 4. Data and integrations =====
-INSERT INTO list_items (list, value, label, sort_order) VALUES
-('DATA_INTEGRATIONS', '1', 'Does not use critical data or require integrations', 1),
-('DATA_INTEGRATIONS', '2', 'Uses limited data or possible integrations, but not critical', 2),
-('DATA_INTEGRATIONS', '3', 'Uses real or sensitive data or integrates with systems, APIs, or institutional workflows', 3);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+('DATA_INTEGRATIONS', 'en', '1', 'Does not use critical data or require integrations', 1),
+('DATA_INTEGRATIONS', 'en', '2', 'Uses limited data or possible integrations, but not critical', 2),
+('DATA_INTEGRATIONS', 'en', '3', 'Uses real or sensitive data or integrates with systems, APIs, or institutional workflows', 3);
 -- 4. Traducciones para Datos e integraciones
-INSERT INTO item_translations (list, value, lang, label) VALUES
-('DATA_INTEGRATIONS', '1', 'es', 'No usa datos críticos ni requiere integraciones'),
-('DATA_INTEGRATIONS', '2', 'es', 'Usa datos limitados o integraciones posibles, pero no críticas'),
-('DATA_INTEGRATIONS', '3', 'es', 'Usa datos reales o sensibles o integración con sistemas, APIs o flujos institucionales');
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+('DATA_INTEGRATIONS', 'es', '1', 'No usa datos críticos ni requiere integraciones', 1),
+('DATA_INTEGRATIONS', 'es', '2', 'Usa datos limitados o integraciones posibles, pero no críticas', 2),
+('DATA_INTEGRATIONS', 'es', '3', 'Usa datos reales o sensibles o integración con sistemas, APIs o flujos institucionales', 3);
 
 -- ===== 5. Risk and impact =====
-INSERT INTO list_items (list, value, label, sort_order) VALUES
-('RISK_IMPACT', '1', 'Low risk; errors have no significant consequences', 1),
-('RISK_IMPACT', '2', 'Medium risk; requires validation before broader use', 2),
-('RISK_IMPACT', '3', 'High risk; may affect operations, decisions, users, or compliance', 3);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+('RISK_IMPACT', 'en', '1', 'Low risk; errors have no significant consequences', 1),
+('RISK_IMPACT', 'en', '2', 'Medium risk; requires validation before broader use', 2),
+('RISK_IMPACT', 'en', '3', 'High risk; may affect operations, decisions, users, or compliance', 3);
 -- 5. Riesgo e impacto
-INSERT INTO item_translations (list, value, lang, label) VALUES
-('RISK_IMPACT', '1', 'es', 'Riesgo bajo; error sin consecuencias relevantes'),
-('RISK_IMPACT', '2', 'es', 'Riesgo medio; requiere validación antes de uso más amplio'),
-('RISK_IMPACT', '3', 'es', 'Riesgo alto; puede afectar operación, decisiones, usuarios o cumplimiento');
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+('RISK_IMPACT', 'es', '1', 'Riesgo bajo; error sin consecuencias relevantes', 1),
+('RISK_IMPACT', 'es', '2', 'Riesgo medio; requiere validación antes de uso más amplio', 2),
+('RISK_IMPACT', 'es', '3', 'Riesgo alto; puede afectar operación, decisiones, usuarios o cumplimiento', 3);
 
 -- ===== 6. Sustainability and adoption =====
-INSERT INTO list_items (list, value, label, sort_order) VALUES
-('SUSTAINABILITY', '1', 'One-time or learning use; does not require continuous operation', 1),
-('SUSTAINABILITY', '2', 'Recurring use, but still under evaluation', 2),
-('SUSTAINABILITY', '3', 'Continuous use; requires knowledge transfer, ownership, and evolution over time', 3);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+('SUSTAINABILITY', 'en', '1', 'One-time or learning use; does not require continuous operation', 1),
+('SUSTAINABILITY', 'en', '2', 'Recurring use, but still under evaluation', 2),
+('SUSTAINABILITY', 'en', '3', 'Continuous use; requires knowledge transfer, ownership, and evolution over time', 3);
 -- 6. Sostenibilidad
-INSERT INTO item_translations (list, value, lang, label) VALUES
-('SUSTAINABILITY', '1', 'es', 'Uso puntual o de aprendizaje; no requiere operación continua'),
-('SUSTAINABILITY', '2', 'es', 'Uso recurrente, pero aún en evaluación'),
-('SUSTAINABILITY', '3', 'es', 'Uso continuo; requiere transferencia, apropiación y evolución en el tiempo');
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+('SUSTAINABILITY', 'es', '1', 'Uso puntual o de aprendizaje; no requiere operación continua', 1),
+('SUSTAINABILITY', 'es', '2', 'Uso recurrente, pero aún en evaluación', 2),
+('SUSTAINABILITY', 'es', '3', 'Uso continuo; requiere transferencia, apropiación y evolución en el tiempo', 3);

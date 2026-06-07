@@ -127,62 +127,62 @@ ALTER TABLE executions
 -- **********************************
 
 -- ===== List: Dashboard Type =====
-INSERT INTO lists (code, name, description, type, module, is_active) VALUES (
+INSERT INTO lists (code, name, description, type, module) VALUES (
     'DASHBOARD_TYPE', 'List of dashboard types for system configuration',
     'List that classifies the types of dashboards in SynapxIA.',
-    'LIST_OF_VALUES', 'ANA', TRUE);
-INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
-    ('DASHBOARD_TYPE', 'DASHBOARD', 'Dashboard', 10, TRUE),
-    ('DASHBOARD_TYPE', 'REPORT', 'Report', 20, TRUE),
-    ('DASHBOARD_TYPE', 'SCORECARD', 'Scorecard', 30, TRUE),
-    ('DASHBOARD_TYPE', 'KPI_VIEW', 'KPI View', 40, TRUE),
-    ('DASHBOARD_TYPE', 'ANALYTICAL_VIEW', 'Analytical View', 50, TRUE);
+    'LIST_OF_VALUES', 'ANA');
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('DASHBOARD_TYPE', 'en', 'DASHBOARD', 'Dashboard', 10),
+    ('DASHBOARD_TYPE', 'en', 'REPORT', 'Report', 20),
+    ('DASHBOARD_TYPE', 'en', 'SCORECARD', 'Scorecard', 30),
+    ('DASHBOARD_TYPE', 'en', 'KPI_VIEW', 'KPI View', 40),
+    ('DASHBOARD_TYPE', 'en', 'ANALYTICAL_VIEW', 'Analytical View', 50);
 
 -- ===== List: Source Type =====
-INSERT INTO lists (code, name, description, type, module, is_active) VALUES (
+INSERT INTO lists (code, name, description, type, module) VALUES (
     'SOURCE_TYPE', 'List of source types for system configuration',
     'List that classifies the types of data sources in SynapxIA.',
-    'LIST_OF_VALUES', 'ANA', TRUE);
-INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
-    ('SOURCE_TYPE', 'INTERNAL_PAGE', 'Internal Page', 10, TRUE),
-    ('SOURCE_TYPE', 'POWER_BI', 'Power BI', 20, TRUE),
-    ('SOURCE_TYPE', 'LOOKER_STUDIO', 'Looker Studio', 30, TRUE),
-    ('SOURCE_TYPE', 'TABLEAU', 'Tableau', 40, TRUE),
-    ('SOURCE_TYPE', 'QLIK_SENSE', 'Qlik Sense', 50, TRUE),
-    ('SOURCE_TYPE', 'METABASE', 'Metabase', 60, TRUE),
-    ('SOURCE_TYPE', 'SUPERSET', 'Superset', 70, TRUE),
-    ('SOURCE_TYPE', 'CUSTOM_IFRAME', 'Custom Iframe', 80, TRUE);
+    'LIST_OF_VALUES', 'ANA');
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('SOURCE_TYPE', 'en', 'INTERNAL_PAGE', 'Internal Page', 10),
+    ('SOURCE_TYPE', 'en', 'POWER_BI', 'Power BI', 20),
+    ('SOURCE_TYPE', 'en', 'LOOKER_STUDIO', 'Looker Studio', 30),
+    ('SOURCE_TYPE', 'en', 'TABLEAU', 'Tableau', 40),
+    ('SOURCE_TYPE', 'en', 'QLIK_SENSE', 'Qlik Sense', 50),
+    ('SOURCE_TYPE', 'en', 'METABASE', 'Metabase', 60),
+    ('SOURCE_TYPE', 'en', 'SUPERSET', 'Superset', 70),
+    ('SOURCE_TYPE', 'en', 'CUSTOM_IFRAME', 'Custom Iframe', 80);
 
 -- ===== List: Dashboard Status =====
-INSERT INTO lists (code, name, description, type, module, is_active) VALUES (
+INSERT INTO lists (code, name, description, type, module) VALUES (
     'DASHBOARD_STATUS', 'List of dashboard statuses for system configuration',
     'List that classifies the statuses of dashboards in SynapxIA.',
-    'LIST_OF_VALUES', 'ANA', TRUE);
-INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
-    ('DASHBOARD_STATUS', 'DRAFT', 'Draft', 10, TRUE),
-    ('DASHBOARD_STATUS', 'PUBLISHED', 'Published', 20, TRUE),
-    ('DASHBOARD_STATUS', 'ARCHIVED', 'Archived', 30, TRUE),
-    ('DASHBOARD_STATUS', 'RETIRED', 'Retired', 40, TRUE);
+    'LIST_OF_VALUES', 'ANA');
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('DASHBOARD_STATUS', 'en', 'DRAFT', 'Draft', 10),
+    ('DASHBOARD_STATUS', 'en', 'PUBLISHED', 'Published', 20),
+    ('DASHBOARD_STATUS', 'en', 'ARCHIVED', 'Archived', 30),
+    ('DASHBOARD_STATUS', 'en', 'RETIRED', 'Retired', 40);
 
 -- ===== List: Parameter Type =====
-INSERT INTO lists (code, name, description, type, module, is_active) VALUES (
+INSERT INTO lists (code, name, description, type, module) VALUES (
     'PARAM_TYPE', 'List of parameter types for system configuration',
     'List that classifies the types of parameters in SynapxIA.',
-    'LIST_OF_VALUES', 'ANA', TRUE);
-INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
-    ('PARAM_TYPE', 'STRING', 'String', 10, TRUE),
-    ('PARAM_TYPE', 'NUMBER', 'Number', 20, TRUE),
-    ('PARAM_TYPE', 'BOOLEAN', 'Boolean', 30, TRUE),
-    ('PARAM_TYPE', 'DATE', 'Date', 40, TRUE);
+    'LIST_OF_VALUES', 'ANA');
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('PARAM_TYPE', 'en', 'STRING', 'String', 10),
+    ('PARAM_TYPE', 'en', 'NUMBER', 'Number', 20),
+    ('PARAM_TYPE', 'en', 'BOOLEAN', 'Boolean', 30),
+    ('PARAM_TYPE', 'en', 'DATE', 'Date', 40);
 
 -- ===== List: Execution Status =====
-INSERT INTO lists (code, name, description, type, module, is_active) VALUES (
+INSERT INTO lists (code, name, description, type, module) VALUES (
     'EXECUTION_STATUS', 'List of execution statuses for dashboard executions',
     'List that classifies the statuses of executions in SynapxIA.',
-    'LIST_OF_VALUES', 'ANA', TRUE);
-INSERT INTO list_items (list, value, label, sort_order, is_active) VALUES
-    ('EXECUTION_STATUS', 'SUCCESS', 'Success', 10, TRUE),
-    ('EXECUTION_STATUS', 'FAILED', 'Failed', 20, TRUE),
-    ('EXECUTION_STATUS', 'CANCELLED', 'Cancelled', 30, TRUE),
-    ('EXECUTION_STATUS', 'TIMEOUT', 'Timeout', 40, TRUE),
-    ('EXECUTION_STATUS', 'UNAUTHORIZED', 'Unauthorized', 50, TRUE);
+    'LIST_OF_VALUES', 'ANA');
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('EXECUTION_STATUS', 'en', 'SUCCESS', 'Success', 10),
+    ('EXECUTION_STATUS', 'en', 'FAILED', 'Failed', 20),
+    ('EXECUTION_STATUS', 'en', 'CANCELLED', 'Cancelled', 30),
+    ('EXECUTION_STATUS', 'en', 'TIMEOUT', 'Timeout', 40),
+    ('EXECUTION_STATUS', 'en', 'UNAUTHORIZED', 'Unauthorized', 50);

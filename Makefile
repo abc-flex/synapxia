@@ -1,4 +1,4 @@
-.PHONY: help up down ps logs shell dev clean rebuild restart health test
+.PHONY: help up down ps logs shell dev clean rebuild restart health test hooks
 
 # Default target
 .DEFAULT_GOAL := help
@@ -267,6 +267,13 @@ backup-help:
 	@echo "  make backup-db     - Backup database to ./backups/"
 	@echo "  make restore-db    - Restore from latest backup"
 	@echo "  make migrations    - List database migrations"
+
+## Git hooks
+
+hooks:
+	@git config core.hooksPath .githooks
+	@echo "$(GREEN)✓ Git hooks activated (.githooks/post-merge)$(NC)"
+	@echo "  Changelog will update automatically on merges to develop/main/prod"
 
 ## Quick Start
 

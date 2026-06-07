@@ -1,5 +1,5 @@
-"""Models for Taxonomy module - Categories, Features"""
-from sqlmodel import Field, SQLModel
+"""Models for Taxonomy module - Categories, Features, Specifications"""
+from sqlmodel import Field, SQLModel, Column, String, ForeignKey
 from typing import Optional
 from datetime import datetime
 
@@ -77,3 +77,36 @@ class FeatureUpdate(SQLModel):
         default=None, max_length=100, description="Feature type")
     is_active: Optional[bool] = Field(
         default=None, description="Indicates if the feature is active")
+
+# Specifications Models
+
+
+class SpecificationBase(SQLModel):
+    category: str = Field(sa_column=Column(
+        'category', String, ForeignKey('categories.code'), primary_key=True))
+    feature: str = Field(sa_column=Column(
+        'feature', String, ForeignKey('features.code'), primary_key=True))
+    default_value: Optional[str] = Field(default=None)
+    is_active: bool = Field(default=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = None
+
+
+class Specification(SpecificationBase, table=True):
+    __tablename__ = "specifications"
+
+
+class SpecificationCreate(SQLModel):
+    category: str = Field(max_length=50, description="Category code")
+    feature: str = Field(max_length=50, description="Feature code")
+    default_value: Optional[str] = Field(
+        default=None, description="Default value (Any or a List_items.value)")
+    is_active: Optional[bool] = Field(
+        default=True, description="Indicates if the specification is active")
+
+
+class SpecificationUpdate(SQLModel):
+    default_value: Optional[str] = Field(
+        default=None, description="Default value (Any or a List_items.value)")
+    is_active: Optional[bool] = Field(
+        default=None, description="Indicates if the specification is active")

@@ -3,7 +3,7 @@ from typing import List
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Depends
-from sqlmodel import Session, select
+from sqlmodel import Session, select, SQLModel
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import case
 
@@ -12,6 +12,27 @@ from ..internal.dependencies import get_db_session
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/categories", tags=["categories"])
+
+#Model for module select options
+class CategoryBasic(SQLModel):
+    value: str
+    label: str
+
+@router.get("/select", response_model=List[CategoryBasic])
+def get_list(session: Session = Depends(get_db_session)) -> List[CategoryBasic]:
+    """
+    Returns a categories list optimized for selects with value (code) and label (name). 
+    Only active categories.
+    """
+    statement = (
+        select(
+            Category.code.label("value"), 
+            Category.name.label("label")
+        )
+        .where(Category.is_active == True)
+        .order_by(Category.name)
+    )
+    return session.exec(statement).all()
 
 
 @router.get("/", response_model=List[Category])

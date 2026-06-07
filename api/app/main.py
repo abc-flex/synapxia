@@ -18,6 +18,7 @@ from .admin.routes import privileges as privileges_router
 
 from .taxo.routes import categories as categories_router
 from .taxo.routes import features as features_router
+from .taxo.routes import specifications as specifications_router
 
 from .lib.routes import assets as assets_router
 from .lib.routes import characterizations as characterizations_router
@@ -99,6 +100,10 @@ app = FastAPI(
             "description": "Feature management operations",
         },
         {
+            "name": "specifications",
+            "description": "Specification management operations",
+        },
+        {
             "name": "assets",
             "description": "Asset management operations",
         },
@@ -174,6 +179,7 @@ app.include_router(privileges_router.router)
 # Taxonomy module
 app.include_router(categories_router.router)
 app.include_router(features_router.router)
+app.include_router(specifications_router.router)
 
 # Asset Library module
 app.include_router(assets_router.router)
@@ -234,6 +240,7 @@ def read_root() -> dict:
             "taxo": {
                 "categories": "/api/categories",
                 "features": "/api/features",
+                "specifications": "/api/specifications",
             },
             "lib": {
                 "assets": "/api/assets",

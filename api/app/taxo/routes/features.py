@@ -3,7 +3,7 @@ from typing import List
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Depends
-from sqlmodel import Session, select
+from sqlmodel import Session, select, SQLModel
 from sqlalchemy.exc import IntegrityError
 
 from ..internal.models import Feature, FeatureCreate, FeatureUpdate
@@ -11,6 +11,27 @@ from ..internal.dependencies import get_db_session
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/features", tags=["features"])
+
+#Model for module select options
+class FeatureBasic(SQLModel):
+    value: str
+    label: str
+
+@router.get("/select", response_model=List[FeatureBasic])
+def get_list(session: Session = Depends(get_db_session)) -> List[FeatureBasic]:
+    """
+    Returns a features list optimized for selects with value (code) and label (name). 
+    Only active features.
+    """
+    statement = (
+        select(
+            Feature.code.label("value"), 
+            Feature.name.label("label")
+        )
+        .where(Feature.is_active == True)
+        .order_by(Feature.name)
+    )
+    return session.exec(statement).all()
 
 
 @router.get("/", response_model=List[Feature])

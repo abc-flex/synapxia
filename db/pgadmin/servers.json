@@ -1,0 +1,15 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "SynapxIA DB",
+      "Group": "Servers",
+      "Host": "synapxia-db",
+      "Port": 5432,
+      "MaintenanceDB": "postgres",
+      "Username": "synapxia",
+      "PassFile": "/pgpass",
+      "SSLMode": "prefer",
+      "Comment": "SynapxIA Development Database — auto-loaded by pgAdmin"
+    }
+  }
+}

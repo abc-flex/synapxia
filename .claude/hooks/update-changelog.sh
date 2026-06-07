@@ -82,7 +82,9 @@ while IFS= read -r line; do
 done <<< "$COMMITS"
 
 # --- Build entry ---
-DATE=$(date +%Y-%m-%d)
+# Use HH:MM alongside the date so multiple same-day entries stay ordered
+# (Constitution III: traceability — each PR/merge/direct push gets one entry).
+DATE=$(date '+%Y-%m-%d %H:%M')
 SHORT_SHA=$(git -C "$REPO_ROOT" rev-parse --short "$TO_REF" 2>/dev/null)
 
 ENTRY="## [${BRANCH}] — ${DATE} · ${SHORT_SHA}"$'\n'$'\n'

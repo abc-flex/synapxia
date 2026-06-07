@@ -159,67 +159,67 @@ INSERT INTO lists (code, name, description, type, module) VALUES (
     'ASSET_STATUS', 'List of asset statuses for system configuration',
     'List that classifies the statuses of resources in SynapxIA.',
     'LIST_OF_VALUES', 'LIB');
-INSERT INTO list_items (list, value, label, sort_order) VALUES
-    ('ASSET_STATUS', '1-PROPOSED', '1-Proposed', 10),
-    ('ASSET_STATUS', '2-FEEDBACK', '2-Feedback Provided', 20),
-    ('ASSET_STATUS', '3-PUBLISHED', '3-Published', 30),
-    ('ASSET_STATUS', '4-REJECTED', '4-Rejected', 40),
-    ('ASSET_STATUS', '5-DEPRECATED', '5-Deprecated', 50),
-    ('ASSET_STATUS', '6-IN_USE', '6-In Use', 60);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('ASSET_STATUS', 'en', '1-PROPOSED', '1-Proposed', 10),
+    ('ASSET_STATUS', 'en', '2-FEEDBACK', '2-Feedback Provided', 20),
+    ('ASSET_STATUS', 'en', '3-PUBLISHED', '3-Published', 30),
+    ('ASSET_STATUS', 'en', '4-REJECTED', '4-Rejected', 40),
+    ('ASSET_STATUS', 'en', '5-DEPRECATED', '5-Deprecated', 50),
+    ('ASSET_STATUS', 'en', '6-IN_USE', '6-In Use', 60);
 
 -- ===== List: Action Type =====
 INSERT INTO lists (code, name, description, type, module) VALUES (
     'ACTION_TYPE', 'List of action types for system configuration',
     'List that classifies the types of actions that users can perform on assets in SynapxIA.',
     'LIST_OF_VALUES', 'LIB');
-INSERT INTO list_items (list, value, label, sort_order) VALUES
-    ('ACTION_TYPE', '1-PROPOSAL', '1-Proposal', 10), -- with manage in access_level can propouse an publish
-    ('ACTION_TYPE', '2-REVIEW', '2-Review', 20),
-    ('ACTION_TYPE', '3-MODIFICATION', '3-Modification', 30),
-    ('ACTION_TYPE', '3-PUBLICATION', '3-Publication', 40),
-    ('ACTION_TYPE', '4-REJECTION', '4-Rejection', 50),
-    ('ACTION_TYPE', '5-DEPRECATION', '5-Deprecation', 60),
-    ('ACTION_TYPE', '6-VERSIONING', '6-Versioning', 70),
-    ('ACTION_TYPE', '6-USAGE', '6-Usage', 70),
-    ('ACTION_TYPE', '6-VOTE', '6-Vote', 80),
-    ('ACTION_TYPE', '6-COMMENT', '6-Comment', 90),
-    ('ACTION_TYPE', '6-QUESTION', '6-Question', 100),
-    ('ACTION_TYPE', '6-ANSWER', '6-Answer', 110),
-    ('ACTION_TYPE', '6-REQUEST', '6-Request', 120);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('ACTION_TYPE', 'en', '1-PROPOSAL', '1-Proposal', 10),          -- user with MANAGE in access_level can propose and publish at same time
+    ('ACTION_TYPE', 'en', '2-REVIEW', '2-Review', 20),              -- only users with MANAGE in access_level can review
+    ('ACTION_TYPE', 'en', '3-MODIFICATION', '3-Modification', 30),  -- only owner can modify
+    ('ACTION_TYPE', 'en', '3-PUBLICATION', '3-Publication', 40),    -- only users with MANAGE in access_level can publish
+    ('ACTION_TYPE', 'en', '4-REJECTION', '4-Rejection', 50),        -- only users with MANAGE in access_level can reject
+    ('ACTION_TYPE', 'en', '5-DEPRECATION', '5-Deprecation', 60),    -- only users with MANAGE in access_level can deprecate
+    ('ACTION_TYPE', 'en', '6-VERSIONING', '6-Versioning', 70),      -- only users with MANAGE in access_level can create new version, modification with versioning creates a new asset with reference to the previous one and a relation of type 'Extends'
+    ('ACTION_TYPE', 'en', '6-USAGE', '6-Usage', 70),
+    ('ACTION_TYPE', 'en', '6-VOTE', '6-Vote', 80),
+    ('ACTION_TYPE', 'en', '6-COMMENT', '6-Comment', 90),
+    ('ACTION_TYPE', 'en', '6-QUESTION', '6-Question', 100),
+    ('ACTION_TYPE', 'en', '6-ANSWER', '6-Answer', 110),
+    ('ACTION_TYPE', 'en', '6-REQUEST', '6-Request', 120);
 
 -- ===== List: Asset Relation Type =====
 INSERT INTO lists (code, name, description, type, module) VALUES (
     'RELATION_TYPE', 'List of relation types for system configuration',
     'List that classifies the types of relationships between elements in SynapxIA (e.g., Depends On, Related To, Similar To, Part Of).',
     'LIST_OF_VALUES', NULL);
-INSERT INTO list_items (list, value, label, sort_order) VALUES
-    ('RELATION_TYPE', 'DEPENDS_ON', 'Depends On', 10),
-    ('RELATION_TYPE', 'RELATED_TO', 'Related To', 20),
-    ('RELATION_TYPE', 'SIMILAR_TO', 'Similar To', 30),
-    ('RELATION_TYPE', 'PART_OF', 'Part Of', 40),
-    ('RELATION_TYPE', 'USED_BY', 'Used By', 50),
-    ('RELATION_TYPE', 'EXTENDS', 'Extends', 60),
-    ('RELATION_TYPE', 'CONTAINS', 'Contains', 70),
-    ('RELATION_TYPE', 'INSPIRED_BY', 'Inspired By', 80);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('RELATION_TYPE', 'en', 'DEPENDS_ON', 'Depends On', 10),
+    ('RELATION_TYPE', 'en', 'RELATED_TO', 'Related To', 20),
+    ('RELATION_TYPE', 'en', 'SIMILAR_TO', 'Similar To', 30),
+    ('RELATION_TYPE', 'en', 'PART_OF', 'Part Of', 40),
+    ('RELATION_TYPE', 'en', 'USED_BY', 'Used By', 50),
+    ('RELATION_TYPE', 'en', 'EXTENDS', 'Extends', 60),
+    ('RELATION_TYPE', 'en', 'CONTAINS', 'Contains', 70),
+    ('RELATION_TYPE', 'en', 'INSPIRED_BY', 'Inspired By', 80);
 
 -- ===== List: Target Type =====
 INSERT INTO lists (code, name, description, type, module) VALUES (
     'TARGET_TYPE', 'List of target types for system configuration',
     'List that classifies the types of targets for access control in SynapxIA.',
     'LIST_OF_VALUES', NULL);
-INSERT INTO list_items (list, value, label, sort_order) VALUES
-    ('TARGET_TYPE', 'USER', 'Users', 10),
-    ('TARGET_TYPE', 'ROLE', 'Roles', 20),
-    ('TARGET_TYPE', 'PROJECT', 'Projects', 30),
-    ('TARGET_TYPE', 'TEAM', 'Teams', 40),
-    ('TARGET_TYPE', 'UNIT', 'Units', 50),
-    ('TARGET_TYPE', 'PUBLIC', 'Public', 60);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('TARGET_TYPE', 'en', 'USER', 'Users', 10),
+    ('TARGET_TYPE', 'en', 'ROLE', 'Roles', 20),
+    ('TARGET_TYPE', 'en', 'PROJECT', 'Projects', 30),
+    ('TARGET_TYPE', 'en', 'TEAM', 'Teams', 40),
+    ('TARGET_TYPE', 'en', 'UNIT', 'Units', 50),
+    ('TARGET_TYPE', 'en', 'PUBLIC', 'Public', 60);
 
 -- ===== List: Access Level =====
 INSERT INTO lists (code, name, description, type, module) VALUES (
     'ACCESS_LEVEL', 'List of access levels for system configuration',
     'List that classifies the levels of access that users can have for elements in SynapxIA.',
     'LIST_OF_VALUES', NULL);
-INSERT INTO list_items (list, value, label, sort_order) VALUES
-    ('ACCESS_LEVEL', 'VIEW', 'View', 10),
-    ('ACCESS_LEVEL', 'MANAGE', 'Manage', 20);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('ACCESS_LEVEL', 'en', 'VIEW', 'View', 10),
+    ('ACCESS_LEVEL', 'en', 'MANAGE', 'Manage', 20);

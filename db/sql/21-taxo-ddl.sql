@@ -76,9 +76,30 @@ INSERT INTO lists (code, name, description, type, module) VALUES (
     'FEAT_TYPE', 'List of feature types for system configuration',
     'List that classifies the types of features (e.g., General, Technical, Commercial, Usability, Documentation and Platform) available in SynapxIA.',
     'LIST_OF_VALUES', 'TAXO');
-INSERT INTO list_items (list, value, label, sort_order) VALUES
-    ('FEAT_TYPE', 'GENERAL',       'General',       10),
-    ('FEAT_TYPE', 'TECHNICAL',     'Technical',     20),
-    ('FEAT_TYPE', 'COMMERCIAL',    'Commercial',    30),
-    ('FEAT_TYPE', 'USABILITY',     'Usability',     40),
-    ('FEAT_TYPE', 'DOCUMENTATION', 'Documentation', 50);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('FEAT_TYPE', 'en', 'GENERAL',       'General',       10),
+    ('FEAT_TYPE', 'en', 'TECHNICAL',     'Technical',     20),
+    ('FEAT_TYPE', 'en', 'COMMERCIAL',    'Commercial',    30),
+    ('FEAT_TYPE', 'en', 'USABILITY',     'Usability',     40),
+    ('FEAT_TYPE', 'en', 'DOCUMENTATION', 'Documentation', 50);
+
+-- ===== List of features: Programming Languages =====
+INSERT INTO lists (code, name, description, type, module) VALUES (
+    'LANGUAGE', 'List of programming languages for system configuration',
+    'List that classifies the programming languages available in SynapxIA.',
+    'FEATURE', 'TAXO');
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('LANGUAGE', 'en', 'PYTHON',     'Python',     10),
+    ('LANGUAGE', 'en', 'JAVASCRIPT', 'JavaScript', 20),
+    ('LANGUAGE', 'en', 'JAVA',       'Java',       30),
+    ('LANGUAGE', 'en', 'CPLUSPLUS',  'C++',        40),
+    ('LANGUAGE', 'en', 'CSHARP',     'C#',         50);
+
+-- ===== List of features: Execution Modes =====
+INSERT INTO lists (code, name, description, type, module) VALUES (
+    'EXECUTION_MODE', 'List of execution modes for system configuration',
+    'List that classifies the execution modes available in SynapxIA.',
+    'FEATURE', 'TAXO');
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('EXECUTION_MODE', 'en', 'LOCAL',    'Local',    10),
+    ('EXECUTION_MODE', 'en', 'REMOTE',   'Remote',   20);

@@ -3,7 +3,7 @@ import tailwind from "@astrojs/tailwind";
 import { fileURLToPath } from "node:url";
 
 export default defineConfig({
-  site: "http://localhost:4321",
+  site: process.env.SITE_URL || "http://localhost:4321",
   integrations: [tailwind()],
   vite: {
     resolve: {

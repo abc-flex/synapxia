@@ -20,7 +20,7 @@ Files run in lexical order. The numbering groups DDL then INSERT per domain:
 41-lib-ddl.sql     42-lib-insert.sql
 51-inits-ddl.sql   52-inits-insert.sql
 61-ana-ddl.sql
-drop.sql / delete.sql   # teardown / cleanup helpers (not auto-run)
+manual/drop.sql / manual/delete.sql   # teardown / cleanup helpers (subdir; not auto-run on init)
 ```
 
 Add new schema as a new numbered file in the right domain band; keep DDL before its

@@ -13,8 +13,11 @@ services:
     volumes:
       # Mount SQL migration files for automatic execution on startup
       - ./db/sql:/docker-entrypoint-initdb.d
-      # Persist database data
-      - synapxia-db-volume:/var/lib/postgresql/data
+      # Persist database data (PostgreSQL 18+ uses /var/lib/postgresql, not /var/lib/postgresql/data)
+      # Volume renamed from synapxia-db-volume → synapxia-db-pg18 to force a fresh init
+      # on the PG18 upgrade — the old volume contained PG17 data at the /data subpath
+      # which conflicts with PG18's expected layout.
+      - synapxia-db-pg18:/var/lib/postgresql
     networks:
       - synapxia-network
     healthcheck:
@@ -31,25 +34,19 @@ services:
     environment:
       - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
       - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
-      # Database connection variables for server auto-registration
-      - DB_HOST=${DB_HOST}
-      - DB_PORT=${DB_PORT}
-      - DB_SCHEMA=${DB_SCHEMA}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      # Auto-configuration settings
+      - PGADMIN_CONFIG_SERVER_MODE=False
+      - PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED=False
       - PGADMIN_CONFIG_ENHANCED_IAM_AUTHENTICATION=False
-      - PGADMIN_CONFIG_CONSOLE_LOG_LEVEL=10
-      # Server auto-registration (synapxia-db server)
-      - SERVER_MAINTENANCE_ON_STARTUP=true
+      # Auto-load the SynapxIA DB server connection on every startup
+      - PGADMIN_REPLACE_SERVERS_ON_STARTUP=True
     volumes:
-      # Mount template for server configuration
-      - ./pgadmin-servers.json.template:/pgadmin-servers.json.template:ro
-      # Mount custom entrypoint script
-      - ./pgadmin-entrypoint.sh:/custom-entrypoint.sh:ro
-    entrypoint: /bin/bash /custom-entrypoint.sh
+      # Pre-registered server (host, port, user) + passfile so the DB
+      # connection is one-click after login (no manual server registration).
+      - ./db/pgadmin/servers.json:/pgadmin4/servers.json:ro
+      - ./db/pgadmin/pgpass:/pgpass:ro
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - synapxia-network
 
@@ -101,7 +98,7 @@ services:
     entrypoint: bun run dev
 
 volumes:
-  synapxia-db-volume:
+  synapxia-db-pg18:
     driver: local
 
 networks:

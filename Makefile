@@ -1,4 +1,4 @@
-.PHONY: help up down ps logs shell dev clean rebuild restart health test hooks
+.PHONY: help up down ps logs shell dev clean rebuild restart reset reset-db health test hooks lint lint-ui fmt fmt-check pytest
 
 # Default target
 .DEFAULT_GOAL := help
@@ -23,6 +23,8 @@ help:
 	@echo "  make down        - Stop all containers"
 	@echo "  make restart     - Restart all containers"
 	@echo "  make rebuild     - Clean rebuild (remove volumes)"
+	@echo "  make reset-db    - Reset DB only (wipe + re-run DDL/seeds)"
+	@echo "  make reset       - Full reset: reset-db + rebuild"
 	@echo ""
 	@echo "$(GREEN)Information:$(NC)"
 	@echo "  make ps          - Show running containers"
@@ -32,7 +34,14 @@ help:
 	@echo "$(GREEN)Development:$(NC)"
 	@echo "  make shell       - Open database shell (psql)"
 	@echo "  make dev         - Start all services in development"
-	@echo "  make test        - Run tests"
+	@echo "  make test        - Smoke tests (health + DB + admin user)"
+	@echo ""
+	@echo "$(GREEN)Code Quality:$(NC)"
+	@echo "  make lint        - Lint API: ruff + mypy"
+	@echo "  make lint-ui     - Lint UI: eslint"
+	@echo "  make fmt         - Format API: black + isort (auto-fix)"
+	@echo "  make fmt-check   - Format check (exit 1 if drift)"
+	@echo "  make pytest      - Run API unit tests"
 	@echo ""
 	@echo "$(GREEN)Cleanup:$(NC)"
 	@echo "  make clean       - Remove all containers & volumes"
@@ -44,7 +53,6 @@ help:
 
 # Start all containers in the background, wait ~30s for the DB to initialize,
 # print the service URLs and run a health check.
-# NOTE: relies on ./setup-database.sh (via `make health`), which is not in the repo yet.
 up:
 	@echo "$(GREEN)Starting containers...$(NC)"
 	docker-compose -f $(COMPOSE_FILE) up -d
@@ -81,6 +89,27 @@ rebuild:
 	@sleep 30
 	@make health
 
+# Reset the DB only — wipes the postgres volume + container and re-runs every
+# DDL/insert file in db/sql/. Other services (api, ui, pgadmin) stay untouched.
+# Use when seeds change and you don't want a full rebuild.
+reset-db:
+	@echo "$(RED)Resetting database...$(NC)"
+	@echo "Stopping database container..."
+	docker-compose -f $(COMPOSE_FILE) stop db
+	@echo "Removing database container and volumes..."
+	docker-compose -f $(COMPOSE_FILE) rm -f -v db
+	docker volume rm synapxia_synapxia-db-pg18 2>/dev/null || true
+	@echo "Recreating database container..."
+	docker-compose -f $(COMPOSE_FILE) up -d db
+	@echo "Waiting for database initialization (DDL + seeds)..."
+	@sleep 15
+	@echo "$(GREEN)✓ Database reset complete — DDL + seeds reinitialized$(NC)"
+
+# Full reset: nuke the DB, then rebuild every container from scratch.
+# Equivalent to safe-transfers' `make reset`.
+reset: reset-db rebuild
+	@echo "$(GREEN)✓ Full reset complete$(NC)"
+
 ## Information Commands
 
 # Show the status of all containers.
@@ -107,12 +136,21 @@ logs-ui:
 logs-pgadmin:
 	docker-compose -f $(COMPOSE_FILE) logs -f pgadmin
 
-# Run the health-check script.
-# WARNING: ./setup-database.sh does not exist in the repo yet, so this will fail
-# until the script is added (also affects `up`, `rebuild` and `quickstart`).
+# Inline health checks: API /health endpoint, DB pg_isready, admin user existence.
+# Replaces the legacy ./setup-database.sh shell script (no longer required).
 health:
 	@echo "$(GREEN)Running health checks...$(NC)"
-	@bash ./setup-database.sh
+	@echo ""
+	@echo "$(BLUE)API Health Check:$(NC)"
+	@curl -s http://localhost:8000/api/health || echo "$(RED)✗ API not responding$(NC)"
+	@echo ""
+	@echo "$(BLUE)Database Connection:$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) exec -T db pg_isready -U synapxia && echo "$(GREEN)✓ Database healthy$(NC)" || echo "$(RED)✗ Database unavailable$(NC)"
+	@echo ""
+	@echo "$(BLUE)Admin User Check:$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) exec -T db psql -U synapxia -d synapxia -c "SELECT username, email FROM users WHERE is_superuser = true LIMIT 1;" 2>/dev/null || echo "$(RED)✗ Admin user not found$(NC)"
+	@echo ""
+	@echo "$(GREEN)✓ Health checks complete$(NC)"
 
 ## Development Commands
 
@@ -148,19 +186,8 @@ dev: up
 
 ## Test Commands
 
-# Quick smoke tests: API health endpoint, DB readiness, and superuser existence.
-test:
-	@echo "$(GREEN)Running application tests...$(NC)"
-	@echo ""
-	@echo "$(BLUE)API Health Check:$(NC)"
-	@curl -s http://localhost:8000/api/health || echo "API not responding"
-	@echo ""
-	@echo "$(BLUE)Database Connection:$(NC)"
-	@docker-compose -f $(COMPOSE_FILE) exec db pg_isready -U synapxia && echo "$(GREEN)✓ Database healthy$(NC)" || echo "$(RED)✗ Database unavailable$(NC)"
-	@echo ""
-	@echo "$(BLUE)Admin User Check:$(NC)"
-	@docker-compose -f $(COMPOSE_FILE) exec db psql -U synapxia -d synapxia -c "SELECT username, email FROM users WHERE is_superuser = true LIMIT 1;" || echo "Users table not found"
-	@echo ""
+# Quick smoke tests: delegates to `make health` (same checks).
+test: health
 	@echo "$(GREEN)✓ Tests complete$(NC)"
 
 ## Cleanup Commands
@@ -208,17 +235,41 @@ restore-db:
 
 ## Advanced Commands
 
-# Check Python syntax in the API container with py_compile.
+# Lint API: ruff (style/errors) + mypy (types). Exits 1 on violations.
 lint:
-	@echo "$(BLUE)Checking Python syntax...$(NC)"
-	@docker-compose -f $(COMPOSE_FILE) exec api python -m py_compile app/**/*.py
-	@echo "$(GREEN)✓ Python syntax OK$(NC)"
+	@echo "$(BLUE)Linting API (ruff + mypy)...$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) exec api ruff check app/
+	@docker-compose -f $(COMPOSE_FILE) exec api mypy app/ --ignore-missing-imports
+	@echo "$(GREEN)✓ API lint OK$(NC)"
 
-# Format the API's Python code with black inside the container.
-format:
-	@echo "$(BLUE)Formatting Python code...$(NC)"
+# Lint UI: eslint for Astro + TypeScript files.
+lint-ui:
+	@echo "$(BLUE)Linting UI (eslint)...$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) exec ui bun run lint
+	@echo "$(GREEN)✓ UI lint OK$(NC)"
+
+# Format API code with black + isort (auto-fix in place).
+fmt:
+	@echo "$(BLUE)Formatting API (black + isort)...$(NC)"
 	@docker-compose -f $(COMPOSE_FILE) exec api black app/
-	@echo "$(GREEN)✓ Code formatted$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) exec api isort app/
+	@echo "$(GREEN)✓ Formatted$(NC)"
+
+# Check API format without modifying files. Exits 1 if drift detected.
+fmt-check:
+	@echo "$(BLUE)Checking API format (black + isort)...$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) exec api black --check app/
+	@docker-compose -f $(COMPOSE_FILE) exec api isort --check app/
+	@echo "$(GREEN)✓ Format OK$(NC)"
+
+# Run API unit tests via pytest. Targets api/tests/ with SQLite in-memory fixtures.
+pytest:
+	@echo "$(BLUE)Running API unit tests...$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) exec api pytest tests/ -v
+	@echo "$(GREEN)✓ Tests passed$(NC)"
+
+# Legacy alias — kept for compatibility.
+format: fmt
 
 # List the SQL migration files in db/sql/ (run automatically on a fresh DB).
 migrations:
@@ -278,7 +329,6 @@ hooks:
 ## Quick Start
 
 # Full fresh start: wipe everything (clean), start (up), then show access info (dev).
-# NOTE: chains through `up`, so it also depends on the missing ./setup-database.sh.
 quickstart: clean up dev
 	@echo ""
 	@echo "$(GREEN)✓ Synapxia is ready to use!$(NC)"

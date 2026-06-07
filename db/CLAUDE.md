@@ -43,8 +43,9 @@ db/
 │   ├── 51-inits-ddl.sql        # Initiatives:     initiatives, criterias, diagnostics, collaborations, permissions
 │   ├── 52-inits-insert.sql     # Inits seeds:     6 evaluation criteria with 1-3 scales (en/es)
 │   ├── 61-ana-ddl.sql          # Analytics:       dashboards, parameters, executions, permissions
-│   ├── delete.sql              # Manual cleanup:  DELETE all rows, schema preserved
-│   └── drop.sql                # Manual teardown: DROP every table
+│   └── manual/                 # NOT auto-run on init — Postgres entrypoint doesn't recurse
+│       ├── delete.sql          # Manual cleanup:  DELETE all rows, schema preserved
+│       └── drop.sql            # Manual teardown: DROP every table
 ├── neon-migrate.sh             # psql-driven migration script for Neon (prod deploys)
 ├── AGENTS.md                   # Rules (see root AGENTS.md too)
 └── CLAUDE.md                   # this file
@@ -337,8 +338,9 @@ favorite/permission rows.
   killing the Postgres volume / role / database. Useful in CI when you want to
   re-apply DDL against an existing cluster.
 
-Neither is auto-run. They're manual tools — run with `make shell` then
-`\i /docker-entrypoint-initdb.d/delete.sql`.
+Neither is auto-run — they live in `db/sql/manual/`, a subdirectory the Postgres
+entrypoint doesn't recurse into. Run them manually with `make shell` then
+`\i /docker-entrypoint-initdb.d/manual/delete.sql`.
 
 ---
 

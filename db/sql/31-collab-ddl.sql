@@ -153,56 +153,56 @@ INSERT INTO lists (code, name, description, type, module) VALUES (
     'PROJECT_STATUS', 'Project status values',
     'List of possible status values for Projects in SynapxIA (planned, in progress, on hold or complete).',
     'LIST_OF_VALUES', 'COLLAB');
-INSERT INTO list_items (list, value, label, sort_order) VALUES
-    ('PROJECT_STATUS', 'PLANNED', 'Planned',   10),
-    ('PROJECT_STATUS', 'IN_PROGRESS', 'In Progress', 20),
-    ('PROJECT_STATUS', 'ON_HOLD', 'On Hold',  30),
-    ('PROJECT_STATUS', 'COMPLETED','Completed', 40);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('PROJECT_STATUS', 'en', 'PLANNED', 'Planned',   10),
+    ('PROJECT_STATUS', 'en', 'IN_PROGRESS', 'In Progress', 20),
+    ('PROJECT_STATUS', 'en', 'ON_HOLD', 'On Hold',  30),
+    ('PROJECT_STATUS', 'en', 'COMPLETED','Completed', 40);
 
 -- ===== List: Dimensions Unit =====
 INSERT INTO lists (code, name, description, type, module) VALUES (
     'DIMENSIONS_UNIT', 'Dimensions unit values',
     'List of possible unit values for Dimensions in SynapxIA (e.g., hours, days, etc.).',
     'LIST_OF_VALUES', 'COLLAB');
-INSERT INTO list_items (list, value, label, sort_order) VALUES
-    ('DIMENSIONS_UNIT', 'PCT', 'Percentage', 10),
-    ('DIMENSIONS_UNIT', 'UNITS', 'Units', 20),
-    ('DIMENSIONS_UNIT', 'COUNT', 'Count', 30),
-    ('DIMENSIONS_UNIT', 'HOURS', 'Hours', 40),
-    ('DIMENSIONS_UNIT', 'DAYS', 'Days', 50);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('DIMENSIONS_UNIT', 'en', 'PCT', 'Percentage', 10),
+    ('DIMENSIONS_UNIT', 'en', 'UNITS', 'Units', 20),
+    ('DIMENSIONS_UNIT', 'en', 'COUNT', 'Count', 30),
+    ('DIMENSIONS_UNIT', 'en', 'HOURS', 'Hours', 40),
+    ('DIMENSIONS_UNIT', 'en', 'DAYS', 'Days', 50);
 
 -- ===== List: GenAI Adoption for Devs =====
 INSERT INTO lists (code, name, description, type, module) VALUES (
     'GENAI_DEV_ADOPTION', 'GenAI Adoption for Devs',
     'Defines levels of adoption of Generative AI tools and practices among development teams.',
     'SCALE', 'COLLAB');
-INSERT INTO list_items (list, value, label, sort_order) VALUES
-    ('GENAI_DEV_ADOPTION', 'NO_USAGE',  'Github Copilot, Cursor, Windsurf or Antigravity not configured', 10),
-    ('GENAI_DEV_ADOPTION', 'LOW',       'Chat used in query mode for small scripts and code suggestions', 20),
-    ('GENAI_DEV_ADOPTION', 'MODERATE',  'Agent mode for basic generation, refactoring and bug fixing', 30),
-    ('GENAI_DEV_ADOPTION', 'HIGH',      'Custom agents and MCP for advanced generation and interaction with Azure DevOps', 40),
-    ('GENAI_DEV_ADOPTION', 'VERY_HIGH', 'Agents, multi-agents and advanced MCP for more autonomous development', 50);
-INSERT INTO item_translations (list, value, lang, label) VALUES
-    ('GENAI_DEV_ADOPTION', 'NO_USAGE',  'es', 'No configurado Github Copilot, Cursor, Windsurf o Antigravity'),
-    ('GENAI_DEV_ADOPTION', 'LOW',       'es', 'Chat en modo consulta para pequeños scripts y sugerencias de código'),
-    ('GENAI_DEV_ADOPTION', 'MODERATE',  'es', 'Modo agente para generación básica, refactorización y corrección de problemas'),
-    ('GENAI_DEV_ADOPTION', 'HIGH',      'es', 'Agentes customizados y MCP para generación avanzada e interacción con Azure DevOps'),
-    ('GENAI_DEV_ADOPTION', 'VERY_HIGH', 'es', 'Agentes, multi-agentes y MCP avanzado para desarrollo con autonomía');
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('GENAI_DEV_ADOPTION', 'en', 'NO_USAGE',  'Github Copilot, Cursor, Windsurf or Antigravity not configured', 10),
+    ('GENAI_DEV_ADOPTION', 'en', 'LOW',       'Chat used in query mode for small scripts and code suggestions', 20),
+    ('GENAI_DEV_ADOPTION', 'en', 'MODERATE',  'Agent mode for basic generation, refactoring and bug fixing', 30),
+    ('GENAI_DEV_ADOPTION', 'en', 'HIGH',      'Custom agents and MCP for advanced generation and interaction with Azure DevOps', 40),
+    ('GENAI_DEV_ADOPTION', 'en', 'VERY_HIGH', 'Agents, multi-agents and advanced MCP for more autonomous development', 50);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('GENAI_DEV_ADOPTION', 'es', 'NO_USAGE',  'No configurado Github Copilot, Cursor, Windsurf o Antigravity', 10),
+    ('GENAI_DEV_ADOPTION', 'es', 'LOW',       'Chat en modo consulta para pequeños scripts y sugerencias de código', 20),
+    ('GENAI_DEV_ADOPTION', 'es', 'MODERATE',  'Modo agente para generación básica, refactorización y corrección de problemas', 30),
+    ('GENAI_DEV_ADOPTION', 'es', 'HIGH',      'Agentes customizados y MCP para generación avanzada e interacción con Azure DevOps', 40),
+    ('GENAI_DEV_ADOPTION', 'es', 'VERY_HIGH', 'Agentes, multi-agentes y MCP avanzado para desarrollo con autonomía', 50);
 
 -- ===== List: GenAI Adoption for QA =====
 INSERT INTO lists (code, name, description, type, module) VALUES (
     'GENAI_QA_ADOPTION', 'GenAI Adoption for QA',
     'Defines levels of adoption of Generative AI tools and practices among QA teams.',
     'SCALE', 'COLLAB');
-INSERT INTO list_items (list, value, label, sort_order) VALUES
-    ('GENAI_QA_ADOPTION', 'NO_USAGE',  'Github Copilot, Cursor, Windsurf or Antigravity not configured', 10),
-    ('GENAI_QA_ADOPTION', 'LOW',       'Chat used in query mode for small scripts and code suggestions', 20),
-    ('GENAI_QA_ADOPTION', 'MODERATE',  'Agent mode for basic generation, refactoring and bug fixing', 30),
-    ('GENAI_QA_ADOPTION', 'HIGH',      'Custom agents and MCP for advanced generation and interaction with Azure DevOps', 40),
-    ('GENAI_QA_ADOPTION', 'VERY_HIGH', 'Agents, multi-agents and advanced MCP for more autonomous development', 50);
-INSERT INTO item_translations (list, value, lang, label) VALUES
-    ('GENAI_QA_ADOPTION', 'NO_USAGE',  'es', 'No hay herramientas con IA configuradas para la realización de pruebas'),
-    ('GENAI_QA_ADOPTION', 'LOW',       'es', 'Chat en modo consulta para pequeños scripts y sugerencias de pruebas'),
-    ('GENAI_QA_ADOPTION', 'MODERATE',  'es', 'Modo agente para generación básica de pruebas y revisión de problemas'),
-    ('GENAI_QA_ADOPTION', 'HIGH',      'es', 'Agentes customizados y MCP para realizar pruebas e interactuar con Azure DevOps'),
-    ('GENAI_QA_ADOPTION', 'VERY_HIGH', 'es', 'Agentes, multi-agentes y MCP avanzado para pruebas autónomas');
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('GENAI_QA_ADOPTION', 'en', 'NO_USAGE',  'Github Copilot, Cursor, Windsurf or Antigravity not configured', 10),
+    ('GENAI_QA_ADOPTION', 'en', 'LOW',       'Chat used in query mode for small scripts and code suggestions', 20),
+    ('GENAI_QA_ADOPTION', 'en', 'MODERATE',  'Agent mode for basic generation, refactoring and bug fixing', 30),
+    ('GENAI_QA_ADOPTION', 'en', 'HIGH',      'Custom agents and MCP for advanced generation and interaction with Azure DevOps', 40),
+    ('GENAI_QA_ADOPTION', 'en', 'VERY_HIGH', 'Agents, multi-agents and advanced MCP for more autonomous development', 50);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('GENAI_QA_ADOPTION', 'es', 'NO_USAGE',  'No hay herramientas con IA configuradas para la realización de pruebas', 10),
+    ('GENAI_QA_ADOPTION', 'es', 'LOW',       'Chat en modo consulta para pequeños scripts y sugerencias de pruebas', 20),
+    ('GENAI_QA_ADOPTION', 'es', 'MODERATE',  'Modo agente para generación básica de pruebas y revisión de problemas', 30),
+    ('GENAI_QA_ADOPTION', 'es', 'HIGH',      'Agentes customizados y MCP para realizar pruebas e interactuar con Azure DevOps', 40),
+    ('GENAI_QA_ADOPTION', 'es', 'VERY_HIGH', 'Agentes, multi-agentes y MCP avanzado para pruebas autónomas', 50);

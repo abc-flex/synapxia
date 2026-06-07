@@ -24,14 +24,20 @@ INSERT INTO categories (code, name, description, parent) VALUES
 -- ******* Table features ****
 -- **********************************
 
+INSERT INTO features (code, name, type, description, list) VALUES
+    -- Features that are useful for any digital asset with list of features
+    ('LANGUAGE', 'Programming language', 'TECHNICAL',
+    'The programming language used in the digital asset.', 'LANGUAGE'),
+    -- Features primarily for MCPS with list of features
+    ('MODE', 'Mode of operation', 'GENERAL',
+    'The mode of operation for the digital asset, such as local or remote.', 'EXECUTION_MODE'),;
+
 INSERT INTO features (code, name, type, description) VALUES
     -- Features that are useful for any digital asset
     ('PLATFORM', 'Digital asset platform', 'TECHNICAL',
     'Platform for the execution, deployment or storage of the digital asset.'),
     ('REPOSITORY', 'Asset repository', 'TECHNICAL',
     'The repository where the digital asset is hosted.'),
-    ('LANGUAGE', 'Programming language', 'TECHNICAL',
-    'The programming language used in the digital asset.'),
     ('FRAMEWORK', 'Web framework', 'TECHNICAL',
     'The web framework used in the digital asset.'),
     ('COMPLEXITY', 'Complexity level', 'GENERAL',

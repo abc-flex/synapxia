@@ -50,25 +50,14 @@ CREATE TABLE lists (
 -- Table list_items
 CREATE TABLE list_items (
     list        VARCHAR(50)  NOT NULL,
+    lang        VARCHAR(10)  NOT NULL,
     value       VARCHAR(100) NOT NULL,
     label       VARCHAR(200) NOT NULL,
     sort_order  INT          NOT NULL DEFAULT 0,
     is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ,
-    CONSTRAINT pk_list_items PRIMARY KEY (list, value)
-);
-
--- Table item_translations
-CREATE TABLE item_translations (
-    list        VARCHAR(50)  NOT NULL,
-    value       VARCHAR(100) NOT NULL,
-    lang        VARCHAR(10)  NOT NULL,
-    label       VARCHAR(200) NOT NULL,
-    is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
-    created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    updated_at  TIMESTAMPTZ,
-    CONSTRAINT pk_item_translations PRIMARY KEY (list, value, lang)
+    CONSTRAINT pk_list_items PRIMARY KEY (list, lang, value)
 );
 
 -- Table profiles
@@ -151,12 +140,6 @@ ALTER TABLE list_items
     FOREIGN KEY (list)
     REFERENCES lists (code);
 
--- item_translations.(list, value) → list_items.(list, value)
-ALTER TABLE item_translations
-    ADD CONSTRAINT fk_item_translations_list_items
-    FOREIGN KEY (list, value)
-    REFERENCES list_items (list, value);
-
 -- users.profile → profiles.code
 ALTER TABLE users
     ADD CONSTRAINT fk_users_profiles
@@ -223,28 +206,43 @@ INSERT INTO lists (code, name, description, type, module) VALUES (
     'LIST_TYPE', 'List types for system configuration',
     'List that classifies the types of lists in two categories: List of Values and Scale.',
     'LIST_OF_VALUES', 'ADMIN');
-INSERT INTO list_items (list, value, label, sort_order) VALUES
-    ('LIST_TYPE', 'LIST_OF_VALUES', 'List of Values', 10),
-    ('LIST_TYPE', 'SCALE',          'Scale',          20),
-    ('LIST_TYPE', 'FEATURE',        'Feature',        30),
-    ('LIST_TYPE', 'CRITERIA',       'Criteria',       40);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('LIST_TYPE', 'en', 'LIST_OF_VALUES', 'List of Values', 10),
+    ('LIST_TYPE', 'en', 'SCALE',          'Scale',          20),
+    ('LIST_TYPE', 'en', 'FEATURE',        'Feature',        30),
+    ('LIST_TYPE', 'en', 'CRITERIA',       'Criteria',       40);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('LIST_TYPE', 'es', 'LIST_OF_VALUES', 'Lista de Valores', 10),
+    ('LIST_TYPE', 'es', 'SCALE',          'Escala',           20),
+    ('LIST_TYPE', 'es', 'FEATURE',        'Característica',   30),
+    ('LIST_TYPE', 'es', 'CRITERIA',       'Criterio',         40);
 
 -- ===== List: Option Type =====
 INSERT INTO lists (code, name, description, type, module) VALUES (
     'OPTION_TYPE', 'Option types for navigation items',
     'List that classifies application options by type, such as content pages, forms or reports.',
     'LIST_OF_VALUES', 'ADMIN');
-INSERT INTO list_items (list, value, label, sort_order) VALUES
-    ('OPTION_TYPE', 'CONTENT', 'Content', 10),
-    ('OPTION_TYPE', 'FORM',    'Form',    20),
-    ('OPTION_TYPE', 'REPORT',  'Report',  30);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('OPTION_TYPE', 'en', 'CONTENT', 'Content', 10),
+    ('OPTION_TYPE', 'en', 'FORM',    'Form',    20),
+    ('OPTION_TYPE', 'en', 'REPORT',  'Report',  30);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('OPTION_TYPE', 'es', 'CONTENT', 'Contenido',  10),
+    ('OPTION_TYPE', 'es', 'FORM',    'Formulario', 20),
+    ('OPTION_TYPE', 'es', 'REPORT',  'Reporte',    30);
 
 -- ===== List: Business Unit Type =====
 INSERT INTO lists (code, name, description, type, module) VALUES (
     'BIZ_UNIT_TYPE', 'Types of organizational units',
     'List that classifies the types of organizational units (e.g., Department, Business Unit, Chapter) available in SynapxIA.',
     'LIST_OF_VALUES', 'ADMIN');
-INSERT INTO list_items (list, value, label, sort_order) VALUES
-    ('BIZ_UNIT_TYPE', 'BUSINESS_UNIT','Business Unit', 10),
-    ('BIZ_UNIT_TYPE', 'DEPARTMENT',   'Department',    20),
-    ('BIZ_UNIT_TYPE', 'CHAPTER',      'Chapter',       30);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('BIZ_UNIT_TYPE', 'en', 'BUSINESS_UNIT','Business Unit', 10),
+    ('BIZ_UNIT_TYPE', 'en', 'DEPARTMENT',   'Department',    20),
+    ('BIZ_UNIT_TYPE', 'en', 'AREA',         'Area',          30),
+    ('BIZ_UNIT_TYPE', 'en', 'DIVISION',     'Division',      40);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('BIZ_UNIT_TYPE', 'es', 'BUSINESS_UNIT','Unidad de Negocio', 10),
+    ('BIZ_UNIT_TYPE', 'es', 'DEPARTMENT',   'Departamento',      20),
+    ('BIZ_UNIT_TYPE', 'es', 'AREA',         'Área',              30),
+    ('BIZ_UNIT_TYPE', 'es', 'DIVISION',     'División',          40);

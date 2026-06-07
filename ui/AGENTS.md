@@ -31,6 +31,13 @@ bun run build    # production build
 
 App: http://localhost:4321.
 
+## Deployment (Vercel)
+
+Deployed as a static Astro site (`vercel.json`: `bun install` / `bun run build` / `dist`).
+`site` is set from `SITE_URL`; the API base URL comes from `PUBLIC_API_BASE_URL`. Pages
+fetch data **client-side** after login — build-time fetches fail gracefully (return `[]`).
+Full guide: [`../docs/DEPLOYMENT.md`](../docs/DEPLOYMENT.md).
+
 ## Adding a CRUD entity (the established pattern)
 
 1. Add `Entity`, `EntityCreate`, `EntityUpdate` interfaces to `src/types/api.ts`.

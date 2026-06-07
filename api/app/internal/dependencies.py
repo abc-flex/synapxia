@@ -29,22 +29,24 @@ DB_CONFIG = {
     "port": os.getenv("DB_PORT", "5432"),
 }
 
-# Validate required environment variables
-_missing_vars = [k for k, v in DB_CONFIG.items() if not v and k != "password"]
-if _missing_vars:
-    logger.error(
-        f"❌ Missing required database environment variables: {', '.join(_missing_vars)}\n"
-        f"Please set: DB_HOST, DB_SCHEMA, DB_USER, DB_PASSWORD, DB_PORT"
-    )
-
-DATABASE_URL = (
+# POSTGRES_URL is injected automatically by Vercel's Neon integration.
+# Fall back to individual DB_* vars for local Docker Compose usage.
+DATABASE_URL = os.getenv("POSTGRES_URL") or (
     f"postgresql://{DB_CONFIG['user']}:{DB_CONFIG['password']}"
     f"@{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}"
 )
 
-# Log connection string (without password)
-safe_url = DATABASE_URL.replace(DB_CONFIG['password'], '***')
-logger.info(f"📊 Database URL: {safe_url}")
+if not os.getenv("POSTGRES_URL"):
+    _missing_vars = [k for k, v in DB_CONFIG.items() if not v and k != "password"]
+    if _missing_vars:
+        logger.error(
+            f"❌ Missing required database environment variables: {', '.join(_missing_vars)}\n"
+            f"Please set POSTGRES_URL (Vercel/Neon) or DB_HOST, DB_SCHEMA, DB_USER, DB_PASSWORD, DB_PORT"
+        )
+
+# Log connection string without credentials
+_safe_url = DATABASE_URL.split("@")[-1] if "@" in DATABASE_URL else DATABASE_URL
+logger.info(f"📊 Database host: {_safe_url}")
 
 # Configure SQL echo only in development
 echo_sql = os.getenv("APP_ENV", "development") == "development"

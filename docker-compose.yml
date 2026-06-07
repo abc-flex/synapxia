@@ -14,7 +14,10 @@ services:
       # Mount SQL migration files for automatic execution on startup
       - ./db/sql:/docker-entrypoint-initdb.d
       # Persist database data (PostgreSQL 18+ uses /var/lib/postgresql, not /var/lib/postgresql/data)
-      - synapxia-db-volume:/var/lib/postgresql
+      # Volume renamed from synapxia-db-volume → synapxia-db-pg18 to force a fresh init
+      # on the PG18 upgrade — the old volume contained PG17 data at the /data subpath
+      # which conflicts with PG18's expected layout.
+      - synapxia-db-pg18:/var/lib/postgresql
     networks:
       - synapxia-network
     healthcheck:
@@ -101,7 +104,7 @@ services:
     entrypoint: bun run dev
 
 volumes:
-  synapxia-db-volume:
+  synapxia-db-pg18:
     driver: local
 
 networks:

@@ -2,6 +2,7 @@ import logging
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.routing import APIRoute
 
 from .auth import routes as auth_routes
 
@@ -216,49 +217,84 @@ async def shutdown_event():
     logger.info("SynapxIA API shutting down...")
 
 
+# Tag → module grouping for the root endpoint inventory.
+TAG_TO_MODULE: dict[str, str] = {
+    "authentication": "auth",
+    "profiles": "admin",
+    "modules": "admin",
+    "lists": "admin",
+    "list_items": "admin",
+    "item_translations": "admin",
+    "business_units": "admin",
+    "users": "admin",
+    "options": "admin",
+    "privileges": "admin",
+    "categories": "taxo",
+    "features": "taxo",
+    "specifications": "taxo",
+    "assets": "lib",
+    "characterizations": "lib",
+    "favorites": "lib",
+    "actions": "lib",
+    "asset_relations": "lib",
+    "teams": "collab",
+    "roles": "collab",
+    "assignments": "collab",
+    "projects": "collab",
+    "dimensions": "collab",
+    "metrics": "collab",
+}
+
+
 @app.get("/", tags=["health"])
 def read_root() -> dict:
     """
     API root endpoint.
 
-    Returns basic information about the API and its main endpoints.
+    Returns metadata about the API plus a live inventory of every registered route,
+    grouped by module → tag. Built by introspecting ``app.routes`` so it stays in sync
+    as routers are added.
     """
+    modules: dict[str, dict[str, list[dict]]] = {}
+    meta: dict[str, list[dict]] = {"health": [], "system": []}
+
+    for route in app.routes:
+        if not isinstance(route, APIRoute):
+            continue
+
+        methods = sorted(m for m in (route.methods or set()) if m != "HEAD")
+        operation = {
+            "path": route.path,
+            "methods": methods,
+            "summary": route.summary or route.name,
+        }
+
+        tag = (route.tags or [None])[0]
+        module = TAG_TO_MODULE.get(tag) if tag else None
+
+        if route.path == "/":
+            meta["system"].append(operation)
+        elif tag == "health" or route.path == "/health":
+            meta["health"].append(operation)
+        elif module:
+            modules.setdefault(module, {}).setdefault(tag, []).append(operation)
+        else:
+            modules.setdefault("other", {}).setdefault(tag or "untagged", []).append(operation)
+
+    for tag_map in modules.values():
+        for ops in tag_map.values():
+            ops.sort(key=lambda op: (op["path"], op["methods"]))
+
     return {
-        "message": "SynapxIA API - System for Insight, Adoption, Practice & eXpansion through Intelligent Agents",
-        "version": "1.0.0",
-        "endpoints": {
-            "admin": {
-                "profiles": "/api/profiles",
-                "modules": "/api/modules",
-                "lists": "/api/lists",
-                "list_items": "/api/list_items",
-                "units": "/api/units",
-                "users": "/api/users",
-                "options": "/api/options",
-                "privileges": "/api/privileges",
-            },
-            "taxo": {
-                "categories": "/api/categories",
-                "features": "/api/features",
-                "specifications": "/api/specifications",
-            },
-            "lib": {
-                "assets": "/api/assets",
-                "characterizations": "/api/characterizations",
-                "favorites": "/api/favorites",
-                "actions": "/api/actions",
-                "asset_relations": "/api/asset_relations",
-            },
-            "collab": {
-                "teams": "/api/teams",
-                "roles": "/api/roles",
-                "assignments": "/api/assignments",
-                "projects": "/api/projects",
-                "dimensions": "/api/dimensions",
-                "metrics": "/api/metrics",
-            },
-            "health": "/health",
-            "docs": "/docs",
+        "name": "SynapxIA API",
+        "description": "System for Insight, Adoption, Practice & eXpansion through Intelligent Agents",
+        "version": app.version,
+        "docs": {
+            "swagger": "/docs",
             "redoc": "/redoc",
+            "openapi": "/openapi.json",
         },
+        "health": "/health",
+        "modules": modules,
+        "meta_endpoints": meta,
     }

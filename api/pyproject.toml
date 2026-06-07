@@ -3,7 +3,7 @@ name = "synapxia-api"
 version = "0.1.0"
 description = "SynapxIA backend managed with uv"
 readme = "../README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.15"
 dependencies = [
     "fastapi[standard]",
     "uvicorn[standard]",
@@ -27,19 +27,19 @@ dependencies = [
 
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+target-version = "py315"
 select = ["E", "F", "I", "B", "UP"]
 
 [tool.black]
 line-length = 100
-target-version = ["py312"]
+target-version = ["py315"]
 
 [tool.isort]
 profile = "black"
 line_length = 100
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.15"
 ignore_missing_imports = true
 check_untyped_defs = true
 

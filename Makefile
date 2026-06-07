@@ -1,4 +1,4 @@
-.PHONY: help up down ps logs shell dev clean rebuild restart health test hooks lint lint-ui fmt fmt-check pytest
+.PHONY: help up down ps logs shell dev clean rebuild restart reset reset-db health test hooks lint lint-ui fmt fmt-check pytest
 
 # Default target
 .DEFAULT_GOAL := help
@@ -23,6 +23,8 @@ help:
 	@echo "  make down        - Stop all containers"
 	@echo "  make restart     - Restart all containers"
 	@echo "  make rebuild     - Clean rebuild (remove volumes)"
+	@echo "  make reset-db    - Reset DB only (wipe + re-run DDL/seeds)"
+	@echo "  make reset       - Full reset: reset-db + rebuild"
 	@echo ""
 	@echo "$(GREEN)Information:$(NC)"
 	@echo "  make ps          - Show running containers"
@@ -86,6 +88,27 @@ rebuild:
 	@echo "$(GREEN)Waiting for database initialization...$(NC)"
 	@sleep 30
 	@make health
+
+# Reset the DB only — wipes the postgres volume + container and re-runs every
+# DDL/insert file in db/sql/. Other services (api, ui, pgadmin) stay untouched.
+# Use when seeds change and you don't want a full rebuild.
+reset-db:
+	@echo "$(RED)Resetting database...$(NC)"
+	@echo "Stopping database container..."
+	docker-compose -f $(COMPOSE_FILE) stop db
+	@echo "Removing database container and volumes..."
+	docker-compose -f $(COMPOSE_FILE) rm -f -v db
+	docker volume rm synapxia_synapxia-db-pg18 2>/dev/null || true
+	@echo "Recreating database container..."
+	docker-compose -f $(COMPOSE_FILE) up -d db
+	@echo "Waiting for database initialization (DDL + seeds)..."
+	@sleep 15
+	@echo "$(GREEN)✓ Database reset complete — DDL + seeds reinitialized$(NC)"
+
+# Full reset: nuke the DB, then rebuild every container from scratch.
+# Equivalent to safe-transfers' `make reset`.
+reset: reset-db rebuild
+	@echo "$(GREEN)✓ Full reset complete$(NC)"
 
 ## Information Commands
 

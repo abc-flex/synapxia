@@ -42,6 +42,18 @@ export async function getList(code: string): Promise<List> {
 }
 
 /**
+ * Fetch all list by type
+ * @param list_type - list code
+ * @param skip - Number of records to skip (default: 0)
+ * @param limit - Maximum number of records to return (default: 100)
+ * @returns Promise with array of lists
+ */
+export async function getListsbyType(list_type: string, skip: number = 0, limit: number = 100): Promise<List[]> {
+  const queryString = buildQueryString({ skip, limit });
+  return apiGet<List[]>(`/api/lists/type/${list_type}${queryString}`);
+}
+
+/**
  * Create a new list
  * @param data - List data to create
  * @returns Promise with created list

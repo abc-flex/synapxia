@@ -180,6 +180,7 @@
   },
   "list_item_modal": {
     "list": "Lista",
+    "lang": "Idioma",
     "value": "Valor",
     "label": "Etiqueta",
     "sort_order": "Orden",
@@ -190,19 +191,6 @@
     "delete": "Eliminar Item-Lista",
     "empty_message": "No se encontraron Items en la Lista",
     "delete_confirmation": "¿Está seguro de que desea eliminar este Item de la Lista?"
-  },
-  "item_translation_modal": {
-    "list": "Lista",
-    "value": "Valor",
-    "lang": "Idioma",
-    "label": "Etiqueta",
-    "one_title": "Traducción del Item de Lista",
-    "many_title": "Traducciones del Item",
-    "add_new": "Nueva Traducción del Item",
-    "edit": "Editar Traducción del Item",
-    "delete": "Eliminar Traducción del Item",
-    "empty_message": "No se encontraron Traducciones del Item",
-    "delete_confirmation": "¿Está seguro de que desea eliminar esta Traducción del Item?"
   },
   "module_modal": {
     "code": "Código",
@@ -253,6 +241,7 @@
     "name": "Nombre",
     "description": "Descripción",
     "type": "Tipo",
+    "list": "Lista",
     "one_title": "Característica",
     "many_title": "Características",
     "filter_title": "Todas las Características",

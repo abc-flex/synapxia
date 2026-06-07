@@ -48,6 +48,25 @@ def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_s
     return lists
 
 
+@router.get("/type/{list_type}", response_model=List[ListModel])
+def get_by_type(
+    list_type: str, 
+    session: Session = Depends(get_db_session)
+) -> List[ListModel]:
+    """
+    Obtener todos los elementos de una lista específica.
+    Si no existen registros para el tipo indicado, devuelve una lista vacía.
+
+    - **list_type**: Tipo de la lista para filtrar
+    """
+    items = session.exec(
+        select(ListModel)
+        .where(ListModel.type == list_type, ListModel.is_active == True)
+        .order_by(ListModel.name)
+    ).all()
+    return items
+
+
 @router.get("/{code}", response_model=ListModel)
 def get(code: str, session: Session = Depends(get_db_session)) -> ListModel:
     """

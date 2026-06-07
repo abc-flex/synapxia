@@ -14,6 +14,7 @@ dependencies = [
     "python-multipart",
     "passlib[bcrypt]",
     "python-jose[cryptography]",
+    "mangum>=0.17.0",
     # Dev / quality tooling (installed in the container; gated by make lint/fmt/pytest)
     "ruff>=0.4",
     "black>=24.0",

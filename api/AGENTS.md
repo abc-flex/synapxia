@@ -33,6 +33,13 @@ uv run fastapi dev     # run locally (as the container does)
 
 API docs: http://localhost:8000/docs · ReDoc http://localhost:8000/redoc.
 
+## Deployment (Vercel)
+
+Deployed as a Python serverless function. `index.py` wraps the ASGI app with Mangum
+(`handler = Mangum(app, lifespan="off")`); `vercel.json` routes all paths to it; Vercel
+installs from `requirements.txt`. DB connection prefers `POSTGRES_URL` (Neon, auto-injected)
+over the local `DB_*` vars. Full guide: [`../docs/DEPLOYMENT.md`](../docs/DEPLOYMENT.md).
+
 ## Rules that bite here
 
 - **Contract stability:** don't remove/rename existing endpoints or request/response

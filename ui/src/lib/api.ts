@@ -76,6 +76,11 @@ export async function apiGet<T>(route: string, init?: RequestInit): Promise<T> {
   } catch (error) {
     if (error instanceof Error) {
       console.error('API GET error:', error.message);
+      // Server-side (static build): no API available, return empty so prerender
+      // completes. Real data is always fetched client-side after login.
+      if (typeof window === 'undefined') {
+        return [] as unknown as T;
+      }
       throw error;
     }
     throw new Error(`GET ${url} failed: ${String(error)}`);

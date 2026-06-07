@@ -1,5 +1,6 @@
 import { defineConfig } from "astro/config";
 import tailwind from "@astrojs/tailwind";
+import { fileURLToPath } from "node:url";
 
 export default defineConfig({
   site: "http://localhost:4321",
@@ -7,7 +8,7 @@ export default defineConfig({
   vite: {
     resolve: {
       alias: {
-        '@': '/src',
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
       },
     },
     server: {

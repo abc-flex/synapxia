@@ -26,14 +26,15 @@
     "ADMIN": "Administración",
     "TAXO": "Taxonomía de Activos",
     "COLLAB": "Colaboración",
+    "LIB": "Biblioteca de IA",
     "INITS": "Iniciativas",
     "ANA": "Analítica",
     "PROC": "Procesos"
   },
   "menu_options": {
-    "profile": "Perfil",
     "business_units": "Unidades de Negocio",
-    "roles": "Roles",
+    "profiles": "Perfiles",
+    "privileges": "Privilegios",
     "users": "Usuarios",
     "lists": "Listas",
     "list_items": "Elementos de Lista",
@@ -42,6 +43,7 @@
     "options": "Opciones",
     "categories": "Categorías",
     "features": "Características",
+    "roles": "Roles",
     "teams": "Equipos",
     "projects": "Proyectos",
     "dimensions": "Dimensiones",
@@ -114,21 +116,26 @@
     "empty_message": "No se encontraron Unidades de Negocio",
     "delete_confirmation": "¿Está seguro de que desea eliminar esta Unidad de Negocio?"
   },
-  "role_modal": {
-    "code": "Código",
-    "name": "Nombre",
-    "description": "Descripción",
-    "one_title": "Rol",
-    "many_title": "Roles",
-    "filter_title": "Todos los Roles",
-    "add_new": "Nuevo Rol",
-    "edit": "Editar Rol",
-    "delete": "Eliminar Rol",
-    "empty_message": "No se encontraron Roles",
-    "delete_confirmation": "¿Está seguro de que desea eliminar este Rol?"
+  "unit_modal": {
+    "one_title": "Unidad de Negocio",
+    "many_title": "Unidades de Negocio",
+    "filter_title": "Todas las Unidades de Negocio"
+  },
+  "profile_modal": {
+    "code": "Code",
+    "name": "Name",
+    "description": "Description",
+    "one_title": "Profile",
+    "many_title": "Profiles",
+    "filter_title": "All Profiles",
+    "add_new": "New Profile",
+    "edit": "Edit Profile",
+    "delete": "Delete Profile",
+    "empty_message": "No Profiles found",
+    "delete_confirmation": "Are you sure you want to delete this Profile"
   },
   "privilege_modal": {
-    "role": "Rol",
+    "profile": "Perfil",
     "module": "Módulo",
     "option": "Opción",
     "can_edit": "Puede Editar",
@@ -146,8 +153,8 @@
     "password": "Contraseña",
     "first_name": "Nombre",
     "last_name": "Apellidos",
-    "menu_role": "Rol",
-    "business_unit": "Unidad de Negocio",
+    "profile": "Perfil",
+    "unit": "Unidad de Negocio",
     "one_title": "Usuario",
     "many_title": "Usuarios",
     "add_new": "Nuevo Usuario",
@@ -183,6 +190,19 @@
     "delete": "Eliminar Item-Lista",
     "empty_message": "No se encontraron Items en la Lista",
     "delete_confirmation": "¿Está seguro de que desea eliminar este Item de la Lista?"
+  },
+  "item_translation_modal": {
+    "list": "Lista",
+    "value": "Valor",
+    "lang": "Idioma",
+    "label": "Etiqueta",
+    "one_title": "Traducción del Item de Lista",
+    "many_title": "Traducciones del Item",
+    "add_new": "Nueva Traducción del Item",
+    "edit": "Editar Traducción del Item",
+    "delete": "Eliminar Traducción del Item",
+    "empty_message": "No se encontraron Traducciones del Item",
+    "delete_confirmation": "¿Está seguro de que desea eliminar esta Traducción del Item?"
   },
   "module_modal": {
     "code": "Código",
@@ -241,6 +261,19 @@
     "delete": "Eliminar Característica",
     "empty_message": "No se encontraron Características",
     "delete_confirmation": "¿Está seguro de que desea eliminar esta Característica?"
+  },
+  "role_modal": {
+    "code": "Código",
+    "name": "Nombre",
+    "description": "Descripción",
+    "one_title": "Rol",
+    "many_title": "Roles",
+    "filter_title": "Todos los Roles",
+    "add_new": "Nuevo Rol",
+    "edit": "Editar Rol",
+    "delete": "Eliminar Rol",
+    "empty_message": "No se encontraron Roles",
+    "delete_confirmation": "¿Está seguro de que desea eliminar este Rol?"
   },
   "team_modal": {
     "code": "Código",

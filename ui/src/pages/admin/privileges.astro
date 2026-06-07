@@ -5,7 +5,7 @@ import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
 import { getPrivileges } from "@/lib/privileges";
-import { getRolesSelect } from "@/lib/roles";
+import { getProfilesSelect } from "@/lib/profiles";
 import { getModulesSelect } from "@/lib/modules";
 import { getOptionsSelect } from "@/lib/options";
 
@@ -24,16 +24,16 @@ try {
   privileges = [];
 }
 
-// Fetch roles from API for select field
-let roles: any[] = [];
+// Fetch profiles from API for select field
+let profiles: any[] = [];
 try {
-  const apiRoles = await getRolesSelect();
-  roles = apiRoles;
+  const apiProfiles = await getProfilesSelect();
+  profiles = apiProfiles;
 } catch (error) {
-  console.error('Failed to fetch roles:', error);
-  errorMessage = error instanceof Error ? error.message : 'Failed to fetch roles from API';
+  console.error('Failed to fetch profiles:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch profiles from API';
   // Fallback to empty array to still render the page
-  roles = [];
+  profiles = [];
 }
 
 // Fetch modules from API for select field
@@ -61,8 +61,8 @@ try {
 }
 
 const columns = [
-  { key: "role", label: "privilege_modal.role", visible: false },
-  { key: "role_name", label: "privilege_modal.role" },
+  { key: "profile", label: "privilege_modal.profile", visible: false },
+  { key: "profile_name", label: "privilege_modal.profile" },
   { key: "module", label: "privilege_modal.module", visible: false },
   { key: "module_name", label: "privilege_modal.module" },
   { key: "option", label: "privilege_modal.option", visible: false },
@@ -70,9 +70,9 @@ const columns = [
   { key: "can_edit", label: "privilege_modal.can_edit" },
 ];
 const data = privileges.map((item) => ({
-  id: `${item.role}::${item.module}::${item.option}`,
-  role: item.role,
-  role_name: roles.find((r) => String(r.value) === String(item.role))?.label || item.role,
+  id: `${item.profile}::${item.module}::${item.option}`,
+  profile: item.profile,
+  profile_name: profiles.find((r) => String(r.value) === String(item.profile))?.label || item.profile,
   module: item.module,
   module_name: modules.find((m) => String(m.value) === String(item.module))?.label || item.module,
   option: item.option,
@@ -83,7 +83,7 @@ const data = privileges.map((item) => ({
   updated_at: item.updated_at,
 }));
 const formFields = [
-  { key: "role", label: "privilege_modal.role", type: "select" as const, options: roles, pk: true, required: true },
+  { key: "profile", label: "privilege_modal.profile", type: "select" as const, options: profiles, pk: true, required: true },
   { key: "module", label: "privilege_modal.module", type: "select" as const, options: modules, pk: true, required: true },
   { key: "option", label: "privilege_modal.option", type: "select" as const, options: options, pk: true, required: true },
   { key: "can_edit", label: "privilege_modal.can_edit", type: "checkbox" as const },
@@ -181,12 +181,12 @@ const fieldKeys = ["id", ...formFields.map((f) => f.key)];
         const { modalId, mode, data } = e.detail;
 
         try {
-          // Parse composite ID: "role::module::option"
-          const [role, module, option] = data.id.split("::");
+          // Parse composite ID: "profile::module::option"
+          const [profile, module, option] = data.id.split("::");
           if (mode === "create") {
             // Create new privilege
             await createPrivilege({
-              role: data.role,
+              profile: data.profile,
               module: data.module,
               option: data.option,
               can_edit: data.can_edit || false,
@@ -195,14 +195,14 @@ const fieldKeys = ["id", ...formFields.map((f) => f.key)];
             setTimeout(() => window.location.reload(), 1000);
           } else if (mode === "edit") {
             // Update existing privilege
-            await updatePrivilege(role, module, option, {
+            await updatePrivilege(profile, module, option, {
               can_edit: data.can_edit || false,
               is_active: data.is_active !== false,
             });
             showToast("Privilege updated successfully!");
             setTimeout(() => window.location.reload(), 1000);
           } else if (mode === "delete") {
-            await deletePrivilege(role, module, option);
+            await deletePrivilege(profile, module, option);
             showToast("Privilege deleted successfully!");
             setTimeout(() => window.location.reload(), 1000);
           }
@@ -220,10 +220,10 @@ const fieldKeys = ["id", ...formFields.map((f) => f.key)];
           data={data}
           tableId="privileges"
           i18Item="privilege"
-          columnFilter="role"
-          filterOptions={roles}
-          masterPage="/admin/roles"
-          mdItem="role"
+          columnFilter="profile"
+          filterOptions={profiles}
+          masterPage="/admin/profiles"
+          mdItem="profile"
         />
       </div>
     </div>

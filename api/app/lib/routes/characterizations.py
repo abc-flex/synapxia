@@ -6,7 +6,8 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 from sqlalchemy.exc import IntegrityError
 
-from ..internal.models import Characterization, CharacterizationCreate, CharacterizationUpdate, Asset, Feature
+from ..internal.models import Characterization, CharacterizationCreate, CharacterizationUpdate, Asset
+from ...taxo.internal.models import Feature
 from ..internal.dependencies import get_db_session
 
 logger = logging.getLogger(__name__)

@@ -4,27 +4,27 @@ import Breadcrumb from "../../components/core/Breadcrumb.astro";
 import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
-import { getRoles } from "@/lib/roles";
+import { getProfiles } from "@/lib/profiles";
 
-// Fetch roles from API
-let roles: any[] = [];
+// Fetch profiles from API
+let profiles: any[] = [];
 let errorMessage: string | null = null;
 
 try {
-  const apiRoles = await getRoles();
-  roles = apiRoles;
+  const apiProfiles = await getProfiles();
+  profiles = apiProfiles;
 } catch (error) {
-  console.error('Failed to fetch roles:', error);
-  errorMessage = error instanceof Error ? error.message : 'Failed to fetch roles from API';
+  console.error('Failed to fetch profiles:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch profiles from API';
   // Fallback to empty array to still render the page
-  roles = [];
+  profiles = [];
 }
 
 const columns = [
-  { key: "code", label: "role_modal.code" },
-  { key: "name", label: "role_modal.name" },
+  { key: "code", label: "profile_modal.code" },
+  { key: "name", label: "profile_modal.name" },
 ];
-const data = roles.map((item) => ({
+const data = profiles.map((item) => ({
   id: item.code,
   code: item.code,
   name: item.name,
@@ -34,13 +34,13 @@ const data = roles.map((item) => ({
   updated_at: item.updated_at,
 }));
 const tableFields = [
-  { key: "code", label: "role_modal.code", pk: true, required: true, placeholder: "e.g. ADMIN" },
-  { key: "name", label: "role_modal.name", required: true, placeholder: "e.g. Administration" },
+  { key: "code", label: "profile_modal.code", pk: true, required: true, placeholder: "e.g. ADMIN" },
+  { key: "name", label: "profile_modal.name", required: true, placeholder: "e.g. Administration" },
   {
     key: "description",
-    label: "role_modal.description",
+    label: "profile_modal.description",
     type: "textarea" as const,  
-    placeholder: "Optional details of role",
+    placeholder: "Optional details of profile",
   },
 ];
 const fieldKeys = tableFields.map((f) => f.key);
@@ -53,39 +53,39 @@ const fieldKeys = tableFields.map((f) => f.key);
     <!-- Breadcrumb Start -->
     <Breadcrumb
       moduleName="Administration"
-      pageName="Roles"
-      pageTitle="Roles"
+      pageName="Profiles"
+      pageTitle="Profiles"
       homeLink="/"
       moduleNameKey="modules.ADMIN"
-      pageNameKey="menu_options.roles"
-      pageTitleKey="menu_options.roles"
+      pageNameKey="menu_options.profiles"
+      pageTitleKey="menu_options.profiles"
     />
     <!-- Breadcrumb End -->
 
     <CrudModal
       mode="create"
-      modalId="role-create-modal"
-      entityName="Role"
+      modalId="profile-create-modal"
+      entityName="Profile"
       fields={tableFields}
       showTrigger={false}
     />
     <CrudModal
       mode="edit"
-      modalId="role-edit-modal"
-      entityName="Role"
+      modalId="profile-edit-modal"
+      entityName="Profile"
       fields={tableFields}
       showTrigger={false}
     />
     <CrudModal
       mode="delete"
-      modalId="role-delete-modal"
-      entityName="Role"
+      modalId="profile-delete-modal"
+      entityName="Profile"
       fields={tableFields}
       showTrigger={false}
     />
 
     <div
-      id="roles-data"
+      id="profiles-data"
       data-rows={encodeURIComponent(JSON.stringify(data))}
       data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
       class="hidden"
@@ -96,15 +96,15 @@ const fieldKeys = tableFields.map((f) => f.key);
     <script type="module">
       import { initCrudPage } from "/scripts/crudClient.js";
       import {
-        createRole,
-        updateRole,
-        deleteRole,
-      } from "/src/lib/roles";
+        createProfile,
+        updateProfile,
+        deleteProfile,
+      } from "/src/lib/profiles";
 
       initCrudPage({
-        dataId: "roles-data",
-        editModalId: "role-edit-modal",
-        deleteModalId: "role-delete-modal",
+        dataId: "profiles-data",
+        editModalId: "profile-edit-modal",
+        deleteModalId: "profile-delete-modal",
       });
 
       // Helper function to show toast notifications
@@ -137,31 +137,31 @@ const fieldKeys = tableFields.map((f) => f.key);
 
         try {
           if (mode === "create") {
-            // Create new role
-            await createRole({
+            // Create new profile
+            await createProfile({
               code: data.code,
               name: data.name,
               description: data.description,
               is_active: data.is_active !== false,
             });
 
-            showToast("Role created successfully!");
+            showToast("Profile created successfully!");
             setTimeout(() => window.location.reload(), 1000);
           } else if (mode === "edit") {
-            // Update existing role
-            await updateRole(data.id, {
+            // Update existing profile
+            await updateProfile(data.id, {
               name: data.name,
               description: data.description,
               is_active: data.is_active !== false,
             });
 
-            showToast("Role updated successfully!");
+            showToast("Profile updated successfully!");
             setTimeout(() => window.location.reload(), 1000);
           } else if (mode === "delete") {
-            // Delete role
-            await deleteRole(data.id);
+            // Delete profile
+            await deleteProfile(data.id);
 
-            showToast("Role deleted successfully!");
+            showToast("Profile deleted successfully!");
             setTimeout(() => window.location.reload(), 1000);
           }
         } catch (error) {
@@ -177,8 +177,8 @@ const fieldKeys = tableFields.map((f) => f.key);
         <DataTable
           columns={columns}
           data={data}
-          tableId="roles"
-          i18Item="role"
+          tableId="profiles"
+          i18Item="profile"
           detailPage="/admin/privileges"
           mdItem="privilege"
         />

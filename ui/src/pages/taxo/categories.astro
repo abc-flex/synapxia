@@ -38,6 +38,7 @@ const data = categories.map((item) => ({
   description: item.description,
   parent: item.parent,
   parent_name: categories.find((c) => c.code === item.parent)?.name || item.parent,
+  icon: item.icon,
   is_active: item.is_active,
   created_at: item.created_at,
   updated_at: item.updated_at,
@@ -46,6 +47,7 @@ const formFields = [
   { key: "code", label: "category_modal.code", pk: true, required: true },
   { key: "name", label: "category_modal.name", required: true },
   { key: "parent", label: "category_modal.parent", type: "select" as const, options: categories_list, required: false },
+  { key: "icon", label: "module_modal.icon", placeholder: "Heroicon path" },
   {
     key: "description",
     label: "category_modal.description",
@@ -154,6 +156,7 @@ const fieldKeys = formFields.map((f) => f.key);
               name: data.name,
               description: data.description,
               parent: data.parent,
+              icon: data.icon,
               is_active: data.is_active !== false,
             });
 
@@ -165,6 +168,7 @@ const fieldKeys = formFields.map((f) => f.key);
               name: data.name,
               description: data.description,
               parent: data.parent,
+              icon: data.icon,
               is_active: data.is_active !== false,
             });
 

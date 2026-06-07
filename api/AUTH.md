@@ -58,8 +58,8 @@ Login and get JWT access token.
     "email": "admin@synapxia.org",
     "first_name": "Platform",
     "last_name": "Administrator",
-    "menu_profile": "ADMINISTRATOR",
-    "business_unit": "GEN_AI"
+    "profile": "ADMINISTRATOR",
+    "unit": "GEN_AI"
   }
 }
 ```
@@ -75,8 +75,8 @@ Register a new user.
   "password": "SecurePass123!",
   "first_name": "John",
   "last_name": "Doe",
-  "menu_profile": "COLLABORATOR",
-  "business_unit": "ENG"
+  "profile": "COLLABORATOR",
+  "unit": "ENG"
 }
 ```
 
@@ -88,8 +88,8 @@ Register a new user.
   "email": "john@example.com",
   "first_name": "John",
   "last_name": "Doe",
-  "menu_profile": "COLLABORATOR",
-  "business_unit": "ENG",
+  "profile": "COLLABORATOR",
+  "unit": "ENG",
   "is_active": true,
   "is_superuser": false,
   "created_at": "2026-03-09T10:30:00+00:00",
@@ -113,8 +113,8 @@ Authorization: Bearer <access_token>
   "email": "admin@synapxia.org",
   "first_name": "Platform",
   "last_name": "Administrator",
-  "menu_profile": "ADMINISTRATOR",
-  "business_unit": "GEN_AI",
+  "profile": "ADMINISTRATOR",
+  "unit": "GEN_AI",
   "is_active": true,
   "is_superuser": true,
   "created_at": "2026-03-09T10:00:00+00:00",
@@ -177,8 +177,8 @@ curl -X POST "http://localhost:8000/api/auth/register" \
     "password": "SecurePass123!",
     "first_name": "New",
     "last_name": "User",
-    "menu_profile": "COLLABORATOR",
-    "business_unit": "ENG"
+    "profile": "COLLABORATOR",
+    "unit": "ENG"
   }'
 ```
 
@@ -301,7 +301,7 @@ async def protected_endpoint(
     current_user: User = Depends(get_current_active_user)
 ):
     # User is authenticated
-    # Use current_user.menu_profile and business_unit for authorization
+    # Use current_user.profile and unit for authorization
     # Query privileges table for detailed access control
     return {"user": current_user.username}
 ```

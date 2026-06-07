@@ -68,7 +68,7 @@ def get_by_profile(
         )
     users = session.exec(
         select(User)
-        .where(User.menu_profile == profile_code)
+        .where(User.profile == profile_code)
         .order_by(User.username)
     ).all()
     return users
@@ -99,8 +99,8 @@ def create(user: UserCreate, session: Session = Depends(get_db_session)) -> User
     - **password_hash**: Password hash (required)
     - **first_name**: First name (required)
     - **last_name**: Last name (required)
-    - **menu_profile**: Profile code (required)
-    - **business_unit**: Business unit code (required)
+    - **profile**: Profile code (required)
+    - **unit**: Business unit code (required)
     - **is_active**: Active/inactive status (default: True)
     """
     # Validate that the username does not exist
@@ -122,19 +122,19 @@ def create(user: UserCreate, session: Session = Depends(get_db_session)) -> User
         )
 
     # Validate that the profile exists
-    profile = session.get(Profile, user.menu_profile)
+    profile = session.get(Profile, user.profile)
     if not profile:
         raise HTTPException(
             status_code=400,
-            detail=f"Profile with code '{user.menu_profile}' does not exist"
+            detail=f"Profile with code '{user.profile}' does not exist"
         )
 
-    # Validate that the business_unit exists
-    business_unit = session.get(BusinessUnit, user.business_unit)
-    if not business_unit:
+    # Validate that the unit exists
+    unit = session.get(BusinessUnit, user.unit)
+    if not unit:
         raise HTTPException(
             status_code=400,
-            detail=f"Business unit with code '{user.business_unit}' does not exist"
+            detail=f"Business unit with code '{user.unit}' does not exist"
         )
 
     try:
@@ -176,21 +176,21 @@ def update(id: int, user_update: UserUpdate, session: Session = Depends(get_db_s
             )
 
     # Validate that the profile exists if provided
-    if user_update.menu_profile is not None:
-        profile = session.get(Profile, user_update.menu_profile)
+    if user_update.profile is not None:
+        profile = session.get(Profile, user_update.profile)
         if not profile:
             raise HTTPException(
                 status_code=400,
-                detail=f"Profile with code '{user_update.menu_profile}' does not exist"
+                detail=f"Profile with code '{user_update.profile}' does not exist"
             )
 
-    # Validate that the business_unit exists if provided
-    if user_update.business_unit is not None:
-        business_unit = session.get(BusinessUnit, user_update.business_unit)
-        if not business_unit:
+    # Validate that the unit exists if provided
+    if user_update.unit is not None:
+        unit = session.get(BusinessUnit, user_update.unit)
+        if not unit:
             raise HTTPException(
                 status_code=400,
-                detail=f"Business unit with code '{user_update.business_unit}' does not exist"
+                detail=f"Business unit with code '{user_update.unit}' does not exist"
             )
 
     update_data = user_update.model_dump(exclude_unset=True)

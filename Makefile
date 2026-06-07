@@ -12,6 +12,7 @@ NC := \033[0m # No Color
 # Docker Compose file
 COMPOSE_FILE = docker-compose.yml
 
+# Default target: print the categorized list of available commands.
 help:
 	@echo "$(BLUE)=======================================$(NC)"
 	@echo "$(BLUE)Synapxia Development Commands$(NC)"
@@ -41,6 +42,9 @@ help:
 
 ## Basic Commands
 
+# Start all containers in the background, wait ~30s for the DB to initialize,
+# print the service URLs and run a health check.
+# NOTE: relies on ./setup-database.sh (via `make health`), which is not in the repo yet.
 up:
 	@echo "$(GREEN)Starting containers...$(NC)"
 	docker-compose -f $(COMPOSE_FILE) up -d
@@ -56,14 +60,18 @@ up:
 	@echo ""
 	@make health
 
+# Stop and remove the running containers. Volumes (DB data) are preserved.
 down:
 	@echo "$(GREEN)Stopping containers...$(NC)"
 	docker-compose -f $(COMPOSE_FILE) down
 	@echo "$(GREEN)✓ Containers stopped$(NC)"
 
+# Restart the whole stack: runs `down` then `up`.
 restart: down up
 	@echo "$(GREEN)✓ Containers restarted$(NC)"
 
+# Clean rebuild: removes volumes (wipes DB data), rebuilds images, restarts,
+# and re-runs all db/sql migrations on the fresh database.
 rebuild:
 	@echo "$(RED)Rebuilding from scratch (removing volumes)...$(NC)"
 	docker-compose -f $(COMPOSE_FILE) down -v
@@ -75,34 +83,45 @@ rebuild:
 
 ## Information Commands
 
+# Show the status of all containers.
 ps:
 	@docker-compose -f $(COMPOSE_FILE) ps
 
+# Follow (tail) the combined logs of all services. Ctrl+C to exit.
 logs:
 	docker-compose -f $(COMPOSE_FILE) logs -f
 
+# Follow the logs of the API service only.
 logs-api:
 	docker-compose -f $(COMPOSE_FILE) logs -f api
 
+# Follow the logs of the database service only.
 logs-db:
 	docker-compose -f $(COMPOSE_FILE) logs -f db
 
+# Follow the logs of the frontend (UI) service only.
 logs-ui:
 	docker-compose -f $(COMPOSE_FILE) logs -f ui
 
+# Follow the logs of the PgAdmin service only.
 logs-pgadmin:
 	docker-compose -f $(COMPOSE_FILE) logs -f pgadmin
 
+# Run the health-check script.
+# WARNING: ./setup-database.sh does not exist in the repo yet, so this will fail
+# until the script is added (also affects `up`, `rebuild` and `quickstart`).
 health:
 	@echo "$(GREEN)Running health checks...$(NC)"
 	@bash ./setup-database.sh
 
 ## Development Commands
 
+# Open an interactive psql shell inside the db container.
 shell:
 	@echo "$(GREEN)Opening database shell...$(NC)"
 	docker-compose -f $(COMPOSE_FILE) exec db psql -U synapxia -d synapxia
 
+# Start the stack (via `up`) and print all access URLs and login credentials.
 dev: up
 	@echo ""
 	@echo "$(GREEN)✓ Development environment ready!$(NC)"
@@ -129,6 +148,7 @@ dev: up
 
 ## Test Commands
 
+# Quick smoke tests: API health endpoint, DB readiness, and superuser existence.
 test:
 	@echo "$(GREEN)Running application tests...$(NC)"
 	@echo ""
@@ -145,6 +165,7 @@ test:
 
 ## Cleanup Commands
 
+# Remove all containers AND volumes. Destroys all database data.
 clean:
 	@echo "$(RED)Removing all containers and volumes...$(NC)"
 	docker-compose -f $(COMPOSE_FILE) down -v
@@ -154,25 +175,31 @@ clean:
 
 ## Additional Utility Commands
 
+# Show a one-shot snapshot of container resource usage (CPU, memory, etc.).
 stats:
 	@echo "$(GREEN)Docker resource usage:$(NC)"
 	@docker stats --no-stream
 
+# Open an interactive bash shell inside the API container.
 exec-api:
 	docker-compose -f $(COMPOSE_FILE) exec api bash
 
+# Open an interactive bash shell inside the database container.
 exec-db:
 	docker-compose -f $(COMPOSE_FILE) exec db bash
 
+# Open an interactive bash shell inside the frontend (UI) container.
 exec-ui:
 	docker-compose -f $(COMPOSE_FILE) exec ui bash
 
+# Dump the database to a timestamped .sql file under ./backups/.
 backup-db:
 	@echo "$(GREEN)Backing up database...$(NC)"
 	@mkdir -p ./backups
 	@docker-compose -f $(COMPOSE_FILE) exec db pg_dump -U synapxia synapxia > ./backups/synapxia-$(shell date +%Y%m%d-%H%M%S).sql
 	@echo "$(GREEN)✓ Backup created$(NC)"
 
+# Restore the database from the most recent .sql backup in ./backups/.
 restore-db:
 	@echo "$(RED)Restoring database from latest backup...$(NC)"
 	@LATEST=$$(ls -t ./backups/*.sql | head -1); \
@@ -181,22 +208,26 @@ restore-db:
 
 ## Advanced Commands
 
+# Check Python syntax in the API container with py_compile.
 lint:
 	@echo "$(BLUE)Checking Python syntax...$(NC)"
 	@docker-compose -f $(COMPOSE_FILE) exec api python -m py_compile app/**/*.py
 	@echo "$(GREEN)✓ Python syntax OK$(NC)"
 
+# Format the API's Python code with black inside the container.
 format:
 	@echo "$(BLUE)Formatting Python code...$(NC)"
 	@docker-compose -f $(COMPOSE_FILE) exec api black app/
 	@echo "$(GREEN)✓ Code formatted$(NC)"
 
+# List the SQL migration files in db/sql/ (run automatically on a fresh DB).
 migrations:
 	@echo "$(BLUE)Listing migrations...$(NC)"
 	@ls -lah db/sql/
 
 ## Docker Info
 
+# Print Docker / Docker Compose versions and a table of running containers.
 docker-info:
 	@echo "$(BLUE)Docker Information:$(NC)"
 	@echo "Docker Version: $$(docker --version)"
@@ -205,6 +236,7 @@ docker-info:
 	@echo "$(BLUE)Running Containers:$(NC)"
 	@docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
+# Remove unused Docker resources system-wide (dangling images, stopped containers, etc.).
 prune:
 	@echo "$(RED)Removing unused Docker resources...$(NC)"
 	docker system prune -f
@@ -212,6 +244,7 @@ prune:
 
 ## Help for specific commands
 
+# Print help for the log-related commands.
 logs-help:
 	@echo "$(BLUE)Log Commands:$(NC)"
 	@echo "  make logs          - All service logs"
@@ -220,6 +253,7 @@ logs-help:
 	@echo "  make logs-ui       - Frontend logs only"
 	@echo "  make logs-pgadmin  - PgAdmin logs only"
 
+# Print help for the shell-access commands.
 exec-help:
 	@echo "$(BLUE)Shell Access:$(NC)"
 	@echo "  make shell         - Database shell (psql)"
@@ -227,6 +261,7 @@ exec-help:
 	@echo "  make exec-db       - Database container bash"
 	@echo "  make exec-ui       - Frontend container bash"
 
+# Print help for the backup/restore commands.
 backup-help:
 	@echo "$(BLUE)Backup Commands:$(NC)"
 	@echo "  make backup-db     - Backup database to ./backups/"
@@ -235,6 +270,8 @@ backup-help:
 
 ## Quick Start
 
+# Full fresh start: wipe everything (clean), start (up), then show access info (dev).
+# NOTE: chains through `up`, so it also depends on the missing ./setup-database.sh.
 quickstart: clean up dev
 	@echo ""
 	@echo "$(GREEN)✓ Synapxia is ready to use!$(NC)"

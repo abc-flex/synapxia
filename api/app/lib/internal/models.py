@@ -1,83 +1,8 @@
-"""Models for Digital Assets module"""
+"""Models for Asset Library module"""
 from sqlmodel import Field, SQLModel, Column, String, ForeignKey
 from sqlalchemy import JSON
-from typing import Optional, List, Dict, Any
+from typing import Optional, Dict, Any
 from datetime import datetime
-
-# Categories Models
-
-
-class CategoryBase(SQLModel):
-    code: str = Field(max_length=50, primary_key=True)
-    name: str = Field(max_length=100)
-    description: Optional[str] = Field(default=None, max_length=500)
-    parent: Optional[str] = Field(default=None, foreign_key="categories.code")
-    is_active: bool = Field(default=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: Optional[datetime] = None
-
-
-class Category(CategoryBase, table=True):
-    __tablename__ = "categories"
-
-
-class CategoryCreate(SQLModel):
-    code: str = Field(max_length=50, description="Unique category code")
-    name: str = Field(max_length=100, description="Category name")
-    description: Optional[str] = Field(
-        default=None, max_length=500, description="Category description")
-    parent: Optional[str] = Field(
-        default=None, max_length=50, description="Parent category code")
-    is_active: Optional[bool] = Field(
-        default=True, description="Indicates if the category is active")
-
-
-class CategoryUpdate(SQLModel):
-    name: Optional[str] = Field(
-        default=None, max_length=100, description="Category name")
-    description: Optional[str] = Field(
-        default=None, max_length=500, description="Category description")
-    parent: Optional[str] = Field(
-        default=None, max_length=50, description="Parent category code")
-    is_active: Optional[bool] = Field(
-        default=None, description="Indicates if the category is active")
-
-# Features Models
-
-
-class FeatureBase(SQLModel):
-    code: str = Field(max_length=50, primary_key=True)
-    name: str = Field(max_length=100)
-    description: Optional[str] = Field(default=None, max_length=500)
-    type: Optional[str] = Field(default=None, max_length=100)
-    is_active: bool = Field(default=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: Optional[datetime] = None
-
-
-class Feature(FeatureBase, table=True):
-    __tablename__ = "features"
-
-
-class FeatureCreate(SQLModel):
-    code: str = Field(max_length=50, description="Unique feature code")
-    name: str = Field(max_length=100, description="Feature name")
-    description: Optional[str] = Field(
-        default=None, max_length=500, description="Feature description")
-    type: Optional[str] = Field(default=None, max_length=100, description="Feature type")
-    is_active: Optional[bool] = Field(
-        default=True, description="Indicates if the feature is active")
-
-
-class FeatureUpdate(SQLModel):
-    name: Optional[str] = Field(
-        default=None, max_length=100, description="Feature name")
-    description: Optional[str] = Field(
-        default=None, max_length=500, description="Feature description")
-    type: Optional[str] = Field(
-        default=None, max_length=100, description="Feature type")
-    is_active: Optional[bool] = Field(
-        default=None, description="Indicates if the feature is active")
 
 # Assets Models
 

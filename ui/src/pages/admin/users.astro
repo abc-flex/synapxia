@@ -6,7 +6,7 @@ import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
 import { getUsers } from "@/lib/users";
 import { getBusinessUnitsSelect } from "@/lib/business_units";
-import { getRolesSelect } from "@/lib/roles";
+import { getProfilesSelect } from "@/lib/profiles";
 
 // Fetch users from API
 let users: any[] = [];
@@ -33,25 +33,25 @@ try {
   business_units = [];
 }
 
-// Fetch roles for filter dropdown and form select
-let roles: any[] = [];
+// Fetch profiles for filter dropdown and form select
+let profiles: any[] = [];
 try {
-  const apiRoles = await getRolesSelect();
-  roles = apiRoles;
+  const apiProfiles = await getProfilesSelect();
+  profiles = apiProfiles;
 } catch (error) {
-  console.error('Failed to fetch roles:', error);
-  errorMessage = error instanceof Error ? error.message : 'Failed to fetch roles from API';
+  console.error('Failed to fetch profiles:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch profiles from API';
   // Fallback to empty array to still render the page
-  roles = [];
+  profiles = [];
 }
 
 const columns = [
   { key: "name", label: "user_modal.first_name" },
   { key: "username", label: "user_modal.username" },
-  { key: "menu_role", label: "user_modal.menu_role", visible: false },
-  { key: "menu_role_name", label: "user_modal.menu_role" },
-  { key: "business_unit", label: "user_modal.business_unit", visible: false },
-  { key: "business_unit_name", label: "user_modal.business_unit" },
+  { key: "profile", label: "user_modal.profile", visible: false },
+  { key: "profile_name", label: "user_modal.profile" },
+  { key: "unit", label: "user_modal.unit", visible: false },
+  { key: "unit_name", label: "user_modal.unit" },
 ];
 const data = users.map((user) => ({
   id: user.id,
@@ -60,10 +60,10 @@ const data = users.map((user) => ({
   email: user.email,
   first_name: user.first_name,
   last_name: user.last_name,
-  menu_role: user.menu_role,
-  menu_role_name: roles.find((r) => String(r.value) === String(user.menu_role))?.label || user.menu_role,
-  business_unit: user.business_unit,
-  business_unit_name: business_units.find((bu) => String(bu.value) === String(user.business_unit))?.label || user.business_unit,
+  profile: user.profile,
+  profile_name: profiles.find((r) => String(r.value) === String(user.profile))?.label || user.profile,
+  unit: user.unit,
+  unit_name: business_units.find((bu) => String(bu.value) === String(user.unit))?.label || user.unit,
   is_active: user.is_active,
 }));
 
@@ -73,8 +73,8 @@ const formFields = [
   { key: "password", label: "user_modal.password", type: "text" as const, required: true, placeholder: "********" },
   { key: "first_name", label: "user_modal.first_name", required: true, placeholder: "John" },
   { key: "last_name", label: "user_modal.last_name", required: true, placeholder: "Doe" },
-  { key: "menu_role", label: "user_modal.menu_role", type: "select" as const, options: roles, required: true },
-  { key: "business_unit", label: "user_modal.business_unit", type: "select" as const, options: business_units, required: true },
+  { key: "profile", label: "user_modal.profile", type: "select" as const, options: profiles, required: true },
+  { key: "unit", label: "user_modal.unit", type: "select" as const, options: business_units, required: true },
 ];
 const fieldKeys = formFields.map((f) => f.key);
 ---
@@ -175,8 +175,8 @@ const fieldKeys = formFields.map((f) => f.key);
               password: data.password,
               first_name: data.first_name,
               last_name: data.last_name,
-              menu_role: data.menu_role,
-              business_unit: data.business_unit,
+              profile: data.profile,
+              unit: data.unit,
               is_active: data.is_active !== false,
             });
 
@@ -189,8 +189,8 @@ const fieldKeys = formFields.map((f) => f.key);
               email: data.email,
               first_name: data.first_name,
               last_name: data.last_name,
-              menu_role: data.menu_role,
-              business_unit: data.business_unit,
+              profile: data.profile,
+              unit: data.unit,
               is_active: data.is_active !== false,
             });
 
@@ -217,7 +217,7 @@ const fieldKeys = formFields.map((f) => f.key);
           data={data}
           tableId="users"
           i18Item="user"
-          columnFilter="business_unit"
+          columnFilter="unit"
           filterOptions={business_units}
         />
       </div>

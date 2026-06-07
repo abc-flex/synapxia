@@ -16,13 +16,14 @@ from .admin.routes import users as users_router
 from .admin.routes import options as options_router
 from .admin.routes import privileges as privileges_router
 
-from .catalog.routes import categories as categories_router
-from .catalog.routes import features as features_router
-from .catalog.routes import assets as assets_router
-from .catalog.routes import characterizations as characterizations_router
-from .catalog.routes import favorites as favorites_router
-from .catalog.routes import actions as actions_router
-from .catalog.routes import asset_relations as asset_relations_router
+from .taxo.routes import categories as categories_router
+from .taxo.routes import features as features_router
+
+from .lib.routes import assets as assets_router
+from .lib.routes import characterizations as characterizations_router
+from .lib.routes import favorites as favorites_router
+from .lib.routes import actions as actions_router
+from .lib.routes import asset_relations as asset_relations_router
 
 from .collab.routes import teams as teams_router
 from .collab.routes import assignments as assignments_router
@@ -170,9 +171,11 @@ app.include_router(users_router.router)
 app.include_router(options_router.router)
 app.include_router(privileges_router.router)
 
-# Catalog module (Digital Assets)
+# Taxonomy module
 app.include_router(categories_router.router)
 app.include_router(features_router.router)
+
+# Asset Library module
 app.include_router(assets_router.router)
 app.include_router(characterizations_router.router)
 app.include_router(favorites_router.router)
@@ -228,9 +231,11 @@ def read_root() -> dict:
                 "options": "/api/options",
                 "privileges": "/api/privileges",
             },
-            "catalog": {
+            "taxo": {
                 "categories": "/api/categories",
                 "features": "/api/features",
+            },
+            "lib": {
                 "assets": "/api/assets",
                 "characterizations": "/api/characterizations",
                 "favorites": "/api/favorites",

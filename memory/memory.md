@@ -64,12 +64,69 @@ Run everything: `make dev`. Verify: `make test`.
 
 ---
 
-## Known issues / next up
+## Feature status
 
-- **Vercel build: API fetch at build time** — static pages in `ui/` call `localhost:8000` during `astro build`. On Vercel this errors (`ECONNREFUSED`). Needs one of: (a) `PUBLIC_API_BASE_URL` env var pointed at deployed API, (b) client-side fetch instead of build-time, or (c) SSR output mode.
-- `genai`, `inits`, `insights` modules are domain stubs — not yet implemented.
-- No automated UI tests; manual verification per quickstart guides only.
-- caniuse-lite is stale — run `npx update-browserslist-db@latest` in `ui/`.
+### Shipped
+| Feature | Domain | Status |
+|---------|--------|--------|
+| Admin CRUD (users, profiles, modules, options, privileges, lists, list_items, item_translations) | admin | ✅ done |
+| Taxonomy (categories hierarchical, features) | taxo | ✅ done |
+| Team collaboration (teams, roles, assignments, projects, dimensions, metrics) | collab | ✅ done |
+| Asset library (assets, characterizations, favorites, actions, asset_relations) | lib | ✅ done |
+| Auth (JWT HS256 + bcrypt, /me, register, change-password) | auth | ✅ done |
+| Vercel deployment (API serverless via Mangum + UI static + Neon DB) | infra | ✅ done |
+| Per-service CLAUDE.md (api/ui/db ~800 lines each) | docs | ✅ done |
+| Changelog HH:MM timestamps + hook automation | tooling | ✅ done |
+
+### In progress / stubs
+| Domain | Status | Notes |
+|--------|--------|-------|
+| genai | ⚠️ stub | No models or routes yet — needs SpecKit spec first |
+| inits | ⚠️ stub | No models or routes yet |
+| insights | ⚠️ stub | No models or routes yet |
+| workflows | ⚠️ stub | No models or routes yet |
+
+### Next (P1.1 in progress)
+| Item | Status |
+|------|--------|
+| API linting: ruff + black + isort + mypy | ✅ config added to pyproject.toml |
+| UI linting: ESLint (Astro + TS) | ✅ .eslintrc.json + package.json updated |
+| pytest skeleton (api/tests/) | ✅ conftest + health/auth/users test files |
+| Makefile: make lint/fmt/fmt-check/pytest/lint-ui | ✅ updated |
+| memory.md expansion | ✅ this update |
+
+---
+
+## Known blockers
+
+| Severity | Issue | Notes |
+|----------|-------|-------|
+| P0 | Vercel build-time API fetch | Static pages call `localhost:8000` during `astro build`; fails on Vercel (`ECONNREFUSED`). Fix: set `PUBLIC_API_BASE_URL` env in Vercel project settings pointing to deployed API. `api.ts` returns `[]` on failure so pages pre-render empty and hydrate client-side. |
+| P1 | API linting not CI-gated | `make lint`/`make fmt-check` now exist but not wired into GitHub Actions. Violations won't block PRs until CI workflow is added. |
+| P1 | No UI tests | Manual verification per quickstart guides only. ESLint now wired; UI test framework (Playwright) is post-launch scope. |
+| P1 | caniuse-lite stale | Run `npx update-browserslist-db@latest` in `ui/` before next UI release. |
+| P2 | Stub domains not implemented | `genai`, `inits`, `insights`, `workflows` are empty placeholders — each needs a SpecKit spec before implementation. |
+| P2 | No Alembic migrations | Append-only SQL files work for greenfield; first breaking schema change in production will require `api/alembic/` setup. |
+
+---
+
+## Docs routing table
+
+| Task | Primary doc | Supporting |
+|------|-------------|------------|
+| Onboarding / what is this | `README.md` | `memory/memory.md` (this file) |
+| API changes | `api/CLAUDE.md` | `AGENTS.md` |
+| UI changes | `ui/CLAUDE.md` | `AGENTS.md` |
+| DB / schema changes | `db/CLAUDE.md` | `AGENTS.md` |
+| Auth deep-dive | `api/AUTH.md` | `api/CLAUDE.md` § Auth |
+| Adding a resource (full stack) | `api/CLAUDE.md` § "Adding a new resource" | `ui/CLAUDE.md` § "Adding a CRUD page", `db/CLAUDE.md` § "Adding a new table" |
+| Adding a whole new domain | `api/CLAUDE.md` § "Adding a new domain" | `db/CLAUDE.md` § "Module bands" |
+| Deployment to Vercel + Neon | `docs/DEPLOYMENT.md` | `api/CLAUDE.md` § Deployment |
+| Constitution rules | `.specify/memory/constitution.md` | `AGENTS.md` |
+| SpecKit workflow (spec → plan → implement) | `AGENTS.md` § SpecKit | `specs/` + `.specify/templates/` |
+| Changelog discipline | `AGENTS.md` § Changelog | `.claude/hooks/update-changelog.sh` |
+| Linting + tests | `api/CLAUDE.md` § "Linting & testing" | `api/pyproject.toml` `[tool.*]` sections |
+| Troubleshooting | `api/CLAUDE.md` § Debugging | `ui/CLAUDE.md` § Debugging, `db/CLAUDE.md` § Debugging |
 
 ---
 
@@ -79,3 +136,9 @@ Run everything: `make dev`. Verify: `make test`.
 - Explored and documented repo: created `AGENTS.md` (root + api, ui, db) and `CLAUDE.md` pointers.
 - Fixed Vercel build failure: added missing `ui/src/layouts/Layout.astro` and fixed `@` alias.
 - Created `memory/changelog.md`, `memory/memory.md`, and changelog automation hook.
+- Expanded per-service CLAUDE.md (api/ui/db → 800+ lines each): modules, routes, patterns, key surfaces, debugging.
+- Added HH:MM timestamps to `.claude/hooks/update-changelog.sh` for same-day changelog ordering.
+- Added linting config to `api/pyproject.toml` ([tool.ruff], [tool.black], [tool.isort], [tool.mypy]) + dev deps (ruff, black, isort, mypy, pytest, httpx, pytest-asyncio).
+- Added ESLint to `ui/package.json` + `ui/.eslintrc.json` (Astro + TypeScript).
+- Created `api/tests/` pytest skeleton: conftest.py (SQLite in-memory + DI override) + test_health.py, test_auth.py, test_users.py (9 tests covering auth contracts + CRUD).
+- Updated `Makefile`: `make lint` (ruff+mypy), `make fmt` (black+isort), `make fmt-check` (exit 1 on drift), `make pytest`, `make lint-ui`.

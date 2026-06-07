@@ -1,4 +1,4 @@
-.PHONY: help up down ps logs shell dev clean rebuild restart health test hooks
+.PHONY: help up down ps logs shell dev clean rebuild restart health test hooks lint lint-ui fmt fmt-check pytest
 
 # Default target
 .DEFAULT_GOAL := help
@@ -32,7 +32,14 @@ help:
 	@echo "$(GREEN)Development:$(NC)"
 	@echo "  make shell       - Open database shell (psql)"
 	@echo "  make dev         - Start all services in development"
-	@echo "  make test        - Run tests"
+	@echo "  make test        - Smoke tests (health + DB + admin user)"
+	@echo ""
+	@echo "$(GREEN)Code Quality:$(NC)"
+	@echo "  make lint        - Lint API: ruff + mypy"
+	@echo "  make lint-ui     - Lint UI: eslint"
+	@echo "  make fmt         - Format API: black + isort (auto-fix)"
+	@echo "  make fmt-check   - Format check (exit 1 if drift)"
+	@echo "  make pytest      - Run API unit tests"
 	@echo ""
 	@echo "$(GREEN)Cleanup:$(NC)"
 	@echo "  make clean       - Remove all containers & volumes"
@@ -208,17 +215,41 @@ restore-db:
 
 ## Advanced Commands
 
-# Check Python syntax in the API container with py_compile.
+# Lint API: ruff (style/errors) + mypy (types). Exits 1 on violations.
 lint:
-	@echo "$(BLUE)Checking Python syntax...$(NC)"
-	@docker-compose -f $(COMPOSE_FILE) exec api python -m py_compile app/**/*.py
-	@echo "$(GREEN)✓ Python syntax OK$(NC)"
+	@echo "$(BLUE)Linting API (ruff + mypy)...$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) exec api ruff check app/
+	@docker-compose -f $(COMPOSE_FILE) exec api mypy app/ --ignore-missing-imports
+	@echo "$(GREEN)✓ API lint OK$(NC)"
 
-# Format the API's Python code with black inside the container.
-format:
-	@echo "$(BLUE)Formatting Python code...$(NC)"
+# Lint UI: eslint for Astro + TypeScript files.
+lint-ui:
+	@echo "$(BLUE)Linting UI (eslint)...$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) exec ui bun run lint
+	@echo "$(GREEN)✓ UI lint OK$(NC)"
+
+# Format API code with black + isort (auto-fix in place).
+fmt:
+	@echo "$(BLUE)Formatting API (black + isort)...$(NC)"
 	@docker-compose -f $(COMPOSE_FILE) exec api black app/
-	@echo "$(GREEN)✓ Code formatted$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) exec api isort app/
+	@echo "$(GREEN)✓ Formatted$(NC)"
+
+# Check API format without modifying files. Exits 1 if drift detected.
+fmt-check:
+	@echo "$(BLUE)Checking API format (black + isort)...$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) exec api black --check app/
+	@docker-compose -f $(COMPOSE_FILE) exec api isort --check app/
+	@echo "$(GREEN)✓ Format OK$(NC)"
+
+# Run API unit tests via pytest. Targets api/tests/ with SQLite in-memory fixtures.
+pytest:
+	@echo "$(BLUE)Running API unit tests...$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) exec api pytest tests/ -v
+	@echo "$(GREEN)✓ Tests passed$(NC)"
+
+# Legacy alias — kept for compatibility.
+format: fmt
 
 # List the SQL migration files in db/sql/ (run automatically on a fresh DB).
 migrations:

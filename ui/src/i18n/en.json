@@ -231,6 +231,7 @@
     "parent": "Parent",
     "one_title": "Category",
     "many_title": "Categories",
+    "filter_title": "All Categories",
     "add_new": "New Category",
     "edit": "Edit Category",
     "delete": "Delete Category",
@@ -251,6 +252,19 @@
     "delete": "Delete Feature",
     "empty_message": "No Features found",
     "delete_confirmation": "Are you sure you want to delete this Feature"
+  },
+  "specification_modal": {
+    "category": "Category",
+    "feature": "Feature",
+    "default_value": "Default Value",
+    "one_title": "Specification",
+    "many_title": "Specifications",
+    "can_edit": "Can Edit",
+    "add_new": "New Specification",
+    "edit": "Edit Specification",
+    "delete": "Delete Specification",
+    "empty_message": "No Specifications found",
+    "delete_confirmation": "Are you sure you want to delete this Specification"
   },
   "role_modal": {
     "code": "Code",

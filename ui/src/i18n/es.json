@@ -230,6 +230,7 @@
     "parent": "Categoría Padre",
     "one_title": "Categoría",
     "many_title": "Categorías",
+    "filter_title": "Todas las Categorías",
     "add_new": "Nueva Categoría",
     "edit": "Editar Categoría",
     "delete": "Eliminar Categoría",
@@ -250,6 +251,19 @@
     "delete": "Eliminar Característica",
     "empty_message": "No se encontraron Características",
     "delete_confirmation": "¿Está seguro de que desea eliminar esta Característica?"
+  },
+  "specification_modal": {
+    "category": "Categoría",
+    "feature": "Característica",
+    "default_value": "Valor Predeterminado",
+    "one_title": "Especificación",
+    "many_title": "Especificaciones",
+    "can_edit": "Puede Editar",
+    "add_new": "Nueva Especificación",
+    "edit": "Editar Especificación",
+    "delete": "Eliminar Especificación",
+    "empty_message": "No se encontraron Especificaciones",
+    "delete_confirmation": "¿Está seguro de que desea eliminar esta Especificación?"
   },
   "role_modal": {
     "code": "Código",

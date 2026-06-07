@@ -65,11 +65,11 @@ const fieldKeys = formFields.map((f) => f.key);
   <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
     <!-- Breadcrumb Start -->
     <Breadcrumb
-      moduleName="Administration"
+      moduleName="Asset Taxonomy"
       pageName="Categories"
       pageTitle="Categories"
       homeLink="/"
-      moduleNameKey="modules.CATALOG"
+      moduleNameKey="modules.TAXO"
       pageNameKey="menu_options.categories"
       pageTitleKey="menu_options.categories"
     />
@@ -196,6 +196,8 @@ const fieldKeys = formFields.map((f) => f.key);
           data={data}
           tableId="categories"
           i18Item="category"
+          detailPage="/taxo/specifications"
+          mdItem="specification"
         />
         <!-- ====== Table End -->
       </div>

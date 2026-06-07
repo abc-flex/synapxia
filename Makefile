@@ -51,7 +51,6 @@ help:
 
 # Start all containers in the background, wait ~30s for the DB to initialize,
 # print the service URLs and run a health check.
-# NOTE: relies on ./setup-database.sh (via `make health`), which is not in the repo yet.
 up:
 	@echo "$(GREEN)Starting containers...$(NC)"
 	docker-compose -f $(COMPOSE_FILE) up -d
@@ -114,12 +113,21 @@ logs-ui:
 logs-pgadmin:
 	docker-compose -f $(COMPOSE_FILE) logs -f pgadmin
 
-# Run the health-check script.
-# WARNING: ./setup-database.sh does not exist in the repo yet, so this will fail
-# until the script is added (also affects `up`, `rebuild` and `quickstart`).
+# Inline health checks: API /health endpoint, DB pg_isready, admin user existence.
+# Replaces the legacy ./setup-database.sh shell script (no longer required).
 health:
 	@echo "$(GREEN)Running health checks...$(NC)"
-	@bash ./setup-database.sh
+	@echo ""
+	@echo "$(BLUE)API Health Check:$(NC)"
+	@curl -s http://localhost:8000/api/health || echo "$(RED)✗ API not responding$(NC)"
+	@echo ""
+	@echo "$(BLUE)Database Connection:$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) exec -T db pg_isready -U synapxia && echo "$(GREEN)✓ Database healthy$(NC)" || echo "$(RED)✗ Database unavailable$(NC)"
+	@echo ""
+	@echo "$(BLUE)Admin User Check:$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) exec -T db psql -U synapxia -d synapxia -c "SELECT username, email FROM users WHERE is_superuser = true LIMIT 1;" 2>/dev/null || echo "$(RED)✗ Admin user not found$(NC)"
+	@echo ""
+	@echo "$(GREEN)✓ Health checks complete$(NC)"
 
 ## Development Commands
 
@@ -155,19 +163,8 @@ dev: up
 
 ## Test Commands
 
-# Quick smoke tests: API health endpoint, DB readiness, and superuser existence.
-test:
-	@echo "$(GREEN)Running application tests...$(NC)"
-	@echo ""
-	@echo "$(BLUE)API Health Check:$(NC)"
-	@curl -s http://localhost:8000/api/health || echo "API not responding"
-	@echo ""
-	@echo "$(BLUE)Database Connection:$(NC)"
-	@docker-compose -f $(COMPOSE_FILE) exec db pg_isready -U synapxia && echo "$(GREEN)✓ Database healthy$(NC)" || echo "$(RED)✗ Database unavailable$(NC)"
-	@echo ""
-	@echo "$(BLUE)Admin User Check:$(NC)"
-	@docker-compose -f $(COMPOSE_FILE) exec db psql -U synapxia -d synapxia -c "SELECT username, email FROM users WHERE is_superuser = true LIMIT 1;" || echo "Users table not found"
-	@echo ""
+# Quick smoke tests: delegates to `make health` (same checks).
+test: health
 	@echo "$(GREEN)✓ Tests complete$(NC)"
 
 ## Cleanup Commands
@@ -309,7 +306,6 @@ hooks:
 ## Quick Start
 
 # Full fresh start: wipe everything (clean), start (up), then show access info (dev).
-# NOTE: chains through `up`, so it also depends on the missing ./setup-database.sh.
 quickstart: clean up dev
 	@echo ""
 	@echo "$(GREEN)✓ Synapxia is ready to use!$(NC)"

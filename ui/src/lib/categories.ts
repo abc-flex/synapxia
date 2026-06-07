@@ -6,6 +6,12 @@
 import { apiGet, apiPost, apiPut, apiDelete, buildQueryString } from './api';
 import type { Category, CategoryCreate, CategoryUpdate } from '../types/api';
 
+// Interface for select options with value and label
+export interface CategorySelectOption {
+  value: string;
+  label: string;
+}
+
 /**
  * Fetch all categories with optional pagination
  * @param skip - Number of records to skip (default: 0)
@@ -15,6 +21,15 @@ import type { Category, CategoryCreate, CategoryUpdate } from '../types/api';
 export async function getCategories(skip: number = 0, limit: number = 100): Promise<Category[]> {
   const queryString = buildQueryString({ skip, limit });
   return apiGet<Category[]>(`/api/categories${queryString}`);
+}
+
+/**
+ * Fetch all categories optimized for select fields
+ * Returns only code and name of active categories
+ * @returns Promise with array of CategorySelectOption objects
+ */
+export async function getCategoriesSelect(): Promise<CategorySelectOption[]> {
+  return apiGet<CategorySelectOption[]>(`/api/categories/select`);
 }
 
 /**

@@ -6,6 +6,12 @@
 import { apiGet, apiPost, apiPut, apiDelete, buildQueryString } from './api';
 import type { Feature, FeatureCreate, FeatureUpdate } from '../types/api';
 
+// Interface for select options with value and label
+export interface FeatureSelectOption {
+  value: string;
+  label: string;
+}
+
 /**
  * Fetch all features with optional pagination
  * @param skip - Number of records to skip (default: 0)
@@ -18,6 +24,15 @@ export async function getFeatures(skip: number = 0, limit: number = 100): Promis
 }
 
 /**
+ * Fetch all features optimized for select fields
+ * Returns only code and name of active features
+ * @returns Promise with array of FeatureSelectOption objects
+ */
+export async function getFeaturesSelect(): Promise<FeatureSelectOption[]> {
+  return apiGet<FeatureSelectOption[]>(`/api/features/select`);
+}
+
+/**
  * Fetch a single feature by its code
  * @param code - Unique feature code
  * @returns Promise with feature data
@@ -27,9 +42,9 @@ export async function getFeature(code: string): Promise<Feature> {
 }
 
 /**
- * Create a new business unit
- * @param data - Business unit data to create
- * @returns Promise with created business unit
+ * Create a new feature
+ * @param data - Feature data to create
+ * @returns Promise with created feature
  */
 export async function createFeature(data: FeatureCreate): Promise<Feature> {
   return apiPost<Feature, FeatureCreate>('/api/features/', data);
@@ -37,8 +52,8 @@ export async function createFeature(data: FeatureCreate): Promise<Feature> {
 
 /**
  * Update an existing business unit
- * @param code - Business unit code to update
- * @param data - Business unit data to update
+ * @param code - Feature code to update
+ * @param data - Feature data to update
  * @returns Promise with updated business unit
  */
 export async function updateFeature(code: string, data: FeatureUpdate): Promise<Feature> {
@@ -47,7 +62,7 @@ export async function updateFeature(code: string, data: FeatureUpdate): Promise<
 
 /**
  * Delete a business unit by its code
- * @param code - Business unit code to delete
+ * @param code - Feature code to delete
  * @returns Promise with void
  */
 export async function deleteFeature(code: string): Promise<void> {

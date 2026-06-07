@@ -6,6 +6,7 @@ import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
 import { getFeatures } from "@/lib/features";
 import { getListItemsbyList } from "@/lib/list_items";
+import { getListsbyType } from "@/lib/lists";
 
 // Fetch features from API
 let features: any[] = [];
@@ -22,7 +23,11 @@ try {
 
 // Fetch items_list from API for select field
 let types: any[] = [];
-types = await getListItemsbyList('CHARS_TYPE');
+types = await getListItemsbyList('FEAT_TYPE');
+
+// Fetch lists from API
+let lists: any[] = [];
+lists = await getListsbyType('FEATURE');
 
 const columns = [
   { key: "code", label: "feature_modal.code" },
@@ -38,6 +43,8 @@ const data = features.map((item) => ({
   description: item.description,
   type: item.type,
   type_name: types.find((t) => t.value === item.type)?.label || item.type,
+  list: item.list,
+  list_name: lists.find((l) => l.code === item.list)?.label || item.list,
   is_active: item.is_active,
   created_at: item.created_at,
   updated_at: item.updated_at,
@@ -46,6 +53,7 @@ const formFields = [
   { key: "code", label: "feature_modal.code", pk: true, required: true },
   { key: "name", label: "feature_modal.name", required: true },
   { key: "type", label: "feature_modal.type", type: "select" as const, options: types, required: false },
+  { key: "list", label: "feature_modal.list", type: "select" as const, options: lists, required: false },
   {
     key: "description",
     label: "feature_modal.description",
@@ -62,11 +70,11 @@ const fieldKeys = formFields.map((f) => f.key);
   <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
     <!-- Breadcrumb Start -->
     <Breadcrumb
-      moduleName="Digital Assets"
+      moduleName="Asset Taxonomy"
       pageName="Features"
       pageTitle="Features"
       homeLink="/"
-      moduleNameKey="modules.CATALOG"
+      moduleNameKey="modules.TAXO"
       pageNameKey="menu_options.features"
       pageTitleKey="menu_options.features"
     />
@@ -153,6 +161,7 @@ const fieldKeys = formFields.map((f) => f.key);
               name: data.name,
               description: data.description,
               type: data.type,
+              list: data.list,
               parent: data.parent,
               is_active: data.is_active !== false,
             });
@@ -165,6 +174,7 @@ const fieldKeys = formFields.map((f) => f.key);
               name: data.name,
               description: data.description,
               type: data.type,
+              list: data.list,
               parent: data.parent,
               is_active: data.is_active !== false,
             });

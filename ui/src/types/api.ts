@@ -380,6 +380,28 @@ export interface FeatureUpdate {
   is_active?: boolean;
 }
 
+// Specification types
+export interface Specification {
+  category: string;
+  feature: string;
+  default_value: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface SpecificationCreate {
+  category: string;
+  feature: string;
+  default_value: string;
+  is_active?: boolean;
+}
+
+export interface SpecificationUpdate {
+  default_value?: string;
+  is_active?: boolean;
+}
+
 // Generic API Error
 export interface ApiError {
   detail: string;

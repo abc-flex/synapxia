@@ -152,14 +152,28 @@ app = FastAPI(
 )
 
 # Configure CORS
-cors_origins = os.getenv("CORS_ORIGINS", "*").split(",")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=cors_origins if "*" not in cors_origins else ["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# allow_origins=["*"] + allow_credentials=True is invalid per the CORS spec —
+# browsers reject it. When no specific origins are configured we fall back to
+# wildcard WITHOUT credentials (safe for public endpoints). When explicit
+# origins are provided we enable credentials so the JWT Bearer header works.
+_raw_origins = os.getenv("CORS_ORIGINS", "").strip()
+if _raw_origins and _raw_origins != "*":
+    cors_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 # Include routers
 # Authentication module (must be first)

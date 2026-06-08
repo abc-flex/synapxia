@@ -1,0 +1,49 @@
+name: Deploy
+
+on:
+  push:
+    branches: [develop, production]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Determine which Neon database to use
+      - name: Set Neon URL
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/develop" ]; then
+            echo "NEON_URL=${{ secrets.NEON_URL_DEVELOP }}" >> $GITHUB_ENV
+          else
+            echo "NEON_URL=${{ secrets.NEON_URL_PRODUCTION }}" >> $GITHUB_ENV
+          fi
+
+      # Run migrations
+      - name: Migrate database
+        run: |
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+
+          # Create tracking table
+          psql "${{ env.NEON_URL }}" <<SQL
+          CREATE TABLE IF NOT EXISTS _migrations (filename TEXT PRIMARY KEY);
+          SQL
+
+          # Apply all migrations
+          for f in db/sql/ddl/*.sql db/sql/inserts/*.sql; do
+            [ -f "$f" ] || continue
+            name=$(basename "$f")
+            if ! psql "${{ env.NEON_URL }}" -c "SELECT 1 FROM _migrations WHERE filename='$name';" | grep -q 1 2>/dev/null; then
+              psql "${{ env.NEON_URL }}" -f "$f" || exit 1
+              psql "${{ env.NEON_URL }}" -c "INSERT INTO _migrations VALUES ('$name');"
+              echo "✓ $name"
+            fi
+          done
+
+      # Verify schema
+      - name: Verify schema
+        run: |
+          psql "${{ env.NEON_URL }}" -c "SELECT 1 FROM users;" || exit 1
+
+      # Deploy to Vercel (automatic via Vercel's GitHub integration)
+      # No manual deployment needed - Vercel watches these branches

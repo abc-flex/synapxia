@@ -15,6 +15,7 @@ from ...internal.dependencies import (
     engine,
     DATABASE_URL,
     DB_CONFIG,
+    IS_MANAGED_POSTGRES,
 )
 
 __all__ = [
@@ -23,4 +24,5 @@ __all__ = [
     "engine",
     "DATABASE_URL",
     "DB_CONFIG",
+    "IS_MANAGED_POSTGRES",
 ]

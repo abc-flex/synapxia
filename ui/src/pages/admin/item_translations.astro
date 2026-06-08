@@ -107,9 +107,9 @@ const fieldKeys = formFields.map((f) => f.key);
     <script type="module">
       import { initCrudPage } from "/scripts/crudClient.js";
       import {
-        createListItem,
-        updateListItem,
-        deleteListItem,
+        createItemTranslation,
+        updateItemTranslation,
+        deleteItemTranslation,
       } from "/src/lib/item_translations";
 
       initCrudPage({
@@ -149,29 +149,29 @@ const fieldKeys = formFields.map((f) => f.key);
           // Parse composite ID: "list:::value"
           const [list, value] = data.id.split("::");
           if (mode === "create") {
-            // Create new list item
-            await createListItem({
+            // Create new item translation
+            await createItemTranslation({
               list: data.list,
               value: data.value,
               label: data.label,
               sort_order: data.sort_order,
               is_active: data.is_active !== false,
             });
-            showToast("List Item created successfully!");
+            showToast("Item Translation created successfully!");
             setTimeout(() => window.location.reload(), 1000);
           } else if (mode === "edit") {
-            // Update existing list item
-            await updateListItem(list, value, {
+            // Update existing item translation
+            await updateItemTranslation(list, value, {
               label: data.label,
               sort_order: data.sort_order,
               is_active: data.is_active !== false,
             });
-            showToast("List Item updated successfully!");
+            showToast("Item Translation updated successfully!");
             setTimeout(() => window.location.reload(), 1000);
           } else if (mode === "delete") {
-            // Delete list item
-            await deleteListItem(list, value);
-            showToast("List Item deleted successfully!");
+            // Delete item translation
+            await deleteItemTranslation(list, value);
+            showToast("Item Translation deleted successfully!");
             setTimeout(() => window.location.reload(), 1000);
           }
         } catch (error) {

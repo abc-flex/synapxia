@@ -67,7 +67,7 @@ services:
     networks:
       - synapxia-network
     environment:
-      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_SCHEMA}
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_SCHEMA}
       - APP_ENV=development
       - LOG_LEVEL=debug
       - DB_HOST=${DB_HOST}
@@ -76,6 +76,7 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_PORT=${DB_PORT}
       - UV_APP=app.main:app
+      - CORS_ORIGINS=http://localhost:4321,http://localhost:8000,http://localhost:3000
     command: uv run fastapi dev --host 0.0.0.0 --port 80
 
   ui:

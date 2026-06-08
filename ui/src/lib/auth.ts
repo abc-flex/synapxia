@@ -103,8 +103,9 @@ export function isAuthenticated(): boolean {
  * Returns user data and stores token
  */
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
-  // Use FormData for OAuth2PasswordRequestForm compatibility
-  const formData = new FormData();
+  // OAuth2PasswordRequestForm requires application/x-www-form-urlencoded, NOT multipart/form-data.
+  // Using URLSearchParams automatically sets the correct Content-Type header.
+  const formData = new URLSearchParams();
   formData.append('username', credentials.username);
   formData.append('password', credentials.password);
 
@@ -122,7 +123,12 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
 
       try {
         const errorJson = JSON.parse(errorText);
-        errorDetail = errorJson.detail || errorText;
+        // FastAPI validation errors return detail as an array of {loc, msg, type} objects.
+        if (Array.isArray(errorJson.detail)) {
+          errorDetail = errorJson.detail.map((e: { msg?: string }) => e.msg ?? 'Validation error').join('. ');
+        } else {
+          errorDetail = errorJson.detail || errorText;
+        }
       } catch {
         errorDetail = errorText || res.statusText;
       }
@@ -194,15 +200,18 @@ export async function changePassword(request: ChangePasswordRequest): Promise<{ 
 
   const url = `${getApiUrl()}/api/auth/change-password`;
 
+  const formData = new URLSearchParams();
+  formData.append('old_password', request.old_password);
+  formData.append('new_password', request.new_password);
+
   try {
     const res = await fetch(url, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(request),
+      body: formData,
     });
 
     if (!res.ok) {

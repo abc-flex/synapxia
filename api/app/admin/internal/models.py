@@ -1,5 +1,6 @@
 from sqlmodel import Field, SQLModel, Relationship, Column, String, ForeignKey
-from typing import Optional, List
+from sqlalchemy.orm import synonym
+from typing import Optional, List, ClassVar
 from datetime import datetime
 
 
@@ -241,6 +242,7 @@ class UserBase(SQLModel):
     unit: str = Field(max_length=50, foreign_key="business_units.code")
     is_active: bool = Field(default=True)
     is_superuser: bool = Field(default=False)
+    is_verified: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
     last_login_at: Optional[datetime] = None
@@ -249,6 +251,7 @@ class UserBase(SQLModel):
 class User(UserBase, table=True):
     __tablename__ = "users"
     id: Optional[int] = Field(default=None, primary_key=True)
+    hashed_password: ClassVar = synonym("password_hash")
 
 
 class UserCreate(SQLModel):

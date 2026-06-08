@@ -11,9 +11,12 @@ dependencies.py files.
 import os
 import logging
 from contextlib import contextmanager
+from typing import AsyncGenerator
 
 import psycopg2
 from sqlmodel import create_engine, Session
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
 from fastapi import HTTPException
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -58,6 +61,31 @@ except Exception as e:
     logger.error(f"❌ Failed to create engine: {e}")
     raise
 
+# ==================== Async Engine (Phase 2: fastapi-users) ====================
+# fastapi-users requires async sessions. Create a parallel async engine pointing
+# to the same database as the sync engine. Both engines share the same tables.
+
+async_database_url = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
+
+try:
+    async_engine = create_async_engine(
+        async_database_url,
+        echo=echo_sql,
+        pool_pre_ping=True,
+    )
+    logger.info("✅ Async SQLAlchemy engine created for fastapi-users")
+except Exception as e:
+    logger.error(f"❌ Failed to create async engine: {e}")
+    raise
+
+# Create async session factory
+async_session_maker = sessionmaker(
+    async_engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+    autoflush=False,
+)
+
 
 # ==================== Database Connection Functions ====================
 
@@ -93,7 +121,7 @@ def get_db_connection():
 
 def get_db_session():
     """
-    FastAPI dependency for obtaining SQLModel session.
+    FastAPI dependency for obtaining SQLModel session (synchronous).
 
     Automatically handles:
     - Commit on success
@@ -152,10 +180,57 @@ def get_db_session():
         session.close()
 
 
+async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
+    """
+    FastAPI async dependency for obtaining AsyncSession (Phase 2: fastapi-users).
+
+    Used by fastapi-users and other async routes. Both get_db_session (sync)
+    and get_async_session (async) point to the same database, allowing
+    gradual async migration.
+
+    Automatically handles:
+    - Commit on success
+    - Rollback on error
+    - Session closure
+
+    Usage in async routes:
+        @app.get("/async-endpoint")
+        async def my_async_endpoint(session: AsyncSession = Depends(get_async_session)):
+            # Your code here
+            pass
+
+    Yields:
+        AsyncSession object
+
+    Raises:
+        HTTPException: 500 error if database error occurs
+    """
+    async with async_session_maker() as session:
+        try:
+            yield session
+            await session.commit()
+        except SQLAlchemyError as e:
+            await session.rollback()
+            error_msg = str(e)
+            logger.error(f"❌ Async database error: {error_msg}")
+            raise HTTPException(
+                status_code=500,
+                detail="Database error occurred"
+            )
+        except Exception as e:
+            await session.rollback()
+            logger.error(f"❌ Unexpected async error: {e}")
+            raise
+        finally:
+            await session.close()
+
+
 __all__ = [
     "get_db_session",
+    "get_async_session",
     "get_db_connection",
     "engine",
+    "async_engine",
     "DATABASE_URL",
     "DB_CONFIG",
 ]

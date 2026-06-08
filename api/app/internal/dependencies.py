@@ -12,6 +12,7 @@ import os
 import logging
 from contextlib import contextmanager
 from typing import AsyncGenerator
+from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 
 import psycopg2
 from sqlmodel import create_engine, Session
@@ -38,6 +39,12 @@ DATABASE_URL = os.getenv("POSTGRES_URL") or (
     f"postgresql://{DB_CONFIG['user']}:{DB_CONFIG['password']}"
     f"@{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}"
 )
+
+# Managed providers (Neon/Vercel) often hand out a `postgres://` URL, but SQLAlchemy 2.x
+# only accepts the `postgresql://` scheme. Normalize the leading scheme so both the sync
+# (psycopg2) and async (asyncpg) engines can parse it.
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = "postgresql://" + DATABASE_URL[len("postgres://"):]
 
 if not os.getenv("POSTGRES_URL"):
     _missing_vars = [k for k, v in DB_CONFIG.items() if not v and k != "password"]
@@ -80,21 +87,42 @@ except Exception as e:
 # fastapi-users requires async sessions. Create a parallel async engine pointing
 # to the same database as the sync engine. Both engines share the same tables.
 
-async_database_url = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
+# Build the async URL from the (normalized) sync URL. asyncpg does not understand the
+# libpq-only query params Neon/Vercel append (`sslmode`, `channel_binding`), so strip them;
+# TLS is enabled via connect_args below for managed Postgres.
+_sync_parts = urlsplit(DATABASE_URL)
+_async_query = urlencode([
+    (k, v)
+    for k, v in parse_qsl(_sync_parts.query, keep_blank_values=True)
+    if k not in ("sslmode", "channel_binding")
+])
+async_database_url = urlunsplit((
+    "postgresql+asyncpg",
+    _sync_parts.netloc,
+    _sync_parts.path,
+    _async_query,
+    _sync_parts.fragment,
+))
+
+# asyncpg connect args. Note: `statement_cache_size` is a valid asyncpg kwarg, but
+# `prepared_statement_cache_size` is NOT — passing it raises TypeError on connect.
+_async_connect_args = {
+    "statement_cache_size": 0,  # CRITICAL: disable for transaction-mode poolers (Neon, Supabase)
+    "server_settings": {
+        "application_name": "synapxia-api",
+        "jit": "off",  # Serverless: disable JIT for consistency
+    },
+}
+if IS_MANAGED_POSTGRES:
+    # Neon/managed Postgres require TLS; asyncpg negotiates it from this flag.
+    _async_connect_args["ssl"] = True
 
 try:
     async_engine = create_async_engine(
         async_database_url,
         echo=echo_sql,
         **POOL_CONFIG,
-        connect_args={
-            "statement_cache_size": 0,  # CRITICAL: disable for transaction-mode poolers (Neon, Supabase)
-            "prepared_statement_cache_size": 0,  # Redundant safety
-            "server_settings": {
-                "application_name": "synapxia-api",
-                "jit": "off",  # Serverless: disable JIT for consistency
-            }
-        }
+        connect_args=_async_connect_args,
     )
     logger.info("✅ Async SQLAlchemy engine created for fastapi-users")
 except Exception as e:

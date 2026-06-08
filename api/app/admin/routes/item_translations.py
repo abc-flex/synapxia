@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 from sqlalchemy.exc import IntegrityError
 
-from ..internal.models import ItemTranslation, ItemTranslationCreate, ItemTranslationUpdate, ListItem
+from ..internal.models import ItemTranslation, ItemTranslationCreate, ItemTranslationUpdate, ListItem, User
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
 from ...internal.permissions import check_privilege

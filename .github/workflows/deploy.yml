@@ -2,7 +2,7 @@ name: Deploy
 
 on:
   push:
-    branches: [develop, prod]
+    branches: [develop, production]
 
 jobs:
   deploy:
@@ -16,7 +16,7 @@ jobs:
           if [ "${{ github.ref }}" = "refs/heads/develop" ]; then
             echo "NEON_URL=${{ secrets.NEON_URL_DEVELOP }}" >> $GITHUB_ENV
           else
-            echo "NEON_URL=${{ secrets.NEON_URL_PROD }}" >> $GITHUB_ENV
+            echo "NEON_URL=${{ secrets.NEON_URL_PRODUCTION }}" >> $GITHUB_ENV
           fi
 
       # Run migrations

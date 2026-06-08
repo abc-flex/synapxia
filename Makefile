@@ -1,4 +1,4 @@
-.PHONY: help up down ps logs shell dev clean rebuild restart reset reset-db health test hooks lint lint-ui fmt fmt-check pytest purge nuke
+.PHONY: help up down ps logs shell dev clean rebuild restart reset reset-db health test hooks lint lint-ui fmt fmt-check pytest purge nuke migrate-create migrate-upgrade migrate-downgrade
 
 # Default target
 .DEFAULT_GOAL := help
@@ -294,7 +294,6 @@ pytest:
 	@docker-compose -f $(COMPOSE_FILE) exec api pytest tests/ -v
 	@echo "$(GREEN)✓ Tests passed$(NC)"
 
-<<<<<<< HEAD
 # Create a new Alembic migration (Phase 2).
 migrate-create:
 	@if [ -z "$(MSG)" ]; then \

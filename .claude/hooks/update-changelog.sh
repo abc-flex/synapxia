@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Called by Claude Code PostToolUse hook after a git push to a principal branch.
 # Reads new commits since the previous merge/principal-branch tip and prepends
-# a changelog entry to memory/changelog.md.
+# a changelog entry to memory/CHANGELOG.md.
 #
 # Usage (from hook): called automatically; can also be run manually:
 #   bash .claude/hooks/update-changelog.sh <branch> [<from_ref>] [<to_ref>]
@@ -9,8 +9,8 @@
 set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
-CHANGELOG="$REPO_ROOT/memory/changelog.md"
-MEMORY="$REPO_ROOT/memory/memory.md"
+CHANGELOG="$REPO_ROOT/memory/CHANGELOG.md"
+MEMORY="$REPO_ROOT/memory/MEMORY.md"
 
 BRANCH="${1:-$(git -C "$REPO_ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null)}"
 FROM_REF="${2:-}"

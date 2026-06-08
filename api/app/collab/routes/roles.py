@@ -77,6 +77,7 @@ def create(
     - **code**: Unique role code (required)
     - **name**: Role name (required)
     - **description**: Optional role description
+    - **icon**: Optional icon name
     - **is_active**: Active/inactive status (default: True)
     """
     # Validate that the code does not exist

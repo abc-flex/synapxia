@@ -8,17 +8,21 @@ import os
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Form, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from fastapi_users import BaseUserManager, IntegerIDMixin, FastAPIUsers
 from fastapi_users.authentication import AuthenticationBackend, BearerTransport, JWTStrategy
 from fastapi_users.db import SQLAlchemyUserDatabase
+from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 from ..admin.internal.models import User, Profile, BusinessUnit
 from ..internal.dependencies import get_async_session
 from .schemas import UserRead, UserCreate, UserUpdate
+
+# Bcrypt context — matches the hashes already stored in the DB ($2b$12$…)
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 logger = logging.getLogger(__name__)
 
@@ -103,8 +107,8 @@ router.include_router(fastapi_users_routers, prefix="/fastapi")
 
 @router.post("/login", response_model=dict)
 async def login(
-    username: str,
-    password: str,
+    username: str = Form(...),
+    password: str = Form(...),
     session: AsyncSession = Depends(get_async_session),
 ):
     """
@@ -127,12 +131,8 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Verify password (fastapi-users uses bcrypt internally via PasswordHelper)
-    from fastapi_users.password import PasswordHelper
-    password_helper = PasswordHelper()
-    try:
-        password_helper.verify(password, user.password_hash)
-    except ValueError:
+    # Verify password against the bcrypt hash stored in the DB
+    if not pwd_context.verify(password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
@@ -223,10 +223,8 @@ async def register(
             detail=f"Business unit '{user_data.unit}' does not exist"
         )
 
-    # Hash password using fastapi-users' PasswordHelper
-    from fastapi_users.password import PasswordHelper
-    password_helper = PasswordHelper()
-    hashed_password = password_helper.hash(user_data.password)
+    # Hash password with bcrypt (consistent with existing hashes in the DB)
+    hashed_password = pwd_context.hash(user_data.password)
 
     # Create new user
     new_user = User(
@@ -259,25 +257,21 @@ async def get_me(current_user: User = Depends(current_active_user)):
 
 @router.post("/change-password")
 async def change_password(
-    old_password: str,
-    new_password: str,
+    old_password: str = Form(...),
+    new_password: str = Form(...),
     current_user: User = Depends(current_active_user),
     session: AsyncSession = Depends(get_async_session),
 ):
     """Change password for current user."""
-    # Verify old password
-    from fastapi_users.password import PasswordHelper
-    password_helper = PasswordHelper()
-    try:
-        password_helper.verify(old_password, current_user.password_hash)
-    except ValueError:
+    # Verify old password against bcrypt hash
+    if not pwd_context.verify(old_password, current_user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Incorrect current password"
         )
 
     # Hash and update new password
-    current_user.password_hash = password_helper.hash(new_password)
+    current_user.password_hash = pwd_context.hash(new_password)
 
     session.add(current_user)
     await session.commit()

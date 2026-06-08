@@ -9,249 +9,252 @@ import "../styles/globals.css";
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title data-i18n="login_page.sign_in">Login - Synapxia</title>
+    <title>Sign In — Synapxia</title>
   </head>
   <body
     class="bg-gradient-to-br from-indigo-600 to-purple-700 dark:from-gray-900 dark:to-gray-950 min-h-screen flex items-center justify-center p-4"
   >
     <ClientTranslations />
 
-    {/* Language Switcher - Top Right */}
+    <!-- Language Switcher -->
     <div class="fixed top-6 right-6 z-50">
       <LanguageSwitcher />
     </div>
+
+    <!-- Loading overlay -->
     <div
-      class="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden"
+      id="loading-spinner"
+      class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
     >
-      {/* Header */}
-      <div
-        class="bg-gradient-to-br from-indigo-600 to-purple-700 px-8 py-10 sm:px-10 sm:py-12 text-center text-white"
-      >
-        <div
-          class="w-16 h-16 mx-auto mb-5 bg-white/10 rounded-2xl flex items-center justify-center text-3xl font-bold"
-        >
+      <div class="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+    </div>
+
+    <div class="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden">
+
+      <!-- Card header -->
+      <div class="bg-gradient-to-br from-indigo-600 to-purple-700 px-8 py-10 sm:px-10 sm:py-12 text-center text-white">
+        <div class="w-16 h-16 mx-auto mb-5 bg-white/10 rounded-2xl flex items-center justify-center text-3xl font-bold select-none">
           IA
         </div>
-        <h1 class="text-2xl sm:text-3xl font-bold mb-2">Synapxia</h1>
-        <p class="text-sm text-white/80">Welcome back</p>
+        <h1 class="text-2xl sm:text-3xl font-bold mb-1">Synapxia</h1>
+        <p class="text-sm text-white/75" data-i18n="login_page.welcome_back">Welcome back</p>
       </div>
 
-      {/* Body */}
+      <!-- Card body -->
       <div class="px-6 sm:px-8 py-8 sm:py-10">
-        {/* Error Message */}
+
+        <!-- Error banner -->
         <div
           id="error-message"
-          class="hidden mb-4 p-3 bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-200 rounded-lg text-sm"
+          class="hidden mb-5 p-3 bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 rounded-lg text-sm flex items-start gap-2"
+          role="alert"
+          aria-live="polite"
         >
+          <svg class="w-4 h-4 mt-0.5 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+          </svg>
+          <span id="error-text"></span>
         </div>
 
-        {/* Loading State */}
-        <div
-          id="loading-spinner"
-          class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-        >
-          <div
-            class="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"
-          >
-          </div>
-        </div>
+        <form id="login-form" class="space-y-5" novalidate>
 
-        <form id="login-form" class="space-y-6">
-          {/* Username/Email Field */}
+          <!-- Username field -->
           <div>
             <label
               for="username"
-              class="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2"
-              >Username or Email</label
-            >
+              class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5"
+              data-i18n="login_page.username_label"
+            >Username or Email</label>
             <input
               id="username"
               type="text"
               name="username"
-              placeholder="Enter your username or email"
+              autocomplete="username"
+              placeholder="you@company.com"
               required
-              class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white dark:bg-gray-800 bg-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition"
+              class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white dark:bg-gray-800 bg-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition placeholder:text-gray-400"
             />
           </div>
 
-          {/* Password Field */}
+          <!-- Password field with show/hide toggle -->
           <div>
             <label
               for="password"
-              class="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2"
-              data-i18n="login_page.password"></label>
-            <input
-              id="password"
-              type="password"
-              name="password"
-              placeholder="Enter your password"
-              required
-              class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white dark:bg-gray-800 bg-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition"
-            />
+              class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5"
+              data-i18n="login_page.password"
+            >Password</label>
+            <div class="relative">
+              <input
+                id="password"
+                type="password"
+                name="password"
+                autocomplete="current-password"
+                placeholder="••••••••"
+                required
+                class="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white dark:bg-gray-800 bg-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition placeholder:text-gray-400"
+              />
+              <!-- Toggle button -->
+              <button
+                type="button"
+                id="toggle-password"
+                aria-label="Toggle password visibility"
+                class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition focus:outline-none"
+              >
+                <!-- Eye icon (password hidden) -->
+                <svg id="icon-eye" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+                <!-- Eye-off icon (password visible) -->
+                <svg id="icon-eye-off" class="w-5 h-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+                </svg>
+              </button>
+            </div>
           </div>
 
-          {/* Remember & Forgot */}
+          <!-- Remember me + Forgot password -->
           <div class="flex items-center justify-between text-sm">
-            <label class="flex items-center cursor-pointer">
+            <label class="flex items-center gap-2 cursor-pointer select-none">
               <input
                 type="checkbox"
+                id="remember"
                 name="remember"
-                class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
+                class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 dark:bg-gray-800"
               />
-              <span
-                class="ml-2 text-gray-700 dark:text-gray-300 font-medium"
-                data-i18n="login_page.remember_me"></span>
+              <span class="text-gray-600 dark:text-gray-400 font-medium" data-i18n="login_page.remember_me">Remember me</span>
             </label>
             <a
               href="#"
               class="text-indigo-600 dark:text-indigo-400 font-medium hover:underline"
-              data-i18n="login_page.forgot_password"></a>
+              data-i18n="login_page.forgot_password"
+            >Forgot password?</a>
           </div>
 
-          {/* Sign In Button */}
+          <!-- Submit button -->
           <button
+            id="submit-btn"
             type="submit"
-            class="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-lg transition active:scale-95 hover:shadow-lg transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
-            data-i18n="login_page.sign_in"></button>
+            class="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-lg transition active:scale-95 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none flex items-center justify-center gap-2"
+          >
+            <svg id="btn-spinner" class="hidden w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+            </svg>
+            <span id="btn-label" data-i18n="login_page.sign_in">Sign In</span>
+          </button>
         </form>
 
-        {/* Divider */}
+        <!-- Divider -->
         <div class="flex items-center gap-3 my-6">
-          <div class="flex-1 h-px bg-gray-300 dark:bg-gray-600"></div>
-          <span
-            class="text-sm text-gray-500 dark:text-gray-400 font-medium"
-            data-i18n="login_page.or"></span>
-          <div class="flex-1 h-px bg-gray-300 dark:bg-gray-600"></div>
+          <div class="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
+          <span class="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wide" data-i18n="login_page.or">or</span>
+          <div class="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
         </div>
 
-        {/* Social Login */}
+        <!-- Social buttons (disabled — not yet implemented) -->
         <div class="grid grid-cols-2 gap-3">
           <button
             type="button"
-            class="flex items-center justify-center gap-2 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition text-sm font-medium text-gray-700 dark:text-gray-300"
-            title="Sign in with Google"
             disabled
+            title="Sign in with Google (coming soon)"
+            class="flex items-center justify-center gap-2 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-500 dark:text-gray-500 cursor-not-allowed opacity-60 select-none"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                fill="#4285F4"></path>
-              <path
-                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                fill="#34A853"></path>
-              <path
-                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                fill="#FBBC05"></path>
-              <path
-                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                fill="#EA4335"></path>
-            </svg>
+            <img src="/images/google.png" alt="Google" width="18" height="18" class="object-contain" />
+            Google
           </button>
           <button
             type="button"
-            class="flex items-center justify-center gap-2 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition text-sm font-medium text-gray-700 dark:text-gray-300"
-            title="Sign in with Microsoft"
             disabled
+            title="Sign in with Microsoft (coming soon)"
+            class="flex items-center justify-center gap-2 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-500 dark:text-gray-500 cursor-not-allowed opacity-60 select-none"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <rect x="1" y="1" width="9" height="9" fill="#F25022"></rect>
-              <rect x="14" y="1" width="9" height="9" fill="#7FBA00"></rect>
-              <rect x="1" y="14" width="9" height="9" fill="#00A4EF"></rect>
-              <rect x="14" y="14" width="9" height="9" fill="#FFB900"></rect>
-            </svg>
+            <img src="/images/microsoft.png" alt="Microsoft" width="18" height="18" class="object-contain" />
+            Microsoft
           </button>
         </div>
 
-        {/* Sign Up Link */}
-        <div class="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
-          <span data-i18n="login_page.no_account"></span>
+        <!-- Sign up link -->
+        <p class="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+          <span data-i18n="login_page.no_account">Don't have an account?</span>
           <a
             href="/signup"
             class="ml-1 text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
-            data-i18n="login_page.sign_up"></a>
-        </div>
+            data-i18n="login_page.sign_up"
+          >Sign up</a>
+        </p>
       </div>
     </div>
 
     <script>
       import { login } from "@/lib/auth";
 
-      const loginForm = document.getElementById(
-        "login-form",
-      ) as HTMLFormElement;
-      const errorMessage = document.getElementById("error-message");
-      const loadingSpinner = document.getElementById("loading-spinner");
-      const submitButton = loginForm?.querySelector(
-        'button[type="submit"]',
-      ) as HTMLButtonElement;
+      const loginForm    = document.getElementById("login-form") as HTMLFormElement;
+      const errorBanner  = document.getElementById("error-message") as HTMLDivElement;
+      const errorText    = document.getElementById("error-text") as HTMLSpanElement;
+      const loadingSpinner = document.getElementById("loading-spinner") as HTMLDivElement;
+      const submitBtn    = document.getElementById("submit-btn") as HTMLButtonElement;
+      const btnLabel     = document.getElementById("btn-label") as HTMLSpanElement;
+      const btnSpinner   = document.getElementById("btn-spinner") as SVGElement;
+      const passwordInput = document.getElementById("password") as HTMLInputElement;
+      const toggleBtn    = document.getElementById("toggle-password") as HTMLButtonElement;
+      const iconEye      = document.getElementById("icon-eye") as SVGElement;
+      const iconEyeOff   = document.getElementById("icon-eye-off") as SVGElement;
+
       let isSubmitting = false;
 
+      // ── Password visibility toggle ──────────────────────────────────────────
+      toggleBtn?.addEventListener("click", () => {
+        const isHidden = passwordInput.type === "password";
+        passwordInput.type = isHidden ? "text" : "password";
+        iconEye.classList.toggle("hidden", isHidden);
+        iconEyeOff.classList.toggle("hidden", !isHidden);
+        toggleBtn.setAttribute("aria-label", isHidden ? "Hide password" : "Show password");
+      });
+
+      // ── Form submit ─────────────────────────────────────────────────────────
       loginForm?.addEventListener("submit", async (e) => {
         e.preventDefault();
-
-        // Prevent double submissions
         if (isSubmitting) return;
-        isSubmitting = true;
 
-        const username = (
-          document.getElementById("username") as HTMLInputElement
-        )?.value;
-        const password = (
-          document.getElementById("password") as HTMLInputElement
-        )?.value;
+        const username = (document.getElementById("username") as HTMLInputElement).value.trim();
+        const password = passwordInput.value;
 
         if (!username || !password) {
-          showError("Username and password are required");
-          isSubmitting = false;
+          showError("Username and password are required.");
           return;
         }
 
+        setLoading(true);
+        hideError();
+
         try {
-          // Show loading spinner and disable button
-          if (loadingSpinner) {
-            loadingSpinner.classList.remove("hidden");
-          }
-          if (submitButton) {
-            submitButton.disabled = true;
-          }
-
-          // Clear previous errors
-          if (errorMessage) {
-            errorMessage.classList.add("hidden");
-            errorMessage.textContent = "";
-          }
-
-          // Call login API
-          const response = await login({ username, password });
-
-          // Login successful
-          console.log("Login successful:", response.user.username);
-
-          // Redirect to dashboard
+          await login({ username, password });
           window.location.href = "/dashboard";
         } catch (error) {
-          isSubmitting = false;
-
-          if (loadingSpinner) {
-            loadingSpinner.classList.add("hidden");
-          }
-          if (submitButton) {
-            submitButton.disabled = false;
-          }
-
-          if (error instanceof Error) {
-            showError(error.message);
-          } else {
-            showError("Login failed: unknown error");
-          }
+          setLoading(false);
+          showError(error instanceof Error ? error.message : "Login failed. Please try again.");
         }
       });
 
-      function showError(message: string) {
-        if (errorMessage) {
-          errorMessage.textContent = message;
-          errorMessage.classList.remove("hidden");
-        }
+      // ── Helpers ─────────────────────────────────────────────────────────────
+      function setLoading(loading: boolean) {
+        isSubmitting = loading;
+        submitBtn.disabled = loading;
+        loadingSpinner.classList.toggle("hidden", !loading);
+        btnSpinner.classList.toggle("hidden", !loading);
+        btnLabel.textContent = loading ? "Signing in…" : (btnLabel.getAttribute("data-i18n-resolved") ?? "Sign In");
+      }
+
+      function showError(msg: string) {
+        errorText.textContent = msg;
+        errorBanner.classList.remove("hidden");
+        errorBanner.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+
+      function hideError() {
+        errorBanner.classList.add("hidden");
+        errorText.textContent = "";
       }
     </script>
   </body>

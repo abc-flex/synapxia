@@ -67,7 +67,7 @@ services:
     networks:
       - synapxia-network
     environment:
-      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_SCHEMA}
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_SCHEMA}
       - APP_ENV=development
       - LOG_LEVEL=debug
       - DB_HOST=${DB_HOST}

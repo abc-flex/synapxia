@@ -196,12 +196,40 @@ import "../styles/globals.css";
       const submitBtn    = document.getElementById("submit-btn") as HTMLButtonElement;
       const btnLabel     = document.getElementById("btn-label") as HTMLSpanElement;
       const btnSpinner   = document.getElementById("btn-spinner") as SVGElement;
+      const usernameInput = document.getElementById("username") as HTMLInputElement;
       const passwordInput = document.getElementById("password") as HTMLInputElement;
       const toggleBtn    = document.getElementById("toggle-password") as HTMLButtonElement;
       const iconEye      = document.getElementById("icon-eye") as SVGElement;
       const iconEyeOff   = document.getElementById("icon-eye-off") as SVGElement;
 
       let isSubmitting = false;
+      let failedAttempts = 0;
+      const MAX_ATTEMPTS = 5;
+      const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes in milliseconds
+
+      // ── Initialize rate limiting from localStorage ──────────────────────────
+      function checkRateLimit() {
+        const lockoutTime = localStorage.getItem("login_lockout_until");
+        if (!lockoutTime) return false;
+
+        const lockoutUntil = parseInt(lockoutTime, 10);
+        const now = Date.now();
+
+        if (now < lockoutUntil) {
+          const remainingMin = Math.ceil((lockoutUntil - now) / 60000);
+          showError(
+            `Too many login attempts. Please try again in ${remainingMin} minute${remainingMin !== 1 ? "s" : ""}.`
+          );
+          submitBtn.disabled = true;
+          return true;
+        } else {
+          // Lockout expired, reset
+          localStorage.removeItem("login_lockout_until");
+          failedAttempts = 0;
+          submitBtn.disabled = false;
+          return false;
+        }
+      }
 
       // ── Password visibility toggle ──────────────────────────────────────────
       toggleBtn?.addEventListener("click", () => {
@@ -212,16 +240,34 @@ import "../styles/globals.css";
         toggleBtn.setAttribute("aria-label", isHidden ? "Hide password" : "Show password");
       });
 
+      // ── Clear error on input ────────────────────────────────────────────────
+      usernameInput?.addEventListener("input", hideError);
+      passwordInput?.addEventListener("input", hideError);
+
       // ── Form submit ─────────────────────────────────────────────────────────
       loginForm?.addEventListener("submit", async (e) => {
         e.preventDefault();
-        if (isSubmitting) return;
+        if (isSubmitting || checkRateLimit()) return;
 
-        const username = (document.getElementById("username") as HTMLInputElement).value.trim();
+        const username = usernameInput.value.trim();
         const password = passwordInput.value;
 
-        if (!username || !password) {
-          showError("Username and password are required.");
+        // Client-side validation
+        if (!username) {
+          showError("Username or email is required.");
+          usernameInput.focus();
+          return;
+        }
+
+        if (!password) {
+          showError("Password is required.");
+          passwordInput.focus();
+          return;
+        }
+
+        if (password.length < 1) {
+          showError("Invalid password format.");
+          passwordInput.focus();
           return;
         }
 
@@ -230,10 +276,51 @@ import "../styles/globals.css";
 
         try {
           await login({ username, password });
+          // Clear form on successful login
+          loginForm.reset();
+          failedAttempts = 0;
+          localStorage.removeItem("login_failed_attempts");
+          // Redirect to dashboard
           window.location.href = "/dashboard";
         } catch (error) {
           setLoading(false);
-          showError(error instanceof Error ? error.message : "Login failed. Please try again.");
+          failedAttempts++;
+          localStorage.setItem("login_failed_attempts", String(failedAttempts));
+
+          // Parse error message
+          let errorMsg = "Login failed. Please try again.";
+          if (error instanceof Error) {
+            const msg = error.message.toLowerCase();
+
+            // Specific error handling
+            if (msg.includes("incorrect username") || msg.includes("incorrect password")) {
+              errorMsg = "Invalid username or password. Please try again.";
+              usernameInput.focus();
+            } else if (msg.includes("user") && msg.includes("disabled")) {
+              errorMsg = "This account has been deactivated. Please contact support.";
+            } else if (msg.includes("unauthorized")) {
+              errorMsg = "Invalid credentials. Please check your username and password.";
+              usernameInput.focus();
+            } else if (msg.includes("network") || msg.includes("connection")) {
+              errorMsg = "Network error. Please check your connection and try again.";
+            } else {
+              errorMsg = error.message;
+            }
+          }
+
+          // Rate limiting: lock after MAX_ATTEMPTS
+          if (failedAttempts >= MAX_ATTEMPTS) {
+            const lockoutUntil = Date.now() + LOCKOUT_DURATION;
+            localStorage.setItem("login_lockout_until", String(lockoutUntil));
+            submitBtn.disabled = true;
+            errorMsg += ` You have been locked out for 15 minutes due to too many failed attempts.`;
+          } else if (failedAttempts > 2) {
+            // Warn user after 3 attempts
+            const remaining = MAX_ATTEMPTS - failedAttempts;
+            errorMsg += ` (${remaining} attempt${remaining !== 1 ? "s" : ""} remaining)`;
+          }
+
+          showError(errorMsg);
         }
       });
 
@@ -241,6 +328,9 @@ import "../styles/globals.css";
       function setLoading(loading: boolean) {
         isSubmitting = loading;
         submitBtn.disabled = loading;
+        usernameInput.disabled = loading;
+        passwordInput.disabled = loading;
+        toggleBtn.disabled = loading;
         loadingSpinner.classList.toggle("hidden", !loading);
         btnSpinner.classList.toggle("hidden", !loading);
         btnLabel.textContent = loading ? "Signing in…" : (btnLabel.getAttribute("data-i18n-resolved") ?? "Sign In");
@@ -250,12 +340,17 @@ import "../styles/globals.css";
         errorText.textContent = msg;
         errorBanner.classList.remove("hidden");
         errorBanner.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        // Announce error to screen readers
+        errorBanner.setAttribute("role", "alert");
       }
 
       function hideError() {
         errorBanner.classList.add("hidden");
         errorText.textContent = "";
       }
+
+      // ── Check rate limit on page load ───────────────────────────────────────
+      checkRateLimit();
     </script>
   </body>
 </html>

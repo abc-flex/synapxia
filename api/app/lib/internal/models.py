@@ -8,19 +8,15 @@ from datetime import datetime
 
 
 class AssetBase(SQLModel):
-    code: str = Field(max_length=50, primary_key=True)
     name: str = Field(max_length=100)
     description: Optional[str] = Field(default=None, max_length=500)
     category: Optional[str] = Field(
         default=None, foreign_key="categories.code")
-    reference: Optional[str] = Field(default=None, max_length=500)
-    type: str = Field(max_length=100)
+    reference: Optional[str] = Field(default=None)
     status: str = Field(max_length=100)
-    visibility: str = Field(max_length=100)
-    tags: Optional[Dict[str, Any]] = Field(
+    tags: Optional[Any] = Field(
         default=None, sa_column=Column("tags", JSON))
-    details: Optional[Dict[str, Any]] = Field(
-        default=None, sa_column=Column("details", JSON))
+    detail: Optional[str] = Field(default=None)
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
@@ -28,24 +24,22 @@ class AssetBase(SQLModel):
 
 class Asset(AssetBase, table=True):
     __tablename__ = "assets"
+    id: Optional[int] = Field(default=None, primary_key=True)
 
 
 class AssetCreate(SQLModel):
-    code: str = Field(max_length=50, description="Unique asset code")
     name: str = Field(max_length=100, description="Asset name")
     description: Optional[str] = Field(
         default=None, max_length=500, description="Asset description")
     category: Optional[str] = Field(
         default=None, max_length=50, description="Category code")
     reference: Optional[str] = Field(
-        default=None, max_length=500, description="Asset reference")
-    type: str = Field(max_length=100, description="Asset type")
+        default=None, description="Asset reference")
     status: str = Field(max_length=100, description="Asset status")
-    visibility: str = Field(max_length=100, description="Asset visibility")
-    tags: Optional[Dict[str, Any]] = Field(
+    tags: Optional[Any] = Field(
         default=None, description="Asset tags (JSON)")
-    details: Optional[Dict[str, Any]] = Field(
-        default=None, description="Asset details (JSON)")
+    detail: Optional[str] = Field(
+        default=None, description="Asset detail")
     is_active: Optional[bool] = Field(
         default=True, description="Indicates if the asset is active")
 
@@ -58,17 +52,13 @@ class AssetUpdate(SQLModel):
     category: Optional[str] = Field(
         default=None, max_length=50, description="Category code")
     reference: Optional[str] = Field(
-        default=None, max_length=500, description="Asset reference")
-    type: Optional[str] = Field(
-        default=None, max_length=100, description="Asset type")
+        default=None, description="Asset reference")
     status: Optional[str] = Field(
         default=None, max_length=100, description="Asset status")
-    visibility: Optional[str] = Field(
-        default=None, max_length=100, description="Asset visibility")
-    tags: Optional[Dict[str, Any]] = Field(
+    tags: Optional[Any] = Field(
         default=None, description="Asset tags (JSON)")
-    details: Optional[Dict[str, Any]] = Field(
-        default=None, description="Asset details (JSON)")
+    detail: Optional[str] = Field(
+        default=None, description="Asset detail")
     is_active: Optional[bool] = Field(
         default=None, description="Indicates if the asset is active")
 

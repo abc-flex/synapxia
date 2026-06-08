@@ -1,7 +1,6 @@
 import logging
 from typing import List
 from datetime import datetime
-import json
 
 from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
@@ -29,18 +28,47 @@ def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_s
     return assets
 
 
-@router.get("/{code}", response_model=Asset)
-def get(code: str, session: Session = Depends(get_db_session)) -> Asset:
+@router.get("/category/{category_code}", response_model=List[Asset])
+def get_by_category(
+    category_code: str,
+    skip: int = 0,
+    limit: int = 100,
+    session: Session = Depends(get_db_session)
+) -> List[Asset]:
     """
-    Get an asset by its code.
+    Obtener todos los assets de una categoría específica.
 
-    - **code**: Unique asset code
+    - **category_code**: Código de la categoría para filtrar
     """
-    asset = session.get(Asset, code)
+    # Validar primero si la categoría existe (opcional, pero recomendado por integridad)
+    category_exists = session.get(Category, category_code)
+    if not category_exists:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"Category with code '{category_code}' does not exist"
+        )
+    items = session.exec(
+        select(Asset)
+        .where(Asset.category == category_code)
+        .offset(skip)
+        .limit(limit)
+        .order_by(Asset.name)
+    ).all()
+    return items
+
+
+@router.get("/{asset_id}", response_model=Asset)
+def get(asset_id: int, session: Session = Depends(get_db_session)) -> Asset:
+    """
+    Get an asset by its id.
+
+    - **asset_id**: Unique asset id
+    """
+    asset = session.get(Asset, asset_id)
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
     elif not asset.is_active:
-        raise HTTPException(status_code=400, detail=f"Asset with code '{code}' is inactive")
+        raise HTTPException(status_code=400, detail=f"Asset with id '{asset_id}' is inactive")
     return asset
 
 
@@ -50,24 +78,14 @@ def create(asset: AssetCreate, session: Session = Depends(get_db_session)) -> As
     Create a new asset.
 
     - **name**: Asset name (required)
-    - **type**: Asset type (required)
     - **status**: Asset status (required)
-    - **visibility**: Asset visibility (required)
     - **description**: Optional description
     - **category**: Category code (optional)
     - **reference**: Asset reference (optional)
     - **tags**: Asset tags in JSON format (optional)
-    - **details**: Asset details in JSON format (optional)
+    - **detail**: Asset detail (optional)
     - **is_active**: Active/inactive status (default: True)
     """
-    # Validate that the code doesn't exist
-    existing = session.get(Asset, asset.code)
-    if existing:
-        raise HTTPException(
-            status_code=409,
-            detail=f"Asset with code '{asset.code}' already exists"
-        )
-
     # Validate that the category exists if provided
     if asset.category:
         category = session.get(Category, asset.category)
@@ -78,37 +96,30 @@ def create(asset: AssetCreate, session: Session = Depends(get_db_session)) -> As
             )
 
     try:
-        # Convert tags and details to JSON string if they are dict
-        data = asset.model_dump()
-        if data.get('tags') and isinstance(data['tags'], dict):
-            data['tags'] = json.dumps(data['tags'])
-        if data.get('details') and isinstance(data['details'], dict):
-            data['details'] = json.dumps(data['details'])
-
-        db = Asset.model_validate(data)
+        db = Asset.model_validate(asset)
         session.add(db)
         session.commit()
         session.refresh(db)
-        logger.info(f"Asset created: {asset.code}")
+        logger.info(f"Asset created: {db.id}")
         return db
     except IntegrityError as e:
         session.rollback()
-        logger.error(f"Integrity error creating asset {asset.code}: {e}")
+        logger.error(f"Integrity error creating asset {asset.name}: {e}")
         raise HTTPException(
             status_code=409,
-            detail=f"Asset with code '{asset.code}' already exists"
+            detail="Asset could not be created due to a constraint violation"
         )
 
 
-@router.put("/{code}", response_model=Asset)
-def update(code: str, update: AssetUpdate, session: Session = Depends(get_db_session)) -> Asset:
+@router.put("/{asset_id}", response_model=Asset)
+def update(asset_id: int, update: AssetUpdate, session: Session = Depends(get_db_session)) -> Asset:
     """
     Update an existing asset.
 
-    - **code**: Unique asset code to update
+    - **asset_id**: Unique asset id to update
     - Only provided fields are updated
     """
-    asset = session.get(Asset, code)
+    asset = session.get(Asset, asset_id)
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
 
@@ -122,12 +133,6 @@ def update(code: str, update: AssetUpdate, session: Session = Depends(get_db_ses
             )
 
     update_data = update.model_dump(exclude_unset=True)
-    # Convert tags and details to JSON string if they are dict
-    if 'tags' in update_data and isinstance(update_data['tags'], dict):
-        update_data['tags'] = json.dumps(update_data['tags'])
-    if 'details' in update_data and isinstance(update_data['details'], dict):
-        update_data['details'] = json.dumps(update_data['details'])
-
     for key, value in update_data.items():
         setattr(asset, key, value)
 
@@ -137,20 +142,20 @@ def update(code: str, update: AssetUpdate, session: Session = Depends(get_db_ses
     session.add(asset)
     session.commit()
     session.refresh(asset)
-    logger.info(f"Asset updated: {code}")
+    logger.info(f"Asset updated: {asset_id}")
     return asset
 
 
-@router.delete("/{code}", response_model=Asset, status_code=200)
-def delete(code: str, session: Session = Depends(get_db_session)) -> Asset:
+@router.delete("/{asset_id}", response_model=Asset, status_code=200)
+def delete(asset_id: int, session: Session = Depends(get_db_session)) -> Asset:
     """
     Delete an asset (logical delete).
 
     Performs a logical delete by setting is_active=False instead of removing the record.
 
-    - **code**: Unique asset code to delete
+    - **asset_id**: Unique asset id to delete
     """
-    asset = session.get(Asset, code)
+    asset = session.get(Asset, asset_id)
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
 
@@ -158,7 +163,7 @@ def delete(code: str, session: Session = Depends(get_db_session)) -> Asset:
     if not asset.is_active:
         raise HTTPException(
             status_code=400,
-            detail=f"Asset with code '{code}' is already inactive"
+            detail=f"Asset with id '{asset_id}' is already inactive"
         )
 
     # Logical delete: update is_active to False
@@ -168,5 +173,5 @@ def delete(code: str, session: Session = Depends(get_db_session)) -> Asset:
     session.add(asset)
     session.commit()
     session.refresh(asset)
-    logger.info(f"Asset deactivated (logical delete): {code}")
+    logger.info(f"Asset deactivated (logical delete): {asset_id}")
     return asset

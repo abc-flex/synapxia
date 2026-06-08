@@ -207,10 +207,10 @@ INSERT INTO lists (code, name, description, type, module) VALUES (
     'List that classifies the types of lists in two categories: List of Values and Scale.',
     'LIST_OF_VALUES', 'ADMIN');
 INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
-    ('LIST_TYPE', 'en', 'LIST_OF_VALUES', 'List of Values', 10),
-    ('LIST_TYPE', 'en', 'SCALE',          'Scale',          20),
-    ('LIST_TYPE', 'en', 'FEATURE',        'Feature',        30),
-    ('LIST_TYPE', 'en', 'CRITERIA',       'Criteria',       40);
+    ('LIST_TYPE', 'en', 'LIST_OF_VALUES', 'List of Values', 10),  -- assign a value to any item from a group in any module (e.g., types, statuses, etc.)
+    ('LIST_TYPE', 'en', 'SCALE',          'Scale',          20),  -- assign a value from the list of dimensions.scale to metrics.value in collab module
+    ('LIST_TYPE', 'en', 'FEATURE',        'Feature',        30),  -- assign a value from the list of features.list to caracterizations.value in lib module
+    ('LIST_TYPE', 'en', 'CRITERIA',       'Criteria',       40);  -- assign a value from the list of criterias.list to diagnostics.*_score in inits module
 INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
     ('LIST_TYPE', 'es', 'LIST_OF_VALUES', 'Lista de Valores', 10),
     ('LIST_TYPE', 'es', 'SCALE',          'Escala',           20),

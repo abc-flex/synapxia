@@ -30,7 +30,7 @@ INSERT INTO features (code, name, type, description, list) VALUES
     'The programming language used in the digital asset.', 'LANGUAGE'),
     -- Features primarily for MCPS with list of features
     ('MODE', 'Mode of operation', 'GENERAL',
-    'The mode of operation for the digital asset, such as local or remote.', 'EXECUTION_MODE'),;
+    'The mode of operation for the digital asset, such as local or remote.', 'EXECUTION_MODE');
 
 INSERT INTO features (code, name, type, description) VALUES
     -- Features that are useful for any digital asset
@@ -54,8 +54,6 @@ INSERT INTO features (code, name, type, description) VALUES
     'Example output of the digital asset.'),
 
     -- Features primarily for MCPS
-    ('MODE', 'Mode of operation', 'GENERAL',
-    'The mode of operation for the digital asset, such as local or remote.'),
     ('OVERVIEW', 'Overview', 'GENERAL',
     'Overview of the digital asset with business problem solved, key capabilities or ROI impact.'),
     ('CONTENT', 'Content', 'TECHNICAL',

@@ -13,6 +13,9 @@ INSERT INTO assets (id, name, reference, description, category, status, tags) VA
     'An AI agent specialized in developing web applications using Python frameworks.',
     'AGENTS', 'IN_USE', '["python", "web", "agent"]');
 
+-- Keep the identity sequence aligned with the explicit ids above
+SELECT setval(pg_get_serial_sequence('assets', 'id'), (SELECT MAX(id) FROM assets));
+
 -- **********************************
 -- ***** Table characterizations ****
 -- **********************************
@@ -145,6 +148,9 @@ INSERT INTO actions (id, asset, user_id, type, content, parent) VALUES
     (6, 1, 0, '6-COMMENT', 'This prompt and its related agent are great.', NULL),
     (7, 2, 0, '3-PUBLICATION', NULL, NULL),
     (8, 2, 0, '6-USAGE', NULL, NULL);
+
+-- Keep the identity sequence aligned with the explicit ids above
+SELECT setval(pg_get_serial_sequence('actions', 'id'), (SELECT MAX(id) FROM actions));
 
 -- **********************************
 -- ****** Table favorite_assets *****

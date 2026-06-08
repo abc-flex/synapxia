@@ -265,7 +265,7 @@ VALUES
 INSERT INTO business_units (code, name, description, type, parent) VALUES
     ('CORP', 'Corporate', 'Corporate Unit', 'BUSINESS_UNIT', NULL),
     ('ENG', 'Engineering', 'Engineering Department', 'DEPARTMENT', 'CORP'),
-    ('GEN_AI', 'Generative AI', 'Generative AI', 'CHAPTER', 'ENG');
+    ('GEN_AI', 'Generative AI', 'Generative AI', 'AREA', 'ENG');
 
 -- **********************************
 -- ********** Table Users ***********
@@ -282,3 +282,6 @@ INSERT INTO users (id, username, email, password_hash, first_name, last_name, pr
     'ADMINISTRATOR',
     'GEN_AI',
     TRUE);
+
+-- Keep the identity sequence aligned with the explicit ids above
+SELECT setval(pg_get_serial_sequence('users', 'id'), (SELECT MAX(id) FROM users));

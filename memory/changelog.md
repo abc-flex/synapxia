@@ -6,7 +6,40 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased] — claude/upbeat-galileo-fiupL
+## [Unreleased] — claude/security-implementation-auth-rbac
+
+### Security
+- **PR #25**: Comprehensive security implementation with JWT authentication + role-based access control (RBAC).
+  - Secured 81 unprotected API endpoints across all modules (ADMIN, TAXO, LIB, COLLAB).
+  - Added privilege matrix enforcement: all endpoints check user profile against `privileges` table.
+  - Superuser bypass: `is_superuser=True` skips privilege checks.
+  - All GET operations require read privilege (`can_edit=False`); POST/PUT/DELETE require write privilege (`can_edit=True`).
+  - Returns 401 Unauthorized (missing token) or 403 Forbidden (insufficient privileges).
+
+### Backend (API)
+- `api/app/internal/permissions.py` — New permission service with `check_privilege()` dependency.
+- Updated 22 route files to add auth + RBAC:
+  - Admin: `profiles`, `modules`, `options`, `privileges`, `business_units`, `lists`, `list_items`, `item_translations`
+  - Taxo: `categories`, `features`, `specifications`
+  - Lib: `assets`, `characterizations`, `favorites`, `actions`, `asset_relations`
+  - Collab: `teams`, `roles`, `assignments`, `projects`, `dimensions`, `metrics`
+- Fixed `docker-compose.yml` line 70: `DATABASE_URL` hostname corrected from `postgres` to `db`.
+
+### Frontend (UI)
+- `ui/src/middleware.ts` — New Astro middleware protecting all routes except `/login`, `/signup`, `/`.
+  - Unauthenticated users redirected to `/login`.
+  - Static assets and API routes exempt from guard.
+- `ui/src/lib/api.ts` — Enhanced error handling:
+  - 401/403 errors trigger auto-logout (clear token).
+  - Redirect to `/login` on auth failures.
+  - Applied to `apiGet`, `apiPost`, `apiPut`, `apiDelete`.
+- `ui/src/pages/login.astro` — Refactored login page with security + UX improvements:
+  - Rate limiting: 5 failed attempts = 15-minute lockout.
+  - Specific error messages for auth failures, network errors, disabled accounts.
+  - Field focus on validation errors.
+  - Error auto-clears on input.
+  - Attempt counter after 3 failures.
+  - Screen reader support.
 
 ### Fixed
 - `ui/src/layouts/Layout.astro` created — `dashboard.astro` imported a missing layout, breaking Vercel build.
@@ -14,9 +47,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Docs
 - Added root `AGENTS.md` — canonical AI coding guide covering the 5 Constitution principles, architecture, conventions, patterns, and pre-PR checklist.
-- Added root `CLAUDE.md` — thin pointer to `AGENTS.md` with everyday commands.
+- Added root `CLAUDE.md` — thin pointer to `AGENTS.md` with everyday commands; updated with security implementation note.
 - Added `api/AGENTS.md`, `ui/AGENTS.md`, `db/AGENTS.md` — project-specific agent guidance (stack, structure, commands, rules).
 - Added `api/CLAUDE.md`, `ui/CLAUDE.md`, `db/CLAUDE.md` — slim pointers to their sibling AGENTS.md.
+- Updated `vercel.env.example` with security warnings and critical variable documentation.
 
 ---
 

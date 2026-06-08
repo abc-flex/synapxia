@@ -275,8 +275,8 @@ INSERT INTO users (id, username, email, password_hash, first_name, last_name, pr
    (0,
     'admin',
     'admin@synapxia.org',
-    'SCRAM-SHA-256$4096:erZkGksCVwc49r8o18VeSg==$2c7cw07foNs0h+cLgJYdpcc7da/tjQRH7v5Y8UP0ugo=:yw24DEvmi0xGcE7qj2Y7g+QwCxuoO4q6JhZsaLkzMlg=',
-    -- Password: Admin123*
+    '$2b$12$Q/ZWUi06lisvmpto32xbm.5r.ynn8fDfJ1fnLEPoBQqX.BqFAL5tG',
+    -- Password: Admin123! (bcrypt hash, cost=12)
     'Platform',
     'Administrator',
     'ADMINISTRATOR',

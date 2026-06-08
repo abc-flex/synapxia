@@ -43,6 +43,11 @@ help:
 	@echo "  make fmt-check   - Format check (exit 1 if drift)"
 	@echo "  make pytest      - Run API unit tests"
 	@echo ""
+	@echo "$(GREEN)Database Migrations (Phase 2 - Alembic):$(NC)"
+	@echo "  make migrate-create MSG='...' - Create new migration"
+	@echo "  make migrate-upgrade          - Apply pending migrations"
+	@echo "  make migrate-downgrade TARGET=xxx - Rollback to revision"
+	@echo ""
 	@echo "$(GREEN)Cleanup:$(NC)"
 	@echo "  make clean       - Remove all containers & volumes"
 	@echo ""
@@ -267,6 +272,33 @@ pytest:
 	@echo "$(BLUE)Running API unit tests...$(NC)"
 	@docker-compose -f $(COMPOSE_FILE) exec api pytest tests/ -v
 	@echo "$(GREEN)✓ Tests passed$(NC)"
+
+<<<<<<< HEAD
+# Create a new Alembic migration (Phase 2).
+migrate-create:
+	@if [ -z "$(MSG)" ]; then \
+		echo "$(RED)Error: MSG not set. Usage: make migrate-create MSG='Your migration message'$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(BLUE)Creating Alembic migration: $(MSG)...$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) exec api alembic revision --autogenerate -m "$(MSG)"
+	@echo "$(GREEN)✓ Migration created in api/migrations/versions/$(NC)"
+
+# Apply pending Alembic migrations to the database.
+migrate-upgrade:
+	@echo "$(BLUE)Applying migrations...$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) exec api alembic upgrade head
+	@echo "$(GREEN)✓ Migrations applied$(NC)"
+
+# Rollback to a specific migration revision (e.g., make migrate-downgrade TARGET=0001).
+migrate-downgrade:
+	@if [ -z "$(TARGET)" ]; then \
+		echo "$(RED)Error: TARGET not set. Usage: make migrate-downgrade TARGET=revision_id$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(BLUE)Rolling back to $(TARGET)...$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) exec api alembic downgrade $(TARGET)
+	@echo "$(GREEN)✓ Rolled back to $(TARGET)$(NC)"
 
 # Legacy alias — kept for compatibility.
 format: fmt

@@ -10,11 +10,18 @@ dependencies = [
     "psycopg2-binary",
     "python-dotenv",
     "sqlmodel>=0.0.27",
-    "fastapi-users[sqlalchemy]>=12.1.0",
+    "fastapi-users[sqlalchemy]>=13.0.0,<14",
     "python-multipart",
     "passlib[bcrypt]",
     "python-jose[cryptography]",
     "mangum>=0.17.0",
+    # Phase 2: FastAPI plugins adoption
+    "fastapi-mail>=1.4.1,<2",
+    "pydantic-settings>=2.13.0,<3",
+    "jinja2>=3.1.0",
+    "alembic>=1.18.0,<2",
+    "asyncpg>=0.29.0,<1",
+    "aiosqlite>=0.20.0",  # For async SQLite in tests
     # Dev / quality tooling (installed in the container; gated by make lint/fmt/pytest)
     "ruff>=0.4",
     "black>=24.0",

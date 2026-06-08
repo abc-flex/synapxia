@@ -1,40 +1,26 @@
-"""Authentication configuration and routes."""
+"""
+Authentication configuration and routes (Phase 2: fastapi-users integration).
+
+Combines fastapi-users machinery with backward-compatibility shim to preserve
+the existing /api/auth contract for the Astro UI.
+"""
 import os
 import logging
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from fastapi_users import BaseUserManager, IntegerIDMixin
-from fastapi_users.authentication import (
-    AuthenticationBackend,
-    BearerTransport,
-    JWTStrategy,
-)
-from sqlmodel import Session, select
-from datetime import datetime, timedelta
-from jose import JWTError, jwt
-from passlib.context import CryptContext
+from fastapi.security import OAuth2PasswordBearer
+from fastapi_users import BaseUserManager, IntegerIDMixin, FastAPIUsers
+from fastapi_users.authentication import AuthenticationBackend, BearerTransport, JWTStrategy
+from fastapi_users.db import SQLAlchemyUserDatabase
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 from ..admin.internal.models import User, Profile, BusinessUnit
-from ..internal import get_db_session
+from ..internal.dependencies import get_async_session
 from .schemas import UserRead, UserCreate, UserUpdate
 
 logger = logging.getLogger(__name__)
-
-# ==================== Password Hashing ====================
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
-def hash_password(password: str) -> str:
-    """Hash a password using bcrypt."""
-    return pwd_context.hash(password)
-
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against its hash."""
-    return pwd_context.verify(plain_password, hashed_password)
-
 
 # ==================== JWT Configuration ====================
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
@@ -45,46 +31,19 @@ if SECRET_KEY == "your-secret-key-change-in-production":
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
-
-# ==================== JWT Token Functions ====================
+# ==================== fastapi-users setup ====================
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    """Create a JWT access token."""
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-
-def decode_access_token(token: str):
-    """Decode and validate a JWT access token."""
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: int = payload.get("sub")
-        if user_id is None:
-            return None
-        return user_id
-    except JWTError:
-        return None
-
-# ==================== User Manager ====================
+async def get_user_db(session: AsyncSession = Depends(get_async_session)):
+    """Dependency that provides SQLAlchemy user database."""
+    yield SQLAlchemyUserDatabase(session, User)
 
 
 class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
-    """Custom user manager for SQLModel integration."""
+    """Custom user manager for fastapi-users with bcrypt password hashing."""
 
     reset_password_token_secret = SECRET_KEY
     verification_token_secret = SECRET_KEY
-
-    def __init__(self, user_db, session: Session):
-        super().__init__(user_db)
-        self.session = session
 
     async def on_after_register(self, user: User, request=None) -> None:
         """Called after user registration."""
@@ -98,78 +57,82 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         """Called after email verification request."""
         logger.info(f"Verification requested for {user.username}")
 
-# ==================== Authentication Dependency ====================
+
+async def get_user_manager(user_db=Depends(get_user_db)):
+    """Dependency that provides the user manager."""
+    yield UserManager(user_db)
 
 
-async def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    session: Session = Depends(get_db_session)
-) -> User:
-    """
-    Get the current authenticated user from JWT token.
+bearer_transport = BearerTransport(tokenUrl="/api/auth/login")
 
-    Raises:
-        HTTPException: If token is invalid or user not found
-    """
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
+
+def get_jwt_strategy() -> JWTStrategy:
+    """JWT strategy for authentication."""
+    return JWTStrategy(
+        secret=SECRET_KEY,
+        lifetime_seconds=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
 
-    user_id = decode_access_token(token)
-    if user_id is None:
-        raise credentials_exception
 
-    user = session.get(User, user_id)
-    if user is None:
-        raise credentials_exception
+auth_backend = AuthenticationBackend(
+    name="jwt",
+    transport=bearer_transport,
+    get_strategy=get_jwt_strategy,
+)
 
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="User is inactive")
+# Initialize fastapi-users with the JWT backend
+fastapi_users = FastAPIUsers[User, int](get_user_manager, [auth_backend])
 
-    return user
-
-
-async def get_current_active_user(
-    current_user: User = Depends(get_current_user),
-) -> User:
-    """Get current active user."""
-    return current_user
-
-
-async def get_current_superuser(
-    current_user: User = Depends(get_current_active_user),
-) -> User:
-    """Get current user and verify they are a superuser."""
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
-                            detail="Not enough permissions")
-    return current_user
+# Export auth dependencies for use in other routes
+current_active_user = fastapi_users.current_user(active=True)
+current_superuser = fastapi_users.current_user(active=True, superuser=True)
 
 # ==================== Routes ====================
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
 
+# Include fastapi-users auto-generated routers at /api/auth/fastapi/*
+# These provide a complete auth system with password reset, email verification, etc.
+fastapi_users_routers = fastapi_users.get_auth_router(auth_backend)
+router.include_router(fastapi_users_routers, prefix="/fastapi")
+
+# ==================== Backward-compatibility shim ====================
+# The Astro UI expects the old contract:
+# POST /api/auth/login → {access_token, token_type, user: {id, username, email, ...}}
+# These endpoints delegate to fastapi-users while preserving the old response shape.
+
 
 @router.post("/login", response_model=dict)
-def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    session: Session = Depends(get_db_session)
+async def login(
+    username: str,
+    password: str,
+    session: AsyncSession = Depends(get_async_session),
 ):
     """
-    Login endpoint - returns JWT access token.
+    Login endpoint - backward-compatible with Astro UI.
 
+    Returns JWT access token + user profile object (for UI convenience).
     Username can be either username or email.
     """
-    # Find user by username or email
+    # Query user by username or email
     stmt = select(User).where(
-        (User.username == form_data.username) | (
-            User.email == form_data.username)
+        (User.username == username) | (User.email == username)
     )
-    user = session.exec(stmt).first()
+    result = await session.execute(stmt)
+    user = result.scalars().first()
 
-    if not user or not verify_password(form_data.password, user.password_hash):
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Verify password (fastapi-users uses bcrypt internally via PasswordHelper)
+    from fastapi_users.password import PasswordHelper
+    password_helper = PasswordHelper()
+    try:
+        password_helper.verify(password, user.password_hash)
+    except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
@@ -182,16 +145,13 @@ def login(
             detail="User account is disabled"
         )
 
-    # Update last login
-    user.last_login_at = datetime.utcnow()
-    session.add(user)
-    session.commit()
-
-    # Create access token
-    access_token = create_access_token(data={"sub": str(user.id)})
+    # Generate JWT token using fastapi-users' JWT strategy
+    jwt_strategy = get_jwt_strategy()
+    access_token = await jwt_strategy.write_token(user)
 
     logger.info(f"User {user.username} logged in")
 
+    # Return token + user profile (preserves Astro UI contract)
     return {
         "access_token": access_token,
         "token_type": "bearer",
@@ -201,76 +161,90 @@ def login(
             "email": user.email,
             "first_name": user.first_name,
             "last_name": user.last_name,
-            "menu_profile": user.menu_profile,
-            "business_unit": user.business_unit,
+            "profile": user.profile,
+            "unit": user.unit,
         }
     }
 
 
 @router.post("/register", response_model=UserRead, status_code=201)
-def register(
+async def register(
     user_data: UserCreate,
-    session: Session = Depends(get_db_session)
+    session: AsyncSession = Depends(get_async_session),
 ):
     """
     Register a new user.
 
     Validates:
     - Username and email are unique
-    - Profile and business_unit exist
+    - Profile and unit exist
     """
     # Check username uniqueness
-    existing_user = session.exec(
+    result = await session.execute(
         select(User).where(User.username == user_data.username)
-    ).first()
+    )
+    existing_user = result.scalars().first()
     if existing_user:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_409_CONFLICT,
             detail=f"Username '{user_data.username}' already registered"
         )
 
     # Check email uniqueness
-    existing_email = session.exec(
+    result = await session.execute(
         select(User).where(User.email == user_data.email)
-    ).first()
+    )
+    existing_email = result.scalars().first()
     if existing_email:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_409_CONFLICT,
             detail=f"Email '{user_data.email}' already registered"
         )
 
     # Validate profile exists
-    profile = session.get(Profile, user_data.menu_profile)
+    result = await session.execute(
+        select(Profile).where(Profile.code == user_data.profile)
+    )
+    profile = result.scalars().first()
     if not profile:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Profile '{user_data.menu_profile}' does not exist"
+            detail=f"Profile '{user_data.profile}' does not exist"
         )
 
-    # Validate business_unit exists
-    business_unit = session.get(BusinessUnit, user_data.business_unit)
-    if not business_unit:
+    # Validate unit exists
+    result = await session.execute(
+        select(BusinessUnit).where(BusinessUnit.code == user_data.unit)
+    )
+    unit = result.scalars().first()
+    if not unit:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Business unit '{user_data.business_unit}' does not exist"
+            detail=f"Business unit '{user_data.unit}' does not exist"
         )
 
-    # Create user with hashed password
+    # Hash password using fastapi-users' PasswordHelper
+    from fastapi_users.password import PasswordHelper
+    password_helper = PasswordHelper()
+    hashed_password = password_helper.hash(user_data.password)
+
+    # Create new user
     new_user = User(
         username=user_data.username,
         email=user_data.email,
-        password_hash=hash_password(user_data.password),
+        password_hash=hashed_password,
         first_name=user_data.first_name,
         last_name=user_data.last_name,
-        menu_profile=user_data.menu_profile,
-        business_unit=user_data.business_unit,
+        profile=user_data.profile,
+        unit=user_data.unit,
         is_active=True,
         is_superuser=False,
+        is_verified=False,
     )
 
     session.add(new_user)
-    session.commit()
-    session.refresh(new_user)
+    await session.commit()
+    await session.refresh(new_user)
 
     logger.info(f"New user registered: {new_user.username}")
 
@@ -278,30 +252,35 @@ def register(
 
 
 @router.get("/me", response_model=UserRead)
-def get_me(current_user: User = Depends(get_current_active_user)):
+async def get_me(current_user: User = Depends(current_active_user)):
     """Get current user profile."""
     return current_user
 
 
 @router.post("/change-password")
-def change_password(
+async def change_password(
     old_password: str,
     new_password: str,
-    current_user: User = Depends(get_current_active_user),
-    session: Session = Depends(get_db_session)
+    current_user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(get_async_session),
 ):
     """Change password for current user."""
-    if not verify_password(old_password, current_user.password_hash):
+    # Verify old password
+    from fastapi_users.password import PasswordHelper
+    password_helper = PasswordHelper()
+    try:
+        password_helper.verify(old_password, current_user.password_hash)
+    except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Incorrect current password"
         )
 
-    current_user.password_hash = hash_password(new_password)
-    current_user.updated_at = datetime.utcnow()
+    # Hash and update new password
+    current_user.password_hash = password_helper.hash(new_password)
 
     session.add(current_user)
-    session.commit()
+    await session.commit()
 
     logger.info(f"Password changed for user {current_user.username}")
 
@@ -309,7 +288,7 @@ def change_password(
 
 
 @router.post("/logout")
-def logout(current_user: User = Depends(get_current_active_user)):
+async def logout(current_user: User = Depends(current_active_user)):
     """
     Logout endpoint - returns success message.
 
@@ -317,4 +296,13 @@ def logout(current_user: User = Depends(get_current_active_user)):
     This endpoint is provided for API consistency.
     """
     logger.info(f"User {current_user.username} logged out")
-    return {"message": "Logged out successfully"}
+
+    return {"message": "Successfully logged out"}
+
+
+__all__ = [
+    "router",
+    "current_active_user",
+    "current_superuser",
+    "fastapi_users",
+]

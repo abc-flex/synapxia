@@ -27,7 +27,8 @@ VALUES
 -- **********************************
 
 WITH default_hash AS (
-    SELECT 'SCRAM-SHA-256$4096:erZkGksCVwc49r8o18VeSg==$2c7cw07foNs0h+cLgJYdpcc7da/tjQRH7v5Y8UP0ugo=:yw24DEvmi0xGcE7qj2Y7g+QwCxuoO4q6JhZsaLkzMlg='::text AS h
+    SELECT '$2b$12$Q/ZWUi06lisvmpto32xbm.5r.ynn8fDfJ1fnLEPoBQqX.BqFAL5tG'::text AS h
+    -- Password: Admin123! (bcrypt hash, cost=12)
 ),
 user_data AS (
     SELECT *

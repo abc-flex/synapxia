@@ -84,6 +84,7 @@ CREATE TABLE users (
     unit           VARCHAR(50)   NOT NULL,
     is_superuser   BOOLEAN       NOT NULL DEFAULT FALSE,
     is_active      BOOLEAN       NOT NULL DEFAULT TRUE,
+    is_verified    BOOLEAN       NOT NULL DEFAULT FALSE,
     created_at     TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     updated_at     TIMESTAMPTZ,
     last_login_at  TIMESTAMPTZ,

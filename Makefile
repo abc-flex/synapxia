@@ -273,7 +273,6 @@ pytest:
 	@docker-compose -f $(COMPOSE_FILE) exec api pytest tests/ -v
 	@echo "$(GREEN)✓ Tests passed$(NC)"
 
-<<<<<<< HEAD
 # Create a new Alembic migration (Phase 2).
 migrate-create:
 	@if [ -z "$(MSG)" ]; then \

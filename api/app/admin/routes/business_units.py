@@ -8,6 +8,8 @@ from sqlalchemy.exc import IntegrityError
 
 from ..internal.models import BusinessUnit, BusinessUnitCreate, BusinessUnitUpdate
 from ..internal.dependencies import get_db_session
+from ...auth.routes import current_active_user
+from ...internal.permissions import check_privilege
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/business_units", tags=["business_units"])
@@ -18,7 +20,10 @@ class BusinessUnitBasic(SQLModel):
     label: str
 
 @router.get("/select", response_model=List[BusinessUnitBasic])
-def get_list(session: Session = Depends(get_db_session)) -> List[BusinessUnitBasic]:
+def get_list(
+    session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("ADMIN", "BUSINESS_UNITS", can_edit=False))
+) -> List[BusinessUnitBasic]:
     """
     Returns a business units list optimized for selects with value (code) and label (name). 
     Only active business units.
@@ -35,7 +40,10 @@ def get_list(session: Session = Depends(get_db_session)) -> List[BusinessUnitBas
 
 
 @router.get("/", response_model=List[BusinessUnit])
-def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[BusinessUnit]:
+def get_all(
+    skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("ADMIN", "BUSINESS_UNITS", can_edit=False))
+) -> List[BusinessUnit]:
     """
     List all business_units with pagination (*Only active business_units).
 
@@ -49,7 +57,10 @@ def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_s
 
 
 @router.get("/{code}", response_model=BusinessUnit)
-def get(code: str, session: Session = Depends(get_db_session)) -> BusinessUnit:
+def get(
+    code: str, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("ADMIN", "BUSINESS_UNITS", can_edit=False))
+) -> BusinessUnit:
     """
     Get a business unit by its code.
 
@@ -64,7 +75,10 @@ def get(code: str, session: Session = Depends(get_db_session)) -> BusinessUnit:
 
 
 @router.post("/", response_model=BusinessUnit, status_code=201)
-def create(business_unit: BusinessUnitCreate, session: Session = Depends(get_db_session)) -> BusinessUnit:
+def create(
+    business_unit: BusinessUnitCreate, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("ADMIN", "BUSINESS_UNITS", can_edit=True))
+) -> BusinessUnit:
     """
     Create a new organizational business_unit.
 
@@ -109,7 +123,10 @@ def create(business_unit: BusinessUnitCreate, session: Session = Depends(get_db_
 
 
 @router.put("/{code}", response_model=BusinessUnit)
-def update(code: str, unit_update: BusinessUnitUpdate, session: Session = Depends(get_db_session)) -> BusinessUnit:
+def update(
+    code: str, unit_update: BusinessUnitUpdate, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("ADMIN", "BUSINESS_UNITS", can_edit=True))
+) -> BusinessUnit:
     """
     Update an existing business_unit.
 
@@ -144,7 +161,10 @@ def update(code: str, unit_update: BusinessUnitUpdate, session: Session = Depend
 
 
 @router.delete("/{code}", response_model=BusinessUnit, status_code=200)
-def delete(code: str, session: Session = Depends(get_db_session)) -> BusinessUnit:
+def delete(
+    code: str, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("ADMIN", "BUSINESS_UNITS", can_edit=True))
+) -> BusinessUnit:
     """
     Delete a business_unit (logical delete).
 

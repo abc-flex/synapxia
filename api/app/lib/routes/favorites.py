@@ -8,13 +8,18 @@ from sqlalchemy.exc import IntegrityError
 
 from ..internal.models import Favorite, FavoriteCreate, FavoriteUpdate, Asset
 from ..internal.dependencies import get_db_session
+from ...auth.routes import current_active_user
+from ...internal.permissions import check_privilege
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/favorites", tags=["favorites"])
 
 
 @router.get("/", response_model=List[Favorite])
-def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[Favorite]:
+def get_all(
+    skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("LIB", "FAVORITES", can_edit=False))
+) -> List[Favorite]:
     """
     List all favorites with pagination.
 
@@ -28,7 +33,10 @@ def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_s
 
 
 @router.get("/{user_id}/{asset_code}", response_model=Favorite)
-def get(user_id: int, asset_code: str, session: Session = Depends(get_db_session)) -> Favorite:
+def get(
+    user_id: int, asset_code: str, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("LIB", "FAVORITES", can_edit=False))
+) -> Favorite:
     """
     Get a favorite by its user and asset.
 
@@ -49,7 +57,10 @@ def get(user_id: int, asset_code: str, session: Session = Depends(get_db_session
 
 
 @router.post("/", response_model=Favorite, status_code=201)
-def create(favorite: FavoriteCreate, session: Session = Depends(get_db_session)) -> Favorite:
+def create(
+    favorite: FavoriteCreate, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("LIB", "FAVORITES", can_edit=True))
+) -> Favorite:
     """
     Create a new favorite.
 
@@ -130,7 +141,10 @@ def update(
 
 
 @router.delete("/{user_id}/{asset_code}", response_model=Favorite, status_code=200)
-def delete(user_id: int, asset_code: str, session: Session = Depends(get_db_session)) -> Favorite:
+def delete(
+    user_id: int, asset_code: str, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("LIB", "FAVORITES", can_edit=True))
+) -> Favorite:
     """
     Delete a favorite (logical delete).
 

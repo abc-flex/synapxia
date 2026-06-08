@@ -8,13 +8,18 @@ from sqlalchemy.exc import IntegrityError
 
 from ..internal.models import Project, ProjectCreate, ProjectUpdate, Team
 from ..internal.dependencies import get_db_session
+from ...auth.routes import current_active_user
+from ...internal.permissions import check_privilege
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 
 
 @router.get("/", response_model=List[Project])
-def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[Project]:
+def get_all(
+    skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("COLLAB", "PROJECTS", can_edit=False))
+) -> List[Project]:
     """
     List all projects with pagination.
 
@@ -28,7 +33,10 @@ def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_s
 
 
 @router.get("/{code}", response_model=Project)
-def get(code: str, session: Session = Depends(get_db_session)) -> Project:
+def get(
+    code: str, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("COLLAB", "PROJECTS", can_edit=False))
+) -> Project:
     """
     Get a project by its code.
 
@@ -43,7 +51,10 @@ def get(code: str, session: Session = Depends(get_db_session)) -> Project:
 
 
 @router.post("/", response_model=Project, status_code=201)
-def create(project: ProjectCreate, session: Session = Depends(get_db_session)) -> Project:
+def create(
+    project: ProjectCreate, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("COLLAB", "PROJECTS", can_edit=True))
+) -> Project:
     """
     Create a new project.
 
@@ -91,7 +102,10 @@ def create(project: ProjectCreate, session: Session = Depends(get_db_session)) -
 
 
 @router.put("/{code}", response_model=Project)
-def update(code: str, update: ProjectUpdate, session: Session = Depends(get_db_session)) -> Project:
+def update(
+    code: str, update: ProjectUpdate, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("COLLAB", "PROJECTS", can_edit=True))
+) -> Project:
     """
     Update an existing project.
 
@@ -126,7 +140,10 @@ def update(code: str, update: ProjectUpdate, session: Session = Depends(get_db_s
 
 
 @router.delete("/{code}", response_model=Project, status_code=200)
-def delete(code: str, session: Session = Depends(get_db_session)) -> Project:
+def delete(
+    code: str, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("COLLAB", "PROJECTS", can_edit=True))
+) -> Project:
     """
     Delete a project (logical delete).
 

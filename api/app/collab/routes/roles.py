@@ -8,6 +8,8 @@ from sqlalchemy.exc import IntegrityError
 
 from ..internal.models import Role, RoleCreate, RoleUpdate
 from ..internal.dependencies import get_db_session
+from ...auth.routes import current_active_user
+from ...internal.permissions import check_privilege
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/roles", tags=["roles"])
@@ -18,7 +20,10 @@ class RoleBasic(SQLModel):
     label: str
 
 @router.get("/select", response_model=List[RoleBasic])
-def get_list(session: Session = Depends(get_db_session)) -> List[RoleBasic]:
+def get_list(
+    session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("COLLAB", "ROLES", can_edit=False))
+) -> List[RoleBasic]:
     """
     Returns a roles list optimized for selects with value (code) and label (name). 
     Only active roles.
@@ -53,7 +58,10 @@ def get_all(
 
 
 @router.get("/{code}", response_model=Role)
-def get(code: str, session: Session = Depends(get_db_session)) -> Role:
+def get(
+    code: str, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("COLLAB", "ROLES", can_edit=False))
+) -> Role:
     """
     Get a role by its code.
 
@@ -133,7 +141,10 @@ def update(
 
 
 @router.delete("/{code}", response_model=Role, status_code=200)
-def delete(code: str, session: Session = Depends(get_db_session)) -> Role:
+def delete(
+    code: str, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("COLLAB", "ROLES", can_edit=True))
+) -> Role:
     """
     Delete a role (logical delete).
 

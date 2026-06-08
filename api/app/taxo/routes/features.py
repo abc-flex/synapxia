@@ -8,6 +8,8 @@ from sqlalchemy.exc import IntegrityError
 
 from ..internal.models import Feature, FeatureCreate, FeatureUpdate
 from ..internal.dependencies import get_db_session
+from ...auth.routes import current_active_user
+from ...internal.permissions import check_privilege
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/features", tags=["features"])
@@ -18,7 +20,10 @@ class FeatureBasic(SQLModel):
     label: str
 
 @router.get("/select", response_model=List[FeatureBasic])
-def get_list(session: Session = Depends(get_db_session)) -> List[FeatureBasic]:
+def get_list(
+    session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("TAXO", "FEATURES", can_edit=False))
+) -> List[FeatureBasic]:
     """
     Returns a features list optimized for selects with value (code) and label (name). 
     Only active features.
@@ -35,7 +40,10 @@ def get_list(session: Session = Depends(get_db_session)) -> List[FeatureBasic]:
 
 
 @router.get("/", response_model=List[Feature])
-def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[Feature]:
+def get_all(
+    skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("TAXO", "FEATURES", can_edit=False))
+) -> List[Feature]:
     """
     List all features with pagination (*Only active features).
 
@@ -49,7 +57,10 @@ def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_s
 
 
 @router.get("/{code}", response_model=Feature)
-def get(code: str, session: Session = Depends(get_db_session)) -> Feature:
+def get(
+    code: str, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("TAXO", "FEATURES", can_edit=False))
+) -> Feature:
     """
     Get a feature by its code.
 
@@ -64,7 +75,10 @@ def get(code: str, session: Session = Depends(get_db_session)) -> Feature:
 
 
 @router.post("/", response_model=Feature, status_code=201)
-def create(feature: FeatureCreate, session: Session = Depends(get_db_session)) -> Feature:
+def create(
+    feature: FeatureCreate, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("TAXO", "FEATURES", can_edit=True))
+) -> Feature:
     """
     Create a new feature.
 
@@ -104,7 +118,10 @@ def create(feature: FeatureCreate, session: Session = Depends(get_db_session)) -
 
 
 @router.put("/{code}", response_model=Feature)
-def update(code: str, feature_update: FeatureUpdate, session: Session = Depends(get_db_session)) -> Feature:
+def update(
+    code: str, feature_update: FeatureUpdate, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("TAXO", "FEATURES", can_edit=True))
+) -> Feature:
     """
     Update an existing feature.
 
@@ -135,7 +152,10 @@ def update(code: str, feature_update: FeatureUpdate, session: Session = Depends(
 
 
 @router.delete("/{code}", response_model=Feature, status_code=200)
-def delete(code: str, session: Session = Depends(get_db_session)) -> Feature:
+def delete(
+    code: str, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("TAXO", "FEATURES", can_edit=True))
+) -> Feature:
     """
     Delete a feature (logical delete).
 

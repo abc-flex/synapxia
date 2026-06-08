@@ -6,8 +6,10 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select, SQLModel
 from sqlalchemy.exc import IntegrityError
 
-from ..internal.models import Profile, ProfileCreate, ProfileUpdate
+from ..internal.models import Profile, ProfileCreate, ProfileUpdate, User
 from ..internal.dependencies import get_db_session
+from ...auth.routes import current_active_user
+from ...internal.permissions import check_privilege
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/profiles", tags=["profiles"])

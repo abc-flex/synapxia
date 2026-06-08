@@ -1,8 +1,16 @@
 # Changelog
 
 All notable changes to SynapxIA are recorded here.
-Entries are written automatically when AI-assisted changes are merged to `develop`, `main`, or `prod`.
+Entries are written automatically when AI-assisted changes are merged to `develop`, `main`, or `production`.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+
+---
+
+## 2026-06-08 14:30 — Fix changelog automation for renamed production branch
+- Updated git hooks to recognize `production` as a principal branch after branch rename from `prod`
+- Post-merge hook now triggers changelog updates on develop, main, and production branches
+- Changelog header updated to reflect correct branch name
+- Files affected: `.githooks/post-merge`, `.claude/hooks/update-changelog.sh`, `memory/changelog.md`
 
 ---
 

@@ -9,6 +9,7 @@ class RoleBase(SQLModel):
     code: str = Field(max_length=50, primary_key=True)
     name: str = Field(max_length=100)
     description: Optional[str] = Field(default=None, max_length=255)
+    icon: Optional[str] = Field(default=None, max_length=255)
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
@@ -23,6 +24,8 @@ class RoleCreate(SQLModel):
     name: str = Field(max_length=100, description="Role name")
     description: Optional[str] = Field(
         default=None, max_length=255, description="Role description")
+    icon: Optional[str] = Field(
+        default=None, max_length=255, description="Icon name or path")
     is_active: Optional[bool] = Field(
         default=True, description="Indicates if the role is active")
 
@@ -32,6 +35,8 @@ class RoleUpdate(SQLModel):
         default=None, max_length=100, description="Role name")
     description: Optional[str] = Field(
         default=None, max_length=255, description="Role description")
+    icon: Optional[str] = Field(
+        default=None, max_length=255, description="Icon name or path")
     is_active: Optional[bool] = Field(
         default=None, description="Indicates if the role is active")
 

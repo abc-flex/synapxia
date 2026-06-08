@@ -271,6 +271,7 @@
     "code": "Code",
     "name": "Name",
     "description": "Description",
+    "icon": "Icon",
     "one_title": "Role",
     "many_title": "Roles",
     "filter_title": "All Roles",

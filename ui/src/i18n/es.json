@@ -270,6 +270,7 @@
     "code": "Código",
     "name": "Nombre",
     "description": "Descripción",
+    "icon": "Ícono",
     "one_title": "Rol",
     "many_title": "Roles",
     "filter_title": "Todos los Roles",

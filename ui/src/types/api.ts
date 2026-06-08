@@ -502,6 +502,7 @@ export interface Role {
   code: string;
   name: string;
   description?: string;
+  icon?: string;
   is_active: boolean;
   created_at: string;
   updated_at?: string;
@@ -511,12 +512,14 @@ export interface RoleCreate {
   code: string;
   name: string;
   description?: string;
+  icon?: string;
   is_active?: boolean;
 }
 
 export interface RoleUpdate {
   name?: string;
   description?: string;
+  icon?: string;
   is_active?: boolean;
 }
 

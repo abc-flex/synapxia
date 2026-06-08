@@ -17,7 +17,7 @@ FROM_REF="${2:-}"
 TO_REF="${3:-HEAD}"
 
 # Only run for principal branches
-PRINCIPAL_BRANCHES="develop main prod"
+PRINCIPAL_BRANCHES="develop main production"
 is_principal=false
 for b in $PRINCIPAL_BRANCHES; do
   [[ "$BRANCH" == "$b" ]] && is_principal=true && break

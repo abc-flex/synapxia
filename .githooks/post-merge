@@ -13,7 +13,7 @@ BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 
 # Only run on principal branches
 case "$BRANCH" in
-  develop|main|prod) ;;
+  develop|main|production) ;;
   *) exit 0 ;;
 esac
 

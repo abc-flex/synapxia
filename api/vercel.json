@@ -1,4 +1,4 @@
 {
   "buildCommand": "uv sync",
-  "ignoreCommand": "git diff $VERCEL_GIT_PREVIOUS_SHA $VERCEL_GIT_COMMIT_SHA --quiet -- api/"
+  "ignoreCommand": "! git diff $VERCEL_GIT_PREVIOUS_SHA $VERCEL_GIT_COMMIT_SHA --name-only -- api/ | grep -v '\\.md$\\|\\.txt$' | grep -q ."
 }

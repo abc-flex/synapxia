@@ -9,6 +9,8 @@ from sqlalchemy import func, literal, cast, String
 
 from ..internal.models import User, UserCreate, UserUpdate, Profile, BusinessUnit
 from ..internal.dependencies import get_db_session
+from ...auth.routes import current_active_user
+from ...internal.permissions import check_privilege
 
 #Model for user select options
 class UserBasic(SQLModel):
@@ -20,9 +22,12 @@ router = APIRouter(prefix="/api/users", tags=["users"])
 
 
 @router.get("/select", response_model=List[UserBasic])
-def get_list(session: Session = Depends(get_db_session)) -> List[UserBasic]:
+def get_list(
+    _: User = Depends(current_active_user),
+    session: Session = Depends(get_db_session)
+) -> List[UserBasic]:
     """
-    Returns a users list optimized for selects with value (id) and label (full name). 
+    Returns a users list optimized for selects with value (id) and label (full name).
     Only active users.
     """
     statement = (
@@ -37,9 +42,14 @@ def get_list(session: Session = Depends(get_db_session)) -> List[UserBasic]:
 
 
 @router.get("/", response_model=List[User])
-def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[User]:
+def get_all(
+    skip: int = 0,
+    limit: int = 100,
+    _: User = Depends(lambda: check_privilege("ADMIN", "USERS", can_edit=False)),
+    session: Session = Depends(get_db_session)
+) -> List[User]:
     """
-    List all users with pagination (*Only active users). 
+    List all users with pagination (*Only active users).
 
     - **skip**: Number of records to skip (default: 0)
     - **limit**: Maximum number of records to return (default: 100)
@@ -51,12 +61,13 @@ def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_s
 
 @router.get("/profile/{profile_code}", response_model=List[User])
 def get_by_profile(
-    profile_code: str, 
+    profile_code: str,
+    _: User = Depends(lambda: check_privilege("ADMIN", "USERS", can_edit=False)),
     session: Session = Depends(get_db_session)
 ) -> List[User]:
     """
     Get all users from a specific profile.
-    
+
     - **profile_code**: profile code to filter users
     """
     # Validate if profile exists (optional)
@@ -75,7 +86,11 @@ def get_by_profile(
 
 
 @router.get("/{id}", response_model=User)
-def get(id: int, session: Session = Depends(get_db_session)) -> User:
+def get(
+    id: int,
+    _: User = Depends(lambda: check_privilege("ADMIN", "USERS", can_edit=False)),
+    session: Session = Depends(get_db_session)
+) -> User:
     """
     Get a user by their ID.
 

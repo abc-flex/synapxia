@@ -18,26 +18,24 @@ export async function getAssets(skip: number = 0, limit: number = 100): Promise<
 }
 
 /**
- * Fetch all assets by role with optional pagination
- * @param list_code - role code
+ * Fetch all assets by category with optional pagination
+ * @param list_code - category code
  * @param skip - Number of records to skip (default: 0)
  * @param limit - Maximum number of records to return (default: 100)
  * @returns Promise with array of assets
  */
-export async function getAssetsbyRole(role_code: string, skip: number = 0, limit: number = 100): Promise<Asset[]> {
+export async function getAssetsbyCategory(category_code: string, skip: number = 0, limit: number = 100): Promise<Asset[]> {
   const queryString = buildQueryString({ skip, limit });
-  return apiGet<Asset[]>(`/api/assets/role/${role_code}${queryString}`);
+  return apiGet<Asset[]>(`/api/assets/category/${category_code}${queryString}`);
 }
 
 /**
- * Fetch a single asset by its code
- * @param role_code - Unique asset code
- * @param module_code - Unique asset code
- * @param option_code - Unique asset code
+ * Fetch a single asset by its id
+ * @param id - Unique asset id
  * @returns Promise with asset data
  */
-export async function getAsset(role_code: string, module_code: string, option_code: string): Promise<Asset> {
-  return apiGet<Asset>(`/api/assets/${encodeURIComponent(role_code)}/${encodeURIComponent(module_code)}/${encodeURIComponent(option_code)}`);
+export async function getAsset(id: number): Promise<Asset> {
+  return apiGet<Asset>(`/api/assets/${encodeURIComponent(id)}`);
 }
 
 /**

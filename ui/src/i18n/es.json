@@ -50,6 +50,7 @@
     "dimensions": "Dimensiones",
     "assignment": "Panel de Métricas",
     "assets": "Repositorio de Activos",
+    "characterizations": "Caracterización de Activos",
     "prompts": "Galería de Prompts",
     "mcps": "Directorio de MCPs",
     "agents": "Índice de Agentes",
@@ -329,6 +330,32 @@
     "delete": "Eliminar Asignación",
     "empty_message": "No se encontraron Asignaciones",
     "delete_confirmation": "¿Está seguro de que desea eliminar esta Asignación?"
+  },
+  "asset_modal": {
+    "name": "Nombre",
+    "description": "Descripción",
+    "category": "Categoría",
+    "reference": "URL del Repositorio",
+    "status": "Estado",
+    "tags": "Etiquetas",
+    "detail": "Detalle",
+    "one_title": "Activo",
+    "many_title": "Activos",
+    "filter_title": "Todos los Activos",
+    "add_new": "Nuevo Activo",
+    "edit": "Editar Activo",
+    "delete": "Eliminar Activo",
+    "empty_message": "No se encontraron Activos",
+    "delete_confirmation": "¿Está seguro de que desea eliminar este Activo?"
+  },
+  "characterization_modal": {
+    "one_title": "Caracterización del Activo",
+    "many_title": "Caracterizaciones del Activo",
+    "add_new": "Nueva Caracterización",
+    "edit": "Editar Caracterización",
+    "delete": "Eliminar Caracterización",
+    "empty_message": "No se encontraron Caracterizaciones de este Activo",
+    "delete_confirmation": "¿Está seguro de que desea eliminar esta Caracterización?"
   },
   "profile_page": {
     "title": "Perfil",

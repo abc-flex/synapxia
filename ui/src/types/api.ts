@@ -561,3 +561,41 @@ export interface AssignmentUpdate {
   created_at?: string;
   updated_at?: string;
 }
+
+
+// Asset types
+export interface Asset {
+  id?: number;
+  name: string;
+  description?: string;
+  category?: string;
+  reference?: string;
+  status: string;
+  tags?: string[];
+  detail?: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface AssetCreate {
+  name: string;
+  description?: string;
+  category?: string;
+  reference?: string;
+  status: string;
+  tags?: string[];
+  detail?: string;
+  is_active?: boolean;
+}
+
+export interface AssetUpdate {
+  name?: string;
+  description?: string;
+  category?: string;
+  reference?: string;
+  status?: string;
+  tags?: string[];
+  detail?: string;
+  is_active?: boolean;
+}

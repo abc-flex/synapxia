@@ -5,9 +5,7 @@ import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
 import { getAssets } from "@/lib/assets";
-import { getCategories } from "@/lib/categories";
-import { getBusinessUnits } from "@/lib/business_units";
-import { getTeams } from "@/lib/teams";
+import { getCategoriesSelect } from "@/lib/categories";
 import { getListItemsbyList } from "@/lib/list_items";
 
 // Fetch assets from API
@@ -24,22 +22,14 @@ try {
   assets = [];
 }
 
-// Fetch items_list from API for select field
-let types: any[] = [];
-types = await getListItemsbyList('ASSET_TYPE');
-
-// Fetch items_list from API for select field (list IN['RESOURCE_STATUS', 'INITIATIVE_STATUS'])
+// Fetch items_list from API for select field (list IN['ASSET_STATUS')
 let status: any[] = [];
-status = await getListItemsbyList('RESOURCE_STATUS');
-
-// Fetch items_list from API for select field
-let visibilities: any[] = [];
-visibilities = await getListItemsbyList('VISIBILITY_LEVEL');
+status = await getListItemsbyList('ASSET_STATUS');
 
 // Fetch categories from API for select field
 let categories: any[] = [];
 try {
-  const apiCategories = await getCategories();
+  const apiCategories = await getCategoriesSelect();
   categories = apiCategories;
 } catch (error) {
   console.error('Failed to fetch categories:', error);
@@ -48,35 +38,12 @@ try {
   categories = [];
 }
 
-// Fetch business_units from API for select field
-let units: any[] = [];
-try {
-  const apiUnits = await getBusinessUnits();
-  units = apiUnits;
-} catch (error) {
-  console.error('Failed to fetch business_units:', error);
-  errorMessage = error instanceof Error ? error.message : 'Failed to fetch business_units from API';
-  // Fallback to empty array to still render the page
-  units = [];
-}
-
-// Fetch teams from API for select field
-let teams: any[] = [];
-try {
-  const apiTeams = await getTeams();
-  teams = apiTeams;
-} catch (error) {
-  console.error('Failed to fetch teams:', error);
-  errorMessage = error instanceof Error ? error.message : 'Failed to fetch teams from API';
-  // Fallback to empty array to still render the page
-  teams = [];
-}
-
 const columns = [
-  { key: "name", label: "asset_modal.name", visible: true},
-  { key: "type", label: "asset_modal.type", visible: true },
-  { key: "category", label: "asset_modal.category", visible: true },
-  { key: "status", label: "asset_modal.status", visible: true },
+  { key: "name", label: "asset_modal.name"},
+  { key: "category", label: "asset_modal.category", visible: false },
+  { key: "category_name", label: "asset_modal.category" },
+  { key: "status", label: "asset_modal.status", visible: false },
+  { key: "status_name", label: "asset_modal.status" },
 ];
 
 
@@ -84,38 +51,32 @@ const data = assets.map((item) => ({
   id: item.id,
   name: item.name,
   description: item.description,
-  type: item.type,
   category: item.category,
+  category_name: categories.find((c) => String(c.value) === String(item.category))?.label || item.category_name,
   reference: item.reference,
   status: item.status,
-  visibility: item.visibility,
+  status_name: status.find((s) => s.value === item.status)?.label || item.status,
   tags: item.tags,
   detail: item.detail,
-  unit: item.unit,
-  team: item.team,
   is_active: item.is_active,
   created_at: item.created_at,
   updated_at: item.updated_at,
 }));
 
-const tableFields = [
+const formFields = [
   { key: "name", label: "asset_modal.name", required: true },
+  { key: "category", label: "asset_modal.category", type: "select" as const, options: categories, required: true },
+  { key: "status", label: "asset_modal.status", type: "select" as const, options: status, required: true },
   {
     key: "description",
-    label: "feature_modal.description",
+    label: "asset_modal.description",
     type: "textarea" as const,
     required: false,
   },
-  { key: "type", label: "asset_modal.type", type: "select" as const, options: types, required: true },
-  { key: "category", label: "asset_modal.category", type: "select" as const, options: categories, required: false },
   { key: "reference", label: "asset_modal.reference", required: false },
-  { key: "status", label: "asset_modal.status", type: "select" as const, options: status, required: true },
-  { key: "visibility", label: "asset_modal.visibility", type: "select" as const, options: visibilities, required: true },
-  { key: "unit", label: "asset_modal.unit", type: "select" as const, options: units, required: false },
-  { key: "team", label: "asset_modal.team", type: "select" as const, options: teams, required: false },
   { key: "tags", label: "asset_modal.tags", required: false },
 ];
-const fieldKeys = ["id", ...tableFields.map((f) => f.key)];
+const fieldKeys = formFields.map((f) => f.key);
 ---
 
 <BaseLayout>
@@ -124,11 +85,11 @@ const fieldKeys = ["id", ...tableFields.map((f) => f.key)];
   <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
     <!-- Breadcrumb Start -->
     <Breadcrumb
-      moduleName="Digital Assets"
+      moduleName="AI Library"
       pageName="Assets"
       pageTitle="Assets"
       homeLink="/"
-      moduleNameKey="modules.CATALOG"
+      moduleNameKey="modules.LIB"
       pageNameKey="menu_options.assets"
       pageTitleKey="menu_options.assets"
     />
@@ -138,21 +99,21 @@ const fieldKeys = ["id", ...tableFields.map((f) => f.key)];
       mode="create"
       modalId="asset-create-modal"
       entityName="Asset"
-      fields={tableFields}
+      fields={formFields}
       showTrigger={false}
     />
     <CrudModal
       mode="edit"
       modalId="asset-edit-modal"
       entityName="Asset"
-      fields={tableFields}
+      fields={formFields}
       showTrigger={false}
     />
     <CrudModal
       mode="delete"
       modalId="asset-delete-modal"
       entityName="Asset"
-      fields={tableFields}
+      fields={formFields}
       showTrigger={false}
     />
 
@@ -214,40 +175,32 @@ const fieldKeys = ["id", ...tableFields.map((f) => f.key)];
             // Create new asset
             await createAsset({
               name: data.name,
-              type: data.type,
               description: data.description,
               category: data.category,
               reference: data.reference,
               status: data.status,
-              visibility: data.visibility,
               tags: data.tags,
               detail: data.detail,
-              unit: data.unit,
-              team: data.team,
               is_active: data.is_active !== false,
             });
             showToast("Asset created successfully!");
             setTimeout(() => window.location.reload(), 1000);
           } else if (mode === "edit") {
-            // Update existing asset
-            await updateAsset(id, {
+            // Update existing asset (id is numeric)
+            await updateAsset(Number(data.id), {
               name: data.name,
-              type: data.type,
               description: data.description,
               category: data.category,
               reference: data.reference,
               status: data.status,
-              visibility: data.visibility,
               tags: data.tags,
               detail: data.detail,
-              unit: data.unit,
-              team: data.team,
               is_active: data.is_active !== false,
             });
             showToast("Asset updated successfully!");
             setTimeout(() => window.location.reload(), 1000);
           } else if (mode === "delete") {
-            await deleteAsset(id);
+            await deleteAsset(Number(data.id));
             showToast("Asset deleted successfully!");
             setTimeout(() => window.location.reload(), 1000);
           }
@@ -267,6 +220,8 @@ const fieldKeys = ["id", ...tableFields.map((f) => f.key)];
           i18Item="asset"
           columnFilter="category"
           filterOptions={categories}
+          detailPage="/lib/characterizations"
+          mdItem="characterization"
         />
       </div>
     </div>

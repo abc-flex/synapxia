@@ -50,6 +50,7 @@
     "dimensions": "Dimensions",
     "assignment": "Assignment Dashboard",
     "assets": "Asset Repository",
+    "characterizations": "Asset Characterization",
     "prompts": "Prompt Gallery",
     "mcps": "MCP Directory",
     "agents": "Agent Index",
@@ -330,6 +331,32 @@
     "delete": "Delete Assignment",
     "empty_message": "No Assignments found",
     "delete_confirmation": "Are you sure you want to delete this Assignment"
+  },
+  "asset_modal": {
+    "name": "Name",
+    "description": "Description",
+    "category": "Category",
+    "reference": "Repository URL",
+    "status": "Status",
+    "tags": "Tags",
+    "detail": "Detail",
+    "one_title": "Asset",
+    "many_title": "Assets",
+    "filter_title": "All Assets",
+    "add_new": "New Asset",
+    "edit": "Edit Asset",
+    "delete": "Delete Asset",
+    "empty_message": "No Assets found",
+    "delete_confirmation": "Are you sure you want to delete this Asset"
+  },
+  "characterization_modal": {
+    "one_title": "Asset Characterization",
+    "many_title": "Asset Characterizations",
+    "add_new": "New Characterization",
+    "edit": "Edit Characterization",
+    "delete": "Delete Characterization",
+    "empty_message": "No Characterizations found for this Asset",
+    "delete_confirmation": "Are you sure you want to delete this Asset Characterization"
   },
   "profile_page": {
     "title": "Profile",

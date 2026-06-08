@@ -51,11 +51,26 @@ if not os.getenv("POSTGRES_URL"):
 _safe_url = DATABASE_URL.split("@")[-1] if "@" in DATABASE_URL else DATABASE_URL
 logger.info(f"📊 Database host: {_safe_url}")
 
+# Detect if running against a managed Postgres (Neon/Supabase) vs local Docker
+# Managed services use transaction-mode poolers that drop prepared statements
+# between transactions, so we must disable asyncpg's statement caching.
+IS_MANAGED_POSTGRES = "POSTGRES_URL" in os.environ
+
+# Pool configuration optimized for deployment context:
+# - Managed Postgres (Vercel/Neon): smaller pools due to strict connection limits
+# - Local Docker: larger pools for dev comfort
+POOL_CONFIG = {
+    "pool_size": 5 if IS_MANAGED_POSTGRES else 10,
+    "max_overflow": 10 if IS_MANAGED_POSTGRES else 20,
+    "pool_recycle": 3600 if IS_MANAGED_POSTGRES else 7200,  # Neon idle timeout = 30min
+    "pool_pre_ping": True,
+}
+
 # Configure SQL echo only in development
 echo_sql = os.getenv("APP_ENV", "development") == "development"
 
 try:
-    engine = create_engine(DATABASE_URL, echo=echo_sql, pool_pre_ping=True)
+    engine = create_engine(DATABASE_URL, echo=echo_sql, **POOL_CONFIG)
     logger.info("✅ SQLAlchemy engine created successfully")
 except Exception as e:
     logger.error(f"❌ Failed to create engine: {e}")
@@ -71,7 +86,15 @@ try:
     async_engine = create_async_engine(
         async_database_url,
         echo=echo_sql,
-        pool_pre_ping=True,
+        **POOL_CONFIG,
+        connect_args={
+            "statement_cache_size": 0,  # CRITICAL: disable for transaction-mode poolers (Neon, Supabase)
+            "prepared_statement_cache_size": 0,  # Redundant safety
+            "server_settings": {
+                "application_name": "synapxia-api",
+                "jit": "off",  # Serverless: disable JIT for consistency
+            }
+        }
     )
     logger.info("✅ Async SQLAlchemy engine created for fastapi-users")
 except Exception as e:
@@ -233,4 +256,5 @@ __all__ = [
     "async_engine",
     "DATABASE_URL",
     "DB_CONFIG",
+    "IS_MANAGED_POSTGRES",
 ]

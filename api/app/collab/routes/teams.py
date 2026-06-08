@@ -10,6 +10,7 @@ from ..internal.models import Team, TeamCreate, TeamUpdate
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
 from ...internal.permissions import check_privilege
+from ...admin.internal.models import User
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/teams", tags=["teams"])

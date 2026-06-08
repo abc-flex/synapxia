@@ -10,6 +10,7 @@ from ..internal.models import Assignment, AssignmentCreate, AssignmentUpdate, Te
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
 from ...internal.permissions import check_privilege
+from ...admin.internal.models import User
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/assignments", tags=["assignments"])

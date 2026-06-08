@@ -3,5 +3,6 @@
   "buildCommand": "bun run build",
   "installCommand": "bun install",
   "outputDirectory": "dist",
-  "devCommand": "bun run dev"
+  "devCommand": "bun run dev",
+  "ignoreCommand": "git diff $VERCEL_GIT_PREVIOUS_SHA $VERCEL_GIT_COMMIT_SHA --quiet -- ui/"
 }

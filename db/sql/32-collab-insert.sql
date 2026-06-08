@@ -124,6 +124,9 @@ SELECT
     TRUE
 FROM user_data;
 
+-- Keep the identity sequence aligned with the explicit ids above
+SELECT setval(pg_get_serial_sequence('users', 'id'), (SELECT MAX(id) FROM users));
+
 -- **********************************
 -- ******* Table Assignments ********
 -- **********************************

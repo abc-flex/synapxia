@@ -1,0 +1,51 @@
+---
+import TreeNode from './TreeNode.astro';
+import { buildTree, type TreeFieldKeys } from './tree';
+
+interface Props {
+  /** Flat list of items of any model. */
+  items: Record<string, any>[];
+  /** Override the field names used to read id / parent / label / description. */
+  keys?: Partial<TreeFieldKeys>;
+  /** Message shown when there are no items. */
+  emptyMessage?: string;
+}
+
+const { items, keys = {}, emptyMessage = 'No items found' } = Astro.props;
+
+const roots = buildTree(items, keys);
+---
+
+<div class="tree-view-container">
+  <div class="tree-view">
+    {roots.length > 0 ? (
+      roots.map(root => <TreeNode node={root} level={0} />)
+    ) : (
+      <div class="empty-state">
+        <p class="text-slate-600">{emptyMessage}</p>
+      </div>
+    )}
+  </div>
+</div>
+
+<style>
+  .tree-view-container {
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    overflow: hidden;
+  }
+
+  .tree-view {
+    padding: 16px;
+  }
+
+  .empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    color: #94a3b8;
+    text-align: center;
+  }
+</style>

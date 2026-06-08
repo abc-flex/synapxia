@@ -1,4 +1,4 @@
-.PHONY: help up down ps logs shell dev clean rebuild restart reset reset-db health test hooks lint lint-ui fmt fmt-check pytest
+.PHONY: help up down ps logs shell dev clean rebuild restart reset reset-db health test hooks lint lint-ui fmt fmt-check pytest purge nuke
 
 # Default target
 .DEFAULT_GOAL := help
@@ -50,6 +50,8 @@ help:
 	@echo ""
 	@echo "$(GREEN)Cleanup:$(NC)"
 	@echo "  make clean       - Remove all containers & volumes"
+	@echo "  make purge       - Remove all containers, volumes & images"
+	@echo "  make nuke        - Purge everything then rebuild from scratch"
 	@echo ""
 	@echo "$(BLUE)=======================================$(NC)"
 	@echo ""
@@ -204,6 +206,25 @@ clean:
 	@echo "$(GREEN)✓ Cleanup complete$(NC)"
 	@echo ""
 	@echo "To start fresh, run: $(BLUE)make rebuild$(NC)"
+
+# Remove all containers, volumes, AND built images.
+# Use when Dockerfile or dependencies changed and you want a guaranteed clean slate.
+purge:
+	@echo "$(RED)Removing all containers, volumes and images...$(NC)"
+	docker-compose -f $(COMPOSE_FILE) down -v --rmi all
+	@echo "$(GREEN)✓ Purge complete$(NC)"
+	@echo ""
+	@echo "To rebuild from scratch, run: $(BLUE)make nuke$(NC)"
+
+# Full nuclear reset: purge everything (containers + volumes + images) then rebuild
+# and restart. Guarantees no stale layers survive — use after Dockerfile changes.
+nuke: purge
+	@echo "$(GREEN)Building images from scratch...$(NC)"
+	docker-compose -f $(COMPOSE_FILE) up -d --build
+	@echo "$(GREEN)Waiting for database initialization...$(NC)"
+	@sleep 30
+	@make health
+	@echo "$(GREEN)✓ Nuke complete — clean environment running$(NC)"
 
 ## Additional Utility Commands
 

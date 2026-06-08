@@ -1,4 +1,4 @@
 {
-  "buildCommand": "uv pip install -r requirements.txt",
+  "buildCommand": "uv pip install --system -r requirements.txt",
   "ignoreCommand": "! git diff $VERCEL_GIT_PREVIOUS_SHA $VERCEL_GIT_COMMIT_SHA --name-only -- api/ | grep -v '\\.md$\\|\\.txt$' | grep -q ."
 }

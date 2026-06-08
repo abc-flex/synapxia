@@ -21,6 +21,22 @@ make logs   # tail logs (logs-api / logs-db / logs-ui for one service)
 make down   # stop
 ```
 
+## Security Implementation (PR #25)
+
+As of PR #25, **all API endpoints are secured with JWT authentication + role-based access control (RBAC)**:
+
+- ✅ All endpoints require valid JWT token (401 Unauthorized if missing)
+- ✅ Privilege matrix enforced per user profile (403 Forbidden if insufficient)
+- ✅ Frontend routes protected with Astro middleware
+- ✅ Rate limiting on login (5 attempts = 15-min lockout)
+
+**For deployment to Vercel**, see [`SECURITY_DEPLOYMENT.md`](SECURITY_DEPLOYMENT.md) — requires:
+- `SECRET_KEY` environment variable (generate: `openssl rand -hex 32`)
+- `CORS_ORIGINS` pointing to deployed UI URL
+- `APP_ENV=production`
+
+Local development uses defaults (see `.env.template`), but production Vercel deployment is **security-critical**.
+
 ## Before you commit
 
 Governance is binding — see [`.specify/memory/constitution.md`](.specify/memory/constitution.md)

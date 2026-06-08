@@ -8,13 +8,18 @@ from sqlalchemy.exc import IntegrityError
 
 from ..internal.models import AssetRelation, AssetRelationCreate, AssetRelationUpdate, Asset
 from ..internal.dependencies import get_db_session
+from ...auth.routes import current_active_user
+from ...internal.permissions import check_privilege
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/asset_relations", tags=["asset_relations"])
 
 
 @router.get("/", response_model=List[AssetRelation])
-def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[AssetRelation]:
+def get_all(
+    skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("LIB", "ASSET_RELATIONS", can_edit=False))
+) -> List[AssetRelation]:
     """
     List all asset relations with pagination.
 
@@ -28,7 +33,10 @@ def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_s
 
 
 @router.get("/{source_code}/{target_code}", response_model=AssetRelation)
-def get(source_code: str, target_code: str, session: Session = Depends(get_db_session)) -> AssetRelation:
+def get(
+    source_code: str, target_code: str, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("LIB", "ASSET_RELATIONS", can_edit=False))
+) -> AssetRelation:
     """
     Get an asset relation by its source and target.
 
@@ -49,7 +57,10 @@ def get(source_code: str, target_code: str, session: Session = Depends(get_db_se
 
 
 @router.post("/", response_model=AssetRelation, status_code=201)
-def create(relation: AssetRelationCreate, session: Session = Depends(get_db_session)) -> AssetRelation:
+def create(
+    relation: AssetRelationCreate, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("LIB", "ASSET_RELATIONS", can_edit=True))
+) -> AssetRelation:
     """
     Create a new asset relation.
 
@@ -147,7 +158,10 @@ def update(
 
 
 @router.delete("/{source_code}/{target_code}", response_model=AssetRelation, status_code=200)
-def delete(source_code: str, target_code: str, session: Session = Depends(get_db_session)) -> AssetRelation:
+def delete(
+    source_code: str, target_code: str, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("LIB", "ASSET_RELATIONS", can_edit=True))
+) -> AssetRelation:
     """
     Delete an asset relation (logical delete).
 

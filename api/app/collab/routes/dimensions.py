@@ -8,13 +8,18 @@ from sqlalchemy.exc import IntegrityError
 
 from ..internal.models import Dimension, DimensionCreate, DimensionUpdate
 from ..internal.dependencies import get_db_session
+from ...auth.routes import current_active_user
+from ...internal.permissions import check_privilege
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/dimensions", tags=["dimensions"])
 
 
 @router.get("/", response_model=List[Dimension])
-def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[Dimension]:
+def get_all(
+    skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("COLLAB", "DIMENSIONS", can_edit=False))
+) -> List[Dimension]:
     """
     List all dimensions with pagination.
 
@@ -28,7 +33,10 @@ def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_s
 
 
 @router.get("/{code}", response_model=Dimension)
-def get(code: str, session: Session = Depends(get_db_session)) -> Dimension:
+def get(
+    code: str, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("COLLAB", "DIMENSIONS", can_edit=False))
+) -> Dimension:
     """
     Get a dimension by its code.
 
@@ -43,7 +51,10 @@ def get(code: str, session: Session = Depends(get_db_session)) -> Dimension:
 
 
 @router.post("/", response_model=Dimension, status_code=201)
-def create(dimension: DimensionCreate, session: Session = Depends(get_db_session)) -> Dimension:
+def create(
+    dimension: DimensionCreate, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("COLLAB", "DIMENSIONS", can_edit=True))
+) -> Dimension:
     """
     Create a new dimension.
 
@@ -80,7 +91,10 @@ def create(dimension: DimensionCreate, session: Session = Depends(get_db_session
 
 
 @router.put("/{code}", response_model=Dimension)
-def update(code: str, update: DimensionUpdate, session: Session = Depends(get_db_session)) -> Dimension:
+def update(
+    code: str, update: DimensionUpdate, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("COLLAB", "DIMENSIONS", can_edit=True))
+) -> Dimension:
     """
     Update an existing dimension.
 
@@ -106,7 +120,10 @@ def update(code: str, update: DimensionUpdate, session: Session = Depends(get_db
 
 
 @router.delete("/{code}", response_model=Dimension, status_code=200)
-def delete(code: str, session: Session = Depends(get_db_session)) -> Dimension:
+def delete(
+    code: str, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("COLLAB", "DIMENSIONS", can_edit=True))
+) -> Dimension:
     """
     Delete a dimension (logical delete).
 

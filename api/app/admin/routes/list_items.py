@@ -8,13 +8,18 @@ from sqlalchemy.exc import IntegrityError
 
 from ..internal.models import ListItem, ListItemCreate, ListItemUpdate, List as ListModel, ItemTranslation
 from ..internal.dependencies import get_db_session
+from ...auth.routes import current_active_user
+from ...internal.permissions import check_privilege
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/list_items", tags=["list_items"])
 
 
 @router.get("/", response_model=List[ListItem])
-def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[ListItem]:
+def get_all(
+    skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("ADMIN", "LIST_ITEMS", can_edit=False))
+) -> List[ListItem]:
     """
     Listar todos los elementos de lista con paginación.
     
@@ -52,7 +57,10 @@ def get_by_list(
     return items
 
 @router.get("/{list_code}/{value}", response_model=ListItem)
-def get(list_code: str, value: str, session: Session = Depends(get_db_session)) -> ListItem:
+def get(
+    list_code: str, value: str, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("ADMIN", "LIST_ITEMS", can_edit=False))
+) -> ListItem:
     """
     Obtener un elemento de lista por su código de lista y valor.
     
@@ -194,7 +202,10 @@ def get_single_with_translations(
 
 
 @router.post("/", response_model=ListItem, status_code=201)
-def create(item_data: ListItemCreate, session: Session = Depends(get_db_session)) -> ListItem:
+def create(
+    item_data: ListItemCreate, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("ADMIN", "LIST_ITEMS", can_edit=True))
+) -> ListItem:
     """
     Crear un nuevo elemento de lista.
     
@@ -242,7 +253,10 @@ def create(item_data: ListItemCreate, session: Session = Depends(get_db_session)
 
 
 @router.put("/{list_code}/{value}", response_model=ListItem)
-def update(list_code: str, value: str, item_update: ListItemUpdate, session: Session = Depends(get_db_session)) -> ListItem:
+def update(
+    list_code: str, value: str, item_update: ListItemUpdate, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("ADMIN", "LIST_ITEMS", can_edit=True))
+) -> ListItem:
     """
     Actualizar un elemento de lista existente.
     
@@ -269,7 +283,10 @@ def update(list_code: str, value: str, item_update: ListItemUpdate, session: Ses
 
 
 @router.delete("/{list_code}/{value}", response_model=ListItem, status_code=200)
-def delete(list_code: str, value: str, session: Session = Depends(get_db_session)) -> ListItem:
+def delete(
+    list_code: str, value: str, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("ADMIN", "LIST_ITEMS", can_edit=True))
+) -> ListItem:
     """
     Eliminar un elemento de lista (borrado lógico).
     

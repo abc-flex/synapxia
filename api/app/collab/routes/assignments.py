@@ -8,13 +8,18 @@ from sqlalchemy.exc import IntegrityError
 
 from ..internal.models import Assignment, AssignmentCreate, AssignmentUpdate, Team, Role
 from ..internal.dependencies import get_db_session
+from ...auth.routes import current_active_user
+from ...internal.permissions import check_privilege
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/assignments", tags=["assignments"])
 
 
 @router.get("/", response_model=List[Assignment])
-def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session)) -> List[Assignment]:
+def get_all(
+    skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("COLLAB", "ASSIGNMENTS", can_edit=False))
+) -> List[Assignment]:
     """
     List all assignments with pagination.
 
@@ -28,7 +33,10 @@ def get_all(skip: int = 0, limit: int = 100, session: Session = Depends(get_db_s
 
 
 @router.get("/{id}", response_model=Assignment)
-def get(id: int, session: Session = Depends(get_db_session)) -> Assignment:
+def get(
+    id: int, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("COLLAB", "ASSIGNMENTS", can_edit=False))
+) -> Assignment:
     """
     Get an assignment by its ID.
 
@@ -43,7 +51,10 @@ def get(id: int, session: Session = Depends(get_db_session)) -> Assignment:
 
 
 @router.post("/", response_model=Assignment, status_code=201)
-def create(assignment: AssignmentCreate, session: Session = Depends(get_db_session)) -> Assignment:
+def create(
+    assignment: AssignmentCreate, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("COLLAB", "ASSIGNMENTS", can_edit=True))
+) -> Assignment:
     """
     Create a new assignment.
 
@@ -94,7 +105,10 @@ def create(assignment: AssignmentCreate, session: Session = Depends(get_db_sessi
 
 
 @router.put("/{id}", response_model=Assignment)
-def update(id: int, update: AssignmentUpdate, session: Session = Depends(get_db_session)) -> Assignment:
+def update(
+    id: int, update: AssignmentUpdate, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("COLLAB", "ASSIGNMENTS", can_edit=True))
+) -> Assignment:
     """
     Update an existing assignment.
 
@@ -138,7 +152,10 @@ def update(id: int, update: AssignmentUpdate, session: Session = Depends(get_db_
 
 
 @router.delete("/{id}", response_model=Assignment, status_code=200)
-def delete(id: int, session: Session = Depends(get_db_session)) -> Assignment:
+def delete(
+    id: int, session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("COLLAB", "ASSIGNMENTS", can_edit=True))
+) -> Assignment:
     """
     Delete an assignment (logical delete).
 

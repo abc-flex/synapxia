@@ -4,7 +4,22 @@
  */
 
 import type { ApiError } from '../types/list';
-import { getToken } from './auth';
+import { getToken, clearToken } from './auth';
+
+/**
+ * Handle authentication errors (401/403)
+ * Logs out user and redirects to login
+ */
+function handleAuthError(status: number) {
+  if (status === 401 || status === 403) {
+    // Clear auth state
+    clearToken();
+    // Redirect to login
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
+  }
+}
 
 // Get API base URL from environment variables
 // Use PUBLIC_ prefix for client-side access
@@ -59,6 +74,9 @@ export async function apiGet<T>(route: string, init?: RequestInit): Promise<T> {
     });
 
     if (!res.ok) {
+      // Handle auth errors (401, 403)
+      handleAuthError(res.status);
+
       const errorText = await res.text().catch(() => '');
       let errorDetail = res.statusText;
 
@@ -111,6 +129,9 @@ export async function apiPost<T, D = any>(route: string, data: D, init?: Request
     });
 
     if (!res.ok) {
+      // Handle auth errors (401, 403)
+      handleAuthError(res.status);
+
       const errorText = await res.text().catch(() => '');
       let errorDetail = res.statusText;
 
@@ -158,6 +179,9 @@ export async function apiPut<T, D = any>(route: string, data: D, init?: RequestI
     });
 
     if (!res.ok) {
+      // Handle auth errors (401, 403)
+      handleAuthError(res.status);
+
       const errorText = await res.text().catch(() => '');
       let errorDetail = res.statusText;
 
@@ -202,6 +226,9 @@ export async function apiDelete<T = void>(route: string, init?: RequestInit): Pr
     });
 
     if (!res.ok) {
+      // Handle auth errors (401, 403)
+      handleAuthError(res.status);
+
       const errorText = await res.text().catch(() => '');
       let errorDetail = res.statusText;
 

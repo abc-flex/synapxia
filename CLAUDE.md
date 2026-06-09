@@ -42,3 +42,8 @@ Local development uses defaults (see `.env.template`), but production Vercel dep
 Governance is binding — see [`.specify/memory/constitution.md`](.specify/memory/constitution.md)
 and the pre-PR checklist in [`AGENTS.md`](AGENTS.md). Features are spec-driven; specs live
 in [`specs/`](specs/).
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+<!-- SPECKIT END -->

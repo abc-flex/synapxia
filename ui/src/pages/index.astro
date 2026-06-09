@@ -22,7 +22,7 @@ const title = t(locale, "home_page.title");
 ) : (
   <Layout title={title}>
     {/* ============================== Public top bar ============================== */}
-    <header class="mx-auto max-w-4xl flex flex-wrap items-center justify-between gap-3 px-3 pt-4 sm:px-4 sm:pt-5 md:px-6 md:pt-6">
+    <header class="mx-auto max-w-6xl flex flex-wrap items-center justify-between gap-3 px-3 pt-4 sm:px-4 sm:pt-5 md:px-6 md:pt-6">
       <a
         href="/"
         class="flex items-center gap-2 sm:gap-3 rounded-lg p-1 -m-1 transition hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-indigo-400"
@@ -38,17 +38,10 @@ const title = t(locale, "home_page.title");
         <LanguageSwitcher />
         <a
           href="/login"
-          class="hidden sm:inline-flex items-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800 transition"
+          class="hidden sm:inline-flex items-center rounded-lg bg-indigo-600 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-white hover:bg-indigo-700 transition"
           data-i18n="login_page.sign_in"
         >
           Sign In
-        </a>
-        <a
-          href="/signup"
-          class="inline-flex items-center rounded-lg bg-indigo-600 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-white hover:bg-indigo-700 transition"
-          data-i18n="login_page.sign_up"
-        >
-          Sign up
         </a>
       </div>
     </header>

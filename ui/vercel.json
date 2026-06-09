@@ -1,7 +1,7 @@
 {
   "ignoreCommand": "exit 0",
   "git": {
-    "deploymentEnabled": false-
+    "deploymentEnabled": false
   },
   "rewrites": [
     {

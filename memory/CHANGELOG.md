@@ -6,6 +6,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [develop] — 2026-06-09 10:05 · bc1fd8d
+
+### Changed
+- `1d48800` Spec Kit updated
+
+---
+
+
 ## [develop] — 2026-06-09 03:22 · f208526
 
 ### Added

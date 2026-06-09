@@ -233,6 +233,38 @@ router.include_router(
     prefix="/refresh",
 )
 
+# POST /refresh — trade a valid refresh token for a fresh access token.
+# fastapi-users doesn't ship this endpoint (refresh-token flows vary across
+# apps) but we compose it from its primitives — refresh_strategy.read_token
+# resolves the user; jwt_strategy.write_token mints the new access token.
+# No password re-prompt, no DB session row created.
+@router.post("/refresh")
+async def refresh_access_token(
+    authorization: str = Header(...),
+    user_manager: UserManager = Depends(get_user_manager),
+    refresh_strategy: DatabaseStrategy = Depends(get_refresh_strategy),
+) -> dict:
+    """Exchange a refresh token (Bearer) for a new short-lived access token."""
+    if not authorization.lower().startswith("bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing or malformed Authorization header",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    token = authorization[len("bearer "):].strip()
+
+    user = await refresh_strategy.read_token(token, user_manager)
+    if user is None or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    new_access_token = await get_jwt_strategy().write_token(user)
+    return {"access_token": new_access_token, "token_type": "bearer"}
+
+
 # POST /register
 router.include_router(fastapi_users.get_register_router(UserRead, UserCreate))
 

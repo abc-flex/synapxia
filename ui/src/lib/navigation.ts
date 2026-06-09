@@ -58,6 +58,7 @@ export async function getNavigationData(): Promise<NavigationData> {
     code: o.code,
     name: o.name,
     path: o.path,
+    icon: o.icon ?? null,
   }));
 
   const result: NavigationData = { primaryNav, itemsNav };

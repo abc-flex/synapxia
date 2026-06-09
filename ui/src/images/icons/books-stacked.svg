@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+  <!-- Left book (upright), centered around x=7 -->
+  <rect x="3.75" y="3.5" width="6.5" height="17" rx="1.25" />
+  <!-- Two horizontal page-line accents on the left book -->
+  <path stroke-linecap="round" d="M5.5 7h3M5.5 10h3" />
+  <!-- Right book (tilted 12°), drawn as a tilted rect via path -->
+  <path stroke-linecap="round" stroke-linejoin="round" d="m14.65 4.86 4.6-.97c.6-.13 1.2.26 1.32.87l2.95 14a1.13 1.13 0 0 1-.87 1.32l-4.6.97c-.6.13-1.2-.26-1.32-.87l-2.95-14a1.13 1.13 0 0 1 .87-1.32Z" />
+  <!-- Two horizontal page-line accents on the tilted book -->
+  <path stroke-linecap="round" d="m16.4 8.7 3.18-.67M17 11.66l3.18-.67" />
+</svg>

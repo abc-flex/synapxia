@@ -1,0 +1,75 @@
+---
+// Friendly placeholder shown for routes that aren't implemented yet.
+// Reused by ui/src/pages/404.astro and ui/src/pages/coming-soon.astro.
+//
+// All visible strings reference `coming_soon.*` keys — see ui/src/i18n/en.json
+// and ui/src/i18n/es.json. The runtime patch in ui/src/utils/i18nClient.ts
+// replaces text/title via [data-i18n] attributes on DOMContentLoaded and on
+// language switch.
+
+interface Props {
+  titleKey?: string;
+  subtitleKey?: string;
+  badgeKey?: string;
+}
+
+const {
+  titleKey = "coming_soon.title",
+  subtitleKey = "coming_soon.subtitle",
+  badgeKey = "coming_soon.badge",
+} = Astro.props as Props;
+---
+
+<section class="flex min-h-[calc(100vh-5rem)] items-center justify-center px-4 py-12">
+  <div class="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:p-12">
+    <div class="mx-auto mb-8 flex h-48 w-48 items-center justify-center rounded-full bg-amber-100 text-[8rem] leading-none dark:bg-amber-500/15 sm:h-56 sm:w-56 sm:text-[10rem]">
+      <span aria-hidden="true">🚧</span>
+    </div>
+
+    <span
+      class="mb-4 inline-block rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300"
+      data-i18n={badgeKey}
+    >
+      {badgeKey}
+    </span>
+
+    <h1
+      class="mb-3 text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl"
+      data-i18n={titleKey}
+    >
+      {titleKey}
+    </h1>
+
+    <p
+      class="mb-8 text-base leading-relaxed text-slate-600 dark:text-gray-400"
+      data-i18n={subtitleKey}
+    >
+      {subtitleKey}
+    </p>
+
+    <div class="flex justify-center">
+      <button
+        type="button"
+        data-coming-soon-back
+        class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100 focus:outline-none focus:ring-4 focus:ring-slate-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 dark:focus:ring-gray-700"
+        data-i18n="coming_soon.go_back"
+      >
+        coming_soon.go_back
+      </button>
+    </div>
+  </div>
+</section>
+
+<script>
+  // "Go back" uses history.back() when there's a referrer; otherwise stays put.
+  (() => {
+    if (typeof window === "undefined") return;
+    const btn = document.querySelector<HTMLButtonElement>("[data-coming-soon-back]");
+    if (!btn) return;
+    btn.addEventListener("click", () => {
+      if (window.history.length > 1) {
+        window.history.back();
+      }
+    });
+  })();
+</script>

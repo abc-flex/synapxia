@@ -33,6 +33,30 @@ def get_all(
     return specifications
 
 
+@router.get("/category/{category_code}", response_model=List[Specification])
+def get_by_category(
+    category_code: str,
+    skip: int = 0,
+    limit: int = 100,
+    session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("TAXO", "SPECIFICATIONS", can_edit=False)),
+) -> List[Specification]:
+    """
+    List specifications belonging to a category — used by the asset detail
+    modal to know which feature inputs to render dynamically.
+    """
+    return session.exec(
+        select(Specification)
+        .where(
+            Specification.category == category_code,
+            Specification.is_active == True,
+        )
+        .order_by(Specification.feature)
+        .offset(skip)
+        .limit(limit)
+    ).all()
+
+
 @router.get("/{category_code}/{feature_code}", response_model=Specification)
 def get(
     category_code: str, feature_code: str, session: Session = Depends(get_db_session),

@@ -22,6 +22,12 @@
   "notification_menu": {
     "title": "Notificaciones"
   },
+  "coming_soon": {
+    "badge": "Próximamente",
+    "title": "Estamos trabajando en esto",
+    "subtitle": "Esta funcionalidad aún no está lista — la estamos construyendo y pronto estará disponible.",
+    "go_back": "Volver"
+  },
   "modules": {
     "ADMIN": "Administración",
     "TAXO": "Taxonomía de Activos",
@@ -33,6 +39,7 @@
   },
   "menu_options": {
     "business_units": "Unidades de Negocio",
+    "profile": "Perfil",
     "profiles": "Perfiles",
     "privileges": "Privilegios",
     "users": "Usuarios",
@@ -352,6 +359,42 @@
     "delete": "Eliminar Activo",
     "empty_message": "No se encontraron Activos",
     "delete_confirmation": "¿Está seguro de que desea eliminar este Activo?"
+  },
+  "status_modal": {
+    "filter_title": "Todos los estados"
+  },
+  "asset_detail_modal": {
+    "title_create": "Nuevo Activo",
+    "title_edit": "Editar Activo",
+    "subtitle": "Campos principales más las caracterizaciones requeridas por la categoría elegida.",
+    "core_section": "Datos principales",
+    "characterizations_section": "Caracterizaciones",
+    "characterizations_empty": "Selecciona una categoría para cargar sus características requeridas.",
+    "choose_category": "— elige categoría —",
+    "choose_status": "— elige estado —",
+    "tags_placeholder": "tag1, tag2, tag3",
+    "fields": "campos",
+    "saved": "Activo guardado.",
+    "error_specs": "No se pudieron cargar las especificaciones.",
+    "error_load": "No se pudo cargar el activo.",
+    "error_save": "No se pudo guardar el activo."
+  },
+  "features": {
+    "LANGUAGE": "Lenguaje",
+    "MODE": "Modo",
+    "PLATFORM": "Plataforma",
+    "REPOSITORY": "Repositorio",
+    "FRAMEWORK": "Framework",
+    "COMPLEXITY": "Complejidad",
+    "SUGGESTED_MODEL": "Modelo sugerido",
+    "SUGGESTED_TEMPERATURE": "Temperatura sugerida",
+    "PROMPT_TEMPLATE": "Plantilla de prompt",
+    "EXAMPLE_OUTPUT": "Salida de ejemplo",
+    "OVERVIEW": "Resumen",
+    "CONTENT": "Contenido",
+    "TOOLS": "Herramientas",
+    "SERVER_CONFIG": "Configuración del servidor",
+    "INSTRUCTIONS": "Instrucciones"
   },
   "characterization_modal": {
     "one_title": "Caracterización del Activo",

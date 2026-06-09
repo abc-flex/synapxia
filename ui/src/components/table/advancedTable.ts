@@ -5,7 +5,8 @@ export function initAdvancedTable(
     data: Record<string, any>[],
     allColumns: { key: string; label: string; visible?: boolean }[],
     visibleColumns: { key: string; label: string; visible?: boolean }[] = [],
-    columnFilter: string | null = null
+    columnFilter: string | null = null,
+    columnFilter2: string | null = null
 ) {
     // Si visibleColumns no se pasa o está vacío, usar allColumns como fallback
     const columns = visibleColumns.length > 0 ? visibleColumns : allColumns;
@@ -51,22 +52,24 @@ export function initAdvancedTable(
     }
 
     /* ======================
-       COLUMN FILTER
+       COLUMN FILTER (up to two filters, AND-combined)
     ====================== */
     const filterSelect = document.getElementById(
         `${tableId}-filter`
     ) as HTMLSelectElement | null;
+    const filterSelect2 = document.getElementById(
+        `${tableId}-filter2`
+    ) as HTMLSelectElement | null;
 
     let filterKey: string | null = null;
+    let filterKey2: string | null = null;
 
     if (filterSelect) {
         filterKey = filterSelect.dataset.columnKey ?? null;
 
         // 🔹 Obtener valor inicial desde URL
         const urlParams = new URLSearchParams(window.location.search);
-        const filterParam = columnFilter
-            ? urlParams.get(columnFilter)
-            : null;
+        const filterParam = columnFilter ? urlParams.get(columnFilter) : null;
         if (filterParam) {
             filterSelect.value = filterParam;
         }
@@ -75,8 +78,25 @@ export function initAdvancedTable(
             applyFilters();
         });
 
-        // Apply initial filter from URL param on page load
         if (filterParam) {
+            applyFilters();
+        }
+    }
+
+    if (filterSelect2) {
+        filterKey2 = filterSelect2.dataset.columnKey ?? null;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const filterParam2 = columnFilter2 ? urlParams.get(columnFilter2) : null;
+        if (filterParam2) {
+            filterSelect2.value = filterParam2;
+        }
+
+        filterSelect2.addEventListener("change", () => {
+            applyFilters();
+        });
+
+        if (filterParam2) {
             applyFilters();
         }
     }
@@ -87,9 +107,10 @@ export function initAdvancedTable(
     function applyFilters() {
         const searchTerm = searchInput?.value.toLowerCase() ?? "";
         const filterValue = filterSelect?.value ?? "";
+        const filterValue2 = filterSelect2?.value ?? "";
 
         const rows = Array.from(tbody.querySelectorAll("tr")) as HTMLTableRowElement[];
-        
+
         rows.forEach((row, rowIndex) => {
             let visible = true;
             const rowData = data[rowIndex];
@@ -104,6 +125,12 @@ export function initAdvancedTable(
             if (filterValue && filterKey && rowData) {
                 const cellValue = String(rowData[filterKey] ?? "");
                 visible = visible && cellValue === filterValue;
+            }
+
+            // 🏷️ Segundo filtro (AND con el primero)
+            if (filterValue2 && filterKey2 && rowData) {
+                const cellValue2 = String(rowData[filterKey2] ?? "");
+                visible = visible && cellValue2 === filterValue2;
             }
 
             row.classList.toggle("hidden-by-filter", !visible);

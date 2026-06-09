@@ -20,6 +20,9 @@ const {
   showAddButton = true,
   columnFilter = null,
   filterOptions = [],
+  // Optional second filter — backward-compat: when null, behaves like before.
+  columnFilter2 = null,
+  filterOptions2 = [],
   masterPage = null,
   detailPage = null,
   mdItem = null,
@@ -76,6 +79,25 @@ const visibleColumns = columns.filter((col) => col.visible !== false);
             >
               <option value="" data-i18n={`${columnFilter}_modal.filter_title`}></option>
               {filterOptions.map((opt) => (
+                <option value={opt.value || opt.code}>
+                  {opt.label || opt.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )
+      }
+      {
+        columnFilter2 && data.length > 0 && (
+          <div class="relative">
+            <select
+              id={`${tableId}-filter2`}
+              data-column-key={columnFilter2}
+              class="w-100 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm
+                  focus:border-indigo-500 focus:ring-indigo-500"
+            >
+              <option value="" data-i18n={`${columnFilter2}_modal.filter_title`}></option>
+              {filterOptions2.map((opt) => (
                 <option value={opt.value || opt.code}>
                   {opt.label || opt.name}
                 </option>
@@ -311,7 +333,7 @@ const visibleColumns = columns.filter((col) => col.visible !== false);
 
 </div>
 
-<script type="module" define:vars={{ tableId, data, columns, visibleColumns, columnFilter }}>
+<script type="module" define:vars={{ tableId, data, columns, visibleColumns, columnFilter, columnFilter2 }}>
   import { initAdvancedTable } from "/src/components/table/advancedTable";
-  initAdvancedTable(tableId, data, columns, visibleColumns, columnFilter);
+  initAdvancedTable(tableId, data, columns, visibleColumns, columnFilter, columnFilter2);
 </script>

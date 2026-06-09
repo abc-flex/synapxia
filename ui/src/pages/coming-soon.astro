@@ -1,0 +1,11 @@
+---
+// Explicit route admins can point sidebar options at when a feature
+// exists in the DB but the page is not ready yet. Same friendly card
+// as the catch-all 404 page.
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import ComingSoon from "@/components/ComingSoon.astro";
+---
+
+<BaseLayout title="SynapxIA">
+  <ComingSoon />
+</BaseLayout>

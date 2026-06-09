@@ -39,7 +39,8 @@ def get_by_category(
     category_code: str,
     skip: int = 0,
     limit: int = 100,
-    session: Session = Depends(get_db_session)
+    session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("LIB", "ASSETS", can_edit=False))
 ) -> List[Asset]:
     """
     Obtener todos los assets de una categoría específica.

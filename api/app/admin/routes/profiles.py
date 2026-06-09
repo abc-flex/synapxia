@@ -20,7 +20,10 @@ class ProfileBasic(SQLModel):
     label: str
 
 @router.get("/select", response_model=List[ProfileBasic])
-def get_list(session: Session = Depends(get_db_session)) -> List[ProfileBasic]:
+def get_list(
+    session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("ADMIN", "PROFILES", can_edit=False))
+) -> List[ProfileBasic]:
     """
     Returns a profiles list optimized for selects with value (code) and label (name). 
     Only active profiles.
@@ -41,6 +44,7 @@ def get_all(
     skip: int = 0,
     limit: int = 100,
     session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("ADMIN", "PROFILES", can_edit=False))
 ) -> List[Profile]:
     """
     List all profiles actives with pagination (*Only active profiles).
@@ -55,7 +59,11 @@ def get_all(
 
 
 @router.get("/{code}", response_model=Profile)
-def get(code: str, session: Session = Depends(get_db_session)) -> Profile:
+def get(
+    code: str,
+    session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("ADMIN", "PROFILES", can_edit=False))
+) -> Profile:
     """
     Get a profile by its code.
 
@@ -71,7 +79,9 @@ def get(code: str, session: Session = Depends(get_db_session)) -> Profile:
 
 @router.post("/", response_model=Profile, status_code=201)
 def create(
-    profile: ProfileCreate, session: Session = Depends(get_db_session)
+    profile: ProfileCreate,
+    session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("ADMIN", "PROFILES", can_edit=True))
 ) -> Profile:
     """
     Create a new profile.
@@ -107,7 +117,10 @@ def create(
 
 @router.put("/{code}", response_model=Profile)
 def update(
-    code: str, profile_update: ProfileUpdate, session: Session = Depends(get_db_session)
+    code: str,
+    profile_update: ProfileUpdate,
+    session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("ADMIN", "PROFILES", can_edit=True))
 ) -> Profile:
     """
     Update an existing profile.
@@ -134,7 +147,11 @@ def update(
 
 
 @router.delete("/{code}", response_model=Profile, status_code=200)
-def delete(code: str, session: Session = Depends(get_db_session)) -> Profile:
+def delete(
+    code: str,
+    session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("ADMIN", "PROFILES", can_edit=True))
+) -> Profile:
     """
     Delete a profile (logical delete).
 

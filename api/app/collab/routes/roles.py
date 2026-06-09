@@ -45,6 +45,7 @@ def get_all(
     skip: int = 0,
     limit: int = 100,
     session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("COLLAB", "ROLES", can_edit=False))
 ) -> List[Role]:
     """
     List all roles actives with pagination (*Only active roles).

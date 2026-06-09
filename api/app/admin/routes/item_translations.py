@@ -39,7 +39,8 @@ def get_all(
 @router.get("/list/{list_code}", response_model=List[ItemTranslation])
 def get_by_list(
     list_code: str,
-    session: Session = Depends(get_db_session)
+    session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("ADMIN", "ITEM_TRANSLATIONS", can_edit=False))
 ) -> List[ItemTranslation]:
     """
     Obtener todas las traducciones de una lista específica.
@@ -58,7 +59,8 @@ def get_by_list(
 def get_by_item(
     list_code: str,
     value: str,
-    session: Session = Depends(get_db_session)
+    session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("ADMIN", "ITEM_TRANSLATIONS", can_edit=False))
 ) -> List[ItemTranslation]:
     """
     Obtener todas las traducciones de un elemento de lista específico.

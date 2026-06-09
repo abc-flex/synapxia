@@ -34,8 +34,9 @@ def get_all(
 
 @router.get("/profile/{profile_code}", response_model=List[Privilege])
 def get_by_profile(
-    profile_code: str, 
-    session: Session = Depends(get_db_session)
+    profile_code: str,
+    session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("ADMIN", "PRIVILEGES", can_edit=False))
 ) -> List[Privilege]:
     """
     Get all privileges for a specific profile.

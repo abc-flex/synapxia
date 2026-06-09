@@ -105,7 +105,11 @@ def get(
 
 
 @router.post("/", response_model=User, status_code=201)
-def create(user: UserCreate, session: Session = Depends(get_db_session)) -> User:
+def create(
+    user: UserCreate,
+    session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("ADMIN", "USERS", can_edit=True))
+) -> User:
     """
     Create a new user.
 
@@ -169,7 +173,12 @@ def create(user: UserCreate, session: Session = Depends(get_db_session)) -> User
 
 
 @router.put("/{id}", response_model=User)
-def update(id: int, user_update: UserUpdate, session: Session = Depends(get_db_session)) -> User:
+def update(
+    id: int,
+    user_update: UserUpdate,
+    session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("ADMIN", "USERS", can_edit=True))
+) -> User:
     """
     Update an existing user.
 
@@ -223,7 +232,11 @@ def update(id: int, user_update: UserUpdate, session: Session = Depends(get_db_s
 
 
 @router.delete("/{id}", response_model=User, status_code=200)
-def delete(id: int, session: Session = Depends(get_db_session)) -> User:
+def delete(
+    id: int,
+    session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("ADMIN", "USERS", can_edit=True))
+) -> User:
     """
     Delete a user (logical delete).
 

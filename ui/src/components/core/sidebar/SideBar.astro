@@ -140,8 +140,11 @@ for (const [path, svg] of Object.entries(iconModules)) {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#39;");
 
+    // Parents prefer the solid variant for visual weight.
+    const moduleIcon = (name: string) => icons[`${name}-solid`] || icons[name] || "";
+
     const buildItem = (module: NavModule, opts: NavOption[]) => {
-      const iconSvg = icons[module.icon] || "";
+      const iconSvg = moduleIcon(module.icon);
       const isActive = module.code.toLowerCase() === currentModuleName;
       const hasChildren = opts.length > 0;
       const moduleI18n = `modules.${module.code}`;

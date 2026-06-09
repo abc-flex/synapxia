@@ -23,7 +23,13 @@ function getIcon(icon: string) {
   return icons[`/src/images/icons/${icon}.svg`] ?? "";
 }
 
-const iconSvg = getIcon(module.icon);
+// Parent-module icons prefer the solid variant (`${name}-solid.svg`) for
+// visual weight. Falls back to the outline icon if no solid variant exists.
+function getModuleIcon(icon: string) {
+  return getIcon(`${icon}-solid`) || getIcon(icon);
+}
+
+const iconSvg = getModuleIcon(module.icon);
 const chevronIcon = getIcon("chevron-down");
 ---
 

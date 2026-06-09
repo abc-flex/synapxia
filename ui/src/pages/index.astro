@@ -1,9 +1,227 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import { t } from "@/i18n";
+import { getLocale } from "@/utils/getLocale";
+
+const locale = getLocale(Astro);
+const title = t(locale, "home_page.title");
+
+// Module cards. Each one links to its first canonical option.
+// Icons are referenced by name from /src/images/icons/*.svg via Vite glob.
+const iconModules = import.meta.glob("/src/images/icons/*.svg", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+}) as Record<string, string>;
+const iconByName: Record<string, string> = {};
+for (const [path, svg] of Object.entries(iconModules)) {
+  iconByName[path.replace("/src/images/icons/", "").replace(/\.svg$/, "")] = svg;
+}
+
+const modules = [
+  { code: "ADMIN",  icon: "wrench-screwdriver", href: "/admin/users",        descKey: "home_page.module_admin_desc"  },
+  { code: "TAXO",   icon: "tag",                href: "/taxo/categories",    descKey: "home_page.module_taxo_desc"   },
+  { code: "LIB",    icon: "archive-box",        href: "/lib/assets",         descKey: "home_page.module_lib_desc"    },
+  { code: "COLLAB", icon: "user-group",         href: "/collab/teams",       descKey: "home_page.module_collab_desc" },
+  { code: "INITS",  icon: "rocket-launch",      href: "/inits/explore",      descKey: "home_page.module_inits_desc"  },
+  { code: "ANA",    icon: "presentation-chart-bar", href: "/ana/dashboards", descKey: "home_page.module_ana_desc"    },
+  { code: "PROC",   icon: "share",              href: "/proc/value_chain",   descKey: "home_page.module_proc_desc"   },
+];
+
+const principles = [
+  { titleKey: "home_page.principle_discover_title", descKey: "home_page.principle_discover_desc" },
+  { titleKey: "home_page.principle_govern_title",   descKey: "home_page.principle_govern_desc"   },
+  { titleKey: "home_page.principle_measure_title",  descKey: "home_page.principle_measure_desc"  },
+  { titleKey: "home_page.principle_evolve_title",   descKey: "home_page.principle_evolve_desc"   },
+];
+
+const quickstart = [
+  { textKey: "home_page.qs_assets",      href: "/lib/assets"      },
+  { textKey: "home_page.qs_initiatives", href: "/inits/propose"   },
+  { textKey: "home_page.qs_analytics",   href: "/ana/dashboards"  },
+  { textKey: "home_page.qs_profile",     href: "/profile"         },
+];
 ---
-<BaseLayout>
-  <div class="rounded-2xl border border-dashed border-slate-200 bg-white/70 p-10 text-center shadow-sm">
-    <p class="text-sm uppercase tracking-[0.2em] text-slate-400">TailAdmin</p>
-    <h1 class="mt-3 text-3xl font-bold text-slate-900">Astro Integration Starter</h1>
+
+<BaseLayout title={title}>
+  <div class="mx-auto max-w-(--breakpoint-2xl) p-4 md:p-6 space-y-6">
+
+    {/* ============================== Hero ============================== */}
+    <section
+      class="relative overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-700 p-8 sm:p-10 md:p-12 text-white shadow-sm dark:border-gray-800"
+    >
+      {/* Decorative blobs */}
+      <div class="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" aria-hidden="true"></div>
+      <div class="pointer-events-none absolute -bottom-32 -left-20 h-80 w-80 rounded-full bg-purple-400/20 blur-3xl" aria-hidden="true"></div>
+
+      <div class="relative max-w-3xl">
+        <p
+          class="mb-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-white/90 ring-1 ring-white/20"
+          data-i18n="home_page.eyebrow"
+        >
+          AI Governance Platform
+        </p>
+        <h1 class="text-4xl sm:text-5xl font-bold tracking-tight" data-i18n="home_page.title">
+          SynapxIA
+        </h1>
+        <p class="mt-3 text-base sm:text-lg text-white/85" data-i18n="home_page.subtitle">
+          System for Insight, Adoption, Practice &amp; eXpansion through Intelligent Agents
+        </p>
+        <p class="mt-5 max-w-2xl text-sm sm:text-base text-white/80" data-i18n="home_page.lede">
+          A unified workspace to govern, share, and scale your organization's AI assets — from prompts and agents to RAG apps, processes, and impact metrics.
+        </p>
+
+        <div class="mt-7 flex flex-wrap items-center gap-3">
+          <a
+            href="/lib/assets"
+            class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 shadow hover:bg-indigo-50 transition"
+          >
+            <span data-i18n="home_page.cta_explore_library">Explore the AI Library</span>
+            <span class="inline-block">→</span>
+          </a>
+          <a
+            href="/taxo/categories"
+            class="inline-flex items-center gap-2 rounded-lg border border-white/30 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/15 transition"
+          >
+            <span data-i18n="home_page.cta_browse_taxonomy">Browse the taxonomy</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    {/* ============================== What it's for ============================== */}
+    <section
+      class="rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 shadow-sm dark:border-gray-800 dark:bg-white/[0.03]"
+    >
+      <h2 class="text-2xl font-bold text-gray-900 dark:text-white" data-i18n="home_page.what_is_title">
+        What SynapxIA is for
+      </h2>
+      <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 text-sm sm:text-base text-gray-600 dark:text-gray-300 leading-relaxed">
+        <p data-i18n="home_page.what_is_p1">
+          AI is moving from isolated experiments into mission-critical workflows. Each team builds prompts, agents, RAG apps and notebooks — but they live in chats, docs and dashboards that nobody else can find, audit, or reuse.
+        </p>
+        <p data-i18n="home_page.what_is_p2">
+          SynapxIA is the governance layer for that sprawl. It catalogs every AI asset with a shared taxonomy, ties each to its owners and value chain, and tracks adoption, usage, and impact across the organization.
+        </p>
+      </div>
+    </section>
+
+    {/* ============================== Modules grid ============================== */}
+    <section
+      class="rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 shadow-sm dark:border-gray-800 dark:bg-white/[0.03]"
+    >
+      <div class="mb-6">
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white" data-i18n="home_page.modules_title">
+          What's inside
+        </h2>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400" data-i18n="home_page.modules_subtitle">
+          Seven domains, one source of truth.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 md:gap-6">
+        {modules.map((m) => (
+          <a
+            href={m.href}
+            class="group rounded-xl border border-gray-200 bg-white p-5 hover:border-indigo-300 hover:shadow-md transition dark:border-gray-800 dark:bg-white/[0.02] dark:hover:border-indigo-700"
+          >
+            <div class="flex items-start gap-3">
+              <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-300">
+                <span class="w-5 h-5 inline-block">
+                  <Fragment set:html={iconByName[m.icon] ?? ""} />
+                </span>
+              </div>
+              <div class="min-w-0">
+                <h3 class="font-semibold text-gray-900 group-hover:text-indigo-700 dark:text-white dark:group-hover:text-indigo-300 transition">
+                  <span data-i18n={`modules.${m.code}`}>{t(locale, `modules.${m.code}`)}</span>
+                </h3>
+                <p
+                  class="mt-1 text-sm text-gray-600 dark:text-gray-400 leading-snug"
+                  data-i18n={m.descKey}
+                >
+                  {t(locale, m.descKey)}
+                </p>
+              </div>
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    {/* ============================== Principles + Inspiration ============================== */}
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+
+      {/* Inspiration callout (Fury reference) */}
+      <section
+        class="lg:col-span-2 rounded-2xl border border-indigo-100 bg-indigo-50/60 p-6 sm:p-8 shadow-sm dark:border-indigo-900/40 dark:bg-indigo-950/30"
+      >
+        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-300"
+           data-i18n="home_page.inspiration_eyebrow">
+          Why this exists
+        </p>
+        <h2 class="mt-3 text-2xl font-bold text-gray-900 dark:text-white" data-i18n="home_page.inspiration_title">
+          Inspired by platform thinking
+        </h2>
+        <p class="mt-4 text-sm sm:text-base text-gray-700 dark:text-gray-200 leading-relaxed"
+           data-i18n="home_page.inspiration_body">
+          Just like Mercado Libre's Fury gave thousands of developers a single platform to ship and govern services at scale, SynapxIA aims to give AI builders one place to publish, discover, evaluate and govern intelligent agents — so the org can move from scattered experiments to a measurable, shared AI practice.
+        </p>
+      </section>
+
+      {/* Principles */}
+      <section
+        class="rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 shadow-sm dark:border-gray-800 dark:bg-white/[0.03]"
+      >
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white" data-i18n="home_page.principles_title">
+          Principles
+        </h2>
+        <ul class="mt-4 space-y-4">
+          {principles.map((p) => (
+            <li class="flex items-start gap-3">
+              <span class="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-indigo-500" aria-hidden="true"></span>
+              <div>
+                <p class="text-sm font-semibold text-gray-900 dark:text-white" data-i18n={p.titleKey}>
+                  {t(locale, p.titleKey)}
+                </p>
+                <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400" data-i18n={p.descKey}>
+                  {t(locale, p.descKey)}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
+
+    {/* ============================== Quickstart ============================== */}
+    <section
+      class="rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 shadow-sm dark:border-gray-800 dark:bg-white/[0.03]"
+    >
+      <div class="mb-5">
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white" data-i18n="home_page.quickstart_title">
+          Quickstart
+        </h2>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400" data-i18n="home_page.quickstart_subtitle">
+          Common entry points.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {quickstart.map((q) => (
+          <a
+            href={q.href}
+            class="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-200 dark:hover:border-indigo-700 dark:hover:bg-indigo-900/20 transition"
+          >
+            <span data-i18n={q.textKey}>{t(locale, q.textKey)}</span>
+            <span aria-hidden="true">→</span>
+          </a>
+        ))}
+      </div>
+
+      <p class="mt-6 text-xs text-gray-400 dark:text-gray-500 text-center" data-i18n="home_page.footer_note">
+        Built on FastAPI · Astro · PostgreSQL
+      </p>
+    </section>
+
   </div>
 </BaseLayout>

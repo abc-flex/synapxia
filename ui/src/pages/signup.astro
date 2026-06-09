@@ -34,7 +34,7 @@ import "../styles/globals.css";
           IA
         </div>
         <h1 class="text-2xl sm:text-3xl font-bold mb-2">Synapxia</h1>
-        <p class="text-sm text-white/80">Create your account</p>
+        <p class="text-sm text-white/80" data-i18n="signup.subtitle">Create your account</p>
       </div>
 
       {/* Body */}
@@ -67,6 +67,7 @@ import "../styles/globals.css";
             <label
               for="username"
               class="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1"
+              data-i18n="signup.username_label"
               >Username</label
             >
             <input
@@ -74,6 +75,7 @@ import "../styles/globals.css";
               type="text"
               name="username"
               placeholder="Choose a username"
+              data-i18n-placeholder="signup.username_placeholder"
               required
               minlength="3"
               class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white dark:bg-gray-800 bg-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition"
@@ -85,6 +87,7 @@ import "../styles/globals.css";
             <label
               for="email"
               class="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1"
+              data-i18n="signup.email_label"
               >Email</label
             >
             <input
@@ -92,6 +95,7 @@ import "../styles/globals.css";
               type="email"
               name="email"
               placeholder="Enter your email"
+              data-i18n-placeholder="signup.email_placeholder"
               required
               class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white dark:bg-gray-800 bg-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition"
             />
@@ -102,6 +106,7 @@ import "../styles/globals.css";
             <label
               for="first_name"
               class="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1"
+              data-i18n="signup.first_name_label"
               >First Name</label
             >
             <input
@@ -109,6 +114,7 @@ import "../styles/globals.css";
               type="text"
               name="first_name"
               placeholder="First name"
+              data-i18n-placeholder="signup.first_name_placeholder"
               required
               class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white dark:bg-gray-800 bg-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition"
             />
@@ -119,6 +125,7 @@ import "../styles/globals.css";
             <label
               for="last_name"
               class="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1"
+              data-i18n="signup.last_name_label"
               >Last Name</label
             >
             <input
@@ -126,6 +133,7 @@ import "../styles/globals.css";
               type="text"
               name="last_name"
               placeholder="Last name"
+              data-i18n-placeholder="signup.last_name_placeholder"
               required
               class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white dark:bg-gray-800 bg-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition"
             />
@@ -136,6 +144,7 @@ import "../styles/globals.css";
             <label
               for="profile"
               class="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1"
+              data-i18n="signup.profile_label"
               >Role</label
             >
             <select
@@ -144,10 +153,10 @@ import "../styles/globals.css";
               required
               class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white dark:bg-gray-800 bg-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition"
             >
-              <option value="">Select a role</option>
-              <option value="ADMINISTRATOR">Administrator</option>
-              <option value="ADMINISTRATIVE">Operational Administrator</option>
-              <option value="COLLABORATOR">Standard Collaborator</option>
+              <option value="" data-i18n="signup.profile_placeholder">Select a role</option>
+              <option value="ADMINISTRATOR" data-i18n="modules.ADMINISTRATOR">Administrator</option>
+              <option value="ADMINISTRATIVE" data-i18n="modules.ADMINISTRATIVE">Operational Administrator</option>
+              <option value="COLLABORATOR" data-i18n="modules.COLLABORATOR">Standard Collaborator</option>
             </select>
           </div>
 
@@ -156,6 +165,7 @@ import "../styles/globals.css";
             <label
               for="unit"
               class="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1"
+              data-i18n="signup.unit_label"
               >Business Unit</label
             >
             <select
@@ -164,10 +174,10 @@ import "../styles/globals.css";
               required
               class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white dark:bg-gray-800 bg-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition"
             >
-              <option value="">Select a business unit</option>
-              <option value="CORP">Corporate</option>
-              <option value="ENG">Engineering</option>
-              <option value="GEN_AI">Generative AI</option>
+              <option value="" data-i18n="signup.unit_placeholder">Select a business unit</option>
+              <option value="CORP" data-i18n="modules.CORP">Corporate</option>
+              <option value="ENG" data-i18n="modules.ENG">Engineering</option>
+              <option value="GEN_AI" data-i18n="modules.GEN_AI">Generative AI</option>
             </select>
           </div>
 
@@ -176,6 +186,7 @@ import "../styles/globals.css";
             <label
               for="password"
               class="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1"
+              data-i18n="signup.password_label"
               >Password</label
             >
             <input
@@ -183,6 +194,7 @@ import "../styles/globals.css";
               type="password"
               name="password"
               placeholder="Min 8 characters"
+              data-i18n-placeholder="signup.password_placeholder"
               required
               minlength="8"
               class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white dark:bg-gray-800 bg-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition"
@@ -194,6 +206,7 @@ import "../styles/globals.css";
             <label
               for="confirm_password"
               class="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1"
+              data-i18n="signup.confirm_password_label"
               >Confirm Password</label
             >
             <input
@@ -201,6 +214,7 @@ import "../styles/globals.css";
               type="password"
               name="confirm_password"
               placeholder="Confirm password"
+              data-i18n-placeholder="signup.confirm_password_placeholder"
               required
               minlength="8"
               class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white dark:bg-gray-800 bg-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition"
@@ -216,7 +230,7 @@ import "../styles/globals.css";
               required
               class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
             />
-            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300"
+            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300" data-i18n="signup.terms"
               >I agree to the Terms and Conditions</span
             >
           </label>
@@ -225,6 +239,7 @@ import "../styles/globals.css";
           <button
             type="submit"
             class="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-lg transition active:scale-95 hover:shadow-lg transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed mt-6"
+            data-i18n="signup.submit"
           >
             Create Account
           </button>
@@ -232,10 +247,11 @@ import "../styles/globals.css";
 
         {/* Login Link */}
         <div class="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
-          <span>Already have an account?</span>
+          <span data-i18n="signup.already_account">Already have an account?</span>
           <a
             href="/login"
             class="ml-1 text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
+            data-i18n="signup.login_link"
             >Login</a
           >
         </div>
@@ -253,6 +269,17 @@ import "../styles/globals.css";
       const passwordInput = document.getElementById('password') as HTMLInputElement;
       const submitButton = signupForm?.querySelector('button[type="submit"]') as HTMLButtonElement;
       let isSubmitting = false;
+
+      // i18n helper — looks up via window.t (from ClientTranslations.astro),
+      // falls back to the provided English string when translations aren't ready.
+      const tr = (key: string, fallback: string): string => {
+        try {
+          const lang = localStorage.getItem('lang') || 'en';
+          const w = window as any;
+          if (typeof w.t === 'function') return w.t(key, lang) || fallback;
+        } catch { /* non-fatal */ }
+        return fallback;
+      };
 
       // Password strength validation
       passwordInput?.addEventListener('input', (e) => {
@@ -286,7 +313,7 @@ import "../styles/globals.css";
 
         // Validate inputs
         if (!username || !email || !first_name || !last_name || !profile || !unit || !password) {
-          showError('All fields are required');
+          showError(tr('signup.error_required', 'All fields are required'));
           isSubmitting = false;
           return;
         }
@@ -294,20 +321,20 @@ import "../styles/globals.css";
         // Email validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
-          showError('Please enter a valid email address');
+          showError(tr('signup.error_invalid_email', 'Please enter a valid email address'));
           isSubmitting = false;
           return;
         }
 
         // Password length validation
         if (password.length < 8) {
-          showError('Password must be at least 8 characters long');
+          showError(tr('signup.error_password_min', 'Password must be at least 8 characters long'));
           isSubmitting = false;
           return;
         }
 
         if (password !== confirm_password) {
-          showError('Passwords do not match');
+          showError(tr('signup.error_password_mismatch', 'Passwords do not match'));
           isSubmitting = false;
           return;
         }
@@ -346,7 +373,7 @@ import "../styles/globals.css";
 
           // Registration successful
           if (successMessage) {
-            successMessage.textContent = 'Account created successfully! Redirecting to login...';
+            successMessage.textContent = tr('signup.success_message', 'Account created successfully! Redirecting to login...');
             successMessage.classList.remove('hidden');
           }
 
@@ -367,7 +394,7 @@ import "../styles/globals.css";
           if (error instanceof Error) {
             showError(error.message);
           } else {
-            showError('Registration failed: unknown error');
+            showError(tr('signup.error_unknown', 'Registration failed. Please try again.'));
           }
         }
       });

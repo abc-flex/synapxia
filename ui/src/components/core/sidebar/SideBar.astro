@@ -43,8 +43,13 @@ for (const [path, svg] of Object.entries(iconModules)) {
   class="sidebar fixed left-0 top-0 z-[9999] hidden h-screen w-[290px] flex-col overflow-y-hidden border-r border-gray-200 bg-white px-5 pt-8 pb-8 shadow-sm duration-300 ease-linear dark:border-gray-800 dark:bg-black lg:static lg:flex lg:translate-x-0"
 >
   <!-- SIDEBAR HEADER -->
-  <div class="sidebar-header flex items-center gap-2 pb-7">
-    <div class="flex items-center gap-3">
+  <div class="sidebar-header pb-7">
+    <a
+      href="/"
+      class="flex items-center gap-3 rounded-lg p-1 -m-1 hover:bg-gray-100 dark:hover:bg-gray-800 transition focus:outline-none focus:ring-2 focus:ring-indigo-400"
+      aria-label="SynapxIA — Home"
+      data-i18n-aria-label="home_page.title"
+    >
       <div
         class="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600 text-white font-semibold"
       >
@@ -55,7 +60,7 @@ for (const [path, svg] of Object.entries(iconModules)) {
           {brandTitle}
         </p>
       </div>
-    </div>
+    </a>
   </div>
   <!-- SIDEBAR HEADER -->
 

@@ -39,7 +39,7 @@ const currentModuleName = pathSegments[0] || "";
       if (!hasToken && !isPublic) {
         window.location.replace('/login');
       } else if (hasToken && (path === '/login' || path === '/signup')) {
-        window.location.replace('/dashboard');
+        window.location.replace('/');
       }
     </script>
     <meta charset="UTF-8" />

@@ -228,6 +228,16 @@ import Breadcrumb from "../components/core/Breadcrumb.astro";
           : "bg-red-50 text-red-800 border border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700");
     }
 
+    // i18n helper — looks up via window.t exposed by ClientTranslations.astro.
+    const tr = (key: string, fallback: string): string => {
+      try {
+        const lang = localStorage.getItem("lang") || "en";
+        const w = window as any;
+        if (typeof w.t === "function") return w.t(key, lang) || fallback;
+      } catch { /* non-fatal */ }
+      return fallback;
+    };
+
     // 1) Hydrate real user via GET /me
     (async () => {
       try {
@@ -235,7 +245,7 @@ import Breadcrumb from "../components/core/Breadcrumb.astro";
         renderUser(user);
       } catch (e) {
         showStatus(
-          e instanceof Error ? e.message : "Could not load your profile.",
+          e instanceof Error ? e.message : tr("profile_page.status_load_error", "Could not load your profile."),
           "error",
         );
       }
@@ -267,10 +277,10 @@ import Breadcrumb from "../components/core/Breadcrumb.astro";
         renderUser(updated);
         viewMode?.classList.remove("hidden");
         editForm?.classList.add("hidden");
-        showStatus("Profile updated.", "ok");
+        showStatus(tr("profile_page.status_updated", "Profile updated."), "ok");
       } catch (err) {
         showStatus(
-          err instanceof Error ? err.message : "Could not save your profile.",
+          err instanceof Error ? err.message : tr("profile_page.status_save_error", "Could not save your profile."),
           "error",
         );
       }
@@ -283,20 +293,20 @@ import Breadcrumb from "../components/core/Breadcrumb.astro";
       const newPwd = $<HTMLInputElement>("new_password")?.value ?? "";
       const confirm = $<HTMLInputElement>("confirm_password")?.value ?? "";
       if (newPwd.length < 8) {
-        showStatus("Password must be at least 8 characters.", "error");
+        showStatus(tr("profile_page.status_pwd_min_length", "Password must be at least 8 characters."), "error");
         return;
       }
       if (newPwd !== confirm) {
-        showStatus("Passwords do not match.", "error");
+        showStatus(tr("profile_page.status_pwd_mismatch", "Passwords do not match."), "error");
         return;
       }
       try {
         await changePassword({ old_password: "", new_password: newPwd });
         (pwdForm as HTMLFormElement).reset();
-        showStatus("Password updated.", "ok");
+        showStatus(tr("profile_page.status_pwd_updated", "Password updated."), "ok");
       } catch (err) {
         showStatus(
-          err instanceof Error ? err.message : "Could not change password.",
+          err instanceof Error ? err.message : tr("profile_page.status_pwd_error", "Could not change password."),
           "error",
         );
       }

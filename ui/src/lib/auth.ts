@@ -124,6 +124,18 @@ export function isAuthenticated(): boolean {
 }
 
 /**
+ * Server-side auth check — reads the `auth_token` cookie set at login.
+ * Use from page frontmatters that need to branch on auth state during SSR
+ * (e.g. redirect logged-in users away from `/` into the app shell).
+ *
+ *     import { isAuthenticatedSSR } from '@/lib/auth';
+ *     if (isAuthenticatedSSR(Astro)) return Astro.redirect('/lib/assets');
+ */
+export function isAuthenticatedSSR(astro: { cookies: { get(name: string): { value?: string } | undefined } }): boolean {
+  return !!astro.cookies.get('auth_token')?.value;
+}
+
+/**
  * POST credentials to a fastapi-users login backend and return the issued
  * token. Used for both the access-token backend (/api/auth/login) and the
  * refresh-token backend (/api/auth/refresh/login).

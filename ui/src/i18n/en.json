@@ -504,6 +504,7 @@
     "lede": "A unified workspace to govern, share, and scale your organization's AI assets — from prompts and agents to RAG apps, processes, and impact metrics.",
     "cta_explore_library": "Explore the AI Library",
     "cta_browse_taxonomy": "Browse the taxonomy",
+    "cta_open_app": "Open app",
     "what_is_title": "What SynapxIA is for",
     "what_is_p1": "AI is moving from isolated experiments into mission-critical workflows. Each team builds prompts, agents, RAG apps and notebooks — but they live in chats, docs and dashboards that nobody else can find, audit, or reuse.",
     "what_is_p2": "SynapxIA is the governance layer for that sprawl. It catalogs every AI asset with a shared taxonomy, ties each to its owners and value chain, and tracks adoption, usage, and impact across the organization.",
@@ -534,7 +535,7 @@
     "qs_initiatives": "Propose a new initiative",
     "qs_analytics": "Open analytics dashboards",
     "qs_profile": "Configure your profile",
-    "footer_note": "Built on FastAPI · Astro · PostgreSQL"
+    "footer_note": "Built by the SynapxIA team. The source code is available on GitHub."
   },
   "common": {
     "active": "Active",
@@ -581,25 +582,6 @@
     "error_password_mismatch": "Passwords do not match",
     "error_unknown": "Registration failed. Please try again.",
     "success_message": "Account created successfully! Redirecting to login..."
-  },
-  "dashboard_page": {
-    "title": "Dashboard",
-    "welcome": "Welcome, {name}!",
-    "logged_in_message": "You are successfully logged in to your account.",
-    "account_settings": "Account Settings",
-    "account_settings_description": "Manage your profile and preferences",
-    "change_password": "Change Password",
-    "change_password_description": "Update your account password",
-    "api_documentation": "API Documentation",
-    "api_documentation_description": "View API endpoints and usage",
-    "session_active": "Session Active",
-    "session_message": "Your authentication token is stored securely in your browser. It will expire in 60 minutes of inactivity.",
-    "permissions": "Permissions",
-    "admin_access": "Admin Access",
-    "account_details": "Account Details",
-    "created_at": "Created at",
-    "last_login_at": "Last login",
-    "sign_out": "Sign out"
   },
   "forms_demo": {
     "title": "Form components",

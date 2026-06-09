@@ -287,8 +287,8 @@ import "../styles/globals.css";
           loginForm.reset();
           failedAttempts = 0;
           localStorage.removeItem("login_failed_attempts");
-          // Redirect to dashboard
-          window.location.href = "/";
+          // Redirect to the app's main surface (AI Library).
+          window.location.href = "/lib/assets";
         } catch (error) {
           setLoading(false);
           failedAttempts++;

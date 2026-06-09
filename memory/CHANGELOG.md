@@ -6,6 +6,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [develop] — 2026-06-09 14:53 · 6733ca0
+
+### Changed
+- `6733ca0` update dependencies and remove bun.lockb (#40)
+- `1d48800` Spec Kit updated
+
+---
+
+
 ## [develop] — 2026-06-09 10:05 · bc1fd8d
 
 ### Changed

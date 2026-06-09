@@ -2,6 +2,10 @@
 import { t } from "@/i18n";
 import { getLocale } from "@/utils/getLocale";
 import ChevronDown from "@/images/icons/chevron-down.svg?raw";
+import EditIcon from "@/images/icons/edit.svg?raw";
+import SettingsIcon from "@/images/icons/cog-6-tooth.svg?raw";
+import SupportIcon from "@/images/icons/information-circle.svg?raw";
+import SignOutIcon from "@/images/icons/arrow-left-sign-out.svg?raw";
 
 const locale = getLocale(Astro);
 
@@ -18,6 +22,15 @@ interface Props {
   menuItems?: MenuItem[];
   signOutLabel?: string;
 }
+
+// Pre-bundled SVG strings for the default menu items. Keyed by the
+// account_menu.* i18n string so a custom `menuItems` prop can opt in by
+// using the same labels (or pass its own glyphs).
+const ICONS: Record<string, string> = {
+  "account_menu.edit_profile": EditIcon,
+  "account_menu.account_settings": SettingsIcon,
+  "account_menu.support": SupportIcon,
+};
 
 const {
   name = "—",
@@ -64,7 +77,9 @@ const initials = name
       {menuItems.map((item) => (
         <li>
           <a href={item.href || "#"} class="account-link group">
-            <span class="account-link-icon" aria-hidden="true">•</span>
+            <span class="account-link-icon w-4 h-4 inline-block text-current shrink-0" aria-hidden="true">
+              <Fragment set:html={ICONS[item.label] ?? ""} />
+            </span>
             <span data-i18n={item.label}>{t(locale, item.label)}</span>
           </a>
         </li>
@@ -72,7 +87,9 @@ const initials = name
     </ul>
 
     <button id="account-signout-btn" class="account-link mt-3 w-full text-left" type="button">
-      <span class="account-link-icon" aria-hidden="true">↩</span>
+      <span class="account-link-icon w-4 h-4 inline-block text-current shrink-0" aria-hidden="true">
+        <Fragment set:html={SignOutIcon} />
+      </span>
       <span data-i18n={signOutLabel}>{t(locale, signOutLabel)}</span>
     </button>
   </div>

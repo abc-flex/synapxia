@@ -16,11 +16,13 @@ interface Props {
 }
 
 const {
-  title = "TailAdmin",
+  title = "SynapxIA",
   subtitle = "Dashboard",
   showBrandOnMobile = true,
-  userName = "Musharof Chowdhury",
-  userEmail = "randomuser@pimjo.com",
+  // Neutral placeholders — the real name/email are patched in client-side
+  // from localStorage.auth_user inside AccountMenu's mount script.
+  userName = "—",
+  userEmail = "—",
   userAvatarUrl,
 } = Astro.props as Props;
 
@@ -54,7 +56,7 @@ import SearchBar from "./SearchBar.astro";
         showBrandOnMobile ? (
           <div class="flex items-center gap-3 lg:hidden">
             <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600 text-white font-semibold">
-              TA
+              IA
             </div>
             <div class="leading-tight">
               <p class="text-xs font-semibold text-gray-500 dark:text-gray-300">

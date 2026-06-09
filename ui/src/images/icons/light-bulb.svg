@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+  <!-- Bulb body (rounded teardrop) -->
+  <path stroke-linecap="round" stroke-linejoin="round" d="M9 14.25a5.25 5.25 0 1 1 6 0v1.5a1.5 1.5 0 0 1-1.5 1.5h-3a1.5 1.5 0 0 1-1.5-1.5v-1.5Z" />
+  <!-- Socket bands -->
+  <path stroke-linecap="round" d="M10 18.75h4M10.5 21h3" />
+  <!-- Rays around the bulb (idea / brightness) -->
+  <path stroke-linecap="round" d="M12 2.25v1.5M4.22 5.47l1.06 1.06M2.25 12.75h1.5M5.28 18.97 4.22 20.03M19.78 5.47l-1.06 1.06M21.75 12.75h-1.5M18.72 18.97l1.06 1.06" />
+</svg>

@@ -187,7 +187,7 @@ INSERT INTO modules (code, name, description, sort_order, icon) VALUES
      30, 'user-group'),
     ('LIB', 'Asset Library',
      'Asset Library manages the reusable digital and AI asset repository of SynapxIA, including prompt galleries, MCP catalogs, agents and related assets that can be discovered, governed, reused and evolved.',
-     40, 'archive-box'),
+     40, 'ai-library'),
     ('INITS', 'Initiatives',
      'Initiatives supports the lifecycle of AI adoption opportunities, including proposal registration, evaluation, tracking and promotion of selected initiatives into reusable organizational assets.',
      50, 'rocket-launch'),

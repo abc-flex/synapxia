@@ -140,8 +140,11 @@ for (const [path, svg] of Object.entries(iconModules)) {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#39;");
 
+    // Parents prefer the solid variant for visual weight.
+    const moduleIcon = (name: string) => icons[`${name}-solid`] || icons[name] || "";
+
     const buildItem = (module: NavModule, opts: NavOption[]) => {
-      const iconSvg = icons[module.icon] || "";
+      const iconSvg = moduleIcon(module.icon);
       const isActive = module.code.toLowerCase() === currentModuleName;
       const hasChildren = opts.length > 0;
       const moduleI18n = `modules.${module.code}`;
@@ -151,11 +154,16 @@ for (const [path, svg] of Object.entries(iconModules)) {
           .map((o) => {
             const active = o.path === currentPath;
             const optI18n = `menu_options.${o.code.toLowerCase()}`;
+            // Use option icon when present, otherwise the original bullet dot.
+            const optIconSvg = o.icon ? (icons[o.icon] || "") : "";
+            const leading = optIconSvg
+              ? `<span class="w-5 h-5 inline-block mr-2 text-current">${optIconSvg}</span>`
+              : `<span class="w-1 h-1 inline-block mr-2 bg-current rounded-full"></span>`;
             return `
               <li>
                 <a href="${escapeHtml(o.path || "#")}"
                    class="menu-dropdown-item group ${active ? "menu-dropdown-item-active" : "menu-dropdown-item-inactive"}">
-                  <span class="w-1 h-1 inline-block mr-2 bg-current rounded-full"></span>
+                  ${leading}
                   <span data-i18n="${escapeHtml(optI18n)}">${escapeHtml(o.name)}</span>
                 </a>
               </li>
@@ -166,9 +174,9 @@ for (const [path, svg] of Object.entries(iconModules)) {
         return `
           <li>
             <details class="menu-item-container group" aria-label="${escapeHtml(module.name)} menu" ${isActive ? "open" : ""} data-menu-item>
-              <summary class="menu-item group list-none cursor-pointer select-none p-2 ${isActive ? "menu-item-active" : "menu-item-inactive"}">
-                <span class="text-gray-800 bg-color-gray-100 dark:text-gray-100 flex items-center justify-center rounded-md mr-1">
-                  <span class="w-5 h-5 inline-block">${iconSvg}</span>
+              <summary class="menu-item group list-none cursor-pointer select-none ${isActive ? "menu-item-active" : "menu-item-inactive"}">
+                <span class="menu-item-icon-tile">
+                  <span class="w-6 h-6 inline-block">${iconSvg}</span>
                 </span>
                 <span class="menu-item-text" data-i18n="${escapeHtml(moduleI18n)}">${escapeHtml(module.name)}</span>
                 <span class="menu-item-arrow stroke-current w-5 h-5 inline-block">${chevron}</span>
@@ -184,9 +192,11 @@ for (const [path, svg] of Object.entries(iconModules)) {
       return `
         <li>
           <a href="${escapeHtml((module as any).path || "#")}"
-             class="menu-item group p-2 ${isActive ? "menu-item-active" : "menu-item-inactive"}"
+             class="menu-item group ${isActive ? "menu-item-active" : "menu-item-inactive"}"
              role="button">
-            <span class="w-5 h-5 inline-block mr-1">${iconSvg}</span>
+            <span class="menu-item-icon-tile">
+              <span class="w-5 h-5 inline-block">${iconSvg}</span>
+            </span>
             <span class="menu-item-text" data-i18n="${escapeHtml(moduleI18n)}">${escapeHtml(module.name)}</span>
           </a>
         </li>

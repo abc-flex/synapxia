@@ -6,7 +6,8 @@ export interface NavModule {
 
 export interface NavOption {
   module: string;
+  code: string;
   name: string;
   path: string;
-  icon?: string;
+  icon?: string | null;
 }

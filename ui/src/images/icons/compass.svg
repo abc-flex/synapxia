@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+  <!-- Outer ring -->
+  <circle cx="12" cy="12" r="9" />
+  <!-- Diamond compass needle pointing NE / SW (rhombus, centered on 12,12) -->
+  <path stroke-linecap="round" stroke-linejoin="round" d="M15.2 8.8 13.1 13.1 8.8 15.2 10.9 10.9 Z" />
+  <!-- Center pivot dot -->
+  <circle cx="12" cy="12" r="0.75" fill="currentColor" stroke="none" />
+</svg>

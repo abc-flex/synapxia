@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+  <!-- Open book (centered, viewBox 0–24). Standard Heroicons book-open shape -->
+  <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75c-1.55-1.13-3.4-1.75-5.25-1.75-.95 0-1.87.16-2.75.46v12.04c.88-.3 1.8-.46 2.75-.46 1.85 0 3.7.62 5.25 1.75m0-12.04c1.55-1.13 3.4-1.75 5.25-1.75.95 0 1.87.16 2.75.46v12.04c-.88-.3-1.8-.46-2.75-.46-1.85 0-3.7.62-5.25 1.75m0-12.04v12.04" />
+  <!-- 4-point sparkle, upper-right, small + centered on (19, 5) -->
+  <path stroke-linecap="round" stroke-linejoin="round" d="M19 3.25v3.5M17.25 5h3.5" />
+</svg>

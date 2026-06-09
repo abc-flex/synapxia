@@ -2,12 +2,11 @@
 import { getUser } from "@/lib/auth";
 import Layout from "@/layouts/Layout.astro";
 
-// Auth gate runs client-side from Layout.astro's inline <script> — it
-// redirects to /login before this page paints if the token is missing.
-// `getUser()` returns null during SSR (localStorage is browser-only), and
-// the markup below guards every use with `{user && ...}` so SSR renders
-// placeholders. The client `<script>` at the bottom calls getCurrentUser()
-// to hydrate real values after mount.
+// Auth gate runs server-side via src/middleware.ts (cookie-based). The
+// `getUser()` call here returns null during SSR (localStorage is browser-
+// only); markup below guards every use with `{user && ...}` so SSR renders
+// placeholders. The client script at the bottom calls getCurrentUser() to
+// hydrate real values after mount.
 const user = getUser();
 ---
 

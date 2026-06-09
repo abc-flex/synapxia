@@ -25,6 +25,12 @@ class Settings(BaseSettings):
     )
     jwt_algorithm: str = "HS256"
 
+    # ==================== Cookie Configuration ====================
+    # When the UI lives on a different subdomain than the API, set
+    # COOKIE_DOMAIN=".synapxia.com" so the browser sends the auth_token
+    # cookie to both. In dev (same-origin via Vite proxy) leave it unset.
+    cookie_domain: Optional[str] = os.getenv("COOKIE_DOMAIN") or None
+
     # ==================== SMTP Configuration (Multi-profile) ====================
     # When smtp_hostname is unset/empty, mail is disabled and send operations log instead
     smtp_hostname: Optional[str] = os.getenv("SMTP_HOSTNAME")

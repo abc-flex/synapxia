@@ -14,20 +14,9 @@ const {
 <!doctype html>
 <html lang="en">
   <head>
-    {/* Client-side auth gate — see comment in BaseLayout.astro. Kept here
-        too because Layout is used by /dashboard (gated) AND by /login,
-        /signup, /index (public). The publicRoutes check inside the
-        script handles both cases with the same logic. */}
-    <script is:inline define:vars={{ publicRoutes: ['/login', '/signup', '/', '/index'] }}>
-      const path = window.location.pathname;
-      const isPublic = publicRoutes.includes(path);
-      const hasToken = !!localStorage.getItem('auth_token');
-      if (!hasToken && !isPublic) {
-        window.location.replace('/login');
-      } else if (hasToken && (path === '/login' || path === '/signup')) {
-        window.location.replace('/');
-      }
-    </script>
+    {/* Auth gate runs server-side in src/middleware.ts (cookie-based).
+        Pages reach this layout already authenticated (or already redirected
+        to /login). No flash-of-empty-content, no localStorage round-trip. */}
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>

@@ -251,7 +251,6 @@ const {
      be statically hoisted by Astro/Vite.
      ============================================================ */
   import { createAsset, updateAsset, getAsset } from "@/lib/assets";
-  import { getCategoriesSelect } from "@/lib/categories";
   import { getSpecificationsbyCategory } from "@/lib/specifications";
   import { getFeature } from "@/lib/features";
   import { getListItemsbyList } from "@/lib/list_items";
@@ -311,50 +310,9 @@ const {
     let editingAssetId: number | null = null;
     let initialCharByFeature = new Map(); // feature → existing characterization row
 
-    // ── Load Category + Status dropdown options client-side ──────────────
-    // SSR can't fetch (no JWT server-side → 401 → empty). We populate the
-    // <select> elements after mount so they're ready before the first open.
-    let dropdownsReady: Promise<void> | null = null;
-    async function loadDropdowns() {
-      if (dropdownsReady) return dropdownsReady;
-      dropdownsReady = (async () => {
-        try {
-          const [cats, statuses] = await Promise.all([
-            getCategoriesSelect().catch(() => []),
-            getListItemsbyList("ASSET_STATUS").catch(() => []),
-          ]);
-          // Repopulate category select (skip the first <option> = placeholder)
-          const keepFirst = (sel: HTMLSelectElement) => {
-            const placeholder = sel.options[0];
-            sel.innerHTML = "";
-            if (placeholder) sel.appendChild(placeholder);
-          };
-          if (cats?.length) {
-            keepFirst(categorySel);
-            for (const c of cats) {
-              const opt = document.createElement("option");
-              opt.value = c.value ?? c.code ?? "";
-              opt.textContent = c.label ?? c.name ?? opt.value;
-              categorySel.appendChild(opt);
-            }
-          }
-          if (statuses?.length) {
-            keepFirst(statusSel);
-            for (const s of statuses) {
-              const opt = document.createElement("option");
-              opt.value = s.value ?? "";
-              opt.textContent = s.label ?? s.value ?? "";
-              statusSel.appendChild(opt);
-            }
-          }
-        } catch {
-          /* silent — dropdowns stay with placeholder only */
-        }
-      })();
-      return dropdownsReady;
-    }
-    // Kick off immediately so the data is ready by the time the user clicks.
-    loadDropdowns();
+    // Category + Status dropdowns are now SSR-populated from the page's
+    // `categories` / `statuses` props (auth cookie → middleware → ALS →
+    // apiGet). No client-side hydration needed.
 
     // ── Dynamic characterization renderer ─────────────────────────────────
     async function loadAndRenderSpecs(categoryCode) {
@@ -513,7 +471,6 @@ const {
       titleEl.setAttribute("data-i18n", "asset_detail_modal.title_create");
       titleEl.textContent = tr("asset_detail_modal.title_create", "New Asset");
       dialog.showModal();
-      await loadDropdowns();
     }
 
     async function openEdit(assetId: number | string) {
@@ -522,8 +479,6 @@ const {
       titleEl.setAttribute("data-i18n", "asset_detail_modal.title_edit");
       titleEl.textContent = tr("asset_detail_modal.title_edit", "Edit Asset");
       dialog.showModal();
-      // Ensure dropdowns are populated BEFORE we try to .value = ... below.
-      await loadDropdowns();
 
       try {
         const [asset, chars] = await Promise.all([

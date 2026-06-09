@@ -11,18 +11,20 @@
     "lint": "eslint 'src/**/*.{ts,astro}'"
   },
   "dependencies": {
-    "astro": "^4.0.0",
+    "@astrojs/node": "8",
     "@astrojs/tailwind": "^4.0.0",
+    "astro": "^4.0.0",
     "flowbite": "^2.4.1",
     "simple-datatables": "^9.0.3"
   },
   "devDependencies": {
-    "autoprefixer": "^10.4.19",
-    "postcss": "^8.4.32",
-    "tailwindcss": "^3.4.8",
-    "eslint": "^8.57.0",
+    "@rollup/rollup-linux-arm64-gnu": "^4.61.1",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
-    "eslint-plugin-astro": "^0.34.0"
+    "autoprefixer": "^10.4.19",
+    "eslint": "^8.57.0",
+    "eslint-plugin-astro": "^0.34.0",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.4.8"
   }
 }

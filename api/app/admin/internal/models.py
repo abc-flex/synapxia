@@ -119,6 +119,8 @@ class ListUpdate(SQLModel):
 class ListItemBase(SQLModel):
     list: str = Field(sa_column=Column(
         'list', String, ForeignKey('lists.code'), primary_key=True))
+    lang: str = Field(sa_column=Column(
+        'lang', String(10), primary_key=True))
     value: str = Field(sa_column=Column(
         'value', String(100), primary_key=True))
     label: str = Field(max_length=150)
@@ -134,6 +136,7 @@ class ListItem(ListItemBase, table=True):
 
 class ListItemCreate(SQLModel):
     list: str = Field(max_length=50, description="List code")
+    lang: str = Field(max_length=10, description="Language code")
     value: str = Field(max_length=100, description="Item value")
     label: str = Field(max_length=150, description="Item label")
     sort_order: Optional[int] = Field(default=0, description="Display order")

@@ -90,6 +90,11 @@
     "delete_confirmation": "¿Está seguro de que desea eliminar este",
     "delete_warning": "Esta acción no se puede deshacer."
   },
+  "lang_modal": {
+    "select": "Elige una opción",
+    "filter_title": "Todos los Idiomas",
+    "one_title": "Idioma"
+  },
   "data_table": {
     "actions": "Acciones",
     "add": "Crear",

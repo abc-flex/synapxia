@@ -14,7 +14,7 @@ import type { Assignment, AssignmentCreate, AssignmentUpdate } from '../types/ap
  */
 export async function getAssignments(skip: number = 0, limit: number = 100): Promise<Assignment[]> {
   const queryString = buildQueryString({ skip, limit });
-  return apiGet<Assignment[]>(`/api/assignments${queryString}`);
+  return apiGet<Assignment[]>(`/api/assignments/${queryString}`);
 }
 
 /**

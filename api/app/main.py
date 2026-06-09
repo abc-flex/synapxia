@@ -3,6 +3,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from .auth import routes as auth_routes
 
@@ -151,6 +152,44 @@ app = FastAPI(
     ],
 )
 
+# ────────────────────────────────────────────────────────────────────────
+# ForwardedHostMiddleware — uvicorn's --proxy-headers sets scheme + client
+# from X-Forwarded-Proto / X-Forwarded-For, but NOT the request's Host.
+# Without this, FastAPI's trailing-slash redirects build the Location
+# header from the internal container hostname (`http://synapxia-api:80/...`)
+# — unreachable from the browser → "Failed to fetch".
+#
+# This rewrites the Host header from X-Forwarded-Host (set by the Vite
+# proxy via `xfwd: true` in dev and automatically by Vercel rewrites in
+# prod) so all generated URLs use the public origin. Only applied for
+# HTTP scope; trusted IPs gating is handled upstream by uvicorn's
+# `--forwarded-allow-ips`.
+# ────────────────────────────────────────────────────────────────────────
+class ForwardedHostMiddleware:
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        headers = dict(scope.get("headers") or [])
+        forwarded_host = headers.get(b"x-forwarded-host")
+        if forwarded_host:
+            # Replace the Host header in scope so request.url.netloc picks
+            # it up. List of (bytes, bytes) per ASGI spec.
+            new_headers = []
+            for k, v in scope["headers"]:
+                if k == b"host":
+                    new_headers.append((b"host", forwarded_host))
+                else:
+                    new_headers.append((k, v))
+            scope = {**scope, "headers": new_headers}
+
+        await self.app(scope, receive, send)
+
+
 # Configure CORS
 # allow_origins=["*"] + allow_credentials=True is invalid per the CORS spec —
 # browsers reject it. When no specific origins are configured we fall back to
@@ -174,6 +213,12 @@ else:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+# Apply ForwardedHostMiddleware AFTER CORS so CORS sees the rewritten
+# Host (origin checks may rely on it). add_middleware wraps in reverse
+# call order: this becomes the outermost middleware, hitting requests
+# before CORS does.
+app.add_middleware(ForwardedHostMiddleware)
 
 # Include routers
 # Authentication module (must be first)

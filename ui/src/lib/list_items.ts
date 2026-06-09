@@ -14,7 +14,7 @@ import type { ListItem, ListItemCreate, ListItemUpdate } from '../types/api';
  */
 export async function getListItems(skip: number = 0, limit: number = 100): Promise<ListItem[]> {
   const queryString = buildQueryString({ skip, limit });
-  return apiGet<ListItem[]>(`/api/list_items${queryString}`);
+  return apiGet<ListItem[]>(`/api/list_items/${queryString}`);
 }
 
 /**

@@ -22,7 +22,7 @@ export async function getCharacterizations(
   limit = 1000,
 ): Promise<Characterization[]> {
   return apiGet<Characterization[]>(
-    `/api/characterizations${buildQueryString({ skip, limit })}`,
+    `/api/characterizations/${buildQueryString({ skip, limit })}`,
   );
 }
 

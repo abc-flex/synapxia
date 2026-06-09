@@ -20,7 +20,7 @@ export interface FeatureSelectOption {
  */
 export async function getFeatures(skip: number = 0, limit: number = 100): Promise<Feature[]> {
   const queryString = buildQueryString({ skip, limit });
-  return apiGet<Feature[]>(`/api/features${queryString}`);
+  return apiGet<Feature[]>(`/api/features/${queryString}`);
 }
 
 /**

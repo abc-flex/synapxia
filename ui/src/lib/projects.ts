@@ -15,7 +15,7 @@ import type { Project, ProjectCreate, ProjectUpdate } from '../types/api';
  */
 export async function getProjects(team?: string, skip: number = 0, limit: number = 100): Promise<Project[]> {
   const queryString = buildQueryString({ ...(team ? { team } : {}), skip, limit });
-  return apiGet<Project[]>(`/api/projects${queryString}`);
+  return apiGet<Project[]>(`/api/projects/${queryString}`);
 }
 
 /**

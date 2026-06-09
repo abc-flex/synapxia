@@ -20,7 +20,7 @@ export interface TeamSelectOption {
  */
 export async function getTeams(skip: number = 0, limit: number = 100): Promise<Team[]> {
   const queryString = buildQueryString({ skip, limit });
-  return apiGet<Team[]>(`/api/teams${queryString}`);
+  return apiGet<Team[]>(`/api/teams/${queryString}`);
 }
 
 /**

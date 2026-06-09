@@ -14,7 +14,7 @@ import type { Dimension, DimensionCreate, DimensionUpdate } from '../types/api';
  */
 export async function getDimensions(skip: number = 0, limit: number = 100): Promise<Dimension[]> {
   const queryString = buildQueryString({ skip, limit });
-  return apiGet<Dimension[]>(`/api/dimensions${queryString}`);
+  return apiGet<Dimension[]>(`/api/dimensions/${queryString}`);
 }
 
 /**

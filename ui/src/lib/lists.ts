@@ -20,7 +20,7 @@ export interface ListSelectOption {
  */
 export async function getLists(skip: number = 0, limit: number = 100): Promise<List[]> {
   const queryString = buildQueryString({ skip, limit });
-  return apiGet<List[]>(`/api/lists${queryString}`);
+  return apiGet<List[]>(`/api/lists/${queryString}`);
 }
 
 /**

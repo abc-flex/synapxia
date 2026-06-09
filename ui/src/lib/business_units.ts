@@ -29,7 +29,7 @@ export async function getBusinessUnitsSelect(): Promise<BusinessUnitSelectOption
  */
 export async function getBusinessUnits(skip: number = 0, limit: number = 100): Promise<BusinessUnit[]> {
   const queryString = buildQueryString({ skip, limit });
-  return apiGet<BusinessUnit[]>(`/api/business_units${queryString}`);
+  return apiGet<BusinessUnit[]>(`/api/business_units/${queryString}`);
 }
 
 /**

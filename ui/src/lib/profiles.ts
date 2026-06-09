@@ -20,7 +20,7 @@ export interface ProfileSelectOption {
  */
 export async function getProfiles(skip: number = 0, limit: number = 100): Promise<Profile[]> {
   const queryString = buildQueryString({ skip, limit });
-  return apiGet<Profile[]>(`/api/profiles${queryString}`);
+  return apiGet<Profile[]>(`/api/profiles/${queryString}`);
 }
 
 /**

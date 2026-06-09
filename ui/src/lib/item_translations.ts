@@ -14,7 +14,7 @@ import type { ItemTranslation, ItemTranslationCreate, ItemTranslationUpdate } fr
  */
 export async function getItemTranslations(skip: number = 0, limit: number = 100): Promise<ItemTranslation[]> {
   const queryString = buildQueryString({ skip, limit });
-  return apiGet<ItemTranslation[]>(`/api/item_translations${queryString}`);
+  return apiGet<ItemTranslation[]>(`/api/item_translations/${queryString}`);
 }
 
 /**

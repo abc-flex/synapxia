@@ -20,7 +20,7 @@ export interface CategorySelectOption {
  */
 export async function getCategories(skip: number = 0, limit: number = 100): Promise<Category[]> {
   const queryString = buildQueryString({ skip, limit });
-  return apiGet<Category[]>(`/api/categories${queryString}`);
+  return apiGet<Category[]>(`/api/categories/${queryString}`);
 }
 
 /**

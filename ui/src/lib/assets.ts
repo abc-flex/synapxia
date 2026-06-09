@@ -14,7 +14,7 @@ import type { Asset, AssetCreate, AssetUpdate } from '../types/api';
  */
 export async function getAssets(skip: number = 0, limit: number = 100): Promise<Asset[]> {
   const queryString = buildQueryString({ skip, limit });
-  return apiGet<Asset[]>(`/api/assets${queryString}`);
+  return apiGet<Asset[]>(`/api/assets/${queryString}`);
 }
 
 /**

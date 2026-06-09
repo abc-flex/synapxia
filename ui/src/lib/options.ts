@@ -25,7 +25,7 @@ export async function getOptions(module?: string, skip: number = 0, limit: numbe
     params.module = module;
   }
   const queryString = buildQueryString(params);
-  return apiGet<Option[]>(`/api/options${queryString}`);
+  return apiGet<Option[]>(`/api/options/${queryString}`);
 }
 
 /**

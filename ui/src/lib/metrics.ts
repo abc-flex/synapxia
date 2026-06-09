@@ -14,7 +14,7 @@ import type { Metric, MetricCreate, MetricUpdate } from '../types/api';
  */
 export async function getMetrics(skip: number = 0, limit: number = 100): Promise<Metric[]> {
   const queryString = buildQueryString({ skip, limit });
-  return apiGet<Metric[]>(`/api/metrics${queryString}`);
+  return apiGet<Metric[]>(`/api/metrics/${queryString}`);
 }
 
 /**

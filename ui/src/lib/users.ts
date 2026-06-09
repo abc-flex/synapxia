@@ -20,7 +20,7 @@ export interface UserSelectOption {
  */
 export async function getUsers(skip: number = 0, limit: number = 100): Promise<User[]> {
   const queryString = buildQueryString({ skip, limit });
-  return apiGet<User[]>(`/api/users${queryString}`);
+  return apiGet<User[]>(`/api/users/${queryString}`);
 }
 
 /**

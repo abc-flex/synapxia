@@ -14,7 +14,7 @@ import type { Privilege, PrivilegeCreate, PrivilegeUpdate } from '../types/api';
  */
 export async function getPrivileges(skip: number = 0, limit: number = 100): Promise<Privilege[]> {
   const queryString = buildQueryString({ skip, limit });
-  return apiGet<Privilege[]>(`/api/privileges${queryString}`);
+  return apiGet<Privilege[]>(`/api/privileges/${queryString}`);
 }
 
 /**

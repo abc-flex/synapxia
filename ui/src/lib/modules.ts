@@ -20,7 +20,7 @@ export interface ModuleSelectOption {
  */
 export async function getModules(skip: number = 0, limit: number = 100): Promise<Module[]> {
   const queryString = buildQueryString({ skip, limit });
-  return apiGet<Module[]>(`/api/modules${queryString}`);
+  return apiGet<Module[]>(`/api/modules/${queryString}`);
 }
 
 /**

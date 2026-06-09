@@ -14,7 +14,7 @@ import type { Specification, SpecificationCreate, SpecificationUpdate } from '..
  */
 export async function getSpecifications(skip: number = 0, limit: number = 100): Promise<Specification[]> {
   const queryString = buildQueryString({ skip, limit });
-  return apiGet<Specification[]>(`/api/specifications${queryString}`);
+  return apiGet<Specification[]>(`/api/specifications/${queryString}`);
 }
 
 /**

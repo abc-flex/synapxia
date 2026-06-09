@@ -20,7 +20,7 @@ export interface RoleSelectOption {
  */
 export async function getRoles(skip: number = 0, limit: number = 100): Promise<Role[]> {
   const queryString = buildQueryString({ skip, limit });
-  return apiGet<Role[]>(`/api/roles${queryString}`);
+  return apiGet<Role[]>(`/api/roles/${queryString}`);
 }
 
 /**

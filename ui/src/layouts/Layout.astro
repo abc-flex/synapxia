@@ -1,5 +1,6 @@
 ---
 import "../styles/globals.css";
+import ClientTranslations from "../components/ClientTranslations.astro";
 
 interface Props {
   title?: string;
@@ -32,6 +33,7 @@ const {
     <title>{title}</title>
   </head>
   <body>
+    <ClientTranslations />
     <slot />
   </body>
 </html>

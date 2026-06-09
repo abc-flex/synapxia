@@ -46,6 +46,17 @@ export const loadClientTranslations = () => {
     }
   });
 
+  // Update elements with data-i18n-aria-label attribute
+  // (Matches ClientTranslations.astro's behavior so both runtimes are equivalent.)
+  const ariaElements = document.querySelectorAll('[data-i18n-aria-label]');
+  ariaElements.forEach((element) => {
+    const key = element.getAttribute('data-i18n-aria-label');
+    if (key) {
+      const translation = getNestedValue(translations[locale], key);
+      element.setAttribute('aria-label', translation);
+    }
+  });
+
   // Dispatch custom event for other components to react
   window.dispatchEvent(new CustomEvent('languageChanged', { detail: { locale } }));
 };

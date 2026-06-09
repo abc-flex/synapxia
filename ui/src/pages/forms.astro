@@ -10,15 +10,22 @@ import CheckboxesCard from "../components/forms/CheckboxesCard.astro";
 import RadiosCard from "../components/forms/RadiosCard.astro";
 import TogglesCard from "../components/forms/TogglesCard.astro";
 import DropzoneCard from "../components/forms/DropzoneCard.astro";
+import { t } from "@/i18n";
+import { getLocale } from "@/utils/getLocale";
 
-const title = "TailAdmin x Astro";
+const locale = getLocale(Astro);
+const title = t(locale, "forms_demo.title");
+// Nav items are kept as a vestige of the tailadmin template; BaseLayout
+// doesn't actually consume `navItems` (it builds its own nav). Translated
+// labels via i18n keys so the array isn't hardcoded English if it's ever
+// surfaced again.
 const navItems = [
-  { label: "Dashboard", href: "/" },
-  { label: "Forms", href: "/forms" },
-  { label: "Calendar", href: "#" },
-  { label: "User Profile", href: "#" },
-  { label: "Tables", href: "#" },
-  { label: "Pages", href: "#" },
+  { label: t(locale, "forms_demo.nav_dashboard"), href: "/" },
+  { label: t(locale, "forms_demo.nav_forms"), href: "/forms" },
+  { label: t(locale, "forms_demo.nav_calendar"), href: "#" },
+  { label: t(locale, "forms_demo.nav_user_profile"), href: "#" },
+  { label: t(locale, "forms_demo.nav_tables"), href: "#" },
+  { label: t(locale, "forms_demo.nav_pages"), href: "#" },
 ];
 ---
 <BaseLayout title={title} navItems={navItems}>

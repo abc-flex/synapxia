@@ -4,21 +4,44 @@
  */
 
 import type { ApiError } from '../types/list';
-import { getToken, clearToken } from './auth';
+import { clearToken, getToken, refreshAccessToken } from './auth';
 
 /**
- * Handle authentication errors (401/403)
- * Logs out user and redirects to login
+ * Send a fetch with the current access token, and on a 401 try ONE silent
+ * refresh + retry before giving up. On final failure (no refresh token, or
+ * refresh itself fails), clears local auth and redirects to /login.
+ *
+ * The Authorization header is injected here — callers should NOT add it
+ * themselves (it would be overwritten on retry anyway).
  */
-function handleAuthError(status: number) {
-  if (status === 401 || status === 403) {
-    // Clear auth state
-    clearToken();
-    // Redirect to login
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login';
+async function fetchWithAuth(url: string, init: RequestInit): Promise<Response> {
+  const buildInit = (): RequestInit => {
+    const token = getToken();
+    const headers = new Headers(init.headers || {});
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+    return { ...init, headers };
+  };
+
+  let res = await fetch(url, buildInit());
+
+  if (res.status === 401) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      // Retry once with the new access token
+      res = await fetch(url, buildInit());
     }
+    if (res.status === 401) {
+      // Refresh didn't help (or no refresh token); end the session
+      clearToken();
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+    }
+  } else if (res.status === 403) {
+    // 403 is "you're authenticated but not allowed" — don't logout, just bubble up
   }
+
+  return res;
 }
 
 // Get API base URL from environment variables
@@ -41,55 +64,41 @@ if (!API_BASE_URL) {
 }
 
 /**
- * Get authorization headers if token exists
+ * Drain an error response into a single Error suitable for `throw`.
+ * Handles FastAPI's `{detail: string}` and pydantic `{detail: [{msg}, ...]}` shapes.
  */
-function getAuthHeaders(): Record<string, string> {
-  const token = getToken();
-  if (token) {
-    return {
-      Authorization: `Bearer ${token}`,
-    };
+async function errorFrom(res: Response, method: string, url: string): Promise<Error> {
+  const text = await res.text().catch(() => '');
+  let detail: string = res.statusText;
+  try {
+    const json = JSON.parse(text) as ApiError;
+    if (Array.isArray((json as any).detail)) {
+      detail = ((json as any).detail as Array<{ msg?: string }>)
+        .map((e) => e.msg ?? 'Validation error')
+        .join('. ');
+    } else if (typeof json.detail === 'string') {
+      detail = json.detail;
+    } else if (text) {
+      detail = text;
+    }
+  } catch {
+    detail = text || res.statusText;
   }
-  return {};
+  return new Error(`${method} ${url} failed (${res.status}): ${detail}`);
 }
 
 /**
  * Generic GET request handler
- * @param route - API route (e.g., "/api/lists", "/api/modules")
- * @param init - Optional fetch configuration
- * @returns Promise with typed response data
  */
 export async function apiGet<T>(route: string, init?: RequestInit): Promise<T> {
   const url = new URL(route, API_BASE_URL).toString();
-
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithAuth(url, {
       ...init,
       method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        ...getAuthHeaders(),
-        ...(init?.headers ?? {}),
-      },
+      headers: { Accept: 'application/json', ...(init?.headers ?? {}) },
     });
-
-    if (!res.ok) {
-      // Handle auth errors (401, 403)
-      handleAuthError(res.status);
-
-      const errorText = await res.text().catch(() => '');
-      let errorDetail = res.statusText;
-
-      try {
-        const errorJson = JSON.parse(errorText) as ApiError;
-        errorDetail = errorJson.detail || errorText;
-      } catch {
-        errorDetail = errorText || res.statusText;
-      }
-
-      throw new Error(`GET ${url} failed (${res.status}): ${errorDetail}`);
-    }
-
+    if (!res.ok) throw await errorFrom(res, 'GET', url);
     return res.json() as Promise<T>;
   } catch (error) {
     if (error instanceof Error) {
@@ -107,44 +116,21 @@ export async function apiGet<T>(route: string, init?: RequestInit): Promise<T> {
 
 /**
  * Generic POST request handler
- * @param route - API route
- * @param data - Data to send in request body
- * @param init - Optional fetch configuration
- * @returns Promise with typed response data
  */
 export async function apiPost<T, D = any>(route: string, data: D, init?: RequestInit): Promise<T> {
   const url = new URL(route, API_BASE_URL).toString();
-
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithAuth(url, {
       ...init,
       method: 'POST',
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
-        ...getAuthHeaders(),
         ...(init?.headers ?? {}),
       },
       body: JSON.stringify(data),
     });
-
-    if (!res.ok) {
-      // Handle auth errors (401, 403)
-      handleAuthError(res.status);
-
-      const errorText = await res.text().catch(() => '');
-      let errorDetail = res.statusText;
-
-      try {
-        const errorJson = JSON.parse(errorText) as ApiError;
-        errorDetail = errorJson.detail || errorText;
-      } catch {
-        errorDetail = errorText || res.statusText;
-      }
-
-      throw new Error(`POST ${url} failed (${res.status}): ${errorDetail}`);
-    }
-
+    if (!res.ok) throw await errorFrom(res, 'POST', url);
     return res.json() as Promise<T>;
   } catch (error) {
     if (error instanceof Error) {
@@ -157,44 +143,21 @@ export async function apiPost<T, D = any>(route: string, data: D, init?: Request
 
 /**
  * Generic PUT request handler
- * @param route - API route
- * @param data - Data to send in request body
- * @param init - Optional fetch configuration
- * @returns Promise with typed response data
  */
 export async function apiPut<T, D = any>(route: string, data: D, init?: RequestInit): Promise<T> {
   const url = new URL(route, API_BASE_URL).toString();
-
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithAuth(url, {
       ...init,
       method: 'PUT',
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
-        ...getAuthHeaders(),
         ...(init?.headers ?? {}),
       },
       body: JSON.stringify(data),
     });
-
-    if (!res.ok) {
-      // Handle auth errors (401, 403)
-      handleAuthError(res.status);
-
-      const errorText = await res.text().catch(() => '');
-      let errorDetail = res.statusText;
-
-      try {
-        const errorJson = JSON.parse(errorText) as ApiError;
-        errorDetail = errorJson.detail || errorText;
-      } catch {
-        errorDetail = errorText || res.statusText;
-      }
-
-      throw new Error(`PUT ${url} failed (${res.status}): ${errorDetail}`);
-    }
-
+    if (!res.ok) throw await errorFrom(res, 'PUT', url);
     return res.json() as Promise<T>;
   } catch (error) {
     if (error instanceof Error) {
@@ -207,46 +170,17 @@ export async function apiPut<T, D = any>(route: string, data: D, init?: RequestI
 
 /**
  * Generic DELETE request handler
- * @param route - API route
- * @param init - Optional fetch configuration
- * @returns Promise with void or typed response data
  */
 export async function apiDelete<T = void>(route: string, init?: RequestInit): Promise<T> {
   const url = new URL(route, API_BASE_URL).toString();
-
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithAuth(url, {
       ...init,
       method: 'DELETE',
-      headers: {
-        'Accept': 'application/json',
-        ...getAuthHeaders(),
-        ...(init?.headers ?? {}),
-      },
+      headers: { Accept: 'application/json', ...(init?.headers ?? {}) },
     });
-
-    if (!res.ok) {
-      // Handle auth errors (401, 403)
-      handleAuthError(res.status);
-
-      const errorText = await res.text().catch(() => '');
-      let errorDetail = res.statusText;
-
-      try {
-        const errorJson = JSON.parse(errorText) as ApiError;
-        errorDetail = errorJson.detail || errorText;
-      } catch {
-        errorDetail = errorText || res.statusText;
-      }
-
-      throw new Error(`DELETE ${url} failed (${res.status}): ${errorDetail}`);
-    }
-
-    // If response is 204 No Content, return void
-    if (res.status === 204) {
-      return undefined as T;
-    }
-
+    if (!res.ok) throw await errorFrom(res, 'DELETE', url);
+    if (res.status === 204) return undefined as T;
     return res.json() as Promise<T>;
   } catch (error) {
     if (error instanceof Error) {

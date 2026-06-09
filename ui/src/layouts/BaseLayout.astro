@@ -3,7 +3,6 @@ import "../styles/globals.css";
 import Header from "../components/core/header/Header.astro";
 import SideBar from "../components/core/sidebar/SideBar.astro";
 import ClientTranslations from "../components/ClientTranslations.astro";
-import { getNavigationData } from "@/lib/navigation";
 
 interface Props {
   title?: string;
@@ -13,8 +12,10 @@ const {
   title = "SynapxIA",
 } = Astro.props as Props;
 
-// Fetch navigation data once in the layout
-const { primaryNav, itemsNav } = getNavigationData();
+// Navigation data is intentionally NOT fetched here. The JWT lives in
+// localStorage (browser-only); a server-side fetch would return 401 and
+// produce an empty sidebar. The SideBar component fetches client-side and
+// renders from a localStorage cache for immediate first-paint.
 
 // Get current path for sidebar active state
 const currentPath = Astro.url.pathname;
@@ -27,6 +28,20 @@ const currentModuleName = pathSegments[0] || "";
 <!doctype html>
 <html lang="en">
   <head>
+    {/* Client-side auth gate — runs BEFORE any other script/stylesheet
+        parses so the user never sees a flash of protected content. The
+        token is in localStorage (browser-only) so this has to be inline
+        and synchronous. */}
+    <script is:inline define:vars={{ publicRoutes: ['/login', '/signup', '/', '/index'] }}>
+      const path = window.location.pathname;
+      const isPublic = publicRoutes.includes(path);
+      const hasToken = !!localStorage.getItem('auth_token');
+      if (!hasToken && !isPublic) {
+        window.location.replace('/login');
+      } else if (hasToken && (path === '/login' || path === '/signup')) {
+        window.location.replace('/dashboard');
+      }
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
@@ -34,7 +49,7 @@ const currentModuleName = pathSegments[0] || "";
   <body class="bg-slate-50 text-slate-900 dark:bg-gray-950 dark:text-white">
     <ClientTranslations />
     <div class="min-h-screen flex">
-      <SideBar modules={primaryNav} options={itemsNav} brandTitle={title} currentPath={currentPath} currentModuleName={currentModuleName} />
+      <SideBar modules={[]} options={[]} brandTitle={title} currentPath={currentPath} currentModuleName={currentModuleName} />
 
       <div class="flex-1 flex flex-col min-h-screen">
         <Header title={title} subtitle="Dashboard" />

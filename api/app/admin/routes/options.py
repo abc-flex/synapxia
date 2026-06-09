@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from ..internal.models import Option, OptionCreate, OptionUpdate, Module, User
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
-from ...internal.permissions import check_privilege
+from ...internal.permissions import require_privilege
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/options", tags=["options"])
@@ -22,7 +22,7 @@ class OptionBasic(SQLModel):
 @router.get("/select", response_model=List[OptionBasic])
 def get_list(
     session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "OPTIONS", can_edit=False))
+    _: User = Depends(require_privilege("ADMIN", "OPTIONS", can_edit=False))
 ) -> List[OptionBasic]:
     """
     Returns an options list optimized for selects with value (code) and label (name). 
@@ -42,7 +42,7 @@ def get_list(
 @router.get("/", response_model=List[Option])
 def get_all(
     skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "OPTIONS", can_edit=False))
+    _: User = Depends(require_privilege("ADMIN", "OPTIONS", can_edit=False))
 ) -> List[Option]:
     """
     List all options with pagination (*Only active options).
@@ -59,7 +59,7 @@ def get_all(
 @router.get("/{module_code}/{code}", response_model=Option)
 def get(
     module_code: str, code: str, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "OPTIONS", can_edit=False))
+    _: User = Depends(require_privilege("ADMIN", "OPTIONS", can_edit=False))
 ) -> Option:
     """
     Get an option by its module and code.
@@ -84,7 +84,7 @@ def get(
 @router.post("/", response_model=Option, status_code=201)
 def create(
     option: OptionCreate, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "OPTIONS", can_edit=True))
+    _: User = Depends(require_privilege("ADMIN", "OPTIONS", can_edit=True))
 ) -> Option:
     """
     Create a new option.
@@ -172,7 +172,7 @@ def update(
 @router.delete("/{module_code}/{code}", response_model=Option, status_code=200)
 def delete(
     module_code: str, code: str, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "OPTIONS", can_edit=True))
+    _: User = Depends(require_privilege("ADMIN", "OPTIONS", can_edit=True))
 ) -> Option:
     """
     Delete an option (logical delete).

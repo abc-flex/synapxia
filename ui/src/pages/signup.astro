@@ -134,13 +134,13 @@ import "../styles/globals.css";
           {/* Role */}
           <div>
             <label
-              for="menu_role"
+              for="profile"
               class="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1"
               >Role</label
             >
             <select
-              id="menu_role"
-              name="menu_role"
+              id="profile"
+              name="profile"
               required
               class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white dark:bg-gray-800 bg-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition"
             >
@@ -154,13 +154,13 @@ import "../styles/globals.css";
           {/* Business Unit */}
           <div>
             <label
-              for="business_unit"
+              for="unit"
               class="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1"
               >Business Unit</label
             >
             <select
-              id="business_unit"
-              name="business_unit"
+              id="unit"
+              name="unit"
               required
               class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white dark:bg-gray-800 bg-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition"
             >
@@ -279,13 +279,13 @@ import "../styles/globals.css";
         const email = (document.getElementById('email') as HTMLInputElement)?.value;
         const first_name = (document.getElementById('first_name') as HTMLInputElement)?.value;
         const last_name = (document.getElementById('last_name') as HTMLInputElement)?.value;
-        const menu_role = (document.getElementById('menu_role') as HTMLSelectElement)?.value;
-        const business_unit = (document.getElementById('business_unit') as HTMLSelectElement)?.value;
+        const profile = (document.getElementById('profile') as HTMLSelectElement)?.value;
+        const unit = (document.getElementById('unit') as HTMLSelectElement)?.value;
         const password = (document.getElementById('password') as HTMLInputElement)?.value;
         const confirm_password = (document.getElementById('confirm_password') as HTMLInputElement)?.value;
 
         // Validate inputs
-        if (!username || !email || !first_name || !last_name || !menu_role || !business_unit || !password) {
+        if (!username || !email || !first_name || !last_name || !profile || !unit || !password) {
           showError('All fields are required');
           isSubmitting = false;
           return;
@@ -338,8 +338,8 @@ import "../styles/globals.css";
             password,
             first_name,
             last_name,
-            menu_role,
-            business_unit,
+            profile,
+            unit,
           };
 
           await register(userData);

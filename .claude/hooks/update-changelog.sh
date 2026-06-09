@@ -45,40 +45,59 @@ COMMITS=$(git -C "$REPO_ROOT" log "${FROM_REF}..${TO_REF}" \
 [[ -z "$COMMITS" ]] && exit 0   # nothing new to log
 
 # --- Categorise commits by conventional-commit prefix ---
-declare -A sections
-sections[feat]=""
-sections[fix]=""
-sections[chore]=""
-sections[docs]=""
-sections[refactor]=""
-sections[db]=""
-sections[other]=""
+# Use plain variables instead of `declare -A` so the script runs on macOS's
+# stock bash 3.2 (associative arrays require bash 4+).
+SEC_FEAT=""
+SEC_FIX=""
+SEC_CHORE=""
+SEC_DOCS=""
+SEC_REFACTOR=""
+SEC_DB=""
+SEC_OTHER=""
 
 while IFS= read -r line; do
   hash="${line%% *}"
   msg="${line#* }"
   scope=""
   body="$msg"
+  key="other"
 
-  # Extract type(scope): body
-  if [[ "$msg" =~ ^([a-z]+)(\(([^)]+)\))?: ]]; then
+  # Extract type(scope): body — bash 3.2-safe: try with-scope, then bare prefix.
+  # (Bash 3.2 mishandles optional capturing groups inside [[ =~ ]].)
+  type=""
+  if [[ "$msg" =~ ^([a-z]+)\(([^\)]+)\):[[:space:]] ]]; then
     type="${BASH_REMATCH[1]}"
-    scope="${BASH_REMATCH[3]:-}"
+    scope="${BASH_REMATCH[2]}"
     body="${msg#*: }"
+  elif [[ "$msg" =~ ^([a-z]+):[[:space:]] ]]; then
+    type="${BASH_REMATCH[1]}"
+    body="${msg#*: }"
+  fi
+
+  if [[ -n "$type" ]]; then
     # Map db-scoped chores to db section
     if [[ "$type" == "chore" && "$scope" == "db" ]]; then
       type="db"
     fi
-    key="${type}"
-    [[ -v sections[$key] ]] || key="other"
-  else
-    key="other"
+    case "$type" in
+      feat|fix|chore|docs|refactor|db) key="$type" ;;
+      *) key="other" ;;
+    esac
   fi
 
   entry="- \`${hash}\`"
-  [[ -n "$scope" && "$type" != "db" ]] && entry+=" **($scope)**"
+  [[ -n "$scope" && "$key" != "db" ]] && entry+=" **($scope)**"
   entry+=" ${body}"
-  sections[$key]+="${entry}"$'\n'
+
+  case "$key" in
+    feat)     SEC_FEAT+="${entry}"$'\n' ;;
+    fix)      SEC_FIX+="${entry}"$'\n' ;;
+    chore)    SEC_CHORE+="${entry}"$'\n' ;;
+    docs)     SEC_DOCS+="${entry}"$'\n' ;;
+    refactor) SEC_REFACTOR+="${entry}"$'\n' ;;
+    db)       SEC_DB+="${entry}"$'\n' ;;
+    *)        SEC_OTHER+="${entry}"$'\n' ;;
+  esac
 done <<< "$COMMITS"
 
 # --- Build entry ---
@@ -89,34 +108,42 @@ SHORT_SHA=$(git -C "$REPO_ROOT" rev-parse --short "$TO_REF" 2>/dev/null)
 
 ENTRY="## [${BRANCH}] — ${DATE} · ${SHORT_SHA}"$'\n'$'\n'
 
-add_section() {
-  local header="$1" key="$2"
-  if [[ -n "${sections[$key]:-}" ]]; then
+append_section() {
+  local header="$1" content="$2"
+  if [[ -n "$content" ]]; then
     ENTRY+="### ${header}"$'\n'
-    ENTRY+="${sections[$key]}"$'\n'
+    ENTRY+="${content}"$'\n'
   fi
 }
 
-add_section "Added"     feat
-add_section "Fixed"     fix
-add_section "Database"  db
-add_section "Changed"   chore
-add_section "Refactor"  refactor
-add_section "Docs"      docs
-add_section "Other"     other
+append_section "Added"     "$SEC_FEAT"
+append_section "Fixed"     "$SEC_FIX"
+append_section "Database"  "$SEC_DB"
+append_section "Changed"   "$SEC_CHORE"
+append_section "Refactor"  "$SEC_REFACTOR"
+append_section "Docs"      "$SEC_DOCS"
+append_section "Other"     "$SEC_OTHER"
 ENTRY+="---"$'\n'$'\n'
 
-# --- Prepend entry after the header block (first blank line after the first '---') ---
+# --- Prepend entry after the header block (first '---' separator) ---
+# Pass the entry via a temp file rather than `awk -v` — BSD awk on macOS chokes
+# on newlines inside -v values and silently leaves the file unchanged.
 TMP=$(mktemp)
-awk -v entry="$ENTRY" '
-  /^---$/ && !done {
-    print
-    printf "\n%s", entry
-    done=1
-    next
-  }
-  { print }
-' "$CHANGELOG" > "$TMP" && mv "$TMP" "$CHANGELOG"
+ENTRY_FILE=$(mktemp)
+printf '%s' "$ENTRY" > "$ENTRY_FILE"
+
+{
+  # Print everything up to AND INCLUDING the first '---' separator.
+  awk '{print} /^---$/{exit}' "$CHANGELOG"
+  # Blank line, then the new entry.
+  printf '\n'
+  cat "$ENTRY_FILE"
+  # Then everything AFTER the first '---'.
+  awk 'seen{print} /^---$/{seen=1}' "$CHANGELOG"
+} > "$TMP"
+
+mv "$TMP" "$CHANGELOG"
+rm -f "$ENTRY_FILE"
 
 # --- Also stamp last-updated in memory.md ---
 sed -i "s|^### [0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\} — Session.*|### ${DATE} — Session (auto-updated on push to ${BRANCH})|" "$MEMORY" 2>/dev/null || true

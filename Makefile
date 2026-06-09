@@ -375,8 +375,8 @@ backup-help:
 
 hooks:
 	@git config core.hooksPath .githooks
-	@echo "$(GREEN)✓ Git hooks activated (.githooks/post-merge)$(NC)"
-	@echo "  Changelog will update automatically on merges to develop/main/prod"
+	@echo "$(GREEN)✓ Git hooks activated (.githooks/post-merge, post-commit)$(NC)"
+	@echo "  Changelog will update automatically on commits and merges to develop/main/production"
 
 ## Quick Start
 

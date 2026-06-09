@@ -1,12 +1,10 @@
 ---
 import { t } from "@/i18n";
 import { getLocale } from "@/utils/getLocale";
-
-const locale = getLocale(Astro);
-
 import { NavModule, NavOption } from "../../types/nav";
 import MenuItem from "./SideBarMenuItem.astro";
 
+const locale = getLocale(Astro);
 
 interface Props {
   modules?: NavModule[];
@@ -23,12 +21,27 @@ const {
   currentPath = "",
   currentModuleName = "",
 } = Astro.props as Props;
+
+// Pre-bundle every icon SVG as a raw string at build time so the client-side
+// renderer below can inject them without a runtime fetch. Same glob shape as
+// SideBarMenuItem.astro.
+const iconModules = import.meta.glob("/src/images/icons/*.svg", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+}) as Record<string, string>;
+
+// Normalize the keys to short names ("users" → svg string).
+const iconMap: Record<string, string> = {};
+for (const [path, svg] of Object.entries(iconModules)) {
+  const name = path.replace("/src/images/icons/", "").replace(/\.svg$/, "");
+  iconMap[name] = svg;
+}
 ---
 
 <aside
   class="sidebar fixed left-0 top-0 z-[9999] hidden h-screen w-[290px] flex-col overflow-y-hidden border-r border-gray-200 bg-white px-5 pt-8 pb-8 shadow-sm duration-300 ease-linear dark:border-gray-800 dark:bg-black lg:static lg:flex lg:translate-x-0"
 >
-
   <!-- SIDEBAR HEADER -->
   <div class="sidebar-header flex items-center gap-2 pb-7">
     <div class="flex items-center gap-3">
@@ -49,21 +62,15 @@ const {
   <div class="flex flex-col overflow-y-auto no-scrollbar">
     <!-- SIDEBAR MENU -->
     <nav>
-      <!-- Menu Group -->
       <div>
         <h3 class="mb-4 text-xs uppercase leading-[20px] text-gray-400">
-          <span
-            class="menu-group-title"
-            data-i18n="sidebar.menu_title"
-          >
+          <span class="menu-group-title" data-i18n="sidebar.menu_title">
             {t(locale, "sidebar.menu_title")}
           </span>
         </h3>
 
-        <ul class="flex flex-col gap-4 mb-6">
-          <!-- Menu Item Module -->
-          {
-            modules.map((module) => (
+        <ul id="sidebar-primary-nav" class="flex flex-col gap-4 mb-6">
+          {modules.map((module) => (
             <li>
               <MenuItem
                 module={module}
@@ -72,13 +79,160 @@ const {
                 currentModuleName={currentModuleName}
               />
             </li>
-            ))
-            }
-
+          ))}
         </ul>
       </div>
-      <!-- Menu Group -->
     </nav>
     <!-- SIDEBAR MENU -->
   </div>
+
+  {/* Inline icon registry — read by the client-side renderer below. */}
+  <script type="application/json" id="sidebar-icon-map" set:html={JSON.stringify(iconMap)} />
 </aside>
+
+<script>
+  /* ============================================================
+     Client-side sidebar renderer.
+
+     Strategy: SSR renders an empty `<ul id="sidebar-primary-nav">` (the JWT
+     is in localStorage and isn't readable on the server). Here we:
+
+       1. Synchronously read `nav_cache` from localStorage and render the
+          menu from it — so the menu is visible BEFORE first paint on every
+          page load after the first one.
+       2. Asynchronously call `getNavigationData()` to refresh the data.
+          If the fresh data differs from the cache, re-render. The cache
+          itself is written by `getNavigationData()`.
+
+     Re-rendering twice is cheap: the menu has a handful of items.
+     ============================================================ */
+  import { getNavigationData, readNavCache, type NavigationData } from "@/lib/navigation";
+  import type { NavModule, NavOption } from "@/types/nav";
+  import { loadClientTranslations } from "@/utils/i18nClient";
+
+  type Icons = Record<string, string>;
+  const iconMapEl = document.getElementById("sidebar-icon-map");
+  let icons: Icons = {};
+  try {
+    icons = iconMapEl ? (JSON.parse(iconMapEl.textContent || "{}") as Icons) : {};
+  } catch {
+    icons = {};
+  }
+
+  const chevron = icons["chevron-down"] || "";
+
+  const primaryUl = document.getElementById("sidebar-primary-nav");
+  if (primaryUl) {
+    const currentPath = window.location.pathname;
+    const pathSegments = currentPath.split("/").filter(Boolean);
+    const currentModuleName = (pathSegments[0] || "").toLowerCase();
+
+    const escapeHtml = (s: string) =>
+      String(s ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+
+    const buildItem = (module: NavModule, opts: NavOption[]) => {
+      const iconSvg = icons[module.icon] || "";
+      const isActive = module.code.toLowerCase() === currentModuleName;
+      const hasChildren = opts.length > 0;
+      const moduleI18n = `modules.${module.code}`;
+
+      if (hasChildren) {
+        const items = opts
+          .map((o) => {
+            const active = o.path === currentPath;
+            const optI18n = `menu_options.${o.code.toLowerCase()}`;
+            return `
+              <li>
+                <a href="${escapeHtml(o.path || "#")}"
+                   class="menu-dropdown-item group ${active ? "menu-dropdown-item-active" : "menu-dropdown-item-inactive"}">
+                  <span class="w-1 h-1 inline-block mr-2 bg-current rounded-full"></span>
+                  <span data-i18n="${escapeHtml(optI18n)}">${escapeHtml(o.name)}</span>
+                </a>
+              </li>
+            `;
+          })
+          .join("");
+
+        return `
+          <li>
+            <details class="menu-item-container group" aria-label="${escapeHtml(module.name)} menu" ${isActive ? "open" : ""} data-menu-item>
+              <summary class="menu-item group list-none cursor-pointer select-none p-2 ${isActive ? "menu-item-active" : "menu-item-inactive"}">
+                <span class="text-gray-800 bg-color-gray-100 dark:text-gray-100 flex items-center justify-center rounded-md mr-1">
+                  <span class="w-5 h-5 inline-block">${iconSvg}</span>
+                </span>
+                <span class="menu-item-text" data-i18n="${escapeHtml(moduleI18n)}">${escapeHtml(module.name)}</span>
+                <span class="menu-item-arrow stroke-current w-5 h-5 inline-block">${chevron}</span>
+              </summary>
+              <div class="overflow-hidden transform translate">
+                <ul class="flex flex-col gap-1 mt-2 menu-dropdown pl-3">${items}</ul>
+              </div>
+            </details>
+          </li>
+        `;
+      }
+
+      return `
+        <li>
+          <a href="${escapeHtml((module as any).path || "#")}"
+             class="menu-item group p-2 ${isActive ? "menu-item-active" : "menu-item-inactive"}"
+             role="button">
+            <span class="w-5 h-5 inline-block mr-1">${iconSvg}</span>
+            <span class="menu-item-text" data-i18n="${escapeHtml(moduleI18n)}">${escapeHtml(module.name)}</span>
+          </a>
+        </li>
+      `;
+    };
+
+    const render = (data: NavigationData) => {
+      const html = data.primaryNav
+        .map((module) =>
+          buildItem(
+            module,
+            data.itemsNav.filter((o) => o.module === module.code),
+          ),
+        )
+        .join("");
+      primaryUl.innerHTML = html;
+      // Re-apply i18n to the newly-inserted nodes — the global translator
+      // ran on DOMContentLoaded, but our rebuild happens after that.
+      try { loadClientTranslations(); } catch { /* non-fatal */ }
+      // Re-attach the "close siblings on open" handler that SideBarMenuItem
+      // installs — its own <script> already wired up server-side items, but
+      // our DOM-rebuilt items need the same wiring.
+      primaryUl.querySelectorAll("[data-menu-item]").forEach((menu) => {
+        const m = menu as HTMLDetailsElement;
+        m.addEventListener("toggle", (event) => {
+          const target = event.target as HTMLDetailsElement;
+          if (target.open) {
+            primaryUl.querySelectorAll("details[data-menu-item]").forEach((other) => {
+              if (other !== target && (other as HTMLDetailsElement).open) {
+                (other as HTMLDetailsElement).open = false;
+              }
+            });
+          }
+        });
+      });
+    };
+
+    // 1. Synchronous cache read (paints menu immediately if present).
+    const cached = readNavCache();
+    if (cached) render(cached);
+
+    // 2. Background refresh — even if cache hit, ensure we're current.
+    getNavigationData()
+      .then((fresh) => {
+        if (!fresh.primaryNav.length && !fresh.itemsNav.length) return;
+        const cachedJson = JSON.stringify(cached);
+        const freshJson = JSON.stringify(fresh);
+        if (cachedJson !== freshJson) render(fresh);
+      })
+      .catch(() => {
+        /* network errors are non-fatal — the cache (if any) is still displayed */
+      });
+  }
+</script>

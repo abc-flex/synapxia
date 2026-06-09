@@ -4,17 +4,25 @@ Application configuration using pydantic-settings (Phase 2).
 Centralizes environment variable management for JWT, mail, and other services.
 Constitution IV: all env vars are explicit and documented here.
 """
+import logging
 import os
 from typing import Optional
 from pydantic_settings import BaseSettings
+
+logger = logging.getLogger(__name__)
+
+DEFAULT_DEV_SECRET = "your-secret-key-change-in-production"
 
 
 class Settings(BaseSettings):
     """Application settings from environment variables."""
 
     # ==================== JWT Configuration ====================
-    jwt_secret: str = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
+    jwt_secret: str = os.getenv("SECRET_KEY", DEFAULT_DEV_SECRET)
     jwt_lifetime_seconds: int = int(os.getenv("JWT_LIFETIME_SECONDS", "3600"))  # 60 min
+    jwt_refresh_lifetime_seconds: int = int(
+        os.getenv("JWT_REFRESH_LIFETIME_SECONDS", str(14 * 24 * 3600))  # 14 days
+    )
     jwt_algorithm: str = "HS256"
 
     # ==================== SMTP Configuration (Multi-profile) ====================
@@ -49,3 +57,9 @@ class Settings(BaseSettings):
 
 # Global settings instance
 settings = Settings()
+
+# Warn once at startup if the default dev secret is still in use.
+if settings.jwt_secret == DEFAULT_DEV_SECRET:
+    logger.warning(
+        "⚠️  Using default SECRET_KEY. Set SECRET_KEY environment variable in production!"
+    )

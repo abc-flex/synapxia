@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from ..internal.models import Metric, MetricCreate, MetricUpdate, Dimension, Assignment
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
-from ...internal.permissions import check_privilege
+from ...internal.permissions import require_privilege
 from ...admin.internal.models import User
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ router = APIRouter(prefix="/api/metrics", tags=["metrics"])
 @router.get("/", response_model=List[Metric])
 def get_all(
     skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("COLLAB", "METRICS", can_edit=False))
+    _: User = Depends(require_privilege("COLLAB", "METRICS", can_edit=False))
 ) -> List[Metric]:
     """
     List all metrics with pagination.
@@ -36,7 +36,7 @@ def get_all(
 @router.get("/{id}", response_model=Metric)
 def get(
     id: int, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("COLLAB", "METRICS", can_edit=False))
+    _: User = Depends(require_privilege("COLLAB", "METRICS", can_edit=False))
 ) -> Metric:
     """
     Get a metric by its ID.
@@ -54,7 +54,7 @@ def get(
 @router.post("/", response_model=Metric, status_code=201)
 def create(
     metric: MetricCreate, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("COLLAB", "METRICS", can_edit=True))
+    _: User = Depends(require_privilege("COLLAB", "METRICS", can_edit=True))
 ) -> Metric:
     """
     Create a new metric.
@@ -106,7 +106,7 @@ def create(
 @router.put("/{id}", response_model=Metric)
 def update(
     id: int, update: MetricUpdate, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("COLLAB", "METRICS", can_edit=True))
+    _: User = Depends(require_privilege("COLLAB", "METRICS", can_edit=True))
 ) -> Metric:
     """
     Update an existing metric.
@@ -135,7 +135,7 @@ def update(
 @router.delete("/{id}", response_model=Metric, status_code=200)
 def delete(
     id: int, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("COLLAB", "METRICS", can_edit=True))
+    _: User = Depends(require_privilege("COLLAB", "METRICS", can_edit=True))
 ) -> Metric:
     """
     Delete a metric (logical delete).

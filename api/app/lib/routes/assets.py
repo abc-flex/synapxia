@@ -10,7 +10,7 @@ from ..internal.models import Asset, AssetCreate, AssetUpdate
 from ...taxo.internal.models import Category
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
-from ...internal.permissions import check_privilege
+from ...internal.permissions import require_privilege
 from ...admin.internal.models import User
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/api/assets", tags=["assets"])
 @router.get("/", response_model=List[Asset])
 def get_all(
     skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("LIB", "ASSETS", can_edit=False))
+    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
 ) -> List[Asset]:
     """
     List all assets with pagination.
@@ -40,7 +40,7 @@ def get_by_category(
     skip: int = 0,
     limit: int = 100,
     session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("LIB", "ASSETS", can_edit=False))
+    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
 ) -> List[Asset]:
     """
     Obtener todos los assets de una categoría específica.
@@ -67,7 +67,7 @@ def get_by_category(
 @router.get("/{asset_id}", response_model=Asset)
 def get(
     asset_id: int, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("LIB", "ASSETS", can_edit=False))
+    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
 ) -> Asset:
     """
     Get an asset by its id.
@@ -85,7 +85,7 @@ def get(
 @router.post("/", response_model=Asset, status_code=201)
 def create(
     asset: AssetCreate, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("LIB", "ASSETS", can_edit=True))
+    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
 ) -> Asset:
     """
     Create a new asset.
@@ -127,7 +127,7 @@ def create(
 @router.put("/{asset_id}", response_model=Asset)
 def update(
     asset_id: int, update: AssetUpdate, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("LIB", "ASSETS", can_edit=True))
+    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
 ) -> Asset:
     """
     Update an existing asset.
@@ -165,7 +165,7 @@ def update(
 @router.delete("/{asset_id}", response_model=Asset, status_code=200)
 def delete(
     asset_id: int, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("LIB", "ASSETS", can_edit=True))
+    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
 ) -> Asset:
     """
     Delete an asset (logical delete).

@@ -10,7 +10,7 @@ from ..internal.models import Characterization, CharacterizationCreate, Characte
 from ...taxo.internal.models import Feature
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
-from ...internal.permissions import check_privilege
+from ...internal.permissions import require_privilege
 from ...admin.internal.models import User
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/api/characterizations", tags=["characterizations"])
 @router.get("/", response_model=List[Characterization])
 def get_all(
     skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("LIB", "CHARACTERIZATIONS", can_edit=False))
+    _: User = Depends(require_privilege("LIB", "CHARACTERIZATIONS", can_edit=False))
 ) -> List[Characterization]:
     """
     List all characterizations with pagination.
@@ -37,7 +37,7 @@ def get_all(
 @router.get("/{code}/{feature_code}", response_model=Characterization)
 def get(
     code: str, feature_code: str, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("LIB", "CHARACTERIZATIONS", can_edit=False))
+    _: User = Depends(require_privilege("LIB", "CHARACTERIZATIONS", can_edit=False))
 ) -> Characterization:
     """
     Get a characterization by its asset and feature.
@@ -61,7 +61,7 @@ def get(
 @router.post("/", response_model=Characterization, status_code=201)
 def create(
     characterization: CharacterizationCreate, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("LIB", "CHARACTERIZATIONS", can_edit=True))
+    _: User = Depends(require_privilege("LIB", "CHARACTERIZATIONS", can_edit=True))
 ) -> Characterization:
     """
     Create a new characterization.
@@ -122,7 +122,11 @@ def create(
 
 @router.put("/{code}/{feature_code}", response_model=Characterization)
 def update(
-    code: str, feature_code: str, characterization_update: CharacterizationUpdate, session: Session = Depends(get_db_session)
+    code: str,
+    feature_code: str,
+    characterization_update: CharacterizationUpdate,
+    session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("LIB", "CHARACTERIZATIONS", can_edit=True)),
 ) -> Characterization:
     """
     Update an existing characterization.
@@ -159,7 +163,7 @@ def update(
 @router.delete("/{code}/{feature_code}", response_model=Characterization, status_code=200)
 def delete(
     code: str, feature_code: str, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("LIB", "CHARACTERIZATIONS", can_edit=True))
+    _: User = Depends(require_privilege("LIB", "CHARACTERIZATIONS", can_edit=True))
 ) -> Characterization:
     """
     Delete a characterization (logical delete).

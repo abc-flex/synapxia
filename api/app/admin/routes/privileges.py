@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from ..internal.models import Privilege, PrivilegeCreate, PrivilegeUpdate, Profile, Option, User
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
-from ...internal.permissions import check_privilege
+from ...internal.permissions import require_privilege
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/privileges", tags=["privileges"])
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/api/privileges", tags=["privileges"])
 @router.get("/", response_model=List[Privilege])
 def get_all(
     skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "PRIVILEGES", can_edit=False))
+    _: User = Depends(require_privilege("ADMIN", "PRIVILEGES", can_edit=False))
 ) -> List[Privilege]:
     """
     List all privileges with pagination (*Only active privileges).
@@ -36,7 +36,7 @@ def get_all(
 def get_by_profile(
     profile_code: str,
     session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "PRIVILEGES", can_edit=False))
+    _: User = Depends(require_privilege("ADMIN", "PRIVILEGES", can_edit=False))
 ) -> List[Privilege]:
     """
     Get all privileges for a specific profile.
@@ -61,7 +61,7 @@ def get_by_profile(
 @router.get("/{profile_code}/{module_code}/{option_code}", response_model=Privilege)
 def get(
     profile_code: str, module_code: str, option_code: str, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "PRIVILEGES", can_edit=False))
+    _: User = Depends(require_privilege("ADMIN", "PRIVILEGES", can_edit=False))
 ) -> Privilege:
     """
     Get a privilege by its profile, module and option.
@@ -90,7 +90,7 @@ def get(
 @router.post("/", response_model=Privilege, status_code=201)
 def create(
     privilege: PrivilegeCreate, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "PRIVILEGES", can_edit=True))
+    _: User = Depends(require_privilege("ADMIN", "PRIVILEGES", can_edit=True))
 ) -> Privilege:
     """
     Create a new privilege.
@@ -193,7 +193,7 @@ def update(
 @router.delete("/{profile_code}/{module_code}/{option_code}", response_model=Privilege, status_code=200)
 def delete(
     profile_code: str, module_code: str, option_code: str, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "PRIVILEGES", can_edit=True))
+    _: User = Depends(require_privilege("ADMIN", "PRIVILEGES", can_edit=True))
 ) -> Privilege:
     """
     Delete a privilege (logical delete).

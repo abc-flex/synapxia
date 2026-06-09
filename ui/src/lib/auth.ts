@@ -14,7 +14,7 @@ export interface LoginRequest {
 export interface LoginResponse {
   access_token: string;
   token_type: string;
-  user: UserRead;
+  user: UserRead;  // synthesized client-side from a follow-up GET /me
 }
 
 export interface RegisterRequest {
@@ -23,8 +23,8 @@ export interface RegisterRequest {
   password: string;
   first_name: string;
   last_name: string;
-  menu_role: string;
-  business_unit: string;
+  profile: string;   // FK → profiles.code (was: menu_role)
+  unit: string;      // FK → business_units.code (was: business_unit)
 }
 
 export interface ChangePasswordRequest {
@@ -32,12 +32,13 @@ export interface ChangePasswordRequest {
   new_password: string;
 }
 
-// Local storage key for token
+// Local storage keys
 const TOKEN_STORAGE_KEY = 'auth_token';
+const REFRESH_TOKEN_STORAGE_KEY = 'auth_refresh_token';
 const USER_STORAGE_KEY = 'auth_user';
 
 /**
- * Store JWT token in localStorage
+ * Store JWT access token in localStorage
  */
 export function storeToken(token: string): void {
   if (typeof window !== 'undefined') {
@@ -46,7 +47,7 @@ export function storeToken(token: string): void {
 }
 
 /**
- * Retrieve JWT token from localStorage
+ * Retrieve JWT access token from localStorage
  */
 export function getToken(): string | null {
   if (typeof window !== 'undefined') {
@@ -56,12 +57,36 @@ export function getToken(): string | null {
 }
 
 /**
- * Clear JWT token from localStorage
+ * Store the long-lived refresh token in localStorage.
+ */
+export function storeRefreshToken(token: string): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, token);
+  }
+}
+
+/**
+ * Retrieve the refresh token from localStorage.
+ */
+export function getRefreshToken(): string | null {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
+  }
+  return null;
+}
+
+/**
+ * Clear all auth state — both tokens, the cached user object, and the
+ * cached sidebar nav. The nav clear matters: a stale cache from a
+ * previous user would otherwise leak their menu options to the next
+ * user before the background refetch overrides it.
  */
 export function clearToken(): void {
   if (typeof window !== 'undefined') {
     localStorage.removeItem(TOKEN_STORAGE_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
     localStorage.removeItem(USER_STORAGE_KEY);
+    localStorage.removeItem('nav_cache');
   }
 }
 
@@ -99,57 +124,118 @@ export function isAuthenticated(): boolean {
 }
 
 /**
- * Login user with username/email and password
- * Returns user data and stores token
+ * POST credentials to a fastapi-users login backend and return the issued
+ * token. Used for both the access-token backend (/api/auth/login) and the
+ * refresh-token backend (/api/auth/refresh/login).
  */
-export async function login(credentials: LoginRequest): Promise<LoginResponse> {
-  // OAuth2PasswordRequestForm requires application/x-www-form-urlencoded, NOT multipart/form-data.
-  // Using URLSearchParams automatically sets the correct Content-Type header.
+async function postLogin(endpoint: string, credentials: LoginRequest): Promise<string> {
   const formData = new URLSearchParams();
   formData.append('username', credentials.username);
   formData.append('password', credentials.password);
 
-  const url = `${getApiUrl()}/api/auth/login`;
-
+  let res: Response;
   try {
-    const res = await fetch(url, {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text().catch(() => '');
-      let errorDetail = 'Login failed';
-
-      try {
-        const errorJson = JSON.parse(errorText);
-        // FastAPI validation errors return detail as an array of {loc, msg, type} objects.
-        if (Array.isArray(errorJson.detail)) {
-          errorDetail = errorJson.detail.map((e: { msg?: string }) => e.msg ?? 'Validation error').join('. ');
-        } else {
-          errorDetail = errorJson.detail || errorText;
-        }
-      } catch {
-        errorDetail = errorText || res.statusText;
-      }
-
-      throw new Error(errorDetail);
-    }
-
-    const data = (await res.json()) as LoginResponse;
-
-    // Store token and user info
-    storeToken(data.access_token);
-    storeUser(data.user);
-
-    return data;
-  } catch (error) {
-    if (error instanceof Error) {
-      console.error('Login error:', error.message);
-      throw error;
-    }
-    throw new Error('Login failed: unknown error');
+    res = await fetch(`${getApiUrl()}${endpoint}`, { method: 'POST', body: formData });
+  } catch (e) {
+    throw new Error(e instanceof Error ? e.message : 'Login failed: network error');
   }
+
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => '');
+    let errorDetail = 'Login failed';
+    try {
+      const errorJson = JSON.parse(errorText);
+      if (Array.isArray(errorJson.detail)) {
+        errorDetail = errorJson.detail
+          .map((e: { msg?: string }) => e.msg ?? 'Validation error')
+          .join('. ');
+      } else if (typeof errorJson.detail === 'string') {
+        errorDetail = errorJson.detail;
+      } else {
+        errorDetail = errorText;
+      }
+    } catch {
+      errorDetail = errorText || res.statusText;
+    }
+    throw new Error(errorDetail);
+  }
+
+  const data = (await res.json()) as { access_token: string; token_type: string };
+  return data.access_token;
+}
+
+/**
+ * Login user with username/email and password.
+ *
+ * Issues TWO tokens because fastapi-users uses one auth-backend per token
+ * type:
+ *   1. POST /api/auth/login         → short-lived JWT access token (60 min)
+ *   2. POST /api/auth/refresh/login → long-lived refresh token (14 d, in DB)
+ *   3. GET  /api/auth/me            → hydrate the user object the UI expects
+ *
+ * The refresh token is later used by ``refreshAccessToken()`` to mint a fresh
+ * access token without re-prompting for the password.
+ */
+export async function login(credentials: LoginRequest): Promise<LoginResponse> {
+  const accessToken = await postLogin('/api/auth/login', credentials);
+  storeToken(accessToken);
+
+  // Refresh-token call uses the same credentials. If this leg fails we still
+  // proceed with the access token only — the user can re-log in when it
+  // expires; we shouldn't block login on the refresh-token leg.
+  try {
+    const refreshToken = await postLogin('/api/auth/refresh/login', credentials);
+    storeRefreshToken(refreshToken);
+  } catch (e) {
+    console.warn('Refresh-token issuance failed; proceeding with access token only:', e);
+  }
+
+  const user = await getCurrentUser();
+
+  return {
+    access_token: accessToken,
+    token_type: 'bearer',
+    user,
+  };
+}
+
+/**
+ * Exchange the stored refresh token for a fresh access token (no password
+ * re-prompt). Updates ``auth_token`` in localStorage in place. Returns true
+ * on success, false otherwise — callers should treat false as "auth lost,
+ * redirect to login".
+ *
+ * Safe to call concurrently: the in-flight refresh promise is shared so
+ * parallel 401s only spawn ONE network refresh call.
+ */
+let inflightRefresh: Promise<boolean> | null = null;
+
+export function refreshAccessToken(): Promise<boolean> {
+  if (inflightRefresh) return inflightRefresh;
+
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) {
+    return Promise.resolve(false);
+  }
+
+  inflightRefresh = (async () => {
+    try {
+      const res = await fetch(`${getApiUrl()}/api/auth/refresh`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${refreshToken}` },
+      });
+      if (!res.ok) return false;
+      const data = (await res.json()) as { access_token: string };
+      storeToken(data.access_token);
+      return true;
+    } catch {
+      return false;
+    } finally {
+      inflightRefresh = null;
+    }
+  })();
+
+  return inflightRefresh;
 }
 
 /**
@@ -182,53 +268,120 @@ export async function getCurrentUser(): Promise<UserRead> {
 }
 
 /**
- * Logout current user (client-side)
- * Clears stored token and user info
+ * Update the current user's own profile via fastapi-users' PATCH /me.
+ *
+ * Accepts any subset of the editable fields (first_name, last_name, email,
+ * username, profile, unit, password). On success refreshes the localStorage
+ * cache so the UI sees the new values immediately.
  */
-export function logout(): void {
-  clearToken();
-}
-
-/**
- * Change password for current user
- */
-export async function changePassword(request: ChangePasswordRequest): Promise<{ message: string }> {
+export async function updateMyProfile(data: Record<string, unknown>): Promise<UserRead> {
   const token = getToken();
   if (!token) {
     throw new Error('No authentication token found');
   }
 
-  const url = `${getApiUrl()}/api/auth/change-password`;
+  const url = `${getApiUrl()}/api/auth/me`;
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
 
-  const formData = new URLSearchParams();
-  formData.append('old_password', request.old_password);
-  formData.append('new_password', request.new_password);
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => '');
+    let errorDetail = 'Profile update failed';
+    try {
+      const errorJson = JSON.parse(errorText);
+      if (Array.isArray(errorJson.detail)) {
+        errorDetail = errorJson.detail
+          .map((e: { msg?: string }) => e.msg ?? 'Validation error')
+          .join('. ');
+      } else if (typeof errorJson.detail === 'string') {
+        errorDetail = errorJson.detail;
+      }
+    } catch {
+      errorDetail = errorText || res.statusText;
+    }
+    throw new Error(errorDetail);
+  }
+
+  const updated = (await res.json()) as UserRead;
+  storeUser(updated);
+  return updated;
+}
+
+/**
+ * Logout — revoke the refresh token server-side (delete its DB row), then
+ * clear all local auth state. We DON'T block on the network call: even if
+ * the server is unreachable, the local clear must happen so the user is
+ * logged out client-side.
+ */
+export async function logout(): Promise<void> {
+  const refreshToken = getRefreshToken();
+  if (refreshToken) {
+    try {
+      await fetch(`${getApiUrl()}/api/auth/refresh/logout`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${refreshToken}` },
+      });
+    } catch {
+      // Ignore — local clear below is the source of truth for the user
+    }
+  }
+  clearToken();
+}
+
+/**
+ * Change password for the current user.
+ *
+ * Uses fastapi-users' PATCH /me endpoint. Note: there is no old-password
+ * verification at the API layer — possessing a valid JWT IS the proof of
+ * identity. The `old_password` field in the request is currently ignored
+ * server-side. (Keep the field in the UI form anyway so we can re-add a
+ * server-side check via a custom endpoint later without a UI rewrite.)
+ */
+export async function changePassword(request: ChangePasswordRequest): Promise<UserRead> {
+  const token = getToken();
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+
+  const url = `${getApiUrl()}/api/auth/me`;
 
   try {
     const res = await fetch(url, {
-      method: 'POST',
+      method: 'PATCH',
       headers: {
         'Accept': 'application/json',
+        'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: formData,
+      body: JSON.stringify({ password: request.new_password }),
     });
 
     if (!res.ok) {
       const errorText = await res.text().catch(() => '');
       let errorDetail = 'Password change failed';
-
       try {
         const errorJson = JSON.parse(errorText);
-        errorDetail = errorJson.detail || errorText;
+        if (Array.isArray(errorJson.detail)) {
+          errorDetail = errorJson.detail
+            .map((e: { msg?: string }) => e.msg ?? 'Validation error')
+            .join('. ');
+        } else if (typeof errorJson.detail === 'string') {
+          errorDetail = errorJson.detail;
+        }
       } catch {
         errorDetail = errorText || res.statusText;
       }
-
       throw new Error(errorDetail);
     }
 
-    return res.json() as Promise<{ message: string }>;
+    return res.json() as Promise<UserRead>;
   } catch (error) {
     if (error instanceof Error) {
       console.error('Change password error:', error.message);

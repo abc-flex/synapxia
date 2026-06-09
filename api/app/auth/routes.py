@@ -1,80 +1,205 @@
 """
-Authentication configuration and routes (Phase 2: fastapi-users integration).
+Authentication routes — fully on fastapi-users.
 
-Combines fastapi-users machinery with backward-compatibility shim to preserve
-the existing /api/auth contract for the Astro UI.
+All auth endpoints (`/login`, `/logout`, `/register`, `/me`, …) are the
+fastapi-users defaults mounted directly under ``/api/auth``. The custom shim
+that previously lived here was removed in favor of the library implementation.
+
+Key customizations:
+- ``BcryptPasswordHelper`` — uses passlib bcrypt so existing ``$2b$12$…``
+  hashes in the DB keep working (fastapi-users v13 defaults to argon2).
+- ``UserManager.authenticate`` — overridden to accept either username OR
+  email (default only accepts email).
+- ``UserManager.create`` — validates that the referenced ``profile`` and
+  ``unit`` exist before persisting (preserves prior register behavior).
 """
-import os
 import logging
-from typing import Optional
+import secrets
+from typing import Optional, Tuple
 
-from fastapi import APIRouter, Depends, Form, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-from fastapi_users import BaseUserManager, IntegerIDMixin, FastAPIUsers
-from fastapi_users.authentication import AuthenticationBackend, BearerTransport, JWTStrategy
+from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi_users import BaseUserManager, FastAPIUsers, IntegerIDMixin, exceptions, models
+from fastapi_users.authentication import (
+    AuthenticationBackend,
+    BearerTransport,
+    JWTStrategy,
+)
+from fastapi_users.authentication.strategy import AccessTokenDatabase, DatabaseStrategy
 from fastapi_users.db import SQLAlchemyUserDatabase
+from fastapi_users.password import PasswordHelperProtocol
+from fastapi_users_db_sqlalchemy.access_token import SQLAlchemyAccessTokenDatabase
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
-from ..admin.internal.models import User, Profile, BusinessUnit
+from ..admin.internal.models import BusinessUnit, Profile, User
+from ..core.config import settings
 from ..internal.dependencies import get_async_session
-from .schemas import UserRead, UserCreate, UserUpdate
-
-# Bcrypt context — matches the hashes already stored in the DB ($2b$12$…)
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+from .models import RefreshToken
+from .schemas import UserCreate, UserRead, UserUpdate
 
 logger = logging.getLogger(__name__)
 
-# ==================== JWT Configuration ====================
-SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
-if SECRET_KEY == "your-secret-key-change-in-production":
-    logger.warning(
-        "⚠️  Using default SECRET_KEY. Set SECRET_KEY environment variable in production!")
+# JWT secret + lifetimes come from pydantic-settings (single source of truth).
+# The "default secret" warning is emitted from config.py at startup, not here.
+SECRET_KEY = settings.jwt_secret
 
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+
+# ==================== Password Helper (bcrypt) ====================
+
+class BcryptPasswordHelper(PasswordHelperProtocol):
+    """
+    Drop-in PasswordHelper that uses passlib bcrypt instead of fastapi-users'
+    default argon2 (pwdlib). Required because the seeded hashes in the users
+    table use bcrypt (``$2b$12$…``). Without this swap every login would 401.
+    """
+
+    def __init__(self) -> None:
+        self.context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+    def verify_and_update(self, plain_password: str, hashed_password: str) -> Tuple[bool, Optional[str]]:
+        verified = self.context.verify(plain_password, hashed_password)
+        new_hash: Optional[str] = None
+        if verified and self.context.needs_update(hashed_password):
+            new_hash = self.context.hash(plain_password)
+        return (verified, new_hash)
+
+    def hash(self, password: str) -> str:
+        return self.context.hash(password)
+
+    def generate(self) -> str:
+        return secrets.token_urlsafe(32)
+
 
 # ==================== fastapi-users setup ====================
 
+class _UserDatabase(SQLAlchemyUserDatabase):
+    """
+    Adapter that translates fastapi-users' ``hashed_password`` writes to our
+    actual column name ``password_hash``. The ``User`` model exposes
+    ``hashed_password`` as a *read-only* SQLAlchemy synonym, which means:
+      - on INSERT, ``User(hashed_password=…)`` silently drops the value (the
+        synonym's setter doesn't propagate), producing a NULL column → IntegrityError.
+      - on UPDATE, ``setattr(user, "hashed_password", …)`` raises ``NotImplementedError``.
+    Renaming the key on both paths keeps the model surface clean without
+    making the synonym writable.
+    """
+
+    @staticmethod
+    def _rewrite(d: dict) -> dict:
+        if "hashed_password" in d:
+            d = dict(d)
+            d["password_hash"] = d.pop("hashed_password")
+        return d
+
+    async def create(self, create_dict):
+        return await super().create(self._rewrite(create_dict))
+
+    async def update(self, user, update_dict):
+        return await super().update(user, self._rewrite(update_dict))
+
 
 async def get_user_db(session: AsyncSession = Depends(get_async_session)):
-    """Dependency that provides SQLAlchemy user database."""
-    yield SQLAlchemyUserDatabase(session, User)
+    """SQLAlchemy adapter for fastapi-users."""
+    yield _UserDatabase(session, User)
 
 
 class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
-    """Custom user manager for fastapi-users with bcrypt password hashing."""
+    """User manager: bcrypt hashing + username-or-email login + FK validation."""
 
     reset_password_token_secret = SECRET_KEY
     verification_token_secret = SECRET_KEY
 
+    async def authenticate(self, credentials) -> Optional[User]:
+        """
+        Override the default authenticate() to accept the OAuth2
+        ``username`` field as either a username or an email address.
+        """
+        identifier = credentials.username
+
+        # Try email first (fastapi-users' default lookup)
+        try:
+            user = await self.get_by_email(identifier)
+        except exceptions.UserNotExists:
+            user = None
+
+        # Fall back to username lookup via the underlying session
+        if user is None:
+            stmt = select(User).where(User.username == identifier)
+            result = await self.user_db.session.execute(stmt)
+            user = result.scalars().first()
+
+        if user is None:
+            # Hash anyway to keep timing roughly constant
+            self.password_helper.hash(credentials.password)
+            return None
+
+        verified, updated_password_hash = self.password_helper.verify_and_update(
+            credentials.password, user.hashed_password
+        )
+        if not verified:
+            return None
+
+        if updated_password_hash is not None:
+            await self.user_db.update(user, {"hashed_password": updated_password_hash})
+
+        return user
+
+    async def create(
+        self,
+        user_create,
+        safe: bool = False,
+        request=None,
+    ) -> User:
+        """Validate FKs to profiles/business_units before delegating to the default create."""
+        session: AsyncSession = self.user_db.session
+
+        profile_code = getattr(user_create, "profile", None)
+        if profile_code:
+            result = await session.execute(select(Profile).where(Profile.code == profile_code))
+            if result.scalars().first() is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Profile '{profile_code}' does not exist",
+                )
+
+        unit_code = getattr(user_create, "unit", None)
+        if unit_code:
+            result = await session.execute(select(BusinessUnit).where(BusinessUnit.code == unit_code))
+            if result.scalars().first() is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Business unit '{unit_code}' does not exist",
+                )
+
+        return await super().create(user_create, safe=safe, request=request)
+
     async def on_after_register(self, user: User, request=None) -> None:
-        """Called after user registration."""
         logger.info(f"User {user.username} registered successfully")
 
-    async def on_after_forgot_password(self, user: User, request=None) -> None:
-        """Called after reset password request."""
+    async def on_after_login(self, user: User, request=None, response=None) -> None:
+        logger.info(f"User {user.username} logged in")
+
+    async def on_after_forgot_password(self, user: User, token: str, request=None) -> None:
         logger.info(f"Password reset requested for {user.username}")
 
-    async def on_after_request_verify(self, user: User, request=None) -> None:
-        """Called after email verification request."""
+    async def on_after_request_verify(self, user: User, token: str, request=None) -> None:
         logger.info(f"Verification requested for {user.username}")
 
 
 async def get_user_manager(user_db=Depends(get_user_db)):
-    """Dependency that provides the user manager."""
-    yield UserManager(user_db)
+    """Provide UserManager with the bcrypt-backed password helper."""
+    yield UserManager(user_db, password_helper=BcryptPasswordHelper())
 
 
+# Bearer transport — tokenUrl points to where the UI POSTs OAuth2 form creds
 bearer_transport = BearerTransport(tokenUrl="/api/auth/login")
 
 
 def get_jwt_strategy() -> JWTStrategy:
-    """JWT strategy for authentication."""
     return JWTStrategy(
-        secret=SECRET_KEY,
-        lifetime_seconds=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        secret=settings.jwt_secret,
+        lifetime_seconds=settings.jwt_lifetime_seconds,
     )
 
 
@@ -84,214 +209,99 @@ auth_backend = AuthenticationBackend(
     get_strategy=get_jwt_strategy,
 )
 
-# Initialize fastapi-users with the JWT backend
-fastapi_users = FastAPIUsers[User, int](get_user_manager, [auth_backend])
 
-# Export auth dependencies for use in other routes
+# ==================== Refresh-token backend ====================
+# Long-lived refresh tokens persisted in the `refresh_tokens` table. The UI
+# trades a refresh token for a fresh access token via POST /api/auth/refresh/login
+# when the access token expires — no password re-prompt needed.
+
+async def get_access_token_db(
+    session: AsyncSession = Depends(get_async_session),
+) -> AccessTokenDatabase[RefreshToken]:
+    yield SQLAlchemyAccessTokenDatabase(session, RefreshToken)
+
+
+def get_refresh_strategy(
+    access_token_db: AccessTokenDatabase[RefreshToken] = Depends(get_access_token_db),
+) -> DatabaseStrategy:
+    return DatabaseStrategy(
+        database=access_token_db,
+        lifetime_seconds=settings.jwt_refresh_lifetime_seconds,
+    )
+
+
+# Separate transport so the refresh router lives at /api/auth/refresh/* and
+# its tokens never overlap with the access-token bearer scheme on /api/*.
+refresh_transport = BearerTransport(tokenUrl="/api/auth/refresh/login")
+
+refresh_backend = AuthenticationBackend(
+    name="refresh",
+    transport=refresh_transport,
+    get_strategy=get_refresh_strategy,
+)
+
+
+fastapi_users = FastAPIUsers[User, int](get_user_manager, [auth_backend, refresh_backend])
+
+# Dependencies exported for other routes
 current_active_user = fastapi_users.current_user(active=True)
 current_superuser = fastapi_users.current_user(active=True, superuser=True)
 
-# ==================== Routes ====================
+
+# ==================== Router assembly ====================
+# Mount all fastapi-users routers directly under /api/auth (no /fastapi prefix).
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
 
-# Include fastapi-users auto-generated routers at /api/auth/fastapi/*
-# These provide a complete auth system with password reset, email verification, etc.
-fastapi_users_routers = fastapi_users.get_auth_router(auth_backend)
-router.include_router(fastapi_users_routers, prefix="/fastapi")
+# POST /login, POST /logout  (short-lived access-token JWT)
+router.include_router(fastapi_users.get_auth_router(auth_backend))
 
-# ==================== Backward-compatibility shim ====================
-# The Astro UI expects the old contract:
-# POST /api/auth/login → {access_token, token_type, user: {id, username, email, ...}}
-# These endpoints delegate to fastapi-users while preserving the old response shape.
+# POST /refresh/login, POST /refresh/logout  (long-lived refresh tokens
+# stored in refresh_tokens table; trade refresh→access via this endpoint)
+router.include_router(
+    fastapi_users.get_auth_router(refresh_backend),
+    prefix="/refresh",
+)
 
-
-@router.post("/login", response_model=dict)
-async def login(
-    username: str = Form(...),
-    password: str = Form(...),
-    session: AsyncSession = Depends(get_async_session),
-):
-    """
-    Login endpoint - backward-compatible with Astro UI.
-
-    Returns JWT access token + user profile object (for UI convenience).
-    Username can be either username or email.
-    """
-    # Query user by username or email
-    stmt = select(User).where(
-        (User.username == username) | (User.email == username)
-    )
-    result = await session.execute(stmt)
-    user = result.scalars().first()
-
-    if not user:
+# POST /refresh — trade a valid refresh token for a fresh access token.
+# fastapi-users doesn't ship this endpoint (refresh-token flows vary across
+# apps) but we compose it from its primitives — refresh_strategy.read_token
+# resolves the user; jwt_strategy.write_token mints the new access token.
+# No password re-prompt, no DB session row created.
+@router.post("/refresh")
+async def refresh_access_token(
+    authorization: str = Header(...),
+    user_manager: UserManager = Depends(get_user_manager),
+    refresh_strategy: DatabaseStrategy = Depends(get_refresh_strategy),
+) -> dict:
+    """Exchange a refresh token (Bearer) for a new short-lived access token."""
+    if not authorization.lower().startswith("bearer "):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="Missing or malformed Authorization header",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    token = authorization[len("bearer "):].strip()
+
+    user = await refresh_strategy.read_token(token, user_manager)
+    if user is None or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Verify password against the bcrypt hash stored in the DB
-    if not pwd_context.verify(password, user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User account is disabled"
-        )
-
-    # Generate JWT token using fastapi-users' JWT strategy
-    jwt_strategy = get_jwt_strategy()
-    access_token = await jwt_strategy.write_token(user)
-
-    logger.info(f"User {user.username} logged in")
-
-    # Return token + user profile (preserves Astro UI contract)
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": {
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "profile": user.profile,
-            "unit": user.unit,
-        }
-    }
+    new_access_token = await get_jwt_strategy().write_token(user)
+    return {"access_token": new_access_token, "token_type": "bearer"}
 
 
-@router.post("/register", response_model=UserRead, status_code=201)
-async def register(
-    user_data: UserCreate,
-    session: AsyncSession = Depends(get_async_session),
-):
-    """
-    Register a new user.
+# POST /register
+router.include_router(fastapi_users.get_register_router(UserRead, UserCreate))
 
-    Validates:
-    - Username and email are unique
-    - Profile and unit exist
-    """
-    # Check username uniqueness
-    result = await session.execute(
-        select(User).where(User.username == user_data.username)
-    )
-    existing_user = result.scalars().first()
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Username '{user_data.username}' already registered"
-        )
-
-    # Check email uniqueness
-    result = await session.execute(
-        select(User).where(User.email == user_data.email)
-    )
-    existing_email = result.scalars().first()
-    if existing_email:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Email '{user_data.email}' already registered"
-        )
-
-    # Validate profile exists
-    result = await session.execute(
-        select(Profile).where(Profile.code == user_data.profile)
-    )
-    profile = result.scalars().first()
-    if not profile:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Profile '{user_data.profile}' does not exist"
-        )
-
-    # Validate unit exists
-    result = await session.execute(
-        select(BusinessUnit).where(BusinessUnit.code == user_data.unit)
-    )
-    unit = result.scalars().first()
-    if not unit:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Business unit '{user_data.unit}' does not exist"
-        )
-
-    # Hash password with bcrypt (consistent with existing hashes in the DB)
-    hashed_password = pwd_context.hash(user_data.password)
-
-    # Create new user
-    new_user = User(
-        username=user_data.username,
-        email=user_data.email,
-        password_hash=hashed_password,
-        first_name=user_data.first_name,
-        last_name=user_data.last_name,
-        profile=user_data.profile,
-        unit=user_data.unit,
-        is_active=True,
-        is_superuser=False,
-        is_verified=False,
-    )
-
-    session.add(new_user)
-    await session.commit()
-    await session.refresh(new_user)
-
-    logger.info(f"New user registered: {new_user.username}")
-
-    return new_user
-
-
-@router.get("/me", response_model=UserRead)
-async def get_me(current_user: User = Depends(current_active_user)):
-    """Get current user profile."""
-    return current_user
-
-
-@router.post("/change-password")
-async def change_password(
-    old_password: str = Form(...),
-    new_password: str = Form(...),
-    current_user: User = Depends(current_active_user),
-    session: AsyncSession = Depends(get_async_session),
-):
-    """Change password for current user."""
-    # Verify old password against bcrypt hash
-    if not pwd_context.verify(old_password, current_user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Incorrect current password"
-        )
-
-    # Hash and update new password
-    current_user.password_hash = pwd_context.hash(new_password)
-
-    session.add(current_user)
-    await session.commit()
-
-    logger.info(f"Password changed for user {current_user.username}")
-
-    return {"message": "Password changed successfully"}
-
-
-@router.post("/logout")
-async def logout(current_user: User = Depends(current_active_user)):
-    """
-    Logout endpoint - returns success message.
-
-    Note: JWT tokens are stateless, so logout is client-side by removing the token.
-    This endpoint is provided for API consistency.
-    """
-    logger.info(f"User {current_user.username} logged out")
-
-    return {"message": "Successfully logged out"}
+# GET /me, PATCH /me, GET /{id}, PATCH /{id}, DELETE /{id}
+# NOTE: PATCH /me lets the authenticated user change their own password by
+# sending {"password": "..."}. There is no old-password verification — having
+# a valid JWT is the proof of identity.
+router.include_router(fastapi_users.get_users_router(UserRead, UserUpdate))
 
 
 __all__ = [

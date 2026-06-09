@@ -10,7 +10,7 @@ from sqlalchemy import case
 from ..internal.models import Category, CategoryCreate, CategoryUpdate
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
-from ...internal.permissions import check_privilege
+from ...internal.permissions import require_privilege
 from ...admin.internal.models import User
 
 logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ class CategoryBasic(SQLModel):
 @router.get("/select", response_model=List[CategoryBasic])
 def get_list(
     session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("TAXO", "CATEGORIES", can_edit=False))
+    _: User = Depends(require_privilege("TAXO", "CATEGORIES", can_edit=False))
 ) -> List[CategoryBasic]:
     """
     Returns a categories list optimized for selects with value (code) and label (name). 
@@ -44,7 +44,7 @@ def get_list(
 @router.get("/", response_model=List[Category])
 def get_all(
     skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("TAXO", "CATEGORIES", can_edit=False))
+    _: User = Depends(require_privilege("TAXO", "CATEGORIES", can_edit=False))
 ) -> List[Category]:
     """
     List all categories with pagination.
@@ -75,7 +75,7 @@ def get_all(
 @router.get("/{code}", response_model=Category)
 def get(
     code: str, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("TAXO", "CATEGORIES", can_edit=False))
+    _: User = Depends(require_privilege("TAXO", "CATEGORIES", can_edit=False))
 ) -> Category:
     """
     Get a category by its code.
@@ -93,7 +93,7 @@ def get(
 @router.post("/", response_model=Category, status_code=201)
 def create(
     category: CategoryCreate, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("TAXO", "CATEGORIES", can_edit=True))
+    _: User = Depends(require_privilege("TAXO", "CATEGORIES", can_edit=True))
 ) -> Category:
     """
     Create a new category.
@@ -140,7 +140,7 @@ def create(
 @router.put("/{code}", response_model=Category)
 def update(
     code: str, update: CategoryUpdate, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("TAXO", "CATEGORIES", can_edit=True))
+    _: User = Depends(require_privilege("TAXO", "CATEGORIES", can_edit=True))
 ) -> Category:
     """
     Update an existing category.
@@ -178,7 +178,7 @@ def update(
 @router.delete("/{code}", response_model=Category, status_code=200)
 def delete(
     code: str, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("TAXO", "CATEGORIES", can_edit=True))
+    _: User = Depends(require_privilege("TAXO", "CATEGORIES", can_edit=True))
 ) -> Category:
     """
     Delete a category (logical delete).

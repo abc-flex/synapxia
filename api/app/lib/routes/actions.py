@@ -10,7 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from ..internal.models import Action, ActionCreate, ActionUpdate, Asset
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
-from ...internal.permissions import check_privilege
+from ...internal.permissions import require_privilege
 from ...admin.internal.models import User
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/api/actions", tags=["actions"])
 @router.get("/", response_model=List[Action])
 def get_all(
     skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("LIB", "ACTIONS", can_edit=False))
+    _: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=False))
 ) -> List[Action]:
     """
     List all actions with pagination.
@@ -37,7 +37,7 @@ def get_all(
 @router.get("/{id}", response_model=Action)
 def get(
     id: int, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("LIB", "ACTIONS", can_edit=False))
+    _: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=False))
 ) -> Action:
     """
     Get an action by its ID.
@@ -55,7 +55,7 @@ def get(
 @router.post("/", response_model=Action, status_code=201)
 def create(
     action: ActionCreate, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("LIB", "ACTIONS", can_edit=True))
+    _: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=True))
 ) -> Action:
     """
     Create a new action.
@@ -110,7 +110,7 @@ def create(
 @router.put("/{id}", response_model=Action)
 def update(
     id: int, action_update: ActionUpdate, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("LIB", "ACTIONS", can_edit=True))
+    _: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=True))
 ) -> Action:
     """
     Update an existing action.
@@ -152,7 +152,7 @@ def update(
 @router.delete("/{id}", response_model=Action, status_code=200)
 def delete(
     id: int, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("LIB", "ACTIONS", can_edit=True))
+    _: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=True))
 ) -> Action:
     """
     Delete an action (logical delete).

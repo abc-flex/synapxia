@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from ..internal.models import Team, TeamCreate, TeamUpdate
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
-from ...internal.permissions import check_privilege
+from ...internal.permissions import require_privilege
 from ...admin.internal.models import User
 
 logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ class TeamBasic(SQLModel):
 @router.get("/select", response_model=List[TeamBasic])
 def get_list(
     session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("COLLAB", "TEAMS", can_edit=False))
+    _: User = Depends(require_privilege("COLLAB", "TEAMS", can_edit=False))
 ) -> List[TeamBasic]:
     """
     Returns a teams list optimized for selects with value (code) and label (name). 
@@ -43,7 +43,7 @@ def get_list(
 @router.get("/", response_model=List[Team])
 def get_all(
     skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("COLLAB", "TEAMS", can_edit=False))
+    _: User = Depends(require_privilege("COLLAB", "TEAMS", can_edit=False))
 ) -> List[Team]:
     """
     List all teams actives with pagination (*Only active teams).
@@ -60,7 +60,7 @@ def get_all(
 @router.get("/{code}", response_model=Team)
 def get(
     code: str, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("COLLAB", "TEAMS", can_edit=False))
+    _: User = Depends(require_privilege("COLLAB", "TEAMS", can_edit=False))
 ) -> Team:
     """
     Get a team by its code.
@@ -78,7 +78,7 @@ def get(
 @router.post("/", response_model=Team, status_code=201)
 def create(
     team: TeamCreate, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("COLLAB", "TEAMS", can_edit=True))
+    _: User = Depends(require_privilege("COLLAB", "TEAMS", can_edit=True))
 ) -> Team:
     """
     Create a new team.
@@ -118,7 +118,7 @@ def create(
 @router.put("/{code}", response_model=Team)
 def update(
     code: str, team_update: TeamUpdate, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("COLLAB", "TEAMS", can_edit=True))
+    _: User = Depends(require_privilege("COLLAB", "TEAMS", can_edit=True))
 ) -> Team:
     """
     Update an existing team.
@@ -147,7 +147,7 @@ def update(
 @router.delete("/{code}", response_model=Team, status_code=200)
 def delete(
     code: str, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("COLLAB", "TEAMS", can_edit=True))
+    _: User = Depends(require_privilege("COLLAB", "TEAMS", can_edit=True))
 ) -> Team:
     """
     Delete a team (logical delete).

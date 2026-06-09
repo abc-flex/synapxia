@@ -6,6 +6,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [develop] — 2026-06-09 15:30 · 3f363eb
+
+### Added
+- `3f363eb` enhance UI components with new icons and update dashboard links
+
+---
+
+
 ## [develop] — 2026-06-09 14:53 · 6733ca0
 
 ### Changed

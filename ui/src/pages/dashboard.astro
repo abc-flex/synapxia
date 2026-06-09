@@ -1,16 +1,13 @@
 ---
-import { getToken, getUser } from "@/lib/auth";
+import { getUser } from "@/lib/auth";
 import Layout from "@/layouts/Layout.astro";
 
-// Check if user is authenticated (client-side localStorage; null during SSR
-// — that's fine, middleware also gates this route).
-const token = getToken();
-if (!token) {
-  return Astro.redirect("/login");
-}
-
-// Get user info from localStorage (the client-side <script> below also
-// refreshes this via getCurrentUser() so values stay current).
+// Auth gate runs client-side from Layout.astro's inline <script> — it
+// redirects to /login before this page paints if the token is missing.
+// `getUser()` returns null during SSR (localStorage is browser-only), and
+// the markup below guards every use with `{user && ...}` so SSR renders
+// placeholders. The client `<script>` at the bottom calls getCurrentUser()
+// to hydrate real values after mount.
 const user = getUser();
 ---
 

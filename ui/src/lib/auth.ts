@@ -76,13 +76,17 @@ export function getRefreshToken(): string | null {
 }
 
 /**
- * Clear all auth state — both tokens and the cached user object.
+ * Clear all auth state — both tokens, the cached user object, and the
+ * cached sidebar nav. The nav clear matters: a stale cache from a
+ * previous user would otherwise leak their menu options to the next
+ * user before the background refetch overrides it.
  */
 export function clearToken(): void {
   if (typeof window !== 'undefined') {
     localStorage.removeItem(TOKEN_STORAGE_KEY);
     localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
     localStorage.removeItem(USER_STORAGE_KEY);
+    localStorage.removeItem('nav_cache');
   }
 }
 

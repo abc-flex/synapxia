@@ -1,38 +1,90 @@
-import type { NavModule, NavOption } from "@/types/nav";
+/**
+ * Sidebar navigation data — fetched per page load.
+ *
+ * IMPORTANT: this MUST be called client-side, not in Astro frontmatter (SSR).
+ * The JWT lives in localStorage which the server can't read, so a server-side
+ * call returns 401 → apiGet's SSR-fallback returns []. We cache the result in
+ * localStorage so subsequent page loads render the menu before first paint.
+ */
 import { getModules } from "@/lib/modules";
 import { getOptions } from "@/lib/options";
+import type { NavModule, NavOption } from "@/types/nav";
 
-// Fetch modules and options from API once at module load
-let modules: any[] = [];
-let options: any[] = [];
-
-try {
-  modules = await getModules();
-} catch (error) {
-  console.error('Failed to fetch modules:', error);
-  modules = [];
+export interface NavigationData {
+  primaryNav: NavModule[];
+  itemsNav: NavOption[];
 }
 
-try {
-  options = await getOptions();
-} catch (error) {
-  console.error('Failed to fetch options:', error);
-  options = [];
+const NAV_CACHE_KEY = "nav_cache";
+
+/**
+ * Read the previously-cached nav data synchronously. Used by the sidebar's
+ * inline bootstrap script for an immediate render before the network refetch
+ * completes.
+ */
+export function readNavCache(): NavigationData | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(NAV_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as NavigationData;
+    if (Array.isArray(parsed?.primaryNav) && Array.isArray(parsed?.itemsNav)) {
+      return parsed;
+    }
+  } catch {
+    /* fall through */
+  }
+  return null;
 }
 
-export function getNavigationData() {
-  const primaryNav: NavModule[] = modules.map((module) => ({
-    code: module.code,
-    name: module.name,
-    icon: module.icon,
+/**
+ * Fetch modules + options from the API, normalize, and (when run client-side)
+ * cache the result. Returns the shape the sidebar expects.
+ */
+export async function getNavigationData(): Promise<NavigationData> {
+  const [modulesRaw, optionsRaw] = await Promise.all([
+    getModules().catch(() => []),
+    getOptions().catch(() => []),
+  ]);
+
+  const primaryNav: NavModule[] = modulesRaw.map((m: any) => ({
+    code: m.code,
+    name: m.name,
+    icon: m.icon,
   }));
 
-  const itemsNav: NavOption[] = options.map((option) => ({
-    module: option.module,
-    code: option.code,
-    name: option.name,
-    path: option.path,
+  const itemsNav: NavOption[] = optionsRaw.map((o: any) => ({
+    module: o.module,
+    code: o.code,
+    name: o.name,
+    path: o.path,
   }));
 
-  return { primaryNav, itemsNav };
+  const result: NavigationData = { primaryNav, itemsNav };
+
+  // Cache only on the client AND only when we got real data (don't cache
+  // empty results — that would defeat the purpose).
+  if (typeof window !== "undefined" && (primaryNav.length || itemsNav.length)) {
+    try {
+      localStorage.setItem(NAV_CACHE_KEY, JSON.stringify(result));
+    } catch {
+      /* localStorage may be unavailable in some embeds — non-fatal */
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Clear the cached nav data — call from logout so the next user doesn't
+ * inherit the previous user's menu items.
+ */
+export function clearNavCache(): void {
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.removeItem(NAV_CACHE_KEY);
+    } catch {
+      /* non-fatal */
+    }
+  }
 }

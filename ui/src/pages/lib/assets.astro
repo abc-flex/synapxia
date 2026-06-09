@@ -121,7 +121,10 @@ const fieldKeys = deleteFields.map((f) => f.key);
       // Inline module so we can import crudClient from /public/ (Astro's
       // hoisted bundler forbids importing /public/* files).
       import { initCrudPage } from "/scripts/crudClient.js";
-      import { deleteAsset } from "/src/lib/assets";
+      import { deleteAsset, getAssets } from "/src/lib/assets";
+      import { getCategoriesSelect } from "/src/lib/categories";
+      import { getListItemsbyList } from "/src/lib/list_items";
+      import { loadClientTranslations } from "/src/utils/i18nClient";
 
       // CrudClient still drives the delete modal's prefill flow.
       initCrudPage({
@@ -129,6 +132,132 @@ const fieldKeys = deleteFields.map((f) => f.key);
         editModalId: "asset-edit-modal", // shim — DataTable still emits this id
         deleteModalId: "asset-delete-modal",
       });
+
+      // ── Client-side data hydration ───────────────────────────────────────
+      // SSR has no JWT (token lives in localStorage), so the page-time fetch
+      // for assets/categories/statuses returned []. Refetch now with the
+      // browser's token and rebuild the table rows in place.
+      const escapeHtml = (s) =>
+        String(s ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+
+      function rowHtml(row, columnsOrder) {
+        const cells = columnsOrder
+          .map((key) => `<td class="px-2 py-1">${escapeHtml(row[key] ?? "")}</td>`)
+          .join("");
+        return `
+          <tr class="border-b" data-row-id="${escapeHtml(row.id)}">
+            ${cells}
+            <td class="actions-cell px-2 py-1 text-right space-x-0">
+              <div class="actions-wrapper">
+                <button class="p-1 hover:bg-blue-100 rounded edit-btn"
+                        data-id="${escapeHtml(row.id)}"
+                        data-action="edit"
+                        data-modal-open="asset-edit-modal"
+                        data-i18n-title="asset_modal.edit"
+                        title="">
+                  <span class="w-5 h-5 inline-block">✎</span>
+                </button>
+                <button class="p-1 hover:bg-red-100 rounded delete-btn"
+                        data-id="${escapeHtml(row.id)}"
+                        data-action="delete"
+                        data-modal-open="asset-delete-modal"
+                        data-i18n-title="asset_modal.delete"
+                        title="">
+                  <span class="w-5 h-5 inline-block">🗑</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }
+
+      async function hydrateAssetsTable() {
+        const [assets, categories, statuses] = await Promise.all([
+          getAssets(0, 1000).catch(() => []),
+          getCategoriesSelect().catch(() => []),
+          getListItemsbyList("ASSET_STATUS").catch(() => []),
+        ]);
+        if (!assets || !assets.length) return; // nothing to show — keep empty state
+
+        // Build the same row shape the page would have built SSR-side.
+        const data = assets.map((item) => ({
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          category: item.category,
+          category_name:
+            categories.find((c) => String(c.value) === String(item.category))?.label ||
+            item.category || "",
+          reference: item.reference,
+          status: item.status,
+          status_name:
+            statuses.find((s) => s.value === item.status)?.label || item.status,
+          tags: item.tags,
+          tags_display: Array.isArray(item.tags) ? item.tags.join(", ") : (item.tags || ""),
+          detail: item.detail,
+          is_active: item.is_active,
+        }));
+
+        // Refresh #assets-data so crudClient can resolve the row for the
+        // delete-modal prefill.
+        const dataEl = document.getElementById("assets-data");
+        if (dataEl) {
+          dataEl.dataset.rows = encodeURIComponent(JSON.stringify(data));
+        }
+
+        // If the SSR-rendered empty-state box is still there, swap in a real
+        // table. Otherwise just refill the existing tbody.
+        const tableId = "assets";
+        let table = document.getElementById(tableId);
+        let tbody = table?.querySelector("tbody");
+
+        if (!table) {
+          // Empty-state was rendered (no SSR data). Replace it with a full
+          // table shell + tbody. Headers match the SSR columns order.
+          const host = document.querySelector(".space-y-5.sm\\:space-y-6 > .border-0");
+          if (!host) return;
+          host.innerHTML = `
+            <div class="overflow-x-auto">
+              <table id="${tableId}" class="w-full text-sm text-left text-gray-600 datatable-dense">
+                <thead class="bg-gray-200 text-xs uppercase text-gray-700 border-b border-black">
+                  <tr>
+                    <th class="px-2 py-1 font-semibold tracking-wide" data-i18n="asset_modal.name" data-column-key="name">Name</th>
+                    <th class="px-2 py-1 font-semibold tracking-wide" data-i18n="asset_modal.category" data-column-key="category_name">Category</th>
+                    <th class="px-2 py-1 font-semibold tracking-wide" data-i18n="asset_modal.status" data-column-key="status_name">Status</th>
+                    <th class="px-2 py-1 font-semibold tracking-wide" data-i18n="asset_modal.tags" data-column-key="tags_display">Tags</th>
+                    <th class="px-4 py-4 text-right" data-i18n="data_table.actions">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="[&>tr:nth-child(even)]:bg-gray-100 [&>tr:hover]:bg-gray-200"></tbody>
+              </table>
+            </div>
+          `;
+          table = document.getElementById(tableId);
+          tbody = table?.querySelector("tbody");
+        }
+
+        const columnsOrder = ["name", "category_name", "status_name", "tags_display"];
+        if (tbody) {
+          tbody.innerHTML = data.map((r) => rowHtml(r, columnsOrder)).join("");
+        }
+
+        try { loadClientTranslations(); } catch {}
+
+        // Re-init crudClient over the fresh #assets-data dataset so the
+        // delete modal opens with the right row.
+        initCrudPage({
+          dataId: "assets-data",
+          editModalId: "asset-edit-modal",
+          deleteModalId: "asset-delete-modal",
+        });
+      }
+
+      hydrateAssetsTable();
 
       // Toast helper
       function showToast(message, variant = "info") {

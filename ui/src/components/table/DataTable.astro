@@ -20,9 +20,13 @@ const {
   showAddButton = true,
   columnFilter = null,
   filterOptions = [],
+  // Default selected value for the first filter (applied on page load).
+  filterDefaultValue = "",
   // Optional second filter — backward-compat: when null, behaves like before.
   columnFilter2 = null,
   filterOptions2 = [],
+  // Default selected value for the second filter (applied on page load).
+  filterDefaultValue2 = "",
   masterPage = null,
   detailPage = null,
   mdItem = null,
@@ -80,7 +84,7 @@ const visibleColumns = columns.filter((col) => col.visible !== false);
             >
               <option value="" data-i18n={`${columnFilter}_modal.filter_title`}></option>
               {filterOptions.map((opt) => (
-                <option value={opt.value || opt.code}>
+                <option value={opt.value || opt.code} selected={(opt.value || opt.code) === filterDefaultValue}>
                   {opt.label || opt.name}
                 </option>
               ))}
@@ -100,7 +104,7 @@ const visibleColumns = columns.filter((col) => col.visible !== false);
             >
               <option value="" data-i18n={`${columnFilter2}_modal.filter_title`}></option>
               {filterOptions2.map((opt) => (
-                <option value={opt.value || opt.code}>
+                <option value={opt.value || opt.code} selected={(opt.value || opt.code) === filterDefaultValue2}>
                   {opt.label || opt.name}
                 </option>
               ))}
@@ -336,7 +340,7 @@ const visibleColumns = columns.filter((col) => col.visible !== false);
 
 </div>
 
-<script type="module" define:vars={{ tableId, data, columns, visibleColumns, columnFilter, columnFilter2 }}>
+<script type="module" define:vars={{ tableId, data, columns, visibleColumns, columnFilter, columnFilter2, filterDefaultValue, filterDefaultValue2 }}>
   import { initAdvancedTable } from "/src/components/table/advancedTable";
-  initAdvancedTable(tableId, data, columns, visibleColumns, columnFilter, columnFilter2);
+  initAdvancedTable(tableId, data, columns, visibleColumns, columnFilter, columnFilter2, filterDefaultValue, filterDefaultValue2);
 </script>

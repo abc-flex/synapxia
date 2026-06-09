@@ -90,6 +90,11 @@
     "delete_confirmation": "Are you sure you want to delete this",
     "delete_warning": "This action cannot be undone."
   },
+  "lang_modal": {
+    "select": "Choose an option",
+    "filter_title": "All Languages",
+    "one_title": "Language"
+  },
   "data_table": {
     "actions": "Actions",
     "add": "Add",

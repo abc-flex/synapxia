@@ -6,7 +6,9 @@ export function initAdvancedTable(
     allColumns: { key: string; label: string; visible?: boolean }[],
     visibleColumns: { key: string; label: string; visible?: boolean }[] = [],
     columnFilter: string | null = null,
-    columnFilter2: string | null = null
+    columnFilter2: string | null = null,
+    filterDefaultValue: string = "",
+    filterDefaultValue2: string = ""
 ) {
     // Si visibleColumns no se pasa o está vacío, usar allColumns como fallback
     const columns = visibleColumns.length > 0 ? visibleColumns : allColumns;
@@ -67,18 +69,19 @@ export function initAdvancedTable(
     if (filterSelect) {
         filterKey = filterSelect.dataset.columnKey ?? null;
 
-        // 🔹 Obtener valor inicial desde URL
+        // 🔹 Obtener valor inicial desde URL; si no, usar el valor por defecto
         const urlParams = new URLSearchParams(window.location.search);
         const filterParam = columnFilter ? urlParams.get(columnFilter) : null;
-        if (filterParam) {
-            filterSelect.value = filterParam;
+        const initialValue = filterParam ?? filterDefaultValue;
+        if (initialValue) {
+            filterSelect.value = initialValue;
         }
 
         filterSelect.addEventListener("change", () => {
             applyFilters();
         });
 
-        if (filterParam) {
+        if (initialValue) {
             applyFilters();
         }
     }
@@ -88,15 +91,16 @@ export function initAdvancedTable(
 
         const urlParams = new URLSearchParams(window.location.search);
         const filterParam2 = columnFilter2 ? urlParams.get(columnFilter2) : null;
-        if (filterParam2) {
-            filterSelect2.value = filterParam2;
+        const initialValue2 = filterParam2 ?? filterDefaultValue2;
+        if (initialValue2) {
+            filterSelect2.value = initialValue2;
         }
 
         filterSelect2.addEventListener("change", () => {
             applyFilters();
         });
 
-        if (filterParam2) {
+        if (initialValue2) {
             applyFilters();
         }
     }

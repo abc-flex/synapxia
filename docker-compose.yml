@@ -77,7 +77,15 @@ services:
       - DB_PORT=${DB_PORT}
       - UV_APP=app.main:app
       - CORS_ORIGINS=http://localhost:4321,http://localhost:8000,http://localhost:3000
-    command: uv run fastapi dev --host 0.0.0.0 --port 80
+    # uvicorn directly (instead of `fastapi dev`) so we can pass
+    # --proxy-headers: when the UI's Vite proxy forwards a request, it
+    # sets X-Forwarded-Host: localhost:4321 (xfwd in astro.config.mjs).
+    # Without --proxy-headers, FastAPI builds its 307 trailing-slash
+    # Location header from the internal hostname (`http://synapxia-api:80/...`),
+    # which the browser can't resolve → "Failed to fetch" in client modals.
+    # --forwarded-allow-ips=* trusts every upstream IP since the API only
+    # exposes itself over the synapxia-network bridge.
+    command: uv run uvicorn app.main:app --host 0.0.0.0 --port 80 --reload --proxy-headers --forwarded-allow-ips "*"
 
   ui:
     container_name: synapxia-ui

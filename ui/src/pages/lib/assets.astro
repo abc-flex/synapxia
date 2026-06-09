@@ -39,6 +39,19 @@ try {
   categories = [];
 }
 
+// Resolve a status code to its display label. Tolerates legacy/seeded rows
+// that stored the bare code (e.g. `IN_USE`) without the `N-` sort-prefix
+// that `list_items.value` carries (e.g. `6-IN_USE`). Canonical lookup runs
+// first; the prefix-stripped fallback is the safety net so the column
+// never shows the raw code when a label is available.
+const resolveStatusLabel = (raw: string): string => {
+  if (!raw) return "";
+  const direct = status.find((s) => s.value === raw);
+  if (direct) return direct.label;
+  const stripped = status.find((s) => s.value.replace(/^\d+-/, "") === raw);
+  return stripped?.label ?? raw;
+};
+
 // Columns shown in the table
 const columns = [
   { key: "name", label: "asset_modal.name" },
@@ -62,7 +75,7 @@ const data = assets.map((item) => ({
     "",
   reference: item.reference,
   status: item.status,
-  status_name: status.find((s) => s.value === item.status)?.label || item.status,
+  status_name: resolveStatusLabel(item.status),
   tags: item.tags,
   tags_display: Array.isArray(item.tags) ? item.tags.join(", ") : item.tags || "",
   detail: item.detail,

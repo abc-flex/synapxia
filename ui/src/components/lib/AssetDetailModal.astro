@@ -490,7 +490,20 @@ const {
         nameField.value = asset.name ?? "";
         descField.value = asset.description ?? "";
         refField.value = asset.reference ?? "";
-        statusSel.value = asset.status ?? "";
+        // Tolerate legacy/seeded rows that stored the bare status code
+        // (e.g. `IN_USE`) without the list_items `N-` sort-prefix
+        // (e.g. `6-IN_USE`). Match the dropdown's <option> by exact value
+        // first, then by prefix-stripped value. If we save the row,
+        // the canonical prefixed value gets written back automatically.
+        const resolveStatusValue = (raw: string): string => {
+          if (!raw) return "";
+          if ([...statusSel.options].some((o) => o.value === raw)) return raw;
+          const opt = [...statusSel.options].find(
+            (o) => o.value.replace(/^\d+-/, "") === raw,
+          );
+          return opt?.value ?? raw;
+        };
+        statusSel.value = resolveStatusValue(asset.status ?? "");
         tagsField.value = Array.isArray(asset.tags)
           ? asset.tags.join(", ")
           : (asset.tags ?? "");

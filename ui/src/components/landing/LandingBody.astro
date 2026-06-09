@@ -52,7 +52,7 @@ const quickstart = [
 ];
 ---
 
-<div class="mx-auto max-w-4xl p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
+<div class={`mx-auto ${isAuthed ? "" : "max-w-4xl"} p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6`}>
 
   {/* ============================== Hero ============================== */}
   <section

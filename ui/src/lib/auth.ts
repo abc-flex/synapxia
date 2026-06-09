@@ -14,7 +14,7 @@ export interface LoginRequest {
 export interface LoginResponse {
   access_token: string;
   token_type: string;
-  user: UserRead;
+  user: UserRead;  // synthesized client-side from a follow-up GET /me
 }
 
 export interface RegisterRequest {
@@ -99,57 +99,58 @@ export function isAuthenticated(): boolean {
 }
 
 /**
- * Login user with username/email and password
- * Returns user data and stores token
+ * Login user with username/email and password.
+ *
+ * fastapi-users' /login returns ONLY {access_token, token_type} — it does not
+ * include the user profile. We chain a GET /me with the freshly-issued token
+ * so the UI can hydrate the user object in the same call site as before.
  */
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
-  // OAuth2PasswordRequestForm requires application/x-www-form-urlencoded, NOT multipart/form-data.
-  // Using URLSearchParams automatically sets the correct Content-Type header.
+  // OAuth2PasswordRequestForm requires application/x-www-form-urlencoded.
   const formData = new URLSearchParams();
   formData.append('username', credentials.username);
   formData.append('password', credentials.password);
 
-  const url = `${getApiUrl()}/api/auth/login`;
+  const loginUrl = `${getApiUrl()}/api/auth/login`;
 
+  let res: Response;
   try {
-    const res = await fetch(url, {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text().catch(() => '');
-      let errorDetail = 'Login failed';
-
-      try {
-        const errorJson = JSON.parse(errorText);
-        // FastAPI validation errors return detail as an array of {loc, msg, type} objects.
-        if (Array.isArray(errorJson.detail)) {
-          errorDetail = errorJson.detail.map((e: { msg?: string }) => e.msg ?? 'Validation error').join('. ');
-        } else {
-          errorDetail = errorJson.detail || errorText;
-        }
-      } catch {
-        errorDetail = errorText || res.statusText;
-      }
-
-      throw new Error(errorDetail);
-    }
-
-    const data = (await res.json()) as LoginResponse;
-
-    // Store token and user info
-    storeToken(data.access_token);
-    storeUser(data.user);
-
-    return data;
-  } catch (error) {
-    if (error instanceof Error) {
-      console.error('Login error:', error.message);
-      throw error;
-    }
-    throw new Error('Login failed: unknown error');
+    res = await fetch(loginUrl, { method: 'POST', body: formData });
+  } catch (e) {
+    throw new Error(e instanceof Error ? e.message : 'Login failed: network error');
   }
+
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => '');
+    let errorDetail = 'Login failed';
+    try {
+      const errorJson = JSON.parse(errorText);
+      if (Array.isArray(errorJson.detail)) {
+        errorDetail = errorJson.detail
+          .map((e: { msg?: string }) => e.msg ?? 'Validation error')
+          .join('. ');
+      } else if (typeof errorJson.detail === 'string') {
+        errorDetail = errorJson.detail;
+      } else {
+        errorDetail = errorText;
+      }
+    } catch {
+      errorDetail = errorText || res.statusText;
+    }
+    throw new Error(errorDetail);
+  }
+
+  const tokenData = (await res.json()) as { access_token: string; token_type: string };
+  storeToken(tokenData.access_token);
+
+  // Hydrate the user object via /me so the rest of the app can rely on it.
+  const user = await getCurrentUser();
+
+  return {
+    access_token: tokenData.access_token,
+    token_type: tokenData.token_type,
+    user,
+  };
 }
 
 /**
@@ -190,45 +191,52 @@ export function logout(): void {
 }
 
 /**
- * Change password for current user
+ * Change password for the current user.
+ *
+ * Uses fastapi-users' PATCH /me endpoint. Note: there is no old-password
+ * verification at the API layer — possessing a valid JWT IS the proof of
+ * identity. The `old_password` field in the request is currently ignored
+ * server-side. (Keep the field in the UI form anyway so we can re-add a
+ * server-side check via a custom endpoint later without a UI rewrite.)
  */
-export async function changePassword(request: ChangePasswordRequest): Promise<{ message: string }> {
+export async function changePassword(request: ChangePasswordRequest): Promise<UserRead> {
   const token = getToken();
   if (!token) {
     throw new Error('No authentication token found');
   }
 
-  const url = `${getApiUrl()}/api/auth/change-password`;
-
-  const formData = new URLSearchParams();
-  formData.append('old_password', request.old_password);
-  formData.append('new_password', request.new_password);
+  const url = `${getApiUrl()}/api/auth/me`;
 
   try {
     const res = await fetch(url, {
-      method: 'POST',
+      method: 'PATCH',
       headers: {
         'Accept': 'application/json',
+        'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: formData,
+      body: JSON.stringify({ password: request.new_password }),
     });
 
     if (!res.ok) {
       const errorText = await res.text().catch(() => '');
       let errorDetail = 'Password change failed';
-
       try {
         const errorJson = JSON.parse(errorText);
-        errorDetail = errorJson.detail || errorText;
+        if (Array.isArray(errorJson.detail)) {
+          errorDetail = errorJson.detail
+            .map((e: { msg?: string }) => e.msg ?? 'Validation error')
+            .join('. ');
+        } else if (typeof errorJson.detail === 'string') {
+          errorDetail = errorJson.detail;
+        }
       } catch {
         errorDetail = errorText || res.statusText;
       }
-
       throw new Error(errorDetail);
     }
 
-    return res.json() as Promise<{ message: string }>;
+    return res.json() as Promise<UserRead>;
   } catch (error) {
     if (error instanceof Error) {
       console.error('Change password error:', error.message);

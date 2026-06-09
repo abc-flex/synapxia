@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from ..internal.models import BusinessUnit, BusinessUnitCreate, BusinessUnitUpdate, User
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
-from ...internal.permissions import check_privilege
+from ...internal.permissions import require_privilege
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/business_units", tags=["business_units"])
@@ -22,7 +22,7 @@ class BusinessUnitBasic(SQLModel):
 @router.get("/select", response_model=List[BusinessUnitBasic])
 def get_list(
     session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "BUSINESS_UNITS", can_edit=False))
+    _: User = Depends(require_privilege("ADMIN", "BUSINESS_UNITS", can_edit=False))
 ) -> List[BusinessUnitBasic]:
     """
     Returns a business units list optimized for selects with value (code) and label (name). 
@@ -42,7 +42,7 @@ def get_list(
 @router.get("/", response_model=List[BusinessUnit])
 def get_all(
     skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "BUSINESS_UNITS", can_edit=False))
+    _: User = Depends(require_privilege("ADMIN", "BUSINESS_UNITS", can_edit=False))
 ) -> List[BusinessUnit]:
     """
     List all business_units with pagination (*Only active business_units).
@@ -59,7 +59,7 @@ def get_all(
 @router.get("/{code}", response_model=BusinessUnit)
 def get(
     code: str, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "BUSINESS_UNITS", can_edit=False))
+    _: User = Depends(require_privilege("ADMIN", "BUSINESS_UNITS", can_edit=False))
 ) -> BusinessUnit:
     """
     Get a business unit by its code.
@@ -77,7 +77,7 @@ def get(
 @router.post("/", response_model=BusinessUnit, status_code=201)
 def create(
     business_unit: BusinessUnitCreate, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "BUSINESS_UNITS", can_edit=True))
+    _: User = Depends(require_privilege("ADMIN", "BUSINESS_UNITS", can_edit=True))
 ) -> BusinessUnit:
     """
     Create a new organizational business_unit.
@@ -125,7 +125,7 @@ def create(
 @router.put("/{code}", response_model=BusinessUnit)
 def update(
     code: str, unit_update: BusinessUnitUpdate, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "BUSINESS_UNITS", can_edit=True))
+    _: User = Depends(require_privilege("ADMIN", "BUSINESS_UNITS", can_edit=True))
 ) -> BusinessUnit:
     """
     Update an existing business_unit.
@@ -163,7 +163,7 @@ def update(
 @router.delete("/{code}", response_model=BusinessUnit, status_code=200)
 def delete(
     code: str, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "BUSINESS_UNITS", can_edit=True))
+    _: User = Depends(require_privilege("ADMIN", "BUSINESS_UNITS", can_edit=True))
 ) -> BusinessUnit:
     """
     Delete a business_unit (logical delete).

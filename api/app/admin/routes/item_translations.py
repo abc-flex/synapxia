@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from ..internal.models import ItemTranslation, ItemTranslationCreate, ItemTranslationUpdate, ListItem, User
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
-from ...internal.permissions import check_privilege
+from ...internal.permissions import require_privilege
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/item_translations", tags=["item_translations"])
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/api/item_translations", tags=["item_translations"])
 @router.get("/", response_model=List[ItemTranslation])
 def get_all(
     skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "ITEM_TRANSLATIONS", can_edit=False))
+    _: User = Depends(require_privilege("ADMIN", "ITEM_TRANSLATIONS", can_edit=False))
 ) -> List[ItemTranslation]:
     """
     Listar todas las traducciones de elementos con paginación.
@@ -40,7 +40,7 @@ def get_all(
 def get_by_list(
     list_code: str,
     session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "ITEM_TRANSLATIONS", can_edit=False))
+    _: User = Depends(require_privilege("ADMIN", "ITEM_TRANSLATIONS", can_edit=False))
 ) -> List[ItemTranslation]:
     """
     Obtener todas las traducciones de una lista específica.
@@ -60,7 +60,7 @@ def get_by_item(
     list_code: str,
     value: str,
     session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "ITEM_TRANSLATIONS", can_edit=False))
+    _: User = Depends(require_privilege("ADMIN", "ITEM_TRANSLATIONS", can_edit=False))
 ) -> List[ItemTranslation]:
     """
     Obtener todas las traducciones de un elemento de lista específico.
@@ -129,7 +129,7 @@ def get(
 @router.post("/", response_model=ItemTranslation, status_code=201)
 def create(
     translation_data: ItemTranslationCreate, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "ITEM_TRANSLATIONS", can_edit=True))
+    _: User = Depends(require_privilege("ADMIN", "ITEM_TRANSLATIONS", can_edit=True))
 ) -> ItemTranslation:
     """
     Crear una nueva traducción para un elemento de lista.

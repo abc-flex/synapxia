@@ -10,7 +10,7 @@ from sqlalchemy import func, literal, cast, String
 from ..internal.models import User, UserCreate, UserUpdate, Profile, BusinessUnit
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
-from ...internal.permissions import check_privilege
+from ...internal.permissions import require_privilege
 
 #Model for user select options
 class UserBasic(SQLModel):
@@ -45,7 +45,7 @@ def get_list(
 def get_all(
     skip: int = 0,
     limit: int = 100,
-    _: User = Depends(lambda: check_privilege("ADMIN", "USERS", can_edit=False)),
+    _: User = Depends(require_privilege("ADMIN", "USERS", can_edit=False)),
     session: Session = Depends(get_db_session)
 ) -> List[User]:
     """
@@ -62,7 +62,7 @@ def get_all(
 @router.get("/profile/{profile_code}", response_model=List[User])
 def get_by_profile(
     profile_code: str,
-    _: User = Depends(lambda: check_privilege("ADMIN", "USERS", can_edit=False)),
+    _: User = Depends(require_privilege("ADMIN", "USERS", can_edit=False)),
     session: Session = Depends(get_db_session)
 ) -> List[User]:
     """
@@ -88,7 +88,7 @@ def get_by_profile(
 @router.get("/{id}", response_model=User)
 def get(
     id: int,
-    _: User = Depends(lambda: check_privilege("ADMIN", "USERS", can_edit=False)),
+    _: User = Depends(require_privilege("ADMIN", "USERS", can_edit=False)),
     session: Session = Depends(get_db_session)
 ) -> User:
     """
@@ -108,7 +108,7 @@ def get(
 def create(
     user: UserCreate,
     session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "USERS", can_edit=True))
+    _: User = Depends(require_privilege("ADMIN", "USERS", can_edit=True))
 ) -> User:
     """
     Create a new user.
@@ -177,7 +177,7 @@ def update(
     id: int,
     user_update: UserUpdate,
     session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "USERS", can_edit=True))
+    _: User = Depends(require_privilege("ADMIN", "USERS", can_edit=True))
 ) -> User:
     """
     Update an existing user.
@@ -235,7 +235,7 @@ def update(
 def delete(
     id: int,
     session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "USERS", can_edit=True))
+    _: User = Depends(require_privilege("ADMIN", "USERS", can_edit=True))
 ) -> User:
     """
     Delete a user (logical delete).

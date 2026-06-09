@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from ..internal.models import Specification, SpecificationCreate, SpecificationUpdate, Category, Feature
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
-from ...internal.permissions import check_privilege
+from ...internal.permissions import require_privilege
 from ...admin.internal.models import User
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ router = APIRouter(prefix="/api/specifications", tags=["specifications"])
 @router.get("/", response_model=List[Specification])
 def get_all(
     skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("TAXO", "SPECIFICATIONS", can_edit=False))
+    _: User = Depends(require_privilege("TAXO", "SPECIFICATIONS", can_edit=False))
 ) -> List[Specification]:
     """
     List all specifications with pagination.
@@ -36,7 +36,7 @@ def get_all(
 @router.get("/{category_code}/{feature_code}", response_model=Specification)
 def get(
     category_code: str, feature_code: str, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("TAXO", "SPECIFICATIONS", can_edit=False))
+    _: User = Depends(require_privilege("TAXO", "SPECIFICATIONS", can_edit=False))
 ) -> Specification:
     """
     Get a specification by its category and feature.
@@ -60,7 +60,7 @@ def get(
 @router.post("/", response_model=Specification, status_code=201)
 def create(
     specification: SpecificationCreate, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("TAXO", "SPECIFICATIONS", can_edit=True))
+    _: User = Depends(require_privilege("TAXO", "SPECIFICATIONS", can_edit=True))
 ) -> Specification:
     """
     Create a new specification.
@@ -119,7 +119,11 @@ def create(
 
 @router.put("/{category_code}/{feature_code}", response_model=Specification)
 def update(
-    category_code: str, feature_code: str, specification_update: SpecificationUpdate, session: Session = Depends(get_db_session)
+    category_code: str,
+    feature_code: str,
+    specification_update: SpecificationUpdate,
+    session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("TAXO", "SPECIFICATIONS", can_edit=True)),
 ) -> Specification:
     """
     Update an existing specification.
@@ -156,7 +160,7 @@ def update(
 @router.delete("/{category_code}/{feature_code}", response_model=Specification, status_code=200)
 def delete(
     category_code: str, feature_code: str, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("TAXO", "SPECIFICATIONS", can_edit=True))
+    _: User = Depends(require_privilege("TAXO", "SPECIFICATIONS", can_edit=True))
 ) -> Specification:
     """
     Delete a specification (logical delete).

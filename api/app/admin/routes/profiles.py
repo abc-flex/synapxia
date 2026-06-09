@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from ..internal.models import Profile, ProfileCreate, ProfileUpdate, User
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
-from ...internal.permissions import check_privilege
+from ...internal.permissions import require_privilege
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/profiles", tags=["profiles"])
@@ -22,7 +22,7 @@ class ProfileBasic(SQLModel):
 @router.get("/select", response_model=List[ProfileBasic])
 def get_list(
     session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "PROFILES", can_edit=False))
+    _: User = Depends(require_privilege("ADMIN", "PROFILES", can_edit=False))
 ) -> List[ProfileBasic]:
     """
     Returns a profiles list optimized for selects with value (code) and label (name). 
@@ -44,7 +44,7 @@ def get_all(
     skip: int = 0,
     limit: int = 100,
     session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "PROFILES", can_edit=False))
+    _: User = Depends(require_privilege("ADMIN", "PROFILES", can_edit=False))
 ) -> List[Profile]:
     """
     List all profiles actives with pagination (*Only active profiles).
@@ -62,7 +62,7 @@ def get_all(
 def get(
     code: str,
     session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "PROFILES", can_edit=False))
+    _: User = Depends(require_privilege("ADMIN", "PROFILES", can_edit=False))
 ) -> Profile:
     """
     Get a profile by its code.
@@ -81,7 +81,7 @@ def get(
 def create(
     profile: ProfileCreate,
     session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "PROFILES", can_edit=True))
+    _: User = Depends(require_privilege("ADMIN", "PROFILES", can_edit=True))
 ) -> Profile:
     """
     Create a new profile.
@@ -120,7 +120,7 @@ def update(
     code: str,
     profile_update: ProfileUpdate,
     session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "PROFILES", can_edit=True))
+    _: User = Depends(require_privilege("ADMIN", "PROFILES", can_edit=True))
 ) -> Profile:
     """
     Update an existing profile.
@@ -150,7 +150,7 @@ def update(
 def delete(
     code: str,
     session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("ADMIN", "PROFILES", can_edit=True))
+    _: User = Depends(require_privilege("ADMIN", "PROFILES", can_edit=True))
 ) -> Profile:
     """
     Delete a profile (logical delete).

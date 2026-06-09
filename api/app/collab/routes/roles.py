@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from ..internal.models import Role, RoleCreate, RoleUpdate
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
-from ...internal.permissions import check_privilege
+from ...internal.permissions import require_privilege
 from ...admin.internal.models import User
 
 logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ class RoleBasic(SQLModel):
 @router.get("/select", response_model=List[RoleBasic])
 def get_list(
     session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("COLLAB", "ROLES", can_edit=False))
+    _: User = Depends(require_privilege("COLLAB", "ROLES", can_edit=False))
 ) -> List[RoleBasic]:
     """
     Returns a roles list optimized for selects with value (code) and label (name). 
@@ -45,7 +45,7 @@ def get_all(
     skip: int = 0,
     limit: int = 100,
     session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("COLLAB", "ROLES", can_edit=False))
+    _: User = Depends(require_privilege("COLLAB", "ROLES", can_edit=False))
 ) -> List[Role]:
     """
     List all roles actives with pagination (*Only active roles).
@@ -62,7 +62,7 @@ def get_all(
 @router.get("/{code}", response_model=Role)
 def get(
     code: str, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("COLLAB", "ROLES", can_edit=False))
+    _: User = Depends(require_privilege("COLLAB", "ROLES", can_edit=False))
 ) -> Role:
     """
     Get a role by its code.
@@ -116,7 +116,10 @@ def create(
 
 @router.put("/{code}", response_model=Role)
 def update(
-    code: str, role_update: RoleUpdate, session: Session = Depends(get_db_session)
+    code: str,
+    role_update: RoleUpdate,
+    session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("COLLAB", "ROLES", can_edit=True)),
 ) -> Role:
     """
     Update an existing role.
@@ -145,7 +148,7 @@ def update(
 @router.delete("/{code}", response_model=Role, status_code=200)
 def delete(
     code: str, session: Session = Depends(get_db_session),
-    _: User = Depends(lambda: check_privilege("COLLAB", "ROLES", can_edit=True))
+    _: User = Depends(require_privilege("COLLAB", "ROLES", can_edit=True))
 ) -> Role:
     """
     Delete a role (logical delete).

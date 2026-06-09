@@ -42,6 +42,17 @@ export default defineConfig({
           target: process.env.PROXY_API_TARGET || "http://synapxia-api:80",
           changeOrigin: true,
           cookieDomainRewrite: "",
+          // FastAPI's trailing-slash redirect emits an absolute Location
+          // header (`http://synapxia-api:80/...`) that the browser can't
+          // resolve. autoRewrite rewrites the host:port back to the
+          // proxy's origin (localhost:4321) so the browser follows the
+          // 307 same-origin and the auth cookie attaches.
+          autoRewrite: true,
+          protocolRewrite: "http",
+          // Forward X-Forwarded-For/Host/Proto so the API can build
+          // correct absolute URLs itself once uvicorn runs with
+          // --proxy-headers (Layer 2). autoRewrite stays as a safety net.
+          xfwd: true,
           configure: (proxy) => {
             proxy.on("error", (err, req) => {
               console.error(

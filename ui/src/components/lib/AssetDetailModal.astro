@@ -33,7 +33,7 @@ const {
 
 <dialog
   id={modalId}
-  class="rounded-2xl p-0 w-[min(900px,95vw)] max-w-none backdrop:bg-black/60 backdrop:backdrop-blur-sm"
+  class="rounded-2xl p-0 w-[min(900px,95vw)] max-w-none bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 backdrop:bg-black/60 backdrop:backdrop-blur-sm"
 >
   <form id={`${modalId}-form`} class="flex flex-col max-h-[90vh]">
     {/* ============== Header ============== */}
@@ -104,7 +104,7 @@ const {
               name="name"
               type="text"
               required
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             />
           </div>
 
@@ -118,7 +118,7 @@ const {
               id={`${modalId}-category`}
               name="category"
               required
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             >
               <option value="" data-i18n="asset_detail_modal.choose_category">— choose —</option>
               {categories.map((c) => (
@@ -137,7 +137,7 @@ const {
               id={`${modalId}-status-select`}
               name="status"
               required
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             >
               <option value="" data-i18n="asset_detail_modal.choose_status">— choose —</option>
               {statuses.map((s) => (
@@ -156,7 +156,7 @@ const {
               id={`${modalId}-description`}
               name="description"
               rows={2}
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             ></textarea>
           </div>
 
@@ -170,7 +170,7 @@ const {
               id={`${modalId}-reference`}
               name="reference"
               type="text"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             />
           </div>
 
@@ -186,7 +186,7 @@ const {
               type="text"
               placeholder="tag1, tag2, tag3"
               data-i18n-placeholder="asset_detail_modal.tags_placeholder"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             />
           </div>
         </div>
@@ -196,7 +196,7 @@ const {
       <section>
         <div class="flex items-baseline justify-between mb-3">
           <h4
-            class="text-sm font-semibold uppercase tracking-wide text-gray-500"
+            class="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
             data-i18n="asset_detail_modal.characterizations_section"
           >
             Characterizations
@@ -209,7 +209,7 @@ const {
 
         <div
           id={`${modalId}-empty`}
-          class="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-6 text-center text-sm text-gray-500"
+          class="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-6 text-center text-sm text-gray-500 dark:text-gray-400"
           data-i18n="asset_detail_modal.characterizations_empty"
         >
           Select a category to load the required features.
@@ -412,7 +412,7 @@ const {
         if (spec.listItems && spec.listItems.length > 0) {
           inputEl = document.createElement("select");
           inputEl.className =
-            "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-900 dark:text-white";
+            "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white";
           const blank = document.createElement("option");
           blank.value = "";
           blank.textContent = "—";
@@ -427,7 +427,7 @@ const {
           inputEl = document.createElement("textarea");
           inputEl.rows = 2;
           inputEl.className =
-            "w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-900 dark:text-white";
+            "w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white";
         }
         inputEl.id = `${modalId}-char-${featureCode}`;
         inputEl.name = `char_${featureCode}`;

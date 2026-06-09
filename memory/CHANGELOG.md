@@ -6,6 +6,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [develop] — 2026-06-08 22:03 · 20ea1c9
+
+### Other
+- `20ea1c9` Secure 16 unprotected endpoints with JWT auth and RBAC (#33)
+
+---
+
+
 ## 2026-06-08 14:30 — Fix changelog automation for renamed production branch
 - Updated git hooks to recognize `production` as a principal branch after branch rename from `prod`
 - Post-merge hook now triggers changelog updates on develop, main, and production branches

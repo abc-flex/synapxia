@@ -27,7 +27,9 @@ Running history and decisions are tracked in [`memory/`](memory/):
 - [`memory/changelog.md`](memory/changelog.md) — what changed, per merge to `develop`/`main`/`prod`.
 - [`memory/memory.md`](memory/memory.md) — patterns, decisions, known issues for AI agents.
 
-The changelog is updated automatically via `.githooks/post-merge`. Activate once per clone:
+The changelog is updated automatically via `.githooks/post-commit` (direct commits) and
+`.githooks/post-merge` (PR merges) — both fire on `develop`, `main`, and `production`.
+Activate once per clone:
 ```bash
 make hooks   # git config core.hooksPath .githooks
 ```

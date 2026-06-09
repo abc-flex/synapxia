@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# post-commit hook: updates memory/CHANGELOG.md after every commit to a principal branch.
+# Complements .githooks/post-merge (which handles merge commits).
+# Tracked in .githooks/ — activate once per clone with:
+#   make hooks   # git config core.hooksPath .githooks
+#
+# Behavior:
+#   - Only fires on develop/main/production (branch guard)
+#   - Skips merge commits (post-merge already handles those)
+#   - Skips when a rebase is in progress (avoids per-replayed-commit spam)
+#   - Skips the very-first commit on a fresh repo (no HEAD^ to diff against)
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+
+# Only run on principal branches
+case "$BRANCH" in
+  develop|main|production) ;;
+  *) exit 0 ;;
+esac
+
+# Skip during interactive/non-interactive rebase to avoid one entry per replayed commit
+REBASE_MERGE="$(git rev-parse --git-path rebase-merge 2>/dev/null)"
+REBASE_APPLY="$(git rev-parse --git-path rebase-apply 2>/dev/null)"
+[[ -d "$REBASE_MERGE" || -d "$REBASE_APPLY" ]] && exit 0
+
+# Skip merge commits — .githooks/post-merge handles those (also fires after `git merge`)
+if git rev-parse --verify HEAD^2 >/dev/null 2>&1; then
+  exit 0
+fi
+
+# Skip if there's no parent commit (very first commit in repo)
+git rev-parse --verify HEAD^ >/dev/null 2>&1 || exit 0
+
+HOOK_SCRIPT="$REPO_ROOT/.claude/hooks/update-changelog.sh"
+[[ -x "$HOOK_SCRIPT" ]] || exit 0
+
+bash "$HOOK_SCRIPT" "$BRANCH" HEAD^ HEAD

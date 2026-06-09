@@ -22,6 +22,7 @@ from fastapi_users import BaseUserManager, FastAPIUsers, IntegerIDMixin, excepti
 from fastapi_users.authentication import (
     AuthenticationBackend,
     BearerTransport,
+    CookieTransport,
     JWTStrategy,
 )
 from fastapi_users.authentication.strategy import AccessTokenDatabase, DatabaseStrategy
@@ -241,7 +242,30 @@ refresh_backend = AuthenticationBackend(
 )
 
 
-fastapi_users = FastAPIUsers[User, int](get_user_manager, [auth_backend, refresh_backend])
+# ==================== Cookie backend (for browser/SSR clients) ====================
+# Same JWT strategy, different transport: the token rides in an HTTP-only
+# cookie instead of an Authorization header. This unlocks SSR-side fetches
+# from Astro (server can read cookies; localStorage is browser-only).
+cookie_transport = CookieTransport(
+    cookie_name="auth_token",
+    cookie_max_age=settings.jwt_lifetime_seconds,
+    cookie_httponly=True,
+    cookie_secure=settings.app_env == "production",  # HTTPS-only in prod
+    cookie_samesite="lax",
+    cookie_domain=settings.cookie_domain or None,
+    cookie_path="/",
+)
+
+cookie_backend = AuthenticationBackend(
+    name="cookie",
+    transport=cookie_transport,
+    get_strategy=get_jwt_strategy,  # SAME JWT — single source of truth
+)
+
+
+fastapi_users = FastAPIUsers[User, int](
+    get_user_manager, [auth_backend, refresh_backend, cookie_backend]
+)
 
 # Dependencies exported for other routes
 current_active_user = fastapi_users.current_user(active=True)
@@ -260,6 +284,14 @@ router.include_router(fastapi_users.get_auth_router(auth_backend))
 router.include_router(
     fastapi_users.get_auth_router(refresh_backend),
     prefix="/refresh",
+)
+
+# POST /cookie/login, POST /cookie/logout  (Set-Cookie / Clear-Cookie of
+# `auth_token`; used by the browser/SSR. JWT itself is identical to the
+# bearer flow.)
+router.include_router(
+    fastapi_users.get_auth_router(cookie_backend),
+    prefix="/cookie",
 )
 
 # POST /refresh — trade a valid refresh token for a fresh access token.

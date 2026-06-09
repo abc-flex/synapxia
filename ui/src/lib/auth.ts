@@ -165,36 +165,86 @@ async function postLogin(endpoint: string, credentials: LoginRequest): Promise<s
 }
 
 /**
+ * POST credentials to the cookie auth backend. The server replies 204 with
+ * a Set-Cookie header — there's no body to consume. We send the request
+ * through the same origin (Vite proxy / Vercel rewrite) so the browser
+ * scopes the cookie correctly. Returns nothing meaningful; throws on
+ * non-2xx.
+ */
+async function postCookieLogin(credentials: LoginRequest): Promise<void> {
+  const formData = new URLSearchParams();
+  formData.append('username', credentials.username);
+  formData.append('password', credentials.password);
+
+  let res: Response;
+  try {
+    res = await fetch(`${getApiUrl()}/api/auth/cookie/login`, {
+      method: 'POST',
+      body: formData,
+      credentials: 'include',
+    });
+  } catch (e) {
+    throw new Error(e instanceof Error ? e.message : 'Login failed: network error');
+  }
+
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => '');
+    let errorDetail = 'Login failed';
+    try {
+      const errorJson = JSON.parse(errorText);
+      if (Array.isArray(errorJson.detail)) {
+        errorDetail = errorJson.detail
+          .map((e: { msg?: string }) => e.msg ?? 'Validation error')
+          .join('. ');
+      } else if (typeof errorJson.detail === 'string') {
+        errorDetail = errorJson.detail;
+      } else {
+        errorDetail = errorText;
+      }
+    } catch {
+      errorDetail = errorText || res.statusText;
+    }
+    throw new Error(errorDetail);
+  }
+}
+
+/**
  * Login user with username/email and password.
  *
- * Issues TWO tokens because fastapi-users uses one auth-backend per token
- * type:
- *   1. POST /api/auth/login         → short-lived JWT access token (60 min)
- *   2. POST /api/auth/refresh/login → long-lived refresh token (14 d, in DB)
- *   3. GET  /api/auth/me            → hydrate the user object the UI expects
+ * Three legs:
+ *   1. POST /api/auth/cookie/login  → 204 + HTTP-only `auth_token` cookie
+ *      (the cookie IS the access token — same JWT, just a different
+ *      transport. The Astro middleware reads it server-side; the browser
+ *      auto-attaches it on every same-origin request.)
+ *   2. POST /api/auth/refresh/login → long-lived refresh token (14 d, in
+ *      DB) — kept as a Bearer in localStorage for the silent-refresh path.
+ *      Non-fatal if it fails; the user can re-login when the cookie
+ *      expires.
+ *   3. GET  /api/auth/me            → hydrate the user object the UI uses
+ *      client-side (header, profile, etc.). The cookie auto-attaches.
  *
- * The refresh token is later used by ``refreshAccessToken()`` to mint a fresh
- * access token without re-prompting for the password.
+ * We keep `access_token` empty in the response — no caller reads it now
+ * that the cookie carries it. Bearer access endpoints still exist for
+ * non-browser clients (cron / curl / mobile).
  */
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
-  const accessToken = await postLogin('/api/auth/login', credentials);
-  storeToken(accessToken);
+  await postCookieLogin(credentials);
 
-  // Refresh-token call uses the same credentials. If this leg fails we still
-  // proceed with the access token only — the user can re-log in when it
-  // expires; we shouldn't block login on the refresh-token leg.
+  // Refresh-token leg uses the existing Bearer backend. If it fails we
+  // proceed with the cookie only — the user can re-log in when the
+  // access cookie expires.
   try {
     const refreshToken = await postLogin('/api/auth/refresh/login', credentials);
     storeRefreshToken(refreshToken);
   } catch (e) {
-    console.warn('Refresh-token issuance failed; proceeding with access token only:', e);
+    console.warn('Refresh-token issuance failed; proceeding with cookie only:', e);
   }
 
   const user = await getCurrentUser();
 
   return {
-    access_token: accessToken,
-    token_type: 'bearer',
+    access_token: '',
+    token_type: 'cookie',
     user,
   };
 }
@@ -247,21 +297,17 @@ export async function register(userData: RegisterRequest): Promise<UserRead> {
 }
 
 /**
- * Get current authenticated user profile
+ * Get current authenticated user profile.
+ *
+ * Browser: the auth cookie auto-attaches (credentials:'include' in apiGet).
+ * SSR: the token is forwarded from AsyncLocalStorage by the api layer.
+ * Either way, no manual Bearer header needed.
  */
 export async function getCurrentUser(): Promise<UserRead> {
-  const token = getToken();
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
+  const response = await apiGet<UserRead>('/api/auth/me');
 
-  const response = await apiGet<UserRead>('/api/auth/me', {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  // Update stored user info
+  // Cache the user object client-side for instant header/sidebar rendering
+  // on the next navigation. SSR calls skip storeUser (no window).
   storeUser(response);
 
   return response;
@@ -315,12 +361,24 @@ export async function updateMyProfile(data: Record<string, unknown>): Promise<Us
 }
 
 /**
- * Logout — revoke the refresh token server-side (delete its DB row), then
- * clear all local auth state. We DON'T block on the network call: even if
- * the server is unreachable, the local clear must happen so the user is
- * logged out client-side.
+ * Logout — clear the server-side cookie + revoke the refresh token, then
+ * clear local auth state. We DON'T block on the network calls: even if the
+ * server is unreachable, the local clear must happen so the user is logged
+ * out client-side.
  */
 export async function logout(): Promise<void> {
+  // 1. Clear the auth cookie server-side (fastapi-users responds with a
+  //    Set-Cookie that expires the cookie).
+  try {
+    await fetch(`${getApiUrl()}/api/auth/cookie/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+  } catch {
+    /* swallow — local clear below is the source of truth */
+  }
+
+  // 2. Revoke the refresh token DB row so it can't mint new access tokens.
   const refreshToken = getRefreshToken();
   if (refreshToken) {
     try {
@@ -329,9 +387,10 @@ export async function logout(): Promise<void> {
         headers: { Authorization: `Bearer ${refreshToken}` },
       });
     } catch {
-      // Ignore — local clear below is the source of truth for the user
+      /* swallow */
     }
   }
+
   clearToken();
 }
 

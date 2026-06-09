@@ -7,5 +7,11 @@
   "ignoreCommand": "exit 0",
   "git": {
     "deploymentEnabled": false
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://synapxia-api.vercel.app/api/$1"
+    }
+  ]
 }

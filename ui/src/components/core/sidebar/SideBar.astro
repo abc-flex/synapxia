@@ -99,17 +99,19 @@ for (const [path, svg] of Object.entries(iconModules)) {
   /* ============================================================
      Client-side sidebar renderer.
 
-     Strategy: SSR renders an empty `<ul id="sidebar-primary-nav">` (the JWT
-     is in localStorage and isn't readable on the server). Here we:
+     Strategy: the SSR pass already filled `<ul id="sidebar-primary-nav">`
+     using props passed from `BaseLayout.astro` (the auth cookie is read
+     server-side by middleware, so the fetch succeeds). This script is the
+     fallback / cache-warmer:
 
-       1. Synchronously read `nav_cache` from localStorage and render the
-          menu from it — so the menu is visible BEFORE first paint on every
-          page load after the first one.
-       2. Asynchronously call `getNavigationData()` to refresh the data.
-          If the fresh data differs from the cache, re-render. The cache
-          itself is written by `getNavigationData()`.
+       1. If the SSR-rendered UL is empty (rare: BaseLayout's API call
+          failed), paint from the localStorage `nav_cache` for an instant
+          menu while the network round-trip happens.
+       2. Always run a background `getNavigationData()` to keep the cache
+          fresh; only re-render the DOM if the fetched data actually
+          differs from what's currently displayed.
 
-     Re-rendering twice is cheap: the menu has a handful of items.
+     Re-rendering is cheap: the menu has a handful of items.
      ============================================================ */
   import { getNavigationData, readNavCache, type NavigationData } from "@/lib/navigation";
   import type { NavModule, NavOption } from "@/types/nav";
@@ -234,20 +236,25 @@ for (const [path, svg] of Object.entries(iconModules)) {
       });
     };
 
-    // 1. Synchronous cache read (paints menu immediately if present).
+    // 1. If SSR didn't render any items (BaseLayout's API call failed),
+    //    paint from the localStorage cache so the user sees a menu now.
+    const ssrPainted = primaryUl.children.length > 0;
     const cached = readNavCache();
-    if (cached) render(cached);
+    if (!ssrPainted && cached) render(cached);
 
-    // 2. Background refresh — even if cache hit, ensure we're current.
+    // 2. Background refresh — keep the cache current. Only re-render if
+    //    the fetched data actually differs from what's on screen, to avoid
+    //    a needless DOM rebuild on every page load.
     getNavigationData()
       .then((fresh) => {
         if (!fresh.primaryNav.length && !fresh.itemsNav.length) return;
-        const cachedJson = JSON.stringify(cached);
+        const baseline = ssrPainted ? cached : cached;
+        const baselineJson = JSON.stringify(baseline ?? {});
         const freshJson = JSON.stringify(fresh);
-        if (cachedJson !== freshJson) render(fresh);
+        if (baselineJson !== freshJson) render(fresh);
       })
       .catch(() => {
-        /* network errors are non-fatal — the cache (if any) is still displayed */
+        /* network errors are non-fatal — SSR / cache content stays displayed */
       });
   }
 </script>

@@ -1,66 +1,121 @@
 /**
  * Unified API Service Library
- * Provides reusable HTTP methods for interacting with the FastAPI backend
+ * Provides reusable HTTP methods for interacting with the FastAPI backend.
+ *
+ * Auth model:
+ *   - Browser: an HTTP-only cookie `auth_token` is set by the API at login
+ *     and auto-attached to every same-origin request (via the Vite proxy in
+ *     dev / Vercel rewrite in prod). We send `credentials: "include"` to
+ *     make sure cross-origin fallback still works.
+ *   - Server (Astro frontmatter): cookies are not auto-attached because
+ *     Node has no browser context. The Astro middleware extracts the
+ *     cookie into AsyncLocalStorage; this module reads it and sends it as
+ *     a Bearer header to the API (same JWT, just a different transport).
  */
 
-import type { ApiError } from '../types/list';
+import type { ApiError } from '../types/api';
 import { clearToken, getToken, refreshAccessToken } from './auth';
 
+/* ============================================================
+   SSR context — AsyncLocalStorage of the current request's auth token.
+   Only meaningful server-side; on the client it's a no-op shim so the
+   bundler doesn't trip over `node:async_hooks`.
+   ============================================================ */
+type SsrCtx = { token?: string };
+type AlsLike = { run: (v: SsrCtx, fn: () => any) => any; getStore: () => SsrCtx | undefined };
+
+let _ssrContext: AlsLike = {
+  run: (_v, fn) => fn(),
+  getStore: () => undefined,
+};
+
+if (typeof window === 'undefined') {
+  // Defer the import so client bundles never see `node:async_hooks`.
+  // Top-level await in module scope is supported by Astro/Vite for SSR.
+  // The TS errors below are silenced because @types/node isn't installed
+  // (the UI is a browser-first project) and AsyncLocalStorage is only
+  // accessed at runtime in the Node SSR pass.
+  // @ts-expect-error -- no @types/node in this project; runtime-only import
+  const { AsyncLocalStorage } = await import('node:async_hooks');
+  _ssrContext = new AsyncLocalStorage() as AlsLike;
+}
+
+export const ssrContext: AlsLike = _ssrContext;
+
 /**
- * Send a fetch with the current access token, and on a 401 try ONE silent
- * refresh + retry before giving up. On final failure (no refresh token, or
- * refresh itself fails), clears local auth and redirects to /login.
- *
- * The Authorization header is injected here — callers should NOT add it
- * themselves (it would be overwritten on retry anyway).
+ * fetchWithAuth — single source of truth for auth header injection +
+ * silent-refresh-on-401 (browser only).
  */
 async function fetchWithAuth(url: string, init: RequestInit): Promise<Response> {
   const buildInit = (): RequestInit => {
-    const token = getToken();
     const headers = new Headers(init.headers || {});
+
+    if (typeof window === 'undefined') {
+      // SSR: pull the JWT out of the request-scoped ALS (set by middleware
+      // from the auth_token cookie) and forward as Bearer.
+      const token = ssrContext.getStore()?.token;
+      if (token) headers.set('Authorization', `Bearer ${token}`);
+      return { ...init, headers };
+    }
+
+    // Client: the cookie auto-attaches on same-origin requests, but we
+    // also keep the Bearer fallback for any legacy localStorage token
+    // hanging around mid-migration. credentials:'include' is what
+    // actually carries the cookie cross-origin.
+    const token = getToken();
     if (token) headers.set('Authorization', `Bearer ${token}`);
-    return { ...init, headers };
+    return { ...init, headers, credentials: 'include' };
   };
 
   let res = await fetch(url, buildInit());
 
-  if (res.status === 401) {
+  if (typeof window !== 'undefined' && res.status === 401) {
     const refreshed = await refreshAccessToken();
     if (refreshed) {
-      // Retry once with the new access token
       res = await fetch(url, buildInit());
     }
     if (res.status === 401) {
-      // Refresh didn't help (or no refresh token); end the session
       clearToken();
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
-      }
+      window.location.href = '/login';
     }
-  } else if (res.status === 403) {
-    // 403 is "you're authenticated but not allowed" — don't logout, just bubble up
   }
 
   return res;
 }
 
-// Get API base URL from environment variables
-// Use PUBLIC_ prefix for client-side access
+/* ============================================================
+   Base URL
+   - Browser: empty string → calls go to /api/... as relative paths
+     and are forwarded to the API by the Vite proxy (dev) or Vercel
+     rewrite (prod). One-origin model: cookies just work.
+   - SSR: absolute URL to reach the API directly from Node. Reads
+     PROXY_API_TARGET (matches the Vite proxy target) so dev hits
+     the API container directly, bypassing the Vite proxy that the
+     Astro SSR process can't reach (it IS the Vite process).
+   ============================================================ */
 const getApiBaseUrl = (): string => {
-  // Check if we're on the server (SSR) or client
   if (typeof window === 'undefined') {
-    // Server-side: can access both PUBLIC_ and non-PUBLIC_ env vars
-    return import.meta.env.API_BASE_URL || import.meta.env.PUBLIC_API_BASE_URL || 'http://localhost:8000';
-  } else {
-    // Client-side: can only access PUBLIC_ env vars
-    return import.meta.env.PUBLIC_API_BASE_URL || 'http://localhost:8000';
+    return (
+      import.meta.env.PROXY_API_TARGET ||
+      import.meta.env.API_BASE_URL ||
+      import.meta.env.PUBLIC_API_BASE_URL ||
+      'http://synapxia-api:80'
+    );
   }
+  // Client: relative path → routed through Vite proxy / Vercel rewrite.
+  return '';
 };
 
 const API_BASE_URL = getApiBaseUrl();
 
-if (!API_BASE_URL) {
-  console.warn('API_BASE_URL not configured. Using default: http://localhost:8000');
+/**
+ * Build a request URL. Browser-side we keep paths relative (so they go
+ * through the Vite proxy / Vercel rewrite); server-side we prepend the
+ * absolute API base.
+ */
+function buildUrl(route: string): string {
+  if (!API_BASE_URL) return route; // browser: relative
+  return new URL(route, API_BASE_URL).toString();
 }
 
 /**
@@ -91,7 +146,7 @@ async function errorFrom(res: Response, method: string, url: string): Promise<Er
  * Generic GET request handler
  */
 export async function apiGet<T>(route: string, init?: RequestInit): Promise<T> {
-  const url = new URL(route, API_BASE_URL).toString();
+  const url = buildUrl(route);
   try {
     const res = await fetchWithAuth(url, {
       ...init,
@@ -118,7 +173,7 @@ export async function apiGet<T>(route: string, init?: RequestInit): Promise<T> {
  * Generic POST request handler
  */
 export async function apiPost<T, D = any>(route: string, data: D, init?: RequestInit): Promise<T> {
-  const url = new URL(route, API_BASE_URL).toString();
+  const url = buildUrl(route);
   try {
     const res = await fetchWithAuth(url, {
       ...init,
@@ -145,7 +200,7 @@ export async function apiPost<T, D = any>(route: string, data: D, init?: Request
  * Generic PUT request handler
  */
 export async function apiPut<T, D = any>(route: string, data: D, init?: RequestInit): Promise<T> {
-  const url = new URL(route, API_BASE_URL).toString();
+  const url = buildUrl(route);
   try {
     const res = await fetchWithAuth(url, {
       ...init,
@@ -172,7 +227,7 @@ export async function apiPut<T, D = any>(route: string, data: D, init?: RequestI
  * Generic DELETE request handler
  */
 export async function apiDelete<T = void>(route: string, init?: RequestInit): Promise<T> {
-  const url = new URL(route, API_BASE_URL).toString();
+  const url = buildUrl(route);
   try {
     const res = await fetchWithAuth(url, {
       ...init,

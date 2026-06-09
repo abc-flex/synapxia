@@ -58,8 +58,9 @@ def get_all(
 
 @router.get("/type/{list_type}", response_model=List[ListModel])
 def get_by_type(
-    list_type: str, 
-    session: Session = Depends(get_db_session)
+    list_type: str,
+    session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("ADMIN", "LISTS", can_edit=False))
 ) -> List[ListModel]:
     """
     Obtener todos los elementos de una lista específica.

@@ -34,8 +34,9 @@ def get_all(
 
 @router.get("/list/{list_code}", response_model=List[ListItem])
 def get_by_list(
-    list_code: str, 
-    session: Session = Depends(get_db_session)
+    list_code: str,
+    session: Session = Depends(get_db_session),
+    _: User = Depends(lambda: check_privilege("ADMIN", "LIST_ITEMS", can_edit=False))
 ) -> List[ListItem]:
     """
     Obtener todos los elementos de una lista específica.

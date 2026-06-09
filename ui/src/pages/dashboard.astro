@@ -1,20 +1,17 @@
 ---
-import { getToken, getUser, logout } from "@/lib/auth";
+import { getToken, getUser } from "@/lib/auth";
 import Layout from "@/layouts/Layout.astro";
 
-// Check if user is authenticated
+// Check if user is authenticated (client-side localStorage; null during SSR
+// — that's fine, middleware also gates this route).
 const token = getToken();
 if (!token) {
   return Astro.redirect("/login");
 }
 
-// Get user info from localStorage
+// Get user info from localStorage (the client-side <script> below also
+// refreshes this via getCurrentUser() so values stay current).
 const user = getUser();
-
-// Function to handle logout (will be exported to client)
-const handleLogout = () => {
-  logout();
-};
 ---
 
 <Layout title="Dashboard">
@@ -136,14 +133,14 @@ const handleLogout = () => {
                     <label class="text-xs font-semibold text-slate-400 uppercase">
                       Role
                     </label>
-                    <p class="text-white mt-1 font-medium">{user.menu_role}</p>
+                    <p class="text-white mt-1 font-medium">{user.profile}</p>
                   </div>
                   <div>
                     <label class="text-xs font-semibold text-slate-400 uppercase">
                       Business Unit
                     </label>
                     <p class="text-white mt-1 font-medium">
-                      {user.business_unit}
+                      {user.unit}
                     </p>
                   </div>
                   <div class="pt-2 border-t border-slate-600">
@@ -333,13 +330,20 @@ const handleLogout = () => {
   </div>
 
   <script>
-    import { logout } from "@/lib/auth";
+    import { getCurrentUser, logout } from "@/lib/auth";
 
-    // Handle logout button
+    // Background refresh: pull /me and update the cached user so any edits
+    // made on /profile (or elsewhere) show up on next paint. Non-blocking.
+    getCurrentUser().catch(() => {
+      /* silent — middleware handles unauth, /me may simply not be reachable */
+    });
+
+    // Handle logout button — await so the refresh-token revocation hits the
+    // server before we navigate away.
     const logoutBtn = document.getElementById("logoutBtn");
     if (logoutBtn) {
-      logoutBtn.addEventListener("click", () => {
-        logout();
+      logoutBtn.addEventListener("click", async () => {
+        await logout();
         window.location.href = "/login";
       });
     }

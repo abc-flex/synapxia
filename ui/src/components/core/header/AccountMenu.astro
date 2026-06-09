@@ -20,12 +20,12 @@ interface Props {
 }
 
 const {
-  name = "Musharof Chowdhury",
-  email = "randomuser@pimjo.com",
+  name = "—",
+  email = "—",
   avatarUrl,
   menuItems = [
-    { label: "account_menu.edit_profile" },
-    { label: "account_menu.account_settings" },
+    { label: "account_menu.edit_profile", href: "/profile" },
+    { label: "account_menu.account_settings", href: "/profile" },
     { label: "account_menu.support" },
   ],
   signOutLabel = "account_menu.sign_out",
@@ -45,10 +45,10 @@ const initials = name
       {avatarUrl ? (
         <img src={avatarUrl} alt={name} class="h-full w-full object-cover rounded-full" />
       ) : (
-        <span>{initials}</span>
+        <span id="account-initials">{initials}</span>
       )}
     </span>
-    <span class="mr-1 block text-sm font-medium text-gray-700 dark:text-gray-400">{name.split(" ")[0]}</span>
+    <span id="account-firstname" class="mr-1 block text-sm font-medium text-gray-700 dark:text-gray-400">{name.split(" ")[0]}</span>
     <span class="h-5 w-5 text-gray-500 dark:text-gray-400 transition duration-200 group-open:rotate-180">
       <Fragment set:html={ChevronDown} />
     </span>
@@ -56,8 +56,8 @@ const initials = name
 
   <div class="account-dropdown">
     <div class="mb-4">
-      <span class="block text-sm font-semibold text-gray-800 dark:text-white/90">{name}</span>
-      <span class="mt-1 block text-xs text-gray-500 dark:text-gray-400">{email}</span>
+      <span id="account-fullname" class="block text-sm font-semibold text-gray-800 dark:text-white/90">{name}</span>
+      <span id="account-email" class="mt-1 block text-xs text-gray-500 dark:text-gray-400">{email}</span>
     </div>
 
     <ul class="flex flex-col gap-1 border-b border-gray-200 pb-3 dark:border-gray-800">
@@ -71,9 +71,46 @@ const initials = name
       ))}
     </ul>
 
-    <button class="account-link mt-3 w-full text-left" type="button">
+    <button id="account-signout-btn" class="account-link mt-3 w-full text-left" type="button">
       <span class="account-link-icon" aria-hidden="true">↩</span>
       <span data-i18n={signOutLabel}>{t(locale, signOutLabel)}</span>
     </button>
   </div>
 </details>
+
+<script>
+  import { getUser, logout } from "@/lib/auth";
+
+  // Patch placeholder name/email/initials with real cached user on mount.
+  const user = getUser();
+  if (user) {
+    const fullName =
+      `${(user as any).first_name ?? ""} ${(user as any).last_name ?? ""}`.trim() ||
+      (user as any).username ||
+      "—";
+    const firstName = (user as any).first_name || (user as any).username || "—";
+    const email = (user as any).email ?? "—";
+    const initials =
+      (((user as any).first_name?.[0] ?? "") +
+        ((user as any).last_name?.[0] ?? "")).toUpperCase() ||
+      ((user as any).username?.[0]?.toUpperCase() ?? "?");
+
+    const setText = (id: string, value: string) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    };
+    setText("account-firstname", firstName);
+    setText("account-fullname", fullName);
+    setText("account-email", email);
+    setText("account-initials", initials);
+  }
+
+  // Sign-out button — async so the refresh-token revocation completes
+  // before we navigate away.
+  document
+    .getElementById("account-signout-btn")
+    ?.addEventListener("click", async () => {
+      await logout();
+      window.location.href = "/login";
+    });
+</script>

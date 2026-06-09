@@ -73,9 +73,35 @@ class BcryptPasswordHelper(PasswordHelperProtocol):
 
 # ==================== fastapi-users setup ====================
 
+class _UserDatabase(SQLAlchemyUserDatabase):
+    """
+    Adapter that translates fastapi-users' ``hashed_password`` writes to our
+    actual column name ``password_hash``. The ``User`` model exposes
+    ``hashed_password`` as a *read-only* SQLAlchemy synonym, which means:
+      - on INSERT, ``User(hashed_password=…)`` silently drops the value (the
+        synonym's setter doesn't propagate), producing a NULL column → IntegrityError.
+      - on UPDATE, ``setattr(user, "hashed_password", …)`` raises ``NotImplementedError``.
+    Renaming the key on both paths keeps the model surface clean without
+    making the synonym writable.
+    """
+
+    @staticmethod
+    def _rewrite(d: dict) -> dict:
+        if "hashed_password" in d:
+            d = dict(d)
+            d["password_hash"] = d.pop("hashed_password")
+        return d
+
+    async def create(self, create_dict):
+        return await super().create(self._rewrite(create_dict))
+
+    async def update(self, user, update_dict):
+        return await super().update(user, self._rewrite(update_dict))
+
+
 async def get_user_db(session: AsyncSession = Depends(get_async_session)):
     """SQLAlchemy adapter for fastapi-users."""
-    yield SQLAlchemyUserDatabase(session, User)
+    yield _UserDatabase(session, User)
 
 
 class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
@@ -132,16 +158,19 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         if profile_code:
             result = await session.execute(select(Profile).where(Profile.code == profile_code))
             if result.scalars().first() is None:
-                raise exceptions.UserAlreadyExists  # surface a 400-ish error via fastapi-users
-                # Note: fastapi-users only raises UserAlreadyExists/InvalidPasswordException
-                # from create(); for an explicit "profile not found" we'd need a custom
-                # exception handler. Using UserAlreadyExists keeps the API simple.
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Profile '{profile_code}' does not exist",
+                )
 
         unit_code = getattr(user_create, "unit", None)
         if unit_code:
             result = await session.execute(select(BusinessUnit).where(BusinessUnit.code == unit_code))
             if result.scalars().first() is None:
-                raise exceptions.UserAlreadyExists
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Business unit '{unit_code}' does not exist",
+                )
 
         return await super().create(user_create, safe=safe, request=request)
 

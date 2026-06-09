@@ -23,8 +23,8 @@ export interface RegisterRequest {
   password: string;
   first_name: string;
   last_name: string;
-  menu_role: string;
-  business_unit: string;
+  profile: string;   // FK → profiles.code (was: menu_role)
+  unit: string;      // FK → business_units.code (was: business_unit)
 }
 
 export interface ChangePasswordRequest {
@@ -261,6 +261,53 @@ export async function getCurrentUser(): Promise<UserRead> {
   storeUser(response);
 
   return response;
+}
+
+/**
+ * Update the current user's own profile via fastapi-users' PATCH /me.
+ *
+ * Accepts any subset of the editable fields (first_name, last_name, email,
+ * username, profile, unit, password). On success refreshes the localStorage
+ * cache so the UI sees the new values immediately.
+ */
+export async function updateMyProfile(data: Record<string, unknown>): Promise<UserRead> {
+  const token = getToken();
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+
+  const url = `${getApiUrl()}/api/auth/me`;
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => '');
+    let errorDetail = 'Profile update failed';
+    try {
+      const errorJson = JSON.parse(errorText);
+      if (Array.isArray(errorJson.detail)) {
+        errorDetail = errorJson.detail
+          .map((e: { msg?: string }) => e.msg ?? 'Validation error')
+          .join('. ');
+      } else if (typeof errorJson.detail === 'string') {
+        errorDetail = errorJson.detail;
+      }
+    } catch {
+      errorDetail = errorText || res.statusText;
+    }
+    throw new Error(errorDetail);
+  }
+
+  const updated = (await res.json()) as UserRead;
+  storeUser(updated);
+  return updated;
 }
 
 /**

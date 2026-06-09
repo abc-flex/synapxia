@@ -58,7 +58,7 @@ const chevronIcon = getIcon("chevron-down");
       </summary>
 
       <div class="overflow-hidden transform translate">
-        <ul class="flex flex-col gap-1 mt-2 menu-dropdown pl-3">
+        <ul class="flex flex-col gap-1.5 mt-2 menu-dropdown pl-2.5">
           {options.map((option) => {
             const optIconSvg = option.icon ? getIcon(option.icon) : "";
             return (
@@ -68,11 +68,11 @@ const chevronIcon = getIcon("chevron-down");
                   class={`menu-dropdown-item group ${option.path === currentPath ? 'menu-dropdown-item-active' : 'menu-dropdown-item-inactive'}`}
                 >
                   {optIconSvg ? (
-                    <span class="w-5 h-5 inline-block mr-2 text-current">
+                    <span class="w-5 h-5 inline-block text-current shrink-0">
                       <Fragment set:html={optIconSvg} />
                     </span>
                   ) : (
-                    <span class="w-1 h-1 inline-block mr-2 bg-current rounded-full" />
+                    <span class="w-1.5 h-1.5 inline-block bg-current rounded-full shrink-0" />
                   )}
                   <span data-i18n={`menu_options.${option.code.toLowerCase()}`}>
                     {option.name}

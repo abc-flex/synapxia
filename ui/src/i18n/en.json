@@ -22,6 +22,12 @@
   "notification_menu": {
     "title": "Notification"
   },
+  "coming_soon": {
+    "badge": "Coming soon",
+    "title": "We're working on this",
+    "subtitle": "This feature isn't ready yet — we're building it and it will be available soon.",
+    "go_back": "Go back"
+  },
   "modules": {
     "ADMIN": "Administration",
     "TAXO": "Asset Taxonomy",
@@ -33,6 +39,7 @@
   },
   "menu_options": {
     "business_units": "Business Units",
+    "profile": "Profile",
     "profiles": "Profiles",
     "privileges": "Privileges",
     "users": "Users",
@@ -352,6 +359,42 @@
     "delete": "Delete Asset",
     "empty_message": "No Assets found",
     "delete_confirmation": "Are you sure you want to delete this Asset"
+  },
+  "status_modal": {
+    "filter_title": "All Statuses"
+  },
+  "asset_detail_modal": {
+    "title_create": "New Asset",
+    "title_edit": "Edit Asset",
+    "subtitle": "Core fields plus the characterizations required by the chosen category.",
+    "core_section": "Core",
+    "characterizations_section": "Characterizations",
+    "characterizations_empty": "Select a category to load its required features.",
+    "choose_category": "— choose category —",
+    "choose_status": "— choose status —",
+    "tags_placeholder": "tag1, tag2, tag3",
+    "fields": "fields",
+    "saved": "Asset saved.",
+    "error_specs": "Could not load specifications.",
+    "error_load": "Could not load asset.",
+    "error_save": "Could not save asset."
+  },
+  "features": {
+    "LANGUAGE": "Language",
+    "MODE": "Mode",
+    "PLATFORM": "Platform",
+    "REPOSITORY": "Repository",
+    "FRAMEWORK": "Framework",
+    "COMPLEXITY": "Complexity",
+    "SUGGESTED_MODEL": "Suggested model",
+    "SUGGESTED_TEMPERATURE": "Suggested temperature",
+    "PROMPT_TEMPLATE": "Prompt template",
+    "EXAMPLE_OUTPUT": "Example output",
+    "OVERVIEW": "Overview",
+    "CONTENT": "Content",
+    "TOOLS": "Tools",
+    "SERVER_CONFIG": "Server config",
+    "INSTRUCTIONS": "Instructions"
   },
   "characterization_modal": {
     "one_title": "Asset Characterization",

@@ -4,86 +4,84 @@ import Breadcrumb from "../../components/core/Breadcrumb.astro";
 import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
+import AssetDetailModal from "../../components/lib/AssetDetailModal.astro";
 import { getAssets } from "@/lib/assets";
 import { getCategoriesSelect } from "@/lib/categories";
 import { getListItemsbyList } from "@/lib/list_items";
 
-// Fetch assets from API
+// ── Fetch data for the list view ──────────────────────────────────────────
 let assets: any[] = [];
 let errorMessage: string | null = null;
 
 try {
-  const apiLists = await getAssets();
-  assets = apiLists;
+  assets = await getAssets();
 } catch (error) {
-  console.error('Failed to fetch assets:', error);
-  errorMessage = error instanceof Error ? error.message : 'Failed to fetch assets from API';
-  // Fallback to empty array to still render the page
+  console.error("Failed to fetch assets:", error);
+  errorMessage =
+    error instanceof Error ? error.message : "Failed to fetch assets from API";
   assets = [];
 }
 
-// Fetch items_list from API for select field (list IN['ASSET_STATUS')
+// Status list (ASSET_STATUS) for the in-row label + status filter dropdown
 let status: any[] = [];
-status = await getListItemsbyList('ASSET_STATUS');
+try {
+  status = await getListItemsbyList("ASSET_STATUS");
+} catch {
+  status = [];
+}
 
-// Fetch categories from API for select field
+// Categories for the in-row label + category filter dropdown + AssetDetailModal
 let categories: any[] = [];
 try {
-  const apiCategories = await getCategoriesSelect();
-  categories = apiCategories;
+  categories = await getCategoriesSelect();
 } catch (error) {
-  console.error('Failed to fetch categories:', error);
-  errorMessage = error instanceof Error ? error.message : 'Failed to fetch categories from API';
-  // Fallback to empty array to still render the page
+  console.error("Failed to fetch categories:", error);
   categories = [];
 }
 
+// Columns shown in the table
 const columns = [
-  { key: "name", label: "asset_modal.name"},
+  { key: "name", label: "asset_modal.name" },
   { key: "category", label: "asset_modal.category", visible: false },
   { key: "category_name", label: "asset_modal.category" },
   { key: "status", label: "asset_modal.status", visible: false },
   { key: "status_name", label: "asset_modal.status" },
+  { key: "tags_display", label: "asset_modal.tags" },
 ];
 
-
+// Flatten rows for the table; keep raw category/status as hidden columns so
+// the dropdown filters can match them by value.
 const data = assets.map((item) => ({
   id: item.id,
   name: item.name,
   description: item.description,
   category: item.category,
-  category_name: categories.find((c) => String(c.value) === String(item.category))?.label || item.category_name,
+  category_name:
+    categories.find((c) => String(c.value) === String(item.category))?.label ||
+    item.category ||
+    "",
   reference: item.reference,
   status: item.status,
   status_name: status.find((s) => s.value === item.status)?.label || item.status,
   tags: item.tags,
+  tags_display: Array.isArray(item.tags) ? item.tags.join(", ") : item.tags || "",
   detail: item.detail,
   is_active: item.is_active,
   created_at: item.created_at,
   updated_at: item.updated_at,
 }));
 
-const formFields = [
-  { key: "name", label: "asset_modal.name", required: true },
-  { key: "category", label: "asset_modal.category", type: "select" as const, options: categories, required: true },
-  { key: "status", label: "asset_modal.status", type: "select" as const, options: status, required: true },
-  {
-    key: "description",
-    label: "asset_modal.description",
-    type: "textarea" as const,
-    required: false,
-  },
-  { key: "reference", label: "asset_modal.reference", required: false },
-  { key: "tags", label: "asset_modal.tags", required: false },
+// Delete-only fields for the small confirmation CrudModal
+const deleteFields = [
+  { key: "name", label: "asset_modal.name", pk: true, disabled: true },
 ];
-const fieldKeys = formFields.map((f) => f.key);
+const fieldKeys = deleteFields.map((f) => f.key);
 ---
 
 <BaseLayout>
   {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
 
   <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
-    <!-- Breadcrumb Start -->
     <Breadcrumb
       moduleName="AI Library"
       pageName="Assets"
@@ -93,27 +91,20 @@ const fieldKeys = formFields.map((f) => f.key);
       pageNameKey="menu_options.assets"
       pageTitleKey="menu_options.assets"
     />
-    <!-- Breadcrumb End -->
 
-    <CrudModal
-      mode="create"
-      modalId="asset-create-modal"
-      entityName="Asset"
-      fields={formFields}
-      showTrigger={false}
+    {/* Wide create/edit modal — the main piece of UI here */}
+    <AssetDetailModal
+      modalId="asset-detail-modal"
+      categories={categories}
+      statuses={status.map((s) => ({ value: s.value, label: s.label }))}
     />
-    <CrudModal
-      mode="edit"
-      modalId="asset-edit-modal"
-      entityName="Asset"
-      fields={formFields}
-      showTrigger={false}
-    />
+
+    {/* Slim delete confirmation (reuses existing CrudModal) */}
     <CrudModal
       mode="delete"
       modalId="asset-delete-modal"
       entityName="Asset"
-      fields={formFields}
+      fields={deleteFields}
       showTrigger={false}
     />
 
@@ -127,20 +118,148 @@ const fieldKeys = formFields.map((f) => f.key);
     </div>
 
     <script type="module">
+      // Inline module so we can import crudClient from /public/ (Astro's
+      // hoisted bundler forbids importing /public/* files).
       import { initCrudPage } from "/scripts/crudClient.js";
-      import {
-        createAsset,
-        updateAsset,
-        deleteAsset,
-      } from "/src/lib/assets";
+      import { deleteAsset, getAssets } from "/src/lib/assets";
+      import { getCategoriesSelect } from "/src/lib/categories";
+      import { getListItemsbyList } from "/src/lib/list_items";
+      import { loadClientTranslations } from "/src/utils/i18nClient";
 
+      // CrudClient still drives the delete modal's prefill flow.
       initCrudPage({
         dataId: "assets-data",
-        editModalId: "asset-edit-modal",
+        editModalId: "asset-edit-modal", // shim — DataTable still emits this id
         deleteModalId: "asset-delete-modal",
       });
 
-      // Helper function to show toast notifications
+      // ── Client-side data hydration ───────────────────────────────────────
+      // SSR has no JWT (token lives in localStorage), so the page-time fetch
+      // for assets/categories/statuses returned []. Refetch now with the
+      // browser's token and rebuild the table rows in place.
+      const escapeHtml = (s) =>
+        String(s ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+
+      function rowHtml(row, columnsOrder) {
+        const cells = columnsOrder
+          .map((key) => `<td class="px-2 py-1">${escapeHtml(row[key] ?? "")}</td>`)
+          .join("");
+        return `
+          <tr class="border-b" data-row-id="${escapeHtml(row.id)}">
+            ${cells}
+            <td class="actions-cell px-2 py-1 text-right space-x-0">
+              <div class="actions-wrapper">
+                <button class="p-1 hover:bg-blue-100 rounded edit-btn"
+                        data-id="${escapeHtml(row.id)}"
+                        data-action="edit"
+                        data-modal-open="asset-edit-modal"
+                        data-i18n-title="asset_modal.edit"
+                        title="">
+                  <span class="w-5 h-5 inline-block">✎</span>
+                </button>
+                <button class="p-1 hover:bg-red-100 rounded delete-btn"
+                        data-id="${escapeHtml(row.id)}"
+                        data-action="delete"
+                        data-modal-open="asset-delete-modal"
+                        data-i18n-title="asset_modal.delete"
+                        title="">
+                  <span class="w-5 h-5 inline-block">🗑</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }
+
+      async function hydrateAssetsTable() {
+        const [assets, categories, statuses] = await Promise.all([
+          getAssets(0, 1000).catch(() => []),
+          getCategoriesSelect().catch(() => []),
+          getListItemsbyList("ASSET_STATUS").catch(() => []),
+        ]);
+        if (!assets || !assets.length) return; // nothing to show — keep empty state
+
+        // Build the same row shape the page would have built SSR-side.
+        const data = assets.map((item) => ({
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          category: item.category,
+          category_name:
+            categories.find((c) => String(c.value) === String(item.category))?.label ||
+            item.category || "",
+          reference: item.reference,
+          status: item.status,
+          status_name:
+            statuses.find((s) => s.value === item.status)?.label || item.status,
+          tags: item.tags,
+          tags_display: Array.isArray(item.tags) ? item.tags.join(", ") : (item.tags || ""),
+          detail: item.detail,
+          is_active: item.is_active,
+        }));
+
+        // Refresh #assets-data so crudClient can resolve the row for the
+        // delete-modal prefill.
+        const dataEl = document.getElementById("assets-data");
+        if (dataEl) {
+          dataEl.dataset.rows = encodeURIComponent(JSON.stringify(data));
+        }
+
+        // If the SSR-rendered empty-state box is still there, swap in a real
+        // table. Otherwise just refill the existing tbody.
+        const tableId = "assets";
+        let table = document.getElementById(tableId);
+        let tbody = table?.querySelector("tbody");
+
+        if (!table) {
+          // Empty-state was rendered (no SSR data). Replace it with a full
+          // table shell + tbody. Headers match the SSR columns order.
+          const host = document.querySelector(".space-y-5.sm\\:space-y-6 > .border-0");
+          if (!host) return;
+          host.innerHTML = `
+            <div class="overflow-x-auto">
+              <table id="${tableId}" class="w-full text-sm text-left text-gray-600 datatable-dense">
+                <thead class="bg-gray-200 text-xs uppercase text-gray-700 border-b border-black">
+                  <tr>
+                    <th class="px-2 py-1 font-semibold tracking-wide" data-i18n="asset_modal.name" data-column-key="name">Name</th>
+                    <th class="px-2 py-1 font-semibold tracking-wide" data-i18n="asset_modal.category" data-column-key="category_name">Category</th>
+                    <th class="px-2 py-1 font-semibold tracking-wide" data-i18n="asset_modal.status" data-column-key="status_name">Status</th>
+                    <th class="px-2 py-1 font-semibold tracking-wide" data-i18n="asset_modal.tags" data-column-key="tags_display">Tags</th>
+                    <th class="px-4 py-4 text-right" data-i18n="data_table.actions">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="[&>tr:nth-child(even)]:bg-gray-100 [&>tr:hover]:bg-gray-200"></tbody>
+              </table>
+            </div>
+          `;
+          table = document.getElementById(tableId);
+          tbody = table?.querySelector("tbody");
+        }
+
+        const columnsOrder = ["name", "category_name", "status_name", "tags_display"];
+        if (tbody) {
+          tbody.innerHTML = data.map((r) => rowHtml(r, columnsOrder)).join("");
+        }
+
+        try { loadClientTranslations(); } catch {}
+
+        // Re-init crudClient over the fresh #assets-data dataset so the
+        // delete modal opens with the right row.
+        initCrudPage({
+          dataId: "assets-data",
+          editModalId: "asset-edit-modal",
+          deleteModalId: "asset-delete-modal",
+        });
+      }
+
+      hydrateAssetsTable();
+
+      // Toast helper
       function showToast(message, variant = "info") {
         const toast = document.createElement("div");
         toast.className = `fixed top-4 right-4 z-50 max-w-md p-4 rounded-lg border shadow-lg transition-all duration-300 ${
@@ -155,8 +274,6 @@ const fieldKeys = formFields.map((f) => f.key);
           </div>
         `;
         document.body.appendChild(toast);
-
-        // Auto-remove after 5 seconds
         setTimeout(() => {
           toast.style.opacity = "0";
           toast.style.transform = "translateX(100%)";
@@ -164,49 +281,54 @@ const fieldKeys = formFields.map((f) => f.key);
         }, 5000);
       }
 
-      // Handle CRUD form submissions
-      document.addEventListener("crud-submit", async (e) => {
-        const { modalId, mode, data } = e.detail;
-
-        try {
-          // Parse composite ID: "role::module::option"
-          const [role, module, option] = data.id.split("::");
-          if (mode === "create") {
-            // Create new asset
-            await createAsset({
-              name: data.name,
-              description: data.description,
-              category: data.category,
-              reference: data.reference,
-              status: data.status,
-              tags: data.tags,
-              detail: data.detail,
-              is_active: data.is_active !== false,
-            });
-            showToast("Asset created successfully!");
-            setTimeout(() => window.location.reload(), 1000);
-          } else if (mode === "edit") {
-            // Update existing asset (id is numeric)
-            await updateAsset(Number(data.id), {
-              name: data.name,
-              description: data.description,
-              category: data.category,
-              reference: data.reference,
-              status: data.status,
-              tags: data.tags,
-              detail: data.detail,
-              is_active: data.is_active !== false,
-            });
-            showToast("Asset updated successfully!");
-            setTimeout(() => window.location.reload(), 1000);
-          } else if (mode === "delete") {
-            await deleteAsset(Number(data.id));
-            showToast("Asset deleted successfully!");
-            setTimeout(() => window.location.reload(), 1000);
+      // ── Bridge: DataTable's "asset-create-modal" / "asset-edit-modal"
+      // buttons → AssetDetailModal. We intercept the DataTable's
+      // data-modal-open clicks BEFORE the default modal-open handler runs
+      // and reroute them to our wider modal.
+      document.addEventListener(
+        "click",
+        (e) => {
+          const create = e.target.closest?.('[data-modal-open="asset-create-modal"]');
+          const edit = e.target.closest?.('[data-modal-open="asset-edit-modal"]');
+          const proxy = create || edit;
+          if (!proxy) return;
+          // Stop the default modal opener (it would try to open a dialog
+          // that no longer exists with those ids).
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          // Synthesize a click on the AssetDetailModal trigger.
+          const synthetic = document.createElement("button");
+          synthetic.style.display = "none";
+          synthetic.setAttribute("data-modal-open", "asset-detail-modal");
+          synthetic.setAttribute(
+            "data-asset-mode",
+            create ? "create" : "edit",
+          );
+          if (edit) {
+            const id = edit.getAttribute("data-id");
+            if (id) synthetic.setAttribute("data-asset-id", id);
           }
+          document.body.appendChild(synthetic);
+          synthetic.click();
+          synthetic.remove();
+        },
+        true /* capture phase so we run before crudClient.js */,
+      );
+
+      // ── Delete handler stays on the standard CrudModal pattern.
+      document.addEventListener("crud-submit", async (e) => {
+        const { mode, data } = e.detail;
+        if (mode !== "delete") return; // create/edit handled by AssetDetailModal
+        try {
+          await deleteAsset(Number(data.id));
+          showToast("Asset deleted successfully!");
+          setTimeout(() => window.location.reload(), 800);
         } catch (error) {
-          console.error("CRUD operation failed:", error);
-          showToast(error instanceof Error ? error.message : "An error occurred", "error");
+          console.error("Delete failed:", error);
+          showToast(
+            error instanceof Error ? error.message : "An error occurred",
+            "error",
+          );
         }
       });
     </script>
@@ -220,8 +342,8 @@ const fieldKeys = formFields.map((f) => f.key);
           i18Item="asset"
           columnFilter="category"
           filterOptions={categories}
-          detailPage="/lib/characterizations"
-          mdItem="characterization"
+          columnFilter2="status"
+          filterOptions2={status.map((s) => ({ value: s.value, label: s.label }))}
         />
       </div>
     </div>

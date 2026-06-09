@@ -74,7 +74,7 @@ for (const [path, svg] of Object.entries(iconModules)) {
           </span>
         </h3>
 
-        <ul id="sidebar-primary-nav" class="flex flex-col gap-4 mb-6">
+        <ul id="sidebar-primary-nav" class="flex flex-col gap-2 mb-6">
           {modules.map((module) => (
             <li>
               <MenuItem
@@ -157,8 +157,8 @@ for (const [path, svg] of Object.entries(iconModules)) {
             // Use option icon when present, otherwise the original bullet dot.
             const optIconSvg = o.icon ? (icons[o.icon] || "") : "";
             const leading = optIconSvg
-              ? `<span class="w-5 h-5 inline-block mr-2 text-current">${optIconSvg}</span>`
-              : `<span class="w-1 h-1 inline-block mr-2 bg-current rounded-full"></span>`;
+              ? `<span class="w-5 h-5 inline-block text-current shrink-0">${optIconSvg}</span>`
+              : `<span class="w-1.5 h-1.5 inline-block bg-current rounded-full shrink-0"></span>`;
             return `
               <li>
                 <a href="${escapeHtml(o.path || "#")}"
@@ -182,7 +182,7 @@ for (const [path, svg] of Object.entries(iconModules)) {
                 <span class="menu-item-arrow stroke-current w-5 h-5 inline-block">${chevron}</span>
               </summary>
               <div class="overflow-hidden transform translate">
-                <ul class="flex flex-col gap-1 mt-2 menu-dropdown pl-3">${items}</ul>
+                <ul class="flex flex-col gap-1.5 mt-2 menu-dropdown pl-2.5">${items}</ul>
               </div>
             </details>
           </li>

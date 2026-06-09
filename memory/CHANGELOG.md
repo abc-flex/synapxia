@@ -6,6 +6,32 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [develop] — 2026-06-09 01:15 · 3dcca27
+
+### Added
+- `105cf3d` **(security)** implement role-based access control (RBAC) (#25)
+- `94b3d98` enhance CORS configuration for improved security and local development
+- `74224ea` update authentication flow to use bcrypt for password hashing and improve error handling
+
+### Changed
+- `3abefa3` **(ui)** add lib/assets crudel page
+
+### Other
+- `3dcca27` Style: add icons for suboptions (#36)
+- `7e2e1ce` Fix: translations (#35)
+- `2f25f01` Chore!: secure apages (#34)
+- `20ea1c9` Secure 16 unprotected endpoints with JWT auth and RBAC (#33)
+- `5afd09a` Fix NameError on import and harden POSTGRES_URL handling (#32)
+- `04da648` Fix Vercel build command: use uv pip install (#30)
+- `c68e779` Sync requirements.txt with pyproject.toml (#29)
+- `e513b5b` Fix Vercel Python runtime import error: use uv pip sync instead of uv sync (#28)
+- `9ad746e` Fix Vercel build configuration for uv package manager (#27)
+- `f43a486` changelog automation support for production branch (#26)
+- `9da629d` Fix database connection error in docker-compose (#23)
+
+---
+
+
 ## [develop] — 2026-06-08 22:03 · 20ea1c9
 
 ### Other

@@ -1,6 +1,6 @@
 """Models for Asset Library module"""
 from sqlmodel import Field, SQLModel, Column, String, ForeignKey
-from sqlalchemy import JSON
+from sqlalchemy import JSON, BigInteger
 from typing import Optional, Dict, Any
 from datetime import datetime
 
@@ -66,12 +66,15 @@ class AssetUpdate(SQLModel):
 
 
 class CharacterizationBase(SQLModel):
-    asset: str = Field(sa_column=Column(
-        'asset', String, ForeignKey('assets.code'), primary_key=True))
+    # `asset` is BIGINT (FK to assets.id) per the DDL; was incorrectly typed
+    # as str/assets.code which caused SELECTs to fail with column type
+    # mismatches. Also: DB column is `detail` (singular), not `details`.
+    asset: int = Field(sa_column=Column(
+        'asset', BigInteger, ForeignKey('assets.id'), primary_key=True))
     feature: str = Field(sa_column=Column(
         'feature', String, ForeignKey('features.code'), primary_key=True))
-    value: str = Field(max_length=500)
-    details: Optional[str] = Field(default=None, max_length=500)
+    value: Optional[str] = Field(default=None)
+    detail: Optional[str] = Field(default=None)
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
@@ -82,21 +85,21 @@ class Characterization(CharacterizationBase, table=True):
 
 
 class CharacterizationCreate(SQLModel):
-    asset: str = Field(max_length=50, description="Asset code")
+    asset: int = Field(description="Asset id (FK to assets.id)")
     feature: str = Field(
         max_length=50, description="Feature code")
-    value: str = Field(max_length=500, description="Characterization value")
-    details: Optional[str] = Field(
-        default=None, max_length=500, description="Additional details")
+    value: Optional[str] = Field(default=None, description="Characterization value")
+    detail: Optional[str] = Field(
+        default=None, description="Additional detail")
     is_active: Optional[bool] = Field(
         default=True, description="Indicates if the characterization is active")
 
 
 class CharacterizationUpdate(SQLModel):
     value: Optional[str] = Field(
-        default=None, max_length=500, description="Characterization value")
-    details: Optional[str] = Field(
-        default=None, max_length=500, description="Additional details")
+        default=None, description="Characterization value")
+    detail: Optional[str] = Field(
+        default=None, description="Additional detail")
     is_active: Optional[bool] = Field(
         default=None, description="Indicates if the characterization is active")
 

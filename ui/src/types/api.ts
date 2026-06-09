@@ -599,3 +599,32 @@ export interface AssetUpdate {
   detail?: string;
   is_active?: boolean;
 }
+
+// ============================================================================
+// Characterizations — composite-key (asset, feature) rows that hold the
+// per-feature value for an asset (e.g. asset #3 + feature MODE → "Remote").
+// ============================================================================
+
+export interface Characterization {
+  asset: number;
+  feature: string;
+  value?: string;
+  detail?: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CharacterizationCreate {
+  asset: number;
+  feature: string;
+  value?: string;
+  detail?: string;
+  is_active?: boolean;
+}
+
+export interface CharacterizationUpdate {
+  value?: string;
+  detail?: string;
+  is_active?: boolean;
+}

@@ -1,176 +1,142 @@
 ---
+/**
+ * LanguageSwitcher — segmented-pill toggle when there are exactly 2
+ * languages, native <select> when there are 3+.
+ *
+ * Inspired by a segmented-radiogroup pattern: both languages are visible
+ * at once, the active one is highlighted (white + shadow on light, dark
+ * panel on dark). A single click on the inactive pill switches the
+ * locale in place — no dropdown, no chevron — and re-translates every
+ * `[data-i18n*]` element via `loadClientTranslations()`.
+ *
+ * Source of languages: `src/data/languages.json`. Add a third entry and
+ * the component automatically falls back to the <select> dropdown.
+ */
 import ChevronDown from "@/images/icons/chevron-down.svg?raw";
-import Check from "@/images/icons/check.svg?raw";
 import languagesData from "@/data/languages.json";
 
 const languages = languagesData;
+const isToggle = languages.length === 2;
+const currentDefault = languages[0].code;
 ---
 
-<div class="relative" id="lang-switcher-container">
-  <button
-    id="lang-switcher"
-    class="relative flex h-11 w-14 items-center justify-center rounded-full border border-gray-200 bg-white text-base font-semibold text-gray-700 transition hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
-    type="button"
-    aria-label="Change language"
-    data-i18n-aria-label="header.change_language"
-    title="Change language"
-    data-i18n-title="header.change_language"
-    aria-haspopup="true"
-    aria-expanded="false"
-  >
-    <span id="current-lang-label">EN</span>
-    <span class="ml-1 h-3 w-3">
-      <Fragment set:html={ChevronDown} />
-    </span>
-  </button>
-
+{isToggle ? (
   <div
-    id="lang-dropdown"
-    class="absolute right-0 mt-2 w-40 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800 hidden z-50"
-    role="menu"
-    aria-orientation="vertical"
+    id="lang-switcher-container"
+    role="radiogroup"
+    aria-label="Language"
+    data-i18n-aria-label="header.change_language"
+    class="inline-flex items-center gap-0.5 rounded-full border border-gray-200 bg-gray-100 p-1 dark:border-gray-700 dark:bg-gray-800"
   >
-    {
-      languages.map((lang) => (
-        <button
-          type="button"
-          class="lang-option flex w-full items-center gap-2 px-4 py-3 text-left text-sm transition hover:bg-gray-50 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg"
-          data-lang={lang.code}
-        >
-          <span class="text-2xl">{lang.flag}</span>
-          <span class="flex-1 font-medium text-gray-900 dark:text-gray-100">
-            {lang.label}
-          </span>
-          <span
-            class="lang-check h-4 w-4 text-indigo-600"
-            data-lang-check={lang.code}
-          >
-            <Fragment set:html={Check} />
-          </span>
-        </button>
-      ))
-    }
+    {languages.map((lang) => (
+      <button
+        type="button"
+        role="radio"
+        aria-checked={lang.code === currentDefault ? "true" : "false"}
+        data-lang={lang.code}
+        title={lang.label}
+        class="lang-pill inline-flex items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+      >
+        <span aria-hidden="true" class="text-sm leading-none">{lang.flag}</span>
+        <span>{lang.code.toUpperCase()}</span>
+      </button>
+    ))}
   </div>
-</div>
+) : (
+  <div id="lang-switcher-container" class="relative">
+    <select
+      id="lang-select"
+      aria-label="Change language"
+      data-i18n-aria-label="header.change_language"
+      class="appearance-none cursor-pointer rounded-lg border border-gray-200 bg-white py-1.5 pl-3 pr-8 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+    >
+      {languages.map((lang) => (
+        <option value={lang.code}>{lang.flag} {lang.code.toUpperCase()}</option>
+      ))}
+    </select>
+    <span class="pointer-events-none absolute inset-y-0 right-2 flex items-center text-gray-500 dark:text-gray-400">
+      <span class="h-3.5 w-3.5 inline-block">
+        <Fragment set:html={ChevronDown} />
+      </span>
+    </span>
+  </div>
+)}
 
 <script>
-  const getCurrentLanguage = () => {
-    // Get language from localStorage
+  import { loadClientTranslations } from "@/utils/i18nClient";
+  import languagesData from "@/data/languages.json";
+
+  type Lang = { code: string; label: string; flag: string };
+  const LANGUAGES = languagesData as Lang[];
+  const IS_TOGGLE = LANGUAGES.length === 2;
+
+  // Active-pill styling (light + dark). Applied imperatively so we don't
+  // have to ship two whole class strings per pill in the Astro template.
+  const ACTIVE_CLASSES = [
+    "bg-white",
+    "text-gray-900",
+    "shadow-sm",
+    "dark:bg-gray-900",
+    "dark:text-white",
+  ];
+  const INACTIVE_CLASSES = [
+    "text-gray-500",
+    "hover:text-gray-900",
+    "dark:text-gray-400",
+    "dark:hover:text-white",
+  ];
+
+  const getCurrentLanguage = (): string => {
     const stored = localStorage.getItem("lang");
-    if (stored === "en" || stored === "es") {
-      return stored;
-    }
-    // Fallback to browser language
+    if (stored && LANGUAGES.some((l) => l.code === stored)) return stored;
     const browserLang = navigator.language.split("-")[0];
-    return browserLang === "es" ? "es" : "en";
+    return LANGUAGES.some((l) => l.code === browserLang) ? browserLang : LANGUAGES[0].code;
   };
 
-  const updateUI = (lang: string) => {
-    // Update button label
-    const label = document.getElementById("current-lang-label");
-    if (label) {
-      label.textContent = lang.toUpperCase();
+  const paintActive = (code: string) => {
+    if (IS_TOGGLE) {
+      document.querySelectorAll<HTMLButtonElement>(".lang-pill").forEach((pill) => {
+        const isActive = pill.getAttribute("data-lang") === code;
+        pill.setAttribute("aria-checked", String(isActive));
+        if (isActive) {
+          pill.classList.add(...ACTIVE_CLASSES);
+          pill.classList.remove(...INACTIVE_CLASSES);
+        } else {
+          pill.classList.remove(...ACTIVE_CLASSES);
+          pill.classList.add(...INACTIVE_CLASSES);
+        }
+      });
+    } else {
+      const select = document.getElementById("lang-select") as HTMLSelectElement | null;
+      if (select) select.value = code;
     }
-
-    // Update checkmarks
-    const checks = document.querySelectorAll(".lang-check");
-    checks.forEach((check) => {
-      const checkLang = check.getAttribute("data-lang-check");
-      if (checkLang === lang) {
-        check.classList.remove("hidden");
-      } else {
-        check.classList.add("hidden");
-      }
-    });
   };
 
   const switchLanguage = (newLang: string) => {
-    const currentLang = getCurrentLanguage();
-
-    // Validate if the language is already selected
-    if (currentLang === newLang) {
-      closeDropdown();
-      return;
-    }
-
-    // Save to localStorage
+    const current = getCurrentLanguage();
+    if (current === newLang) return;
     localStorage.setItem("lang", newLang);
-
-    // Translate page without reload
-    if (window.translatePage) {
-      window.translatePage(newLang);
-    }
-
-    // Update UI
-    updateUI(newLang);
-    closeDropdown();
+    paintActive(newLang);
+    loadClientTranslations();
   };
 
-  const toggleDropdown = () => {
-    const dropdown = document.getElementById("lang-dropdown");
-    const button = document.getElementById("lang-switcher");
+  // Initialize with the persisted/browser language.
+  paintActive(getCurrentLanguage());
 
-    if (!dropdown || !button) return;
-
-    const isHidden = dropdown.classList.contains("hidden");
-
-    if (isHidden) {
-      dropdown.classList.remove("hidden");
-      button.setAttribute("aria-expanded", "true");
-    } else {
-      dropdown.classList.add("hidden");
-      button.setAttribute("aria-expanded", "false");
-    }
-  };
-
-  const closeDropdown = () => {
-    const dropdown = document.getElementById("lang-dropdown");
-    const button = document.getElementById("lang-switcher");
-
-    if (!dropdown || !button) return;
-
-    dropdown.classList.add("hidden");
-    button.setAttribute("aria-expanded", "false");
-  };
-
-  // Initialize UI on page load
-  const currentLang = getCurrentLanguage();
-  updateUI(currentLang);
-
-  // Initialize
-  const langButton = document.getElementById("lang-switcher");
-  const langOptions = document.querySelectorAll(".lang-option");
-
-  if (langButton) {
-    langButton.addEventListener("click", (e) => {
-      e.stopPropagation();
-      toggleDropdown();
+  if (IS_TOGGLE) {
+    document.querySelectorAll<HTMLButtonElement>(".lang-pill").forEach((pill) => {
+      pill.addEventListener("click", () => {
+        const lang = pill.getAttribute("data-lang");
+        if (lang) switchLanguage(lang);
+      });
     });
+  } else {
+    const select = document.getElementById("lang-select") as HTMLSelectElement | null;
+    if (select) {
+      select.addEventListener("change", (e) => {
+        const value = (e.target as HTMLSelectElement).value;
+        if (value) switchLanguage(value);
+      });
+    }
   }
-
-  // Handle language option clicks
-  langOptions.forEach((option) => {
-    option.addEventListener("click", (e) => {
-      const target = e.currentTarget as HTMLElement;
-      const lang = target.getAttribute("data-lang");
-      if (lang) {
-        switchLanguage(lang);
-      }
-    });
-  });
-
-  // Close dropdown when clicking outside
-  document.addEventListener("click", (e) => {
-    const container = document.getElementById("lang-switcher-container");
-    if (container && !container.contains(e.target as Node)) {
-      closeDropdown();
-    }
-  });
-
-  // Close dropdown on escape key
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      closeDropdown();
-    }
-  });
 </script>

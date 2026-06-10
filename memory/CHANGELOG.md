@@ -6,6 +6,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [develop] — 2026-06-10 01:27 · 7016f33
+
+### Added
+- `e06680d` unify database URL resolution and update environment variable d… (#42)
+- `58e00a7` **(ui)** filter items from lists by the current language, or lang='en' in CrudModal form
+- `3d00d54` update LanguageSwitcher component to include forceDropdown prop
+
+### Changed
+- `e2eba13` **(ui)** add filterLang: true to lists that are loaded with getListItemsbyList()
+- `e7cbeae` **(ui)** default selected value for filters applied on page load
+- `49a0869` refactor admin/list_items by add lang field
+- `6733ca0` update dependencies and remove bun.lockb (#40)
+
+### Other
+- `7016f33` Ci/unify db url env var (#43)
+- `e78a869` Style: lading page (#41)
+
+---
+
+
 ## [develop] — 2026-06-10 00:54 · d4e20a6
 
 ### Added

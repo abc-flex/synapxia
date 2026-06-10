@@ -26,7 +26,8 @@ SynapxIA deploys as **three Vercel resources** from this single monorepo:
 4. **Build & Output:** leave empty — Vercel installs from `api/requirements.txt` and
    serves `api/index.py` (Mangum-wrapped FastAPI) per `api/vercel.json`.
 5. **Storage tab:** connect the `synapxia-db` Neon database → `POSTGRES_URL` and siblings
-   are auto-injected.
+   are auto-injected. (The app accepts `POSTGRES_URL` as an alias for the canonical
+   `DATABASE_URL`, so no rename is required.)
 6. **Settings → Environment Variables:** add
    - `SECRET_KEY` — a random 32+ char string
    - `CORS_ORIGINS` — your UI URL (e.g. `https://synapxia-ui.vercel.app`)
@@ -67,8 +68,10 @@ This creates all tables and seeds reference data + the `admin` user (`admin / Ad
 
 - **API:** `api/index.py` exposes `handler = Mangum(app, lifespan="off")`. Vercel's
   `@vercel/python` runtime invokes that handler; `api/vercel.json` routes all paths to it.
-- **DB connection:** `api/app/internal/dependencies.py` prefers `POSTGRES_URL` (Neon),
-  falling back to individual `DB_*` vars for local Docker Compose.
+- **DB connection:** resolved in `api/app/core/config.py` (`Settings.database_url`),
+  precedence `DATABASE_URL` → `POSTGRES_URL` (alias) → composed from `DB_HOST` /
+  `DB_USER` / `DB_PASSWORD` / `DB_SCHEMA` / `DB_PORT`. Both `app/internal/dependencies.py`
+  (engines) and `migrations/env.py` (Alembic) read the same resolved value.
 - **UI:** static Astro build. Pages call the API **client-side** after login; build-time
   fetches fail gracefully (return `[]`) so prerender succeeds without a live API.
 

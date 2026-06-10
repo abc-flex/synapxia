@@ -69,18 +69,8 @@ const formFields = [
     type: "textarea" as const,
     placeholder: "Optional description",
   },
-  {
-    key: "scale",
-    label: "dimension_modal.scale",
-    type: "select" as const,
-    options: dimensionScales,
-  },
-  {
-    key: "unit",
-    label: "dimension_modal.unit",
-    type: "select" as const,
-    options: dimensionUnits,
-  },
+  { key: "scale", label: "dimension_modal.scale", type: "select" as const, options: dimensionScales },
+  { key: "unit", label: "dimension_modal.unit", type: "select" as const, options: dimensionUnits, filterLang: true },
 ];
 const fieldKeys = formFields.map((f) => f.key);
 ---

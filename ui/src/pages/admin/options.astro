@@ -49,6 +49,7 @@ const data = options.map((option) => ({
   name: option.name,
   path: option.path,
   sort_order: option.sort_order,
+  icon: option.icon,
   module_name: modules.find((m) => m.value === option.module)?.label || option.module,
 }));
 
@@ -64,6 +65,7 @@ const formFields = [
   { key: "code", label: "option_modal.code", pk: true, required: true, placeholder: "e.g. business_units" },
   { key: "name", label: "option_modal.name", required: true, placeholder: "e.g. Business Units" },
   { key: "path", label: "option_modal.path", required: true, placeholder: "/admin/business_units" },
+  { key: "icon", label: "option_modal.icon", required: false, placeholder: "Heroicon path" },
   { key: "sort_order", label: "option_modal.sort_order", required: true, type: "number" as const, placeholder: "10" },
 ];
 const fieldKeys = formFields.map((f) => f.key);

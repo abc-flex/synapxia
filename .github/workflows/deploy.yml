@@ -1,49 +1,94 @@
 name: Deploy
 
+# Runs every db/sql migration against the matching Neon database on each
+# push to `develop` (dev Neon) or `production` (prod Neon). Idempotent: a
+# `_migrations` tracking table records which files have been applied, so
+# pushes that don't add new SQL files are no-ops. New numbered files
+# (db/sql/13-…, 14-…, etc.) get picked up automatically on the next push.
+#
+# Vercel deploys both branches automatically via its GitHub integration;
+# this workflow only handles the DB side.
+#
+# Required GitHub Actions secrets (repo Settings → Secrets and variables):
+#   NEON_URL_DEVELOP     — non-pooling URL of the dev Neon DB
+#   NEON_URL_PRODUCTION  — non-pooling URL of the prod Neon DB
+# Use the *non-pooling* URL (DB_POSTGRES_URL_NON_POOLING in Vercel) — the
+# pooled connection breaks DDL statements like CREATE TYPE.
+
 on:
   push:
     branches: [develop, production]
 
 jobs:
-  deploy:
+  migrate:
+    name: Migrate Neon DB
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      # Determine which Neon database to use
-      - name: Set Neon URL
+      - name: Select Neon URL for this branch
         run: |
           if [ "${{ github.ref }}" = "refs/heads/develop" ]; then
-            echo "NEON_URL=${{ secrets.NEON_URL_DEVELOP }}" >> $GITHUB_ENV
+            echo "::add-mask::${{ secrets.NEON_URL_DEVELOP }}"
+            echo "NEON_URL=${{ secrets.NEON_URL_DEVELOP }}" >> "$GITHUB_ENV"
           else
-            echo "NEON_URL=${{ secrets.NEON_URL_PRODUCTION }}" >> $GITHUB_ENV
+            echo "::add-mask::${{ secrets.NEON_URL_PRODUCTION }}"
+            echo "NEON_URL=${{ secrets.NEON_URL_PRODUCTION }}" >> "$GITHUB_ENV"
           fi
 
-      # Run migrations
-      - name: Migrate database
+      - name: Install psql
         run: |
-          sudo apt-get update && sudo apt-get install -y postgresql-client
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
 
-          # Create tracking table
-          psql "${{ env.NEON_URL }}" <<SQL
-          CREATE TABLE IF NOT EXISTS _migrations (filename TEXT PRIMARY KEY);
-          SQL
+      - name: Apply unapplied migrations
+        env:
+          # Per-statement timeout so a runaway DDL can't hang the job.
+          PGOPTIONS: "-c statement_timeout=120000"
+        run: |
+          set -euo pipefail
 
-          # Apply all migrations
-          for f in db/sql/ddl/*.sql db/sql/inserts/*.sql; do
-            [ -f "$f" ] || continue
-            name=$(basename "$f")
-            if ! psql "${{ env.NEON_URL }}" -c "SELECT 1 FROM _migrations WHERE filename='$name';" | grep -q 1 2>/dev/null; then
-              psql "${{ env.NEON_URL }}" -f "$f" || exit 1
-              psql "${{ env.NEON_URL }}" -c "INSERT INTO _migrations VALUES ('$name');"
-              echo "✓ $name"
+          # Tracking table: one row per applied file. Created on the first
+          # run; subsequent runs reuse it.
+          psql "$NEON_URL" -v ON_ERROR_STOP=1 -q -c \
+            "CREATE TABLE IF NOT EXISTS _migrations (
+               filename   TEXT PRIMARY KEY,
+               applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+             );"
+
+          applied=0
+          skipped=0
+          # Flat numbered layout (11-…, 12-…, …, 62-…). The [0-9] guard
+          # excludes db/sql/manual/ helpers (drop.sql, delete.sql) which
+          # must never run in CI. Lexical order matches Compose init.
+          for f in db/sql/[0-9]*.sql; do
+            name="$(basename "$f")"
+            already="$(psql "$NEON_URL" -tAc \
+              "SELECT 1 FROM _migrations WHERE filename = '${name}'")"
+            if [ "$already" = "1" ]; then
+              echo "  ⏭  $name (already applied)"
+              skipped=$((skipped + 1))
+              continue
             fi
+            echo "  ▶  $name"
+            # -1 wraps the file in a single transaction so partial failures
+            # don't leave the schema half-applied (and don't record the row
+            # below — the next run retries cleanly).
+            psql "$NEON_URL" -v ON_ERROR_STOP=1 -q -1 -f "$f"
+            psql "$NEON_URL" -v ON_ERROR_STOP=1 -q -c \
+              "INSERT INTO _migrations(filename) VALUES ('${name}');"
+            applied=$((applied + 1))
           done
 
-      # Verify schema
+          echo ""
+          echo "✓ Migration complete: ${applied} applied, ${skipped} skipped."
+
       - name: Verify schema
         run: |
-          psql "${{ env.NEON_URL }}" -c "SELECT 1 FROM users;" || exit 1
-
-      # Deploy to Vercel (automatic via Vercel's GitHub integration)
-      # No manual deployment needed - Vercel watches these branches
+          count="$(psql "$NEON_URL" -v ON_ERROR_STOP=1 -tAc \
+            "SELECT count(*) FROM users WHERE is_superuser;")"
+          if [ "${count:-0}" -lt 1 ]; then
+            echo "❌ Expected at least one superuser row in users; got: $count"
+            exit 1
+          fi
+          echo "✓ users table populated (${count} superuser row(s))"

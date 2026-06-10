@@ -252,6 +252,35 @@ backup-db:
 	@docker-compose -f $(COMPOSE_FILE) exec db pg_dump -U synapxia synapxia > ./backups/synapxia-$(shell date +%Y%m%d-%H%M%S).sql
 	@echo "$(GREEN)✓ Backup created$(NC)"
 
+# Run every db/sql/*.sql migration against a remote Postgres (Neon/Vercel).
+# Uses the local synapxia-db container's psql (v18) so no host install needed.
+#
+# Usage:
+#   NEON_URL='postgres://USER:PASS@HOST/DB?sslmode=require' make neon-migrate
+#
+# Prefer the *NON_POOLING* URL from Vercel → Storage → Neon (DDL doesn't
+# play nicely with PgBouncer's transaction-mode pooler).
+#
+# Idempotency: the script aborts on the first error. If you've already
+# applied DDL but want to re-run seeds, run individual files with:
+#   docker exec -i synapxia-db psql "$$NEON_URL" -f - < db/sql/12-admin-insert.sql
+neon-migrate:
+	@if [ -z "$$NEON_URL" ]; then \
+		echo "$(RED)NEON_URL must be set. Example:$(NC)"; \
+		echo "  NEON_URL='postgresql://user:pass@host/db?sslmode=require' make neon-migrate"; \
+		exit 1; \
+	fi
+	@if ! docker ps --format '{{.Names}}' | grep -q '^synapxia-db$$'; then \
+		echo "$(RED)synapxia-db container is not running. Start it with: make up$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(GREEN)🚀 Running migrations against:$(NC) $${NEON_URL%%@*}@…"
+	@for f in 11-admin-ddl.sql 12-admin-insert.sql 21-taxo-ddl.sql 22-taxo-insert.sql 31-collab-ddl.sql 32-collab-insert.sql 41-lib-ddl.sql 42-lib-insert.sql 51-inits-ddl.sql 52-inits-insert.sql 61-ana-ddl.sql; do \
+		echo "  ▶ $$f"; \
+		docker exec -i synapxia-db psql "$$NEON_URL" -v ON_ERROR_STOP=1 -q -f - < db/sql/$$f || exit 1; \
+	done
+	@echo "$(GREEN)✓ Neon migrations complete$(NC)"
+
 # Restore the database from the most recent .sql backup in ./backups/.
 restore-db:
 	@echo "$(RED)Restoring database from latest backup...$(NC)"

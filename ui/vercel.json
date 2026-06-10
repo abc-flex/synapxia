@@ -6,7 +6,12 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://synapxia-api.vercel.app/api/$1"
+      "has": [{ "type": "host", "value": "synapxia.vercel.app" }],
+      "destination": "https://api-synapxia.vercel.app/api/$1"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "https://dev-api-synapxia.vercel.app/api/$1"
     }
   ]
 }

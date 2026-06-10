@@ -8,7 +8,6 @@ All modules should import from here instead of maintaining duplicate
 dependencies.py files.
 """
 
-import os
 import logging
 from contextlib import contextmanager
 from typing import AsyncGenerator
@@ -21,51 +20,35 @@ from sqlalchemy.orm import sessionmaker
 from fastapi import HTTPException
 from sqlalchemy.exc import SQLAlchemyError
 
+from app.core.config import settings
+
 logger = logging.getLogger(__name__)
 
 # ==================== Database Configuration ====================
+# All DB env resolution lives in `app.core.config.Settings`. The names below
+# are kept as module-level constants so existing imports across the app
+# (per-domain `internal/dependencies.py` shims, health.py, etc.) continue
+# to work without changes.
 
-DB_CONFIG = {
-    "host": os.getenv("DB_HOST", "db"),
-    "database": os.getenv("DB_SCHEMA", "synapxia"),
-    "user": os.getenv("DB_USER"),
-    "password": os.getenv("DB_PASSWORD"),
-    "port": os.getenv("DB_PORT", "5432"),
-}
+DATABASE_URL = settings.database_url
+DB_CONFIG = settings.database_components   # for psycopg2.connect(**kw)
+IS_MANAGED_POSTGRES = settings.is_managed_postgres
 
-# POSTGRES_URL is injected automatically by Vercel's Neon integration.
-# Fall back to individual DB_* vars for local Docker Compose usage.
-DATABASE_URL = os.getenv("POSTGRES_URL") or (
-    f"postgresql://{DB_CONFIG['user']}:{DB_CONFIG['password']}"
-    f"@{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}"
-)
-
-# Managed providers (Neon/Vercel) often hand out a `postgres://` URL, but SQLAlchemy 2.x
-# only accepts the `postgresql://` scheme. Normalize the leading scheme so both the sync
-# (psycopg2) and async (asyncpg) engines can parse it.
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = "postgresql://" + DATABASE_URL[len("postgres://"):]
-
-if not os.getenv("POSTGRES_URL"):
-    _missing_vars = [k for k, v in DB_CONFIG.items() if not v and k != "password"]
-    if _missing_vars:
-        logger.error(
-            f"❌ Missing required database environment variables: {', '.join(_missing_vars)}\n"
-            f"Please set POSTGRES_URL (Vercel/Neon) or DB_HOST, DB_SCHEMA, DB_USER, DB_PASSWORD, DB_PORT"
-        )
-
-# Log connection string without credentials
+# Log the resolved DB host without leaking credentials.
 _safe_url = DATABASE_URL.split("@")[-1] if "@" in DATABASE_URL else DATABASE_URL
 logger.info(f"📊 Database host: {_safe_url}")
 
-# Detect if running against a managed Postgres (Neon/Supabase) vs local Docker
-# Managed services use transaction-mode poolers that drop prepared statements
-# between transactions, so we must disable asyncpg's statement caching.
-IS_MANAGED_POSTGRES = "POSTGRES_URL" in os.environ
+# Warn early if neither URL nor user/password are usable (purely decomposed
+# branch is missing required fields).
+if not (DB_CONFIG.get("user") and DB_CONFIG.get("password")):
+    logger.error(
+        "❌ Missing database credentials. Set DATABASE_URL (or POSTGRES_URL "
+        "as alias), OR DB_USER + DB_PASSWORD alongside the other DB_* vars."
+    )
 
 # Pool configuration optimized for deployment context:
-# - Managed Postgres (Vercel/Neon): smaller pools due to strict connection limits
-# - Local Docker: larger pools for dev comfort
+# - Managed Postgres (Vercel/Neon/etc): smaller pools due to strict connection limits.
+# - Local Docker: larger pools for dev comfort.
 POOL_CONFIG = {
     "pool_size": 5 if IS_MANAGED_POSTGRES else 10,
     "max_overflow": 10 if IS_MANAGED_POSTGRES else 20,
@@ -73,8 +56,8 @@ POOL_CONFIG = {
     "pool_pre_ping": True,
 }
 
-# Configure SQL echo only in development
-echo_sql = os.getenv("APP_ENV", "development") == "development"
+# SQL echo only in dev.
+echo_sql = settings.app_env == "development"
 
 try:
     engine = create_engine(DATABASE_URL, echo=echo_sql, **POOL_CONFIG)

@@ -176,9 +176,10 @@ Each resource implements the **canonical CRUD pattern**:
   ```
 - **`engine`** — SQLAlchemy engine singleton; `pool_pre_ping=True` so dead connections
   in serverless Lambdas get recycled.
-- **`DATABASE_URL`** resolution order:
-  1. `POSTGRES_URL` env (Vercel/Neon auto-injects) — preferred in prod.
-  2. Built from `DB_HOST`/`DB_SCHEMA`/`DB_USER`/`DB_PASSWORD`/`DB_PORT` — Docker Compose.
+- **`DATABASE_URL`** resolution lives in `app/core/config.py` (`Settings.database_url`).
+  Order: `DATABASE_URL` → `POSTGRES_URL` (alias) → composed from `DB_HOST` / `DB_USER`
+  / `DB_PASSWORD` / `DB_SCHEMA` / `DB_PORT`. See the Configuration & environment
+  section below for the full table.
 - `APP_ENV=development` enables SQL echo (verbose); production stays quiet.
 - Never open raw `psycopg2.connect()` inside a route — use this module.
 
@@ -291,17 +292,29 @@ exception detail. Used by `make test`, `docker-compose healthcheck` is on the DB
 
 | Variable | Purpose | Default | Required in prod |
 |----------|---------|---------|------------------|
-| `POSTGRES_URL` | Full connection string (Vercel/Neon convention) | — | **Yes** (prod) |
-| `DB_HOST` | DB hostname | `db` | No (Docker Compose) |
-| `DB_SCHEMA` / `DB_USER` / `DB_PASSWORD` | DB credentials | `synapxia` | No (Docker Compose) |
-| `DB_PORT` | DB port | `5432` | No |
+| `DATABASE_URL` | Full Postgres connection string (canonical) | — | **Yes** (prod) |
+| `POSTGRES_URL` | Alias accepted because Neon/Vercel auto-injects it | — | Either this or `DATABASE_URL` |
+| `DB_HOST` | DB hostname (decomposed mode) | `db` | No (Docker Compose) |
+| `DB_SCHEMA` / `DB_USER` / `DB_PASSWORD` | DB credentials (decomposed mode) | `synapxia` | No (Docker Compose) |
+| `DB_PORT` | DB port (decomposed mode) | `5432` | No |
 | `SECRET_KEY` | JWT signing secret | dev-default + warning | **Yes** |
 | `APP_ENV` | `development` or `production` | `development` | Sets SQL echo |
 | `CORS_ORIGINS` | Comma-separated origins | `*` | **Yes** (prod) |
 
-**No `.env` parsing inside the app** — environment is injected by Compose (`.env` file)
-or Vercel project settings. Don't introduce `pydantic-settings` without aligning with
-the Constitution (principle V — operability).
+**DB resolution precedence** (in `app/core/config.py:Settings.database_url`):
+
+1. `DATABASE_URL` — canonical 12-factor / SQLAlchemy name.
+2. `POSTGRES_URL` — accepted alias (Neon/Vercel auto-injects this).
+3. Compose from `DB_HOST` / `DB_USER` / `DB_PASSWORD` / `DB_SCHEMA` / `DB_PORT`.
+
+The resolver normalizes `postgres://` → `postgresql://` so Neon-style strings work
+transparently, and detects "managed Postgres" from the URL host (Neon, Supabase, RDS,
+Vercel-storage) to size connection pools accordingly. `app/internal/dependencies.py`
+and `migrations/env.py` both read `settings.database_url` — no other place touches
+these env vars.
+
+`settings` lives in `app/core/config.py` (pydantic-settings). Compose injects env vars
+from the root `.env`; Vercel injects them from the project dashboard.
 
 ---
 

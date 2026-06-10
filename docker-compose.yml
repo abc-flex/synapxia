@@ -67,7 +67,9 @@ services:
     networks:
       - synapxia-network
     environment:
-      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_SCHEMA}
+      # Dev uses the decomposed DB_* branch (host=db comes from the docker
+      # bridge). Prod (Vercel) sets DATABASE_URL or POSTGRES_URL instead.
+      # The unified resolver in app/core/config.py picks whichever is set.
       - APP_ENV=development
       - LOG_LEVEL=debug
       - DB_HOST=${DB_HOST}

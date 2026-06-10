@@ -15,6 +15,10 @@
 import ChevronDown from "@/images/icons/chevron-down.svg?raw";
 import languagesData from "@/data/languages.json";
 
+interface Props {
+  forceDropdown?: boolean;
+}
+
 const languages = languagesData;
 const isToggle = languages.length === 2;
 const currentDefault = languages[0].code;

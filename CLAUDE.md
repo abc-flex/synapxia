@@ -1,8 +1,17 @@
+@AGENTS.md
+@memory/MEMORY.md
+
 # CLAUDE.md
 
 **Read [`AGENTS.md`](AGENTS.md) first** — it is the canonical guidance for AI agents in
 this repo (architecture, Constitution rules, conventions, workflow). This file is a thin
 pointer.
+
+## Key Rules
+
+- Before any task: read `memory/MEMORY.md` and skim the last 3–5 entries of `memory/CHANGELOG.md`.
+- Every important group of changes — each PR, each merge commit, and each direct push to `develop` / `main` / `production` — gets **one** rollup entry in `memory/CHANGELOG.md` (newest at top, never edit other PRs' entries). Include date **and** time (`YYYY-MM-DD HH:MM`, 24h local) so same-day entries stay ordered. If you commit again on the same branch (review fixups, follow-ups), update your existing entry — don't append another. Direct pushes are not exempt. See `AGENTS.md` "Mandatory update rules" for the full table and format.
+- If project state changed (new feature done, architectural decision, new blocker): update `memory/MEMORY.md`.
 
 ## Repo at a glance
 

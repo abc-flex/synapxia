@@ -24,15 +24,34 @@ insights, workflows`, with shared plumbing in `api/app/internal/`.
 ## AI coding memory
 
 Running history and decisions are tracked in [`memory/`](memory/):
-- [`memory/changelog.md`](memory/changelog.md) — what changed, per merge to `develop`/`main`/`prod`.
-- [`memory/memory.md`](memory/memory.md) — patterns, decisions, known issues for AI agents.
+- [`memory/CHANGELOG.md`](memory/CHANGELOG.md) — what changed, per PR / merge / direct push to `develop` / `main` / `production`.
+- [`memory/MEMORY.md`](memory/MEMORY.md) — patterns, decisions, known issues for AI agents.
 
-The changelog is updated automatically via `.githooks/post-commit` (direct commits) and
-`.githooks/post-merge` (PR merges) — both fire on `develop`, `main`, and `production`.
-Activate once per clone:
-```bash
-make hooks   # git config core.hooksPath .githooks
+### Mandatory update rules
+
+| Event | Required action |
+|-------|-----------------|
+| PR opened / branch ready to merge | Append **one** entry to `memory/CHANGELOG.md` covering the whole PR (newest at top, never edit other PRs' entries) |
+| Direct push to `develop` / `main` / `production` | Same rule — append **one** entry covering the pushed change set, **before or with** the push |
+| Architectural decision | The PR's (or push's) `CHANGELOG.md` entry calls it out **and** updates the relevant section of `MEMORY.md` |
+| Feature completed | Update the feature status in `MEMORY.md` + add the `CHANGELOG.md` entry |
+| New blocker found | Add it to the "Known blockers" section of `MEMORY.md` |
+
+**Every important group of changes must have a CHANGELOG entry.** That means every PR, every merge commit, and every direct push to a principal branch. The only thing that does NOT get its own entry is an individual commit on a branch that already has its rollup entry — in that case, **update the existing entry** instead.
+
+Entry format (the **time** is required so same-day entries stay ordered):
+
 ```
+## YYYY-MM-DD HH:MM — Short descriptive title
+- 1–3 bullets on what changed and why.
+- Files affected: `path/to/file.ts`, `path/to/other.py`
+```
+
+Use 24-hour local time (Colombia/America for this team). If you're an agent and don't have the current time loaded, run `date '+%Y-%m-%d %H:%M'` and use that.
+
+**One PR / merge / direct-push = one entry.** Do not append a new entry per individual commit — squash the work into a single rollup entry covering everything that ships. If you commit again on the same branch (e.g. fixing a review comment), update the entry you already added on that branch instead of appending another one. A PR open for a week is still one entry, just with a richer summary.
+
+> Historical note: entries dated before 2026-06-10 use a `### Added / Changed / Fixed` auto-generated format produced by a now-removed `.githooks/post-commit` + `post-merge` flow. If your local clone previously ran `make hooks`, run `git config --unset core.hooksPath` once to stop pointing at the deleted directory.
 
 ## Key commands (from repo root)
 

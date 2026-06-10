@@ -1,4 +1,4 @@
-.PHONY: help up down ps logs shell dev clean rebuild restart reset reset-db health test hooks lint lint-ui fmt fmt-check pytest purge nuke migrate-create migrate-upgrade migrate-downgrade
+.PHONY: help up down ps logs shell dev clean rebuild restart reset reset-db health test lint lint-ui fmt fmt-check pytest purge nuke migrate-create migrate-upgrade migrate-downgrade
 
 # Default target
 .DEFAULT_GOAL := help
@@ -113,7 +113,6 @@ reset-db:
 	@echo "$(GREEN)✓ Database reset complete — DDL + seeds reinitialized$(NC)"
 
 # Full reset: nuke the DB, then rebuild every container from scratch.
-# Equivalent to safe-transfers' `make reset`.
 reset: reset-db rebuild
 	@echo "$(GREEN)✓ Full reset complete$(NC)"
 
@@ -399,13 +398,6 @@ backup-help:
 	@echo "  make backup-db     - Backup database to ./backups/"
 	@echo "  make restore-db    - Restore from latest backup"
 	@echo "  make migrations    - List database migrations"
-
-## Git hooks
-
-hooks:
-	@git config core.hooksPath .githooks
-	@echo "$(GREEN)✓ Git hooks activated (.githooks/post-merge, post-commit)$(NC)"
-	@echo "  Changelog will update automatically on commits and merges to develop/main/production"
 
 ## Quick Start
 

@@ -240,7 +240,8 @@ Universal create/edit/delete dialog. Renders form, validates, emits `crud-submit
   type?: "text" | "textarea" | "select" | "email" | "number" | "checkbox",
   required?: boolean,
   placeholder?: string,                           // i18n key for placeholder
-  options?: { value: string, label: string }[],  // For type: "select"
+  options?: { value: string, label: string, lang?: string }[],  // For type: "select"
+  filterLang?: boolean,                           // Filter options to localStorage["lang"] client-side (options must carry `lang`, e.g. from getListItemsbyList)
   pk?: boolean,                                   // PK fields go readonly in edit mode
   disabled?: boolean
 }

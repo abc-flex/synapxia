@@ -6,6 +6,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [develop] — 2026-06-09 18:30 · e78a869
+
+### Changed
+- `e7cbeae` **(ui)** default selected value for filters applied on page load
+- `49a0869` refactor admin/list_items by add lang field
+- `6733ca0` update dependencies and remove bun.lockb (#40)
+- `1d48800` Spec Kit updated
+
+### Other
+- `e78a869` Style: lading page (#41)
+
+---
+
+
 ## [develop] — 2026-06-09 15:30 · 3f363eb
 
 ### Added

@@ -4,6 +4,7 @@ interface FieldOption {
   value?: string;
   code?: string;
   name?: string;
+  lang?: string;
 }
 
 interface Field {
@@ -16,6 +17,11 @@ interface Field {
   disabled?: boolean;
   placeholder?: string;
   options?: FieldOption[];
+  // When true, options carry a `lang` and are filtered client-side to the
+  // user's language (localStorage["lang"]). Use for selects fed by
+  // getListItemsbyList(). Falls back to one other language if the current
+  // one has no options.
+  filterLang?: boolean;
 }
 
 interface Props {
@@ -188,12 +194,14 @@ const triggerTextKey =
                     required={field.required}
                     disabled={fieldDisabled}
                     readonly={fieldIsReadonly}
+                    data-filter-lang={field.filterLang ? "true" : undefined}
                     class={`h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white/90 ${fieldDisabled || fieldIsReadonly ? "opacity-60" : ""}`}
                   >
                     <option value="" data-i18n={`crud_modal.select`} selected={!value}></option>
                     {(field.options || []).map((opt) => (
                       <option
                         value={opt.value || opt.code}
+                        data-lang={opt.lang}
                         selected={opt.value === value || opt.code === value}
                       >
                         {opt.label || opt.name}
@@ -290,6 +298,26 @@ const triggerTextKey =
 
     const modal = document.getElementById(modalId);
     if (!modal) return;
+
+    // Filter language-aware selects (filterLang: true) to the user's language.
+    // localStorage["lang"] is only available client-side, so the server renders
+    // every language's options and we drop the ones that don't match here. If the
+    // current language has no options, fall back to the first other language.
+    const lang = localStorage.getItem("lang") || "en";
+    modal.querySelectorAll('select[data-filter-lang="true"]').forEach((select) => {
+      const options = Array.from(select.querySelectorAll("option[data-lang]"));
+      if (options.length === 0) return;
+
+      const available = new Set(options.map((o) => o.dataset.lang));
+      let targetLang = lang;
+      if (!available.has(targetLang)) {
+        targetLang = options.find((o) => o.dataset.lang !== lang)?.dataset.lang || lang;
+      }
+
+      options.forEach((o) => {
+        if (o.dataset.lang !== targetLang) o.remove();
+      });
+    });
 
     const open = () => {
       if (!modal.open) {

@@ -52,7 +52,7 @@ const data = features.map((item) => ({
 const formFields = [
   { key: "code", label: "feature_modal.code", pk: true, required: true },
   { key: "name", label: "feature_modal.name", required: true },
-  { key: "type", label: "feature_modal.type", type: "select" as const, options: types, required: false },
+  { key: "type", label: "feature_modal.type", type: "select" as const, options: types, required: false, filterLang: true },
   { key: "list", label: "feature_modal.list", type: "select" as const, options: lists, required: false },
   {
     key: "description",

@@ -90,6 +90,11 @@
     "delete_confirmation": "¿Está seguro de que desea eliminar este",
     "delete_warning": "Esta acción no se puede deshacer."
   },
+  "lang_modal": {
+    "select": "Elige una opción",
+    "filter_title": "Todos los Idiomas",
+    "one_title": "Idioma"
+  },
   "data_table": {
     "actions": "Acciones",
     "add": "Crear",
@@ -504,6 +509,7 @@
     "lede": "Un espacio unificado para gobernar, compartir y escalar los activos de IA de tu organización — desde prompts y agentes hasta aplicaciones RAG, procesos y métricas de impacto.",
     "cta_explore_library": "Explorar la Biblioteca de IA",
     "cta_browse_taxonomy": "Ver la taxonomía",
+    "cta_open_app": "Abrir app",
     "what_is_title": "Para qué sirve SynapxIA",
     "what_is_p1": "La IA está pasando de experimentos aislados a flujos críticos del negocio. Cada equipo construye prompts, agentes, apps RAG y notebooks — pero viven en chats, documentos y tableros que nadie más puede encontrar, auditar o reutilizar.",
     "what_is_p2": "SynapxIA es la capa de gobierno sobre esa dispersión. Cataloga cada activo de IA con una taxonomía compartida, lo conecta con sus dueños y cadena de valor, y mide adopción, uso e impacto en toda la organización.",
@@ -534,7 +540,7 @@
     "qs_initiatives": "Proponer una nueva iniciativa",
     "qs_analytics": "Abrir tableros de analítica",
     "qs_profile": "Configurar tu perfil",
-    "footer_note": "Construido sobre FastAPI · Astro · PostgreSQL"
+    "footer_note": "Construido con ❤️ por el equipo de Synapxia"
   },
   "common": {
     "active": "Activo",
@@ -581,25 +587,6 @@
     "error_password_mismatch": "Las contraseñas no coinciden",
     "error_unknown": "Registro fallido. Intenta de nuevo.",
     "success_message": "¡Cuenta creada exitosamente! Redirigiendo al inicio de sesión..."
-  },
-  "dashboard_page": {
-    "title": "Panel",
-    "welcome": "¡Bienvenido, {name}!",
-    "logged_in_message": "Has iniciado sesión correctamente en tu cuenta.",
-    "account_settings": "Configuración de cuenta",
-    "account_settings_description": "Administra tu perfil y preferencias",
-    "change_password": "Cambiar contraseña",
-    "change_password_description": "Actualiza la contraseña de tu cuenta",
-    "api_documentation": "Documentación del API",
-    "api_documentation_description": "Ver endpoints y uso del API",
-    "session_active": "Sesión activa",
-    "session_message": "Tu token de autenticación está almacenado de forma segura en tu navegador. Expirará tras 60 minutos de inactividad.",
-    "permissions": "Permisos",
-    "admin_access": "Acceso de administrador",
-    "account_details": "Detalles de la cuenta",
-    "created_at": "Creado el",
-    "last_login_at": "Último inicio",
-    "sign_out": "Cerrar sesión"
   },
   "forms_demo": {
     "title": "Componentes de formulario",

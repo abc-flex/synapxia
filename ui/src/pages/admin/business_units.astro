@@ -55,7 +55,7 @@ const data = business_units.map((item) => ({
 const formFields = [
   { key: "code", label: "business_unit_modal.code", pk: true, required: true, placeholder: "e.g. ADMIN" },
   { key: "name", label: "business_unit_modal.name", required: true, placeholder: "e.g. Administration" },
-  { key: "type", label: "business_unit_modal.type", type: "select" as const, options: types, required: false },
+  { key: "type", label: "business_unit_modal.type", type: "select" as const, options: types, required: false, filterLang: true },
   { key: "parent", label: "business_unit_modal.parent", type: "select" as const, options: units, required: false },
   {
     key: "description",

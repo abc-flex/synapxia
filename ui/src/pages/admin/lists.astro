@@ -62,7 +62,7 @@ const data = lists.map((item) => ({
 const formFields= [
   { key: "code", label: "list_modal.code", pk: true, required: true, placeholder: "e.g. STATUS" },
   { key: "name", label: "list_modal.name", required: true, placeholder: "e.g. List statuses for..." },
-  { key: "type", label: "list_modal.type", type: "select" as const, options: types, required: true },
+  { key: "type", label: "list_modal.type", type: "select" as const, options: types, required: true, filterLang: true },
   { key: "module", label: "list_modal.module", type: "select" as const, options: modules, required: false },
   {
     key: "description",

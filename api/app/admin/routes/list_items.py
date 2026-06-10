@@ -28,7 +28,7 @@ def get_all(
     """
     items = session.exec(select(ListItem).where(ListItem.is_active == True)
                          .offset(skip).limit(limit)
-                         .order_by(ListItem.list, ListItem.sort_order, ListItem.value)).all()
+                         .order_by(ListItem.list, ListItem.sort_order, ListItem.lang, ListItem.value)).all()
     return items
 
 
@@ -40,7 +40,6 @@ def get_by_list(
 ) -> List[ListItem]:
     """
     Obtener todos los elementos de una lista específica.
-    
     - **list_code**: Código de la lista para filtrar
     """
     # Validar primero si la lista existe (opcional, pero recomendado por integridad)
@@ -53,28 +52,29 @@ def get_by_list(
     items = session.exec(
         select(ListItem)
         .where(ListItem.list == list_code)
-        .order_by(ListItem.sort_order, ListItem.label)
+        .order_by(ListItem.sort_order, ListItem.lang, ListItem.label)
     ).all()
     return items
 
-@router.get("/{list_code}/{value}", response_model=ListItem)
+@router.get("/{list_code}/{lang}/{value}", response_model=ListItem)
 def get(
-    list_code: str, value: str, session: Session = Depends(get_db_session),
+    list_code: str, lang: str, value: str, session: Session = Depends(get_db_session),
     _: User = Depends(require_privilege("ADMIN", "LIST_ITEMS", can_edit=False))
 ) -> ListItem:
     """
     Obtener un elemento de lista por su código de lista y valor.
     
     - **list_code**: Código de la lista
+    - **lang**: Código del idioma
     - **value**: Valor del elemento
     """
-    item = session.exec(select(ListItem).where(ListItem.list == list_code, ListItem.value == value)).first()
+    item = session.exec(select(ListItem).where(ListItem.list == list_code, ListItem.lang == lang, ListItem.value == value)).first()
     if not item:
         raise HTTPException(status_code=404, detail="List item not found")
     elif not item.is_active:
         raise HTTPException(
             status_code=400,
-            detail=f"List item with list '{list_code}' and value '{value}' is inactive"
+            detail=f"List item with list '{list_code}' and lang '{lang}' and value '{value}' is inactive"
         )
     return item
 
@@ -211,6 +211,7 @@ def create(
     Crear un nuevo elemento de lista.
     
     - **list**: Código de la lista (requerido)
+    - **lang**: Código del idioma (requerido)
     - **value**: Valor del elemento (requerido)
     - **label**: Etiqueta del elemento (requerido)
     - **sort_order**: Orden de visualización (default: 0)
@@ -228,13 +229,14 @@ def create(
     existing_item = session.exec(
         select(ListItem).where(
             ListItem.list == item_data.list,
+            ListItem.lang == item_data.lang,
             ListItem.value == item_data.value
         )
     ).first()
     if existing_item:
         raise HTTPException(
             status_code=409,
-            detail=f"List item with list '{item_data.list}' and value '{item_data.value}' already exists"
+            detail=f"List item with list '{item_data.list}' and lang '{item_data.lang}' and value '{item_data.value}' already exists"
         )
     
     try:
@@ -242,30 +244,31 @@ def create(
         session.add(db_item)
         session.commit()
         session.refresh(db_item)
-        logger.info(f"List item created: {item_data.list}/{item_data.value}")
+        logger.info(f"List item created: {item_data.list}/{item_data.lang}/{item_data.value}")
         return db_item
     except IntegrityError as e:
         session.rollback()
-        logger.error(f"Integrity error creating list item {item_data.list}/{item_data.value}: {e}")
+        logger.error(f"Integrity error creating list item {item_data.list}/{item_data.lang}/{item_data.value}: {e}")
         raise HTTPException(
             status_code=409,
-            detail=f"List item with list '{item_data.list}' and value '{item_data.value}' already exists"
+            detail=f"List item with list '{item_data.list}' and lang '{item_data.lang}' and value '{item_data.value}' already exists"
         )
 
 
-@router.put("/{list_code}/{value}", response_model=ListItem)
+@router.put("/{list_code}/{lang}/{value}", response_model=ListItem)
 def update(
-    list_code: str, value: str, item_update: ListItemUpdate, session: Session = Depends(get_db_session),
+    list_code: str, lang: str, value: str, item_update: ListItemUpdate, session: Session = Depends(get_db_session),
     _: User = Depends(require_privilege("ADMIN", "LIST_ITEMS", can_edit=True))
 ) -> ListItem:
     """
     Actualizar un elemento de lista existente.
     
     - **list_code**: Código de la lista
+    - **lang**: Código del idioma
     - **value**: Valor del elemento
     - Solo se actualizan los campos proporcionados
     """
-    item = session.exec(select(ListItem).where(ListItem.list == list_code, ListItem.value == value)).first()
+    item = session.exec(select(ListItem).where(ListItem.list == list_code, ListItem.lang == lang, ListItem.value == value)).first()
     if not item:
         raise HTTPException(status_code=404, detail="List item not found")
 
@@ -279,13 +282,13 @@ def update(
     session.add(item)
     session.commit()
     session.refresh(item)
-    logger.info(f"List item updated: {list_code}/{value}")
+    logger.info(f"List item updated: {list_code}/{lang}/{value}")
     return item
 
 
-@router.delete("/{list_code}/{value}", response_model=ListItem, status_code=200)
+@router.delete("/{list_code}/{lang}/{value}", response_model=ListItem, status_code=200)
 def delete(
-    list_code: str, value: str, session: Session = Depends(get_db_session),
+    list_code: str, lang: str, value: str, session: Session = Depends(get_db_session),
     _: User = Depends(require_privilege("ADMIN", "LIST_ITEMS", can_edit=True))
 ) -> ListItem:
     """
@@ -294,9 +297,10 @@ def delete(
     Realiza un borrado lógico estableciendo is_active=False en lugar de eliminar el registro.
     
     - **list_code**: Código de la lista
+    - **lang**: Código del idioma
     - **value**: Valor del elemento
     """
-    item = session.exec(select(ListItem).where(ListItem.list == list_code, ListItem.value == value)).first()
+    item = session.exec(select(ListItem).where(ListItem.list == list_code, ListItem.lang == lang, ListItem.value == value)).first()
     if not item:
         raise HTTPException(status_code=404, detail="List item not found")
     
@@ -304,7 +308,7 @@ def delete(
     if not item.is_active:
         raise HTTPException(
             status_code=400,
-            detail=f"List item with list '{list_code}' and value '{value}' is already inactive"
+            detail=f"List item with list '{list_code}' and lang '{lang}' and value '{value}' is already inactive"
         )
 
     # Borrado lógico: actualizar is_active a False
@@ -314,6 +318,6 @@ def delete(
     session.add(item)
     session.commit()
     session.refresh(item)
-    logger.info(f"List item deactivated (logical delete): {list_code}/{value}")
+    logger.info(f"List item deactivated (logical delete): {list_code}/{lang}/{value}")
     return item
 

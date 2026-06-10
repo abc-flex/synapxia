@@ -93,6 +93,7 @@ export interface ListUpdate {
 // ListItem types
 export interface ListItem  {
   list: string;
+  lang: string;
   value: string;
   label: string;
   sort_order: number;
@@ -103,6 +104,7 @@ export interface ListItem  {
 
 export interface ListItemCreate {
   list: string;
+  lang: string;
   value: string;
   label: string;
   sort_order: number;
@@ -119,6 +121,7 @@ export interface ListItemUpdate {
 export interface ItemTranslation  {
   list: string;
   value: string;
+  lang: string;
   label: string;
   sort_order: number;
   is_active?: boolean;

@@ -51,20 +51,22 @@ export async function createListItem(data: ListItemCreate): Promise<ListItem> {
 /**
  * Update an existing list item
  * @param list_code - List code
+ * @param lang - Language code
  * @param value - List item value
  * @param data - List item data to update
  * @returns Promise with updated list item
  */
-export async function updateListItem(list_code: string, value: string, data: ListItemUpdate): Promise<ListItem> {
-  return apiPut<ListItem, ListItemUpdate>(`/api/list_items/${encodeURIComponent(list_code)}/${encodeURIComponent(value)}`, data);
+export async function updateListItem(list_code: string, lang: string, value: string, data: ListItemUpdate): Promise<ListItem> {
+  return apiPut<ListItem, ListItemUpdate>(`/api/list_items/${encodeURIComponent(list_code)}/${encodeURIComponent(lang)}/${encodeURIComponent(value)}`, data);
 }
 
 /**
  * Delete a list item by its list and value
  * @param list_code - List code
+ * @param lang - Language code
  * @param value - List item value
  * @returns Promise with void
  */
-export async function deleteListItem(list_code: string, value: string): Promise<void> {
-  return apiDelete<void>(`/api/list_items/${encodeURIComponent(list_code)}/${encodeURIComponent(value)}`);
+export async function deleteListItem(list_code: string, lang: string, value: string): Promise<void> {
+  return apiDelete<void>(`/api/list_items/${encodeURIComponent(list_code)}/${encodeURIComponent(lang)}/${encodeURIComponent(value)}`);
 }

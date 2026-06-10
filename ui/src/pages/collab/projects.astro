@@ -69,7 +69,7 @@ const data = projects.map((item) => ({
 const formFields = [
   { key: "code", label: "project_modal.code", pk: true, required: true, placeholder: "e.g. BE-001" },
   { key: "name", label: "project_modal.name", required: true, placeholder: "e.g. Backend Auth Refactor" },
-  { key: "status", label: "project_modal.status", type: "select" as const, options: projectStatuses, required: true },
+  { key: "status", label: "project_modal.status", type: "select" as const, options: projectStatuses, required: true, filterLang: true },
   { key: "team", label: "project_modal.team", type: "select" as const, options: teams, required: false },
   {
     key: "description",

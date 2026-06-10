@@ -1,6 +1,6 @@
 import { defineConfig } from "astro/config";
 import tailwind from "@astrojs/tailwind";
-import node from "@astrojs/node";
+import vercel from "@astrojs/vercel/serverless";
 import { fileURLToPath } from "node:url";
 import dns from "node:dns";
 
@@ -14,7 +14,7 @@ export default defineConfig({
   // Per-request SSR so middleware sees real cookies/headers. Pages opt-in
   // to prerendering with `export const prerender = true` (e.g. /login).
   output: "server",
-  adapter: node({ mode: "standalone" }),
+  adapter: vercel(),
   integrations: [tailwind()],
   vite: {
     resolve: {

@@ -20,6 +20,16 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-06-13 18:07 — Tabbed asset modal (Details + Related Assets) + relation/favorite API fixes
+
+- Restructured the asset create/edit modal into two tabs — **Details** (existing core fields + dynamic characterizations) and **Related Assets** (compose/list/remove relations where the asset is the source: target asset + RELATION_TYPE + optional rationale) — plus a **favorite star** in the header (per-user; immediate optimistic toggle on edit, staged on create). One form + one Save: panels hide via CSS so all inputs stay in form submission, and a capture-phase `invalid` handler flips to the owning tab so native validation can focus a hidden-tab field. Create mode stages relations + favorite in memory and persists them after the asset id exists; edit mode diffs staged-vs-initial (delete-first, then create with 409→PUT reactivation fallback, then update changed type/rationale).
+- **API model bug fixes (were unusable):** `AssetRelation` now maps to the real `related_assets` table with `source`/`target` as `BigInteger` FKs to `assets.id` (previously `str` FKs to a non-existent `assets.code`) and includes the `rationale` column the DB already had; `Favorite` now maps to `favorite_assets` with `asset` as a BigInteger FK to `assets.id`. Mirrors the earlier Characterization `asset: str→int` fix.
+- **New endpoints (additive):** `GET /api/asset_relations/source/{asset_id}` (relations by source, registered before the composite route) and `GET /api/assets/select` (`{value,label}` for the target-asset dropdown). Relation/favorite routes switched to int path params and their privilege gate moved from the never-seeded `ASSET_RELATIONS`/`FAVORITES` options to the seeded `(LIB, ASSETS)` — non-superusers were getting 403 before.
+- New UI services `lib/asset_relations.ts` + `lib/favorites.ts` (with `setFavorite`/`isFavorite` helpers handling the 404/400/409 soft-delete edge cases), `getAssetsSelect()` in `lib/assets.ts`, six new types in `types/api.ts`, and 17 new `asset_detail_modal.*` i18n keys in en + es.
+- Files affected: `api/app/lib/internal/models.py`, `api/app/lib/routes/asset_relations.py`, `api/app/lib/routes/favorites.py`, `api/app/lib/routes/assets.py`, `ui/src/components/lib/AssetDetailModal.astro`, `ui/src/lib/asset_relations.ts`, `ui/src/lib/favorites.ts`, `ui/src/lib/assets.ts`, `ui/src/types/api.ts`, `ui/src/i18n/en.json`, `ui/src/i18n/es.json`
+
+---
+
 ## 2026-06-10 01:58 — Adopt human-written CHANGELOG flow (mirror safe-transfers)
 
 - Dropped the `.githooks/post-commit` + `.githooks/post-merge` + `.claude/hooks/update-changelog.sh` automation. From now on, Claude (and humans) write **one entry per PR / merge / direct push** here by hand, before or alongside the change — the rule is documented in `AGENTS.md` "Mandatory update rules" and reminded in `CLAUDE.md` (which `@`-imports both `AGENTS.md` and `memory/MEMORY.md` so every session loads them).

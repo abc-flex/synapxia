@@ -631,3 +631,56 @@ export interface CharacterizationUpdate {
   detail?: string;
   is_active?: boolean;
 }
+
+// ============================================================================
+// Asset relations — composite-key (source, target) rows linking two assets
+// with a typed relationship (RELATION_TYPE list) + optional rationale.
+// Both source and target are asset ids (assets.id).
+// ============================================================================
+
+export interface AssetRelation {
+  source: number;
+  target: number;
+  type: string;
+  rationale?: string | null;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface AssetRelationCreate {
+  source: number;
+  target: number;
+  type: string;
+  rationale?: string;
+  is_active?: boolean;
+}
+
+export interface AssetRelationUpdate {
+  type?: string;
+  rationale?: string | null;
+  is_active?: boolean;
+}
+
+// ============================================================================
+// Favorites — composite-key (user_id, asset) bookmark rows. `asset` is the
+// asset id (assets.id).
+// ============================================================================
+
+export interface Favorite {
+  user_id: number;
+  asset: number;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface FavoriteCreate {
+  user_id: number;
+  asset: number;
+  is_active?: boolean;
+}
+
+export interface FavoriteUpdate {
+  is_active?: boolean;
+}

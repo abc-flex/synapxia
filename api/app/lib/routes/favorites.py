@@ -19,7 +19,7 @@ router = APIRouter(prefix="/api/favorites", tags=["favorites"])
 @router.get("/", response_model=List[Favorite])
 def get_all(
     skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "FAVORITES", can_edit=False))
+    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
 ) -> List[Favorite]:
     """
     List all favorites with pagination.
@@ -33,40 +33,40 @@ def get_all(
     return favorites
 
 
-@router.get("/{user_id}/{asset_code}", response_model=Favorite)
+@router.get("/{user_id}/{asset_id}", response_model=Favorite)
 def get(
-    user_id: int, asset_code: str, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "FAVORITES", can_edit=False))
+    user_id: int, asset_id: int, session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
 ) -> Favorite:
     """
     Get a favorite by its user and asset.
 
     - **user_id**: User ID
-    - **asset_code**: Asset code
+    - **asset_id**: Asset id
     """
     favorite = session.exec(
         select(Favorite).where(
             Favorite.user_id == user_id,
-            Favorite.asset == asset_code
+            Favorite.asset == asset_id
         )
     ).first()
     if not favorite:
         raise HTTPException(status_code=404, detail="Favorite not found")
     elif not favorite.is_active:
-        raise HTTPException(status_code=400, detail=f"Favorite with user_id '{user_id}' and asset '{asset_code}' is inactive")
+        raise HTTPException(status_code=400, detail=f"Favorite with user_id '{user_id}' and asset '{asset_id}' is inactive")
     return favorite
 
 
 @router.post("/", response_model=Favorite, status_code=201)
 def create(
     favorite: FavoriteCreate, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "FAVORITES", can_edit=True))
+    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
 ) -> Favorite:
     """
     Create a new favorite.
 
     - **user_id**: User ID (required)
-    - **asset**: Asset code (required)
+    - **asset**: Asset id (required)
     - **is_active**: Active/inactive status (default: True)
     """
     # Validate that the asset exists
@@ -107,25 +107,25 @@ def create(
         )
 
 
-@router.put("/{user_id}/{asset_code}", response_model=Favorite)
+@router.put("/{user_id}/{asset_id}", response_model=Favorite)
 def update(
     user_id: int,
-    asset_code: str,
+    asset_id: int,
     favorite_update: FavoriteUpdate,
     session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "FAVORITES", can_edit=True)),
+    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True)),
 ) -> Favorite:
     """
     Update an existing favorite.
 
     - **user_id**: User ID
-    - **asset_code**: Asset code
+    - **asset_id**: Asset id
     - Only provided fields are updated
     """
     favorite = session.exec(
         select(Favorite).where(
             Favorite.user_id == user_id,
-            Favorite.asset == asset_code
+            Favorite.asset == asset_id
         )
     ).first()
     if not favorite:
@@ -141,14 +141,14 @@ def update(
     session.add(favorite)
     session.commit()
     session.refresh(favorite)
-    logger.info(f"Favorite updated: {user_id}/{asset_code}")
+    logger.info(f"Favorite updated: {user_id}/{asset_id}")
     return favorite
 
 
-@router.delete("/{user_id}/{asset_code}", response_model=Favorite, status_code=200)
+@router.delete("/{user_id}/{asset_id}", response_model=Favorite, status_code=200)
 def delete(
-    user_id: int, asset_code: str, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "FAVORITES", can_edit=True))
+    user_id: int, asset_id: int, session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
 ) -> Favorite:
     """
     Delete a favorite (logical delete).
@@ -156,12 +156,12 @@ def delete(
     Performs a logical delete by setting is_active=False instead of removing the record.
 
     - **user_id**: User ID
-    - **asset_code**: Asset code
+    - **asset_id**: Asset id
     """
     favorite = session.exec(
         select(Favorite).where(
             Favorite.user_id == user_id,
-            Favorite.asset == asset_code
+            Favorite.asset == asset_id
         )
     ).first()
     if not favorite:
@@ -171,7 +171,7 @@ def delete(
     if not favorite.is_active:
         raise HTTPException(
             status_code=400,
-            detail=f"Favorite with user_id '{user_id}' and asset '{asset_code}' is already inactive"
+            detail=f"Favorite with user_id '{user_id}' and asset '{asset_id}' is already inactive"
         )
 
     # Logical delete: update is_active to False
@@ -182,5 +182,5 @@ def delete(
     session.commit()
     session.refresh(favorite)
     logger.info(
-        f"Favorite deactivated (logical delete): {user_id}/{asset_code}")
+        f"Favorite deactivated (logical delete): {user_id}/{asset_id}")
     return favorite

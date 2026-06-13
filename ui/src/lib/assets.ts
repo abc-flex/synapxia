@@ -17,6 +17,19 @@ export async function getAssets(skip: number = 0, limit: number = 100): Promise<
   return apiGet<Asset[]>(`/api/assets/${queryString}`);
 }
 
+export interface AssetSelectOption {
+  value: string; // asset id as string
+  label: string; // asset name
+}
+
+/**
+ * Lightweight {value,label} list of active assets for UI dropdowns
+ * (e.g. picking a related asset in the asset modal).
+ */
+export async function getAssetsSelect(): Promise<AssetSelectOption[]> {
+  return apiGet<AssetSelectOption[]>('/api/assets/select');
+}
+
 /**
  * Fetch all assets by category with optional pagination
  * @param list_code - category code

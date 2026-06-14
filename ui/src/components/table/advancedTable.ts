@@ -8,8 +8,25 @@ export function initAdvancedTable(
     columnFilter: string | null = null,
     columnFilter2: string | null = null,
     filterDefaultValue: string = "",
-    filterDefaultValue2: string = ""
+    filterDefaultValue2: string = "",
+    columnFilter3: string | null = null,
+    filterDefaultValue3: string = ""
 ) {
+    // Normalize a value for filter comparison: strip a leading `N-` ordinal
+    // prefix so a bare seeded code (e.g. `IN_USE`) matches the prefixed
+    // list_items.value the dropdown carries (e.g. `6-IN_USE`). No-op for
+    // codes without a prefix (categories, favorite "yes"/"no").
+    const normFilter = (v: unknown): string => String(v ?? "").replace(/^\d+-/, "");
+
+    // Remove any open master-detail expansion rows. Called before every
+    // re-render (filter/search/paginate) so injected `[data-detail-row]`
+    // siblings never throw off the data[rowIndex] alignment or pagination
+    // counts (which assume one <tr> per data row).
+    const purgeDetailRows = () => {
+        document
+            .querySelectorAll(`#${tableId} tbody tr[data-detail-row]`)
+            .forEach((r) => r.remove());
+    };
     // Si visibleColumns no se pasa o está vacío, usar allColumns como fallback
     const columns = visibleColumns.length > 0 ? visibleColumns : allColumns;
 
@@ -62,9 +79,13 @@ export function initAdvancedTable(
     const filterSelect2 = document.getElementById(
         `${tableId}-filter2`
     ) as HTMLSelectElement | null;
+    const filterSelect3 = document.getElementById(
+        `${tableId}-filter3`
+    ) as HTMLSelectElement | null;
 
     let filterKey: string | null = null;
     let filterKey2: string | null = null;
+    let filterKey3: string | null = null;
 
     if (filterSelect) {
         filterKey = filterSelect.dataset.columnKey ?? null;
@@ -105,13 +126,37 @@ export function initAdvancedTable(
         }
     }
 
+    if (filterSelect3) {
+        filterKey3 = filterSelect3.dataset.columnKey ?? null;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const filterParam3 = columnFilter3 ? urlParams.get(columnFilter3) : null;
+        const initialValue3 = filterParam3 ?? filterDefaultValue3;
+        if (initialValue3) {
+            filterSelect3.value = initialValue3;
+        }
+
+        filterSelect3.addEventListener("change", () => {
+            applyFilters();
+        });
+
+        if (initialValue3) {
+            applyFilters();
+        }
+    }
+
     /* ======================
        FILTRO COMBINADO
     ====================== */
     function applyFilters() {
+        // Collapse any open detail-expansion rows first so the index/data
+        // alignment below stays 1:1 with `data`.
+        purgeDetailRows();
+
         const searchTerm = searchInput?.value.toLowerCase() ?? "";
         const filterValue = filterSelect?.value ?? "";
         const filterValue2 = filterSelect2?.value ?? "";
+        const filterValue3 = filterSelect3?.value ?? "";
 
         const rows = Array.from(tbody.querySelectorAll("tr")) as HTMLTableRowElement[];
 
@@ -125,16 +170,23 @@ export function initAdvancedTable(
                 visible = visible && text.includes(searchTerm);
             }
 
-            // 🏷️ Filtro por columna (búsqueda en los datos, no en el DOM)
+            // 🏷️ Filtro por columna (búsqueda en los datos, no en el DOM).
+            // Prefix-normalized so e.g. status "IN_USE" matches "6-IN_USE".
             if (filterValue && filterKey && rowData) {
                 const cellValue = String(rowData[filterKey] ?? "");
-                visible = visible && cellValue === filterValue;
+                visible = visible && normFilter(cellValue) === normFilter(filterValue);
             }
 
             // 🏷️ Segundo filtro (AND con el primero)
             if (filterValue2 && filterKey2 && rowData) {
                 const cellValue2 = String(rowData[filterKey2] ?? "");
-                visible = visible && cellValue2 === filterValue2;
+                visible = visible && normFilter(cellValue2) === normFilter(filterValue2);
+            }
+
+            // 🏷️ Tercer filtro (AND) — e.g. favorites ("yes"/"no").
+            if (filterValue3 && filterKey3 && rowData) {
+                const cellValue3 = String(rowData[filterKey3] ?? "");
+                visible = visible && normFilter(cellValue3) === normFilter(filterValue3);
             }
 
             row.classList.toggle("hidden-by-filter", !visible);

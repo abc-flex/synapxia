@@ -15,11 +15,16 @@ from ...admin.internal.models import User
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/asset_relations", tags=["asset_relations"])
 
+# NOTE on privilege option: relations are subordinate resources managed from
+# the Assets screen, so they gate on (LIB, ASSETS) — the option that's
+# actually seeded in db/sql/12-admin-insert.sql. The previous
+# "ASSET_RELATIONS" option was never seeded, which 403'd every non-superuser.
+
 
 @router.get("/", response_model=List[AssetRelation])
 def get_all(
     skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ASSET_RELATIONS", can_edit=False))
+    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
 ) -> List[AssetRelation]:
     """
     List all asset relations with pagination.
@@ -33,41 +38,65 @@ def get_all(
     return relations
 
 
-@router.get("/{source_code}/{target_code}", response_model=AssetRelation)
+# Registered BEFORE the composite /{source_id}/{target_id} route so that
+# GET /source/5 matches here instead of 422-ing on the composite parser.
+@router.get("/source/{asset_id}", response_model=List[AssetRelation])
+def get_by_source(
+    asset_id: int, skip: int = 0, limit: int = 100,
+    session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
+) -> List[AssetRelation]:
+    """
+    List active relations where the given asset is the source.
+
+    - **asset_id**: Source asset id
+    - **skip** / **limit**: pagination
+    """
+    relations = session.exec(
+        select(AssetRelation)
+        .where(AssetRelation.source == asset_id, AssetRelation.is_active == True)
+        .offset(skip).limit(limit)
+        .order_by(AssetRelation.target)
+    ).all()
+    return relations
+
+
+@router.get("/{source_id}/{target_id}", response_model=AssetRelation)
 def get(
-    source_code: str, target_code: str, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ASSET_RELATIONS", can_edit=False))
+    source_id: int, target_id: int, session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
 ) -> AssetRelation:
     """
-    Get an asset relation by its source and target.
+    Get an asset relation by its source and target asset ids.
 
-    - **source_code**: Source asset code
-    - **target_code**: Target asset code
+    - **source_id**: Source asset id
+    - **target_id**: Target asset id
     """
     relation = session.exec(
         select(AssetRelation).where(
-            AssetRelation.source == source_code,
-            AssetRelation.target == target_code
+            AssetRelation.source == source_id,
+            AssetRelation.target == target_id
         )
     ).first()
     if not relation:
         raise HTTPException(status_code=404, detail="Asset relation not found")
     elif not relation.is_active:
-        raise HTTPException(status_code=400, detail=f"Asset relation with source '{source_code}' and target '{target_code}' is inactive")
+        raise HTTPException(status_code=400, detail=f"Asset relation with source '{source_id}' and target '{target_id}' is inactive")
     return relation
 
 
 @router.post("/", response_model=AssetRelation, status_code=201)
 def create(
     relation: AssetRelationCreate, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ASSET_RELATIONS", can_edit=True))
+    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
 ) -> AssetRelation:
     """
     Create a new asset relation.
 
-    - **source**: Source asset code (required)
-    - **target**: Target asset code (required)
+    - **source**: Source asset id (required)
+    - **target**: Target asset id (required)
     - **type**: Relation type (required)
+    - **rationale**: Optional note on why the assets are related
     - **is_active**: Active/inactive status (default: True)
     """
     # Validate that the source asset exists
@@ -75,7 +104,7 @@ def create(
     if not source_asset:
         raise HTTPException(
             status_code=400,
-            detail=f"Source asset with code '{relation.source}' does not exist"
+            detail=f"Source asset with id '{relation.source}' does not exist"
         )
 
     # Validate that the target asset exists
@@ -83,7 +112,7 @@ def create(
     if not target_asset:
         raise HTTPException(
             status_code=400,
-            detail=f"Target asset with code '{relation.target}' does not exist"
+            detail=f"Target asset with id '{relation.target}' does not exist"
         )
 
     # Validate that it's not the same relation
@@ -124,25 +153,25 @@ def create(
         )
 
 
-@router.put("/{source_code}/{target_code}", response_model=AssetRelation)
+@router.put("/{source_id}/{target_id}", response_model=AssetRelation)
 def update(
-    source_code: str,
-    target_code: str,
+    source_id: int,
+    target_id: int,
     update: AssetRelationUpdate,
     session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ASSET_RELATIONS", can_edit=True)),
+    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True)),
 ) -> AssetRelation:
     """
     Update an existing asset relation.
 
-    - **source_code**: Source asset code
-    - **target_code**: Target asset code
+    - **source_id**: Source asset id
+    - **target_id**: Target asset id
     - Only provided fields are updated
     """
     relation = session.exec(
         select(AssetRelation).where(
-            AssetRelation.source == source_code,
-            AssetRelation.target == target_code
+            AssetRelation.source == source_id,
+            AssetRelation.target == target_id
         )
     ).first()
     if not relation:
@@ -158,27 +187,27 @@ def update(
     session.add(relation)
     session.commit()
     session.refresh(relation)
-    logger.info(f"Asset relation updated: {source_code} -> {target_code}")
+    logger.info(f"Asset relation updated: {source_id} -> {target_id}")
     return relation
 
 
-@router.delete("/{source_code}/{target_code}", response_model=AssetRelation, status_code=200)
+@router.delete("/{source_id}/{target_id}", response_model=AssetRelation, status_code=200)
 def delete(
-    source_code: str, target_code: str, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ASSET_RELATIONS", can_edit=True))
+    source_id: int, target_id: int, session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
 ) -> AssetRelation:
     """
     Delete an asset relation (logical delete).
 
     Performs a logical delete by setting is_active=False instead of removing the record.
 
-    - **source_code**: Source asset code
-    - **target_code**: Target asset code
+    - **source_id**: Source asset id
+    - **target_id**: Target asset id
     """
     relation = session.exec(
         select(AssetRelation).where(
-            AssetRelation.source == source_code,
-            AssetRelation.target == target_code
+            AssetRelation.source == source_id,
+            AssetRelation.target == target_id
         )
     ).first()
     if not relation:
@@ -188,7 +217,7 @@ def delete(
     if not relation.is_active:
         raise HTTPException(
             status_code=400,
-            detail=f"Asset relation with source '{source_code}' and target '{target_code}' is already inactive"
+            detail=f"Asset relation with source '{source_id}' and target '{target_id}' is already inactive"
         )
 
     # Logical delete: update is_active to False
@@ -199,5 +228,5 @@ def delete(
     session.commit()
     session.refresh(relation)
     logger.info(
-        f"Asset relation deactivated (logical delete): {source_code} -> {target_code}")
+        f"Asset relation deactivated (logical delete): {source_id} -> {target_id}")
     return relation

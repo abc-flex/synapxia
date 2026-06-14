@@ -368,6 +368,15 @@
   "status_modal": {
     "filter_title": "All Statuses"
   },
+  "asset_table": {
+    "favorite": "Favorite",
+    "fav_filter_all": "All assets",
+    "fav_filter_mine": "My favorites",
+    "detail_expand": "Show details",
+    "detail_characterizations": "Characterizations",
+    "detail_related": "Related Assets",
+    "detail_empty": "—"
+  },
   "asset_detail_modal": {
     "title_create": "New Asset",
     "title_edit": "Edit Asset",
@@ -382,7 +391,24 @@
     "saved": "Asset saved.",
     "error_specs": "Could not load specifications.",
     "error_load": "Could not load asset.",
-    "error_save": "Could not save asset."
+    "error_save": "Could not save asset.",
+    "tab_details": "Details",
+    "tab_related": "Related Assets",
+    "related_target": "Target asset",
+    "related_type": "Relation type",
+    "related_rationale": "Rationale",
+    "related_rationale_placeholder": "Why are these related? (optional)",
+    "related_add": "Add relation",
+    "related_remove": "Remove",
+    "related_empty": "No related assets yet.",
+    "related_choose_asset": "— choose asset —",
+    "related_choose_type": "— choose type —",
+    "related_duplicate": "This asset is already related.",
+    "related_missing_fields": "Pick a target asset and a relation type.",
+    "favorite_add": "Add to favorites",
+    "favorite_remove": "Remove from favorites",
+    "error_relations": "Could not load related assets.",
+    "error_favorite": "Could not update favorite."
   },
   "features": {
     "LANGUAGE": "Language",

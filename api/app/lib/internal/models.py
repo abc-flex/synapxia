@@ -107,22 +107,24 @@ class CharacterizationUpdate(SQLModel):
 
 
 class FavoriteBase(SQLModel):
+    # `asset` is BIGINT (FK to assets.id) per the DDL — assets has no `code`
+    # column. DB table is `favorite_assets`, not `favorites`.
     user_id: int = Field(sa_column=Column(
-        'user_id', ForeignKey('users.id'), primary_key=True))
-    asset: str = Field(sa_column=Column(
-        'asset', String, ForeignKey('assets.code'), primary_key=True))
+        'user_id', BigInteger, ForeignKey('users.id'), primary_key=True))
+    asset: int = Field(sa_column=Column(
+        'asset', BigInteger, ForeignKey('assets.id'), primary_key=True))
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
 
 
 class Favorite(FavoriteBase, table=True):
-    __tablename__ = "favorites"
+    __tablename__ = "favorite_assets"
 
 
 class FavoriteCreate(SQLModel):
     user_id: int = Field(description="User ID")
-    asset: str = Field(max_length=50, description="Asset code")
+    asset: int = Field(description="Asset id (FK to assets.id)")
     is_active: Optional[bool] = Field(
         default=True, description="Indicates if the favorite is active")
 
@@ -184,24 +186,30 @@ class ActionUpdate(SQLModel):
 
 
 class AssetRelationBase(SQLModel):
-    source: str = Field(sa_column=Column(
-        'source', String, ForeignKey('assets.code'), primary_key=True))
-    target: str = Field(sa_column=Column(
-        'target', String, ForeignKey('assets.code'), primary_key=True))
+    # `source`/`target` are BIGINT (FK to assets.id) per the DDL — assets has
+    # no `code` column. DB table is `related_assets`, not `asset_relations`,
+    # and carries a `rationale` text column.
+    source: int = Field(sa_column=Column(
+        'source', BigInteger, ForeignKey('assets.id'), primary_key=True))
+    target: int = Field(sa_column=Column(
+        'target', BigInteger, ForeignKey('assets.id'), primary_key=True))
     type: str = Field(max_length=100)
+    rationale: Optional[str] = Field(default=None)
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
 
 
 class AssetRelation(AssetRelationBase, table=True):
-    __tablename__ = "asset_relations"
+    __tablename__ = "related_assets"
 
 
 class AssetRelationCreate(SQLModel):
-    source: str = Field(max_length=50, description="Source asset code")
-    target: str = Field(max_length=50, description="Target asset code")
+    source: int = Field(description="Source asset id (FK to assets.id)")
+    target: int = Field(description="Target asset id (FK to assets.id)")
     type: str = Field(max_length=100, description="Relation type")
+    rationale: Optional[str] = Field(
+        default=None, description="Why the assets are related")
     is_active: Optional[bool] = Field(
         default=True, description="Indicates if the relation is active")
 
@@ -209,5 +217,7 @@ class AssetRelationCreate(SQLModel):
 class AssetRelationUpdate(SQLModel):
     type: Optional[str] = Field(
         default=None, max_length=100, description="Relation type")
+    rationale: Optional[str] = Field(
+        default=None, description="Why the assets are related")
     is_active: Optional[bool] = Field(
         default=None, description="Indicates if the relation is active")

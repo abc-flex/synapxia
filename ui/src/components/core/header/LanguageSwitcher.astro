@@ -20,7 +20,7 @@ interface Props {
 }
 
 const languages = languagesData;
-const isToggle = languages.length === 2;
+const isToggle =  languages.length === 2 && !Astro.props.forceDropdown;
 const currentDefault = languages[0].code;
 ---
 

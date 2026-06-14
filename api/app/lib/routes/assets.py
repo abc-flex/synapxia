@@ -3,7 +3,8 @@ from typing import List
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Depends
-from sqlmodel import Session, select
+from sqlmodel import Session, select, SQLModel
+from sqlalchemy import cast, String
 from sqlalchemy.exc import IntegrityError
 
 from ..internal.models import Asset, AssetCreate, AssetUpdate
@@ -32,6 +33,32 @@ def get_all(
                           .offset(skip).limit(limit)
                           .order_by(Asset.name)).all()
     return assets
+
+
+class AssetBasic(SQLModel):
+    """Lightweight {value,label} shape for UI dropdowns."""
+    value: str
+    label: str
+
+
+# Registered BEFORE /{asset_id} so "select" isn't parsed as an asset id.
+@router.get("/select", response_model=List[AssetBasic])
+def get_select(
+    session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
+) -> List[AssetBasic]:
+    """
+    Lightweight list of active assets for UI dropdowns: value = id, label = name.
+    """
+    rows = session.exec(
+        select(
+            cast(Asset.id, String).label("value"),
+            Asset.name.label("label"),
+        )
+        .where(Asset.is_active == True)
+        .order_by(Asset.name)
+    ).all()
+    return rows
 
 
 @router.get("/category/{category_code}", response_model=List[Asset])

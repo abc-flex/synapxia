@@ -368,12 +368,21 @@
   "status_modal": {
     "filter_title": "Todos los estados"
   },
+  "asset_table": {
+    "favorite": "Favorito",
+    "fav_filter_all": "Todos los activos",
+    "fav_filter_mine": "Mis favoritos",
+    "detail_expand": "Ver detalles",
+    "detail_characterizations": "Caracterizaciones",
+    "detail_related": "Activos relacionados",
+    "detail_empty": "—"
+  },
   "asset_detail_modal": {
     "title_create": "Nuevo Activo",
     "title_edit": "Editar Activo",
     "subtitle": "Campos principales más las caracterizaciones requeridas por la categoría elegida.",
     "core_section": "Datos principales",
-    "characterizations_section": "Caracterizaciones",
+    "characterizations_section": "Caracterización",
     "characterizations_empty": "Selecciona una categoría para cargar sus características requeridas.",
     "choose_category": "— elige categoría —",
     "choose_status": "— elige estado —",
@@ -382,7 +391,24 @@
     "saved": "Activo guardado.",
     "error_specs": "No se pudieron cargar las especificaciones.",
     "error_load": "No se pudo cargar el activo.",
-    "error_save": "No se pudo guardar el activo."
+    "error_save": "No se pudo guardar el activo.",
+    "tab_details": "Detalles",
+    "tab_related": "Activos relacionados",
+    "related_target": "Activo destino",
+    "related_type": "Tipo de relación",
+    "related_rationale": "Justificación",
+    "related_rationale_placeholder": "¿Por qué están relacionados? (opcional)",
+    "related_add": "Añadir relación",
+    "related_remove": "Quitar",
+    "related_empty": "Aún no hay activos relacionados.",
+    "related_choose_asset": "— elige un activo —",
+    "related_choose_type": "— elige un tipo —",
+    "related_duplicate": "Este activo ya está relacionado.",
+    "related_missing_fields": "Selecciona un activo destino y un tipo de relación.",
+    "favorite_add": "Añadir a favoritos",
+    "favorite_remove": "Quitar de favoritos",
+    "error_relations": "No se pudieron cargar los activos relacionados.",
+    "error_favorite": "No se pudo actualizar el favorito."
   },
   "features": {
     "LANGUAGE": "Lenguaje",

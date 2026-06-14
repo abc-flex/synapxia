@@ -20,6 +20,20 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-06-13 23:22 — Tabbed asset modal + asset-table enhancements (filters, favorites, master-detail)
+
+PR #45. One rollup for the whole branch (modal + table work).
+
+- **Tabbed asset modal**: core fields are always visible at the top; the two detail collections — **Characterizations** and **Related Assets** — sit in a bottom tab group, plus a **favorite star** in the header (per-user; immediate optimistic toggle on edit, staged on create). One form + one Save: panels hide via CSS so all inputs stay in form submission, and a capture-phase `invalid` handler flips to the owning tab so native validation can focus a hidden-tab field. Create stages relations + favorite and persists them after the asset id exists; edit diffs staged-vs-initial (delete-first, create with 409→PUT reactivation fallback, update changed type/rationale).
+- **i18n crash fix**: the tab `<button>`s no longer carry `data-i18n` directly — the runtime patch sets `textContent` and was wiping the nested count-badge span, nulling it and throwing in `renderRelations` on open. Labels moved into nested `<span data-i18n>`.
+- **API model bug fixes (were unusable):** `AssetRelation` → real `related_assets` table, `source`/`target` as `BigInteger` FKs to `assets.id` (were `str` FKs to a non-existent `assets.code`), + the DB's `rationale` column; `Favorite` → `favorite_assets`, `asset` as BigInteger FK to `assets.id`. Mirrors the earlier Characterization `asset: str→int` fix.
+- **New endpoints (additive):** `GET /api/asset_relations/source/{asset_id}`, `GET /api/assets/select`, and `GET /api/favorites/user/{user_id}` (each registered before any conflicting composite route). Relation/favorite routes use int path params; privilege gate moved from the never-seeded `ASSET_RELATIONS`/`FAVORITES` options to the seeded `(LIB, ASSETS)` (non-superusers were getting 403).
+- **Asset table (Phase 1):** fixed the **Status filter** (now prefix-normalized, so seeded `IN_USE` matches the `6-IN_USE` list value); **per-row favorite star** (SSR-prefilled from the user's favorites, optimistic toggle); **"My favorites" filter** (new `columnFilter3` slot); **master-detail inline expand row** showing read-only characterizations + related assets per asset (lazy-loaded, one open at a time, purged before any table re-render so `data[rowIndex]` alignment holds). `DataTable`/`advancedTable` gained opt-in `columnFilter3`/`favoriteAction`/`detailExpand` props — other tables unaffected.
+- New UI services `lib/asset_relations.ts` + `lib/favorites.ts` (`setFavorite`/`isFavorite`/`getFavoritesByUser`, handling the 404/400/409 soft-delete cases), `getAssetsSelect()` in `lib/assets.ts`, six new types in `types/api.ts`, and new `asset_detail_modal.*` + `asset_table.*` i18n keys in en + es.
+- Files affected: `api/app/lib/internal/models.py`, `api/app/lib/routes/{asset_relations,favorites,assets}.py`, `ui/src/components/lib/AssetDetailModal.astro`, `ui/src/components/table/{DataTable.astro,advancedTable.ts}`, `ui/src/pages/lib/assets.astro`, `ui/src/lib/{asset_relations,favorites,assets}.ts`, `ui/src/types/api.ts`, `ui/src/i18n/{en,es}.json`
+
+---
+
 ## 2026-06-10 01:58 — Adopt human-written CHANGELOG flow (mirror safe-transfers)
 
 - Dropped the `.githooks/post-commit` + `.githooks/post-merge` + `.claude/hooks/update-changelog.sh` automation. From now on, Claude (and humans) write **one entry per PR / merge / direct push** here by hand, before or alongside the change — the rule is documented in `AGENTS.md` "Mandatory update rules" and reminded in `CLAUDE.md` (which `@`-imports both `AGENTS.md` and `memory/MEMORY.md` so every session loads them).

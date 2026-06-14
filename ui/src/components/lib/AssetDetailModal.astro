@@ -54,21 +54,43 @@ const {
           Core fields + the characterizations required by the chosen category.
         </p>
       </div>
-      <button
-        type="button"
-        data-modal-close={modalId}
-        class="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
-        aria-label="Close"
-        data-i18n-aria-label="common.close"
-      >
-        <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
-          <path
-            fill-rule="evenodd"
-            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-            clip-rule="evenodd"
-          />
-        </svg>
-      </button>
+      <div class="flex items-center gap-1">
+        <button
+          type="button"
+          id={`${modalId}-fav`}
+          aria-pressed="false"
+          title="Add to favorites"
+          data-i18n-title="asset_detail_modal.favorite_add"
+          class="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        >
+          <svg
+            class="w-5 h-5"
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+          >
+            <path
+              d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.3 4.02a1 1 0 00.95.69h4.22c.97 0 1.37 1.24.59 1.81l-3.42 2.48a1 1 0 00-.36 1.12l1.3 4.02c.3.92-.75 1.69-1.54 1.12l-3.41-2.48a1 1 0 00-1.18 0l-3.41 2.48c-.78.57-1.84-.2-1.54-1.12l1.3-4.02a1 1 0 00-.36-1.12L2 9.45c-.78-.57-.38-1.81.6-1.81h4.21a1 1 0 00.95-.69l1.3-4.02z"
+            />
+          </svg>
+        </button>
+        <button
+          type="button"
+          data-modal-close={modalId}
+          class="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+          aria-label="Close"
+          data-i18n-aria-label="common.close"
+        >
+          <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+            <path
+              fill-rule="evenodd"
+              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </button>
+      </div>
     </div>
 
     {/* ============== Status banner ============== */}
@@ -84,7 +106,7 @@ const {
     <div class="flex-1 overflow-y-auto px-6 py-5 space-y-6">
       <input type="hidden" name="id" id={`${modalId}-id`} />
 
-      {/* Core fields ===================== */}
+      {/* ============== Core fields — always visible ============== */}
       <section>
         <h4
           class="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500"
@@ -192,31 +214,153 @@ const {
         </div>
       </section>
 
-      {/* Characterizations (dynamic) ===================== */}
-      <section>
-        <div class="flex items-baseline justify-between mb-3">
-          <h4
-            class="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
-            data-i18n="asset_detail_modal.characterizations_section"
+      {/* ============== Collections tabs (bottom) ============== */}
+      {/* Core fields above are always visible; the two detail collections —
+          Characterizations and Related Assets — live in tabs down here. */}
+      <div>
+        <div class="border-b border-gray-200 dark:border-gray-800">
+          <div
+            role="tablist"
+            aria-label="Asset detail sections"
+            class="-mb-px flex gap-6 text-sm font-medium"
           >
-            Characterizations
-          </h4>
-          <span
-            id={`${modalId}-spec-count`}
-            class="text-xs text-gray-400"
-          ></span>
+            <button
+              type="button"
+              role="tab"
+              id={`${modalId}-tab-chars`}
+              aria-controls={`${modalId}-panel-chars`}
+              aria-selected="true"
+              data-tab="chars"
+              class="border-b-2 border-indigo-600 px-1 pb-3 text-indigo-600 dark:text-indigo-400"
+            >
+              {/* Label in its own span — the i18n runtime patch sets
+                  textContent, which would wipe a sibling count badge if
+                  data-i18n lived on the <button>. */}
+              <span data-i18n="asset_detail_modal.characterizations_section">Characterizations</span>
+              <span
+                id={`${modalId}-spec-count`}
+                class="ml-1 hidden rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+              ></span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              id={`${modalId}-tab-related`}
+              aria-controls={`${modalId}-panel-related`}
+              aria-selected="false"
+              tabindex="-1"
+              data-tab="related"
+              class="border-b-2 border-transparent px-1 pb-3 text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              <span data-i18n="asset_detail_modal.tab_related">Related Assets</span>
+              <span
+                id={`${modalId}-rel-count`}
+                class="ml-1 hidden rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300"
+              ></span>
+            </button>
+          </div>
         </div>
 
+        {/* Tab panel: Characterizations (dynamic) */}
         <div
-          id={`${modalId}-empty`}
-          class="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-6 text-center text-sm text-gray-500 dark:text-gray-400"
-          data-i18n="asset_detail_modal.characterizations_empty"
+          id={`${modalId}-panel-chars`}
+          role="tabpanel"
+          aria-labelledby={`${modalId}-tab-chars`}
+          class="pt-4"
         >
-          Select a category to load the required features.
+          <div
+            id={`${modalId}-empty`}
+            class="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-6 text-center text-sm text-gray-500 dark:text-gray-400"
+            data-i18n="asset_detail_modal.characterizations_empty"
+          >
+            Select a category to load the required features.
+          </div>
+
+          <div id={`${modalId}-chars`} class="hidden space-y-4"></div>
         </div>
 
-        <div id={`${modalId}-chars`} class="hidden space-y-4"></div>
-      </section>
+        {/* Tab panel: Related Assets */}
+        <div
+          id={`${modalId}-panel-related`}
+          role="tabpanel"
+          aria-labelledby={`${modalId}-tab-related`}
+          class="hidden pt-4 space-y-4"
+        >
+          {/* Composer */}
+          <section>
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <label
+                for={`${modalId}-rel-target`}
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                data-i18n="asset_detail_modal.related_target"
+              >Target asset</label>
+              <select
+                id={`${modalId}-rel-target`}
+                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              >
+                <option value="" data-i18n="asset_detail_modal.related_choose_asset">— choose asset —</option>
+              </select>
+            </div>
+
+            <div>
+              <label
+                for={`${modalId}-rel-type`}
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                data-i18n="asset_detail_modal.related_type"
+              >Relation type</label>
+              <select
+                id={`${modalId}-rel-type`}
+                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              >
+                <option value="" data-i18n="asset_detail_modal.related_choose_type">— choose type —</option>
+              </select>
+            </div>
+
+            <div class="md:col-span-2">
+              <label
+                for={`${modalId}-rel-rationale`}
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                data-i18n="asset_detail_modal.related_rationale"
+              >Rationale</label>
+              <div class="flex gap-2">
+                <input
+                  id={`${modalId}-rel-rationale`}
+                  type="text"
+                  placeholder="Why are these related? (optional)"
+                  data-i18n-placeholder="asset_detail_modal.related_rationale_placeholder"
+                  class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                />
+                <button
+                  type="button"
+                  id={`${modalId}-rel-add`}
+                  class="shrink-0 rounded-lg border border-indigo-600 px-4 py-2 text-sm font-semibold text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-900/30"
+                  data-i18n="asset_detail_modal.related_add"
+                >
+                  Add relation
+                </button>
+              </div>
+            </div>
+          </div>
+          <p
+            id={`${modalId}-rel-error`}
+            class="mt-2 hidden text-xs text-red-600 dark:text-red-400"
+          ></p>
+        </section>
+
+        {/* Staged relations list */}
+        <section>
+          <div
+            id={`${modalId}-rel-empty`}
+            class="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-6 text-center text-sm text-gray-500 dark:text-gray-400"
+            data-i18n="asset_detail_modal.related_empty"
+          >
+            No related assets yet.
+          </div>
+          <ul id={`${modalId}-rel-rows`} class="hidden space-y-2"></ul>
+        </section>
+        </div>
+      </div>
     </div>
 
     {/* ============== Footer ============== */}
@@ -250,7 +394,7 @@ const {
      component. We use the literal id (not define:vars) so the script can
      be statically hoisted by Astro/Vite.
      ============================================================ */
-  import { createAsset, updateAsset, getAsset } from "@/lib/assets";
+  import { createAsset, updateAsset, getAsset, getAssetsSelect } from "@/lib/assets";
   import { getSpecificationsbyCategory } from "@/lib/specifications";
   import { getFeature } from "@/lib/features";
   import { getListItemsbyList } from "@/lib/list_items";
@@ -260,6 +404,14 @@ const {
     updateCharacterization,
     deleteCharacterization,
   } from "@/lib/characterizations";
+  import {
+    getAssetRelationsBySource,
+    createAssetRelation,
+    updateAssetRelation,
+    deleteAssetRelation,
+  } from "@/lib/asset_relations";
+  import { isFavorite, setFavorite } from "@/lib/favorites";
+  import { getUser } from "@/lib/auth";
   import { loadClientTranslations } from "@/utils/i18nClient";
 
   const modalId = "asset-detail-modal";
@@ -281,6 +433,23 @@ const {
     const specCountEl = document.getElementById(`${modalId}-spec-count`) as HTMLElement;
     const statusBanner = document.getElementById(`${modalId}-status`) as HTMLElement;
     const submitBtn = document.getElementById(`${modalId}-submit`) as HTMLButtonElement;
+
+    // Tab + related-assets + favorite elements
+    const tabButtons = Array.from(
+      dialog.querySelectorAll<HTMLButtonElement>("[role=tab]"),
+    );
+    const panelChars = document.getElementById(`${modalId}-panel-chars`) as HTMLElement;
+    const panelRelated = document.getElementById(`${modalId}-panel-related`) as HTMLElement;
+    const relTargetSel = document.getElementById(`${modalId}-rel-target`) as HTMLSelectElement;
+    const relTypeSel = document.getElementById(`${modalId}-rel-type`) as HTMLSelectElement;
+    const relRationale = document.getElementById(`${modalId}-rel-rationale`) as HTMLInputElement;
+    const relAddBtn = document.getElementById(`${modalId}-rel-add`) as HTMLButtonElement;
+    const relErrorEl = document.getElementById(`${modalId}-rel-error`) as HTMLElement;
+    const relEmptyEl = document.getElementById(`${modalId}-rel-empty`) as HTMLElement;
+    const relRowsEl = document.getElementById(`${modalId}-rel-rows`) as HTMLElement;
+    const relCountEl = document.getElementById(`${modalId}-rel-count`) as HTMLElement;
+    const favBtn = document.getElementById(`${modalId}-fav`) as HTMLButtonElement;
+    const favSvg = favBtn?.querySelector("svg") as SVGElement;
 
     // ── Small helpers ──────────────────────────────────────────────────────
     const tr = (key: string, fallback: string): string => {
@@ -310,6 +479,221 @@ const {
     let editingAssetId: number | null = null;
     let initialCharByFeature = new Map(); // feature → existing characterization row
 
+    // Related-assets state. `stagedRelations` is the UI's draft; on Save it's
+    // diffed against `initialRelByTarget` (edit mode) to compute the
+    // create/update/delete calls. In create mode initial is empty so every
+    // staged row becomes a create after the asset id exists.
+    let stagedRelations: { target: number; targetLabel: string; type: string; typeLabel: string; rationale: string }[] = [];
+    let initialRelByTarget = new Map<number, any>();
+    let assetOptions: { value: string; label: string }[] = [];
+
+    // Favorite state. Edit mode toggles immediately (a favorite is a per-user
+    // preference orthogonal to the form draft — staging it would create a
+    // confusing "starred but lost on Cancel" state). Create mode stages the
+    // bit until the asset id exists.
+    let favoriteOn = false;
+
+    // ── Tabs ───────────────────────────────────────────────────────────────
+    function activateTab(name: "chars" | "related") {
+      for (const btn of tabButtons) {
+        const active = btn.dataset.tab === name;
+        btn.setAttribute("aria-selected", String(active));
+        btn.tabIndex = active ? 0 : -1;
+        btn.classList.toggle("border-indigo-600", active);
+        btn.classList.toggle("text-indigo-600", active);
+        btn.classList.toggle("dark:text-indigo-400", active);
+        btn.classList.toggle("border-transparent", !active);
+        btn.classList.toggle("text-gray-500", !active);
+        btn.classList.toggle("dark:text-gray-400", !active);
+      }
+      panelChars.classList.toggle("hidden", name !== "chars");
+      panelRelated.classList.toggle("hidden", name !== "related");
+    }
+
+    tabButtons.forEach((btn, idx) => {
+      btn.addEventListener("click", () => activateTab(btn.dataset.tab as any));
+      btn.addEventListener("keydown", (e) => {
+        let next = -1;
+        if (e.key === "ArrowRight") next = (idx + 1) % tabButtons.length;
+        else if (e.key === "ArrowLeft") next = (idx - 1 + tabButtons.length) % tabButtons.length;
+        else if (e.key === "Home") next = 0;
+        else if (e.key === "End") next = tabButtons.length - 1;
+        if (next >= 0) {
+          e.preventDefault();
+          tabButtons[next].focus();
+          activateTab(tabButtons[next].dataset.tab as any);
+        }
+      });
+    });
+
+    // Native constraint validation can't focus a control inside a hidden
+    // panel ("not focusable" error, no bubble shown). Capture the invalid
+    // event and flip to the owning tab first so the browser can do its job.
+    form.addEventListener(
+      "invalid",
+      (e) => {
+        const panel = (e.target as HTMLElement).closest("[role=tabpanel]");
+        if (panel && panel.classList.contains("hidden")) {
+          activateTab(panel.id.endsWith("related") ? "related" : "chars");
+        }
+      },
+      true,
+    );
+
+    // ── Related assets: composer + staged list ─────────────────────────────
+    const showRelError = (msg: string) => {
+      relErrorEl.textContent = msg;
+      relErrorEl.classList.remove("hidden");
+    };
+    const clearRelError = () => relErrorEl.classList.add("hidden");
+
+    function renderRelations() {
+      if (!relRowsEl) return; // panel not in DOM (defensive)
+      relRowsEl.innerHTML = "";
+      const has = stagedRelations.length > 0;
+      relEmptyEl?.classList.toggle("hidden", has);
+      relRowsEl.classList.toggle("hidden", !has);
+      relCountEl?.classList.toggle("hidden", !has);
+      if (relCountEl) relCountEl.textContent = String(stagedRelations.length);
+
+      stagedRelations.forEach((rel, idx) => {
+        const li = document.createElement("li");
+        li.className =
+          "flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-white/[0.02] px-3 py-2";
+        li.innerHTML = `
+          <span class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-800 dark:text-gray-200" title="${escapeHtml(rel.targetLabel)}">
+            ${escapeHtml(rel.targetLabel)}
+          </span>
+          <span class="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">
+            ${escapeHtml(rel.typeLabel || rel.type)}
+          </span>
+          ${rel.rationale
+            ? `<span class="hidden md:block max-w-[200px] truncate text-xs text-gray-500 dark:text-gray-400" title="${escapeHtml(rel.rationale)}">${escapeHtml(rel.rationale)}</span>`
+            : ""}
+          <button type="button" data-rel-remove="${idx}"
+                  class="shrink-0 rounded-md p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30"
+                  title="Remove" data-i18n-title="asset_detail_modal.related_remove">
+            <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+        `;
+        relRowsEl.appendChild(li);
+      });
+      try { loadClientTranslations(); } catch { /* non-fatal */ }
+    }
+
+    relRowsEl.addEventListener("click", (e) => {
+      const btn = (e.target as HTMLElement).closest?.("[data-rel-remove]") as HTMLElement | null;
+      if (!btn) return;
+      stagedRelations.splice(Number(btn.dataset.relRemove), 1);
+      renderRelations();
+    });
+
+    relAddBtn.addEventListener("click", () => {
+      clearRelError();
+      const target = Number(relTargetSel.value);
+      const type = relTypeSel.value;
+      if (!target || !type) {
+        showRelError(tr("asset_detail_modal.related_missing_fields", "Pick a target asset and a relation type."));
+        return;
+      }
+      if (stagedRelations.some((r) => r.target === target)) {
+        showRelError(tr("asset_detail_modal.related_duplicate", "This asset is already related."));
+        return;
+      }
+      stagedRelations.push({
+        target,
+        targetLabel: relTargetSel.selectedOptions[0]?.textContent?.trim() || String(target),
+        type,
+        typeLabel: relTypeSel.selectedOptions[0]?.textContent?.trim() || type,
+        rationale: relRationale.value.trim(),
+      });
+      relTargetSel.value = "";
+      relTypeSel.value = "";
+      relRationale.value = "";
+      renderRelations();
+    });
+
+    // Populate the composer dropdowns once per modal open.
+    async function loadRelationOptions() {
+      const keepFirst = (sel: HTMLSelectElement) => {
+        const placeholder = sel.options[0];
+        sel.innerHTML = "";
+        if (placeholder) sel.appendChild(placeholder);
+      };
+
+      try {
+        assetOptions = await getAssetsSelect();
+      } catch {
+        assetOptions = [];
+      }
+      keepFirst(relTargetSel);
+      for (const a of assetOptions) {
+        if (editingAssetId && Number(a.value) === editingAssetId) continue; // no self-relation
+        const opt = document.createElement("option");
+        opt.value = a.value;
+        opt.textContent = a.label;
+        relTargetSel.appendChild(opt);
+      }
+
+      try {
+        const lang = localStorage.getItem("lang") || "en";
+        let items = listItemsCache.get("RELATION_TYPE");
+        if (!items) {
+          items = await getListItemsbyList("RELATION_TYPE");
+          listItemsCache.set("RELATION_TYPE", items);
+        }
+        const byLang = items.filter((li: any) => li.lang === lang);
+        const usable = (byLang.length ? byLang : items.filter((li: any) => li.lang === "en"))
+          .sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+        keepFirst(relTypeSel);
+        for (const li of usable) {
+          const opt = document.createElement("option");
+          opt.value = li.value;
+          opt.textContent = li.label || li.value;
+          relTypeSel.appendChild(opt);
+        }
+      } catch { /* type select stays placeholder-only */ }
+    }
+
+    // ── Favorite star ───────────────────────────────────────────────────────
+    function paintFavorite() {
+      if (!favBtn || !favSvg) return;
+      favBtn.setAttribute("aria-pressed", String(favoriteOn));
+      favSvg.setAttribute("fill", favoriteOn ? "currentColor" : "none");
+      favBtn.classList.toggle("text-yellow-400", favoriteOn);
+      favBtn.classList.toggle("text-gray-400", !favoriteOn);
+      const key = favoriteOn ? "asset_detail_modal.favorite_remove" : "asset_detail_modal.favorite_add";
+      favBtn.setAttribute("data-i18n-title", key);
+      favBtn.title = tr(key, favoriteOn ? "Remove from favorites" : "Add to favorites");
+    }
+
+    favBtn?.addEventListener("click", async () => {
+      const user = getUser() as any;
+      if (!user?.id && user?.id !== 0) return;
+
+      if (!editingAssetId) {
+        // Create mode: stage the bit; persisted after the asset exists.
+        favoriteOn = !favoriteOn;
+        paintFavorite();
+        return;
+      }
+
+      // Edit mode: immediate optimistic toggle.
+      const next = !favoriteOn;
+      favoriteOn = next;
+      paintFavorite();
+      try {
+        await setFavorite(Number(user.id), editingAssetId, next);
+      } catch {
+        favoriteOn = !next; // revert
+        paintFavorite();
+        showStatus(tr("asset_detail_modal.error_favorite", "Could not update favorite."), "error");
+        statusBanner.classList.remove("hidden");
+      }
+    });
+
     // Category + Status dropdowns are now SSR-populated from the page's
     // `categories` / `statuses` props (auth cookie → middleware → ALS →
     // apiGet). No client-side hydration needed.
@@ -321,7 +705,10 @@ const {
       if (!categoryCode) {
         emptyEl.classList.remove("hidden");
         charsEl.classList.add("hidden");
-        if (specCountEl) specCountEl.textContent = "";
+        if (specCountEl) {
+          specCountEl.textContent = "";
+          specCountEl.classList.add("hidden");
+        }
         return;
       }
       emptyEl.classList.add("hidden");
@@ -438,7 +825,8 @@ const {
       });
 
       if (specCountEl) {
-        specCountEl.textContent = `${enriched.length} ${tr("asset_detail_modal.fields", "fields")}`;
+        specCountEl.textContent = String(enriched.length);
+        specCountEl.classList.toggle("hidden", enriched.length === 0);
       }
       loadClientTranslations();
     }
@@ -462,7 +850,18 @@ const {
       charsEl.innerHTML = "";
       charsEl.classList.add("hidden");
       emptyEl.classList.remove("hidden");
-      if (specCountEl) specCountEl.textContent = "";
+      if (specCountEl) {
+        specCountEl.textContent = "";
+        specCountEl.classList.add("hidden");
+      }
+      // Relations + favorite + tabs back to their pristine state
+      stagedRelations = [];
+      initialRelByTarget = new Map();
+      renderRelations();
+      clearRelError();
+      favoriteOn = false;
+      paintFavorite();
+      activateTab("chars");
       clearStatus();
     }
 
@@ -471,6 +870,7 @@ const {
       titleEl.setAttribute("data-i18n", "asset_detail_modal.title_create");
       titleEl.textContent = tr("asset_detail_modal.title_create", "New Asset");
       dialog.showModal();
+      loadRelationOptions(); // non-blocking; composer fills as data arrives
     }
 
     async function openEdit(assetId: number | string) {
@@ -480,11 +880,42 @@ const {
       titleEl.textContent = tr("asset_detail_modal.title_edit", "Edit Asset");
       dialog.showModal();
 
+      // Composer options + favorite state load in parallel with the asset.
+      const optionsReady = loadRelationOptions();
+      const user = getUser() as any;
+      if (user?.id || user?.id === 0) {
+        isFavorite(Number(user.id), editingAssetId).then((on) => {
+          favoriteOn = on;
+          paintFavorite();
+        });
+      }
+
       try {
-        const [asset, chars] = await Promise.all([
+        const [asset, chars, relations] = await Promise.all([
           getAsset(editingAssetId),
           getCharacterizationsByAsset(editingAssetId),
+          getAssetRelationsBySource(editingAssetId).catch(() => {
+            showStatus(tr("asset_detail_modal.error_relations", "Could not load related assets."), "error");
+            statusBanner.classList.remove("hidden");
+            return [];
+          }),
         ]);
+
+        // Seed relation state (resolve labels once the options list is in).
+        initialRelByTarget = new Map(relations.map((r) => [r.target, r]));
+        await optionsReady;
+        stagedRelations = relations.map((r) => ({
+          target: r.target,
+          targetLabel:
+            assetOptions.find((a) => Number(a.value) === r.target)?.label ||
+            String(r.target),
+          type: r.type,
+          typeLabel:
+            [...relTypeSel.options].find((o) => o.value === r.type)?.textContent?.trim() ||
+            r.type,
+          rationale: r.rationale ?? "",
+        }));
+        renderRelations();
 
         idField.value = String(asset.id ?? "");
         nameField.value = asset.name ?? "";
@@ -612,6 +1043,51 @@ const {
               feature: featureCode,
               value: newValue,
             });
+          }
+        }
+
+        // 3. Sync related assets (diff staged vs initial).
+        //    Deletions first so a removed-then-re-added target lands on the
+        //    409→PUT reactivation path instead of a duplicate-key error.
+        const stagedTargets = new Set(stagedRelations.map((r) => r.target));
+        for (const [target] of initialRelByTarget) {
+          if (!stagedTargets.has(target)) {
+            try { await deleteAssetRelation(assetId, target); } catch { /* already gone */ }
+          }
+        }
+        for (const rel of stagedRelations) {
+          const initial = initialRelByTarget.get(rel.target);
+          if (!initial) {
+            try {
+              await createAssetRelation({
+                source: assetId,
+                target: rel.target,
+                type: rel.type,
+                rationale: rel.rationale || undefined,
+              });
+            } catch {
+              // 409: an inactive row exists for this pair → reactivate it.
+              await updateAssetRelation(assetId, rel.target, {
+                type: rel.type,
+                rationale: rel.rationale || null,
+                is_active: true,
+              });
+            }
+          } else if (initial.type !== rel.type || (initial.rationale ?? "") !== rel.rationale) {
+            await updateAssetRelation(assetId, rel.target, {
+              type: rel.type,
+              rationale: rel.rationale || null,
+            });
+          }
+        }
+
+        // 4. Favorite (create mode only — edit mode toggles immediately).
+        if (!editingAssetId && favoriteOn) {
+          const user = getUser() as any;
+          if (user?.id || user?.id === 0) {
+            try {
+              await setFavorite(Number(user.id), assetId, true);
+            } catch { /* non-fatal — asset itself saved fine */ }
           }
         }
 

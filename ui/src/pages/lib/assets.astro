@@ -8,6 +8,8 @@ import AssetDetailModal from "../../components/lib/AssetDetailModal.astro";
 import { getAssets } from "@/lib/assets";
 import { getCategoriesSelect } from "@/lib/categories";
 import { getListItemsbyList } from "@/lib/list_items";
+import { getCurrentUser } from "@/lib/auth";
+import { getFavoritesByUser } from "@/lib/favorites";
 
 // ── Fetch data for the list view ──────────────────────────────────────────
 let assets: any[] = [];
@@ -20,6 +22,17 @@ try {
   errorMessage =
     error instanceof Error ? error.message : "Failed to fetch assets from API";
   assets = [];
+}
+
+// Current user's favorites (SSR) → pre-fill the row stars + "my favorites"
+// filter. Non-fatal: on any error the stars just render empty.
+let favIds = new Set<number>();
+try {
+  const me = await getCurrentUser();
+  const favs = await getFavoritesByUser(Number(me.id));
+  favIds = new Set(favs.map((f) => Number(f.asset)));
+} catch {
+  favIds = new Set();
 }
 
 // Status list (ASSET_STATUS) for the in-row label + status filter dropdown
@@ -82,6 +95,8 @@ const data = assets.map((item) => ({
   is_active: item.is_active,
   created_at: item.created_at,
   updated_at: item.updated_at,
+  // "yes"/"no" string so the columnFilter3 equality check works.
+  favorite: favIds.has(item.id) ? "yes" : "no",
 }));
 
 // Delete-only fields for the small confirmation CrudModal
@@ -135,6 +150,12 @@ const fieldKeys = deleteFields.map((f) => f.key);
       // hoisted bundler forbids importing /public/* files).
       import { initCrudPage } from "/scripts/crudClient.js";
       import { deleteAsset } from "/src/lib/assets";
+      import { setFavorite } from "/src/lib/favorites";
+      import { getUser } from "/src/lib/auth";
+      import { getCharacterizationsByAsset } from "/src/lib/characterizations";
+      import { getAssetRelationsBySource } from "/src/lib/asset_relations";
+      import { getListItemsbyList } from "/src/lib/list_items";
+      import { loadClientTranslations } from "/src/utils/i18nClient";
 
       // CrudClient drives the delete modal's prefill flow. The table rows
       // are now SSR-rendered (auth cookie → middleware → ALS → apiGet), so
@@ -144,6 +165,142 @@ const fieldKeys = deleteFields.map((f) => f.key);
         editModalId: "asset-edit-modal", // shim — DataTable still emits this id
         deleteModalId: "asset-delete-modal",
       });
+
+      const escapeHtml = (s) =>
+        String(s ?? "")
+          .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+
+      // id → name map from the SSR-embedded rows (for related-asset labels).
+      let nameById = new Map();
+      try {
+        const rows = JSON.parse(
+          decodeURIComponent(document.getElementById("assets-data")?.dataset.rows || "[]"),
+        );
+        nameById = new Map(rows.map((r) => [Number(r.id), r.name]));
+      } catch { /* leave empty */ }
+
+      // RELATION_TYPE code → label, fetched once and cached.
+      let relTypeMap = null;
+      async function ensureRelTypes() {
+        if (relTypeMap) return;
+        relTypeMap = new Map();
+        try {
+          const lang = localStorage.getItem("lang") || "en";
+          const items = await getListItemsbyList("RELATION_TYPE");
+          const byLang = items.filter((li) => li.lang === lang);
+          for (const li of (byLang.length ? byLang : items)) {
+            relTypeMap.set(li.value, li.label || li.value);
+          }
+        } catch { /* fall back to raw codes */ }
+      }
+      const relTypeLabel = (code) => relTypeMap?.get(code) || code;
+
+      // ── Per-row favorite star toggle ──────────────────────────────────────
+      const paintStar = (btn, on) => {
+        btn.setAttribute("data-fav", on ? "1" : "0");
+        btn.setAttribute("aria-pressed", on ? "true" : "false");
+        const span = btn.querySelector("span");
+        const svg = btn.querySelector("svg");
+        span?.classList.toggle("text-yellow-400", on);
+        span?.classList.toggle("text-gray-400", !on);
+        svg?.setAttribute("fill", on ? "currentColor" : "none");
+      };
+
+      document.addEventListener(
+        "click",
+        async (e) => {
+          const favBtn = e.target.closest?.('[data-action="favorite"]');
+          if (favBtn) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            const user = getUser();
+            if (!user || (user.id === undefined || user.id === null)) {
+              showToast("Sign in to manage favorites", "error");
+              return;
+            }
+            const id = Number(favBtn.getAttribute("data-id"));
+            const wasOn = favBtn.getAttribute("data-fav") === "1";
+            const next = !wasOn;
+            paintStar(favBtn, next); // optimistic
+            try {
+              await setFavorite(Number(user.id), id, next);
+            } catch (err) {
+              paintStar(favBtn, wasOn); // revert
+              showToast(err instanceof Error ? err.message : "Could not update favorite", "error");
+            }
+            return;
+          }
+
+          const detailBtn = e.target.closest?.('[data-action="detail"]');
+          if (detailBtn) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            await toggleDetailRow(detailBtn);
+          }
+        },
+        true /* capture so we beat advancedTable's bubble delegation */,
+      );
+
+      // ── Master-detail inline expand row ───────────────────────────────────
+      async function toggleDetailRow(btn) {
+        const tr = btn.closest("tr");
+        if (!tr) return;
+
+        // Collapse if this row's detail is already open.
+        const sib = tr.nextElementSibling;
+        if (sib && sib.hasAttribute("data-detail-row")) {
+          sib.remove();
+          return;
+        }
+        // Only one open at a time.
+        document
+          .querySelectorAll('#assets tbody tr[data-detail-row]')
+          .forEach((r) => r.remove());
+
+        const id = Number(btn.getAttribute("data-id"));
+        const colCount = tr.children.length;
+        const detail = document.createElement("tr");
+        detail.setAttribute("data-detail-row", "");
+        detail.innerHTML = `<td colspan="${colCount}" class="bg-gray-50 dark:bg-gray-900/40 px-4 py-3">
+          <div class="text-sm text-gray-400" data-i18n="common.loading">Loading…</div></td>`;
+        tr.after(detail);
+        const cell = detail.firstElementChild;
+
+        try {
+          await ensureRelTypes();
+          const [chars, rels] = await Promise.all([
+            getCharacterizationsByAsset(id),
+            getAssetRelationsBySource(id),
+          ]);
+          cell.innerHTML = renderDetail(chars, rels);
+          loadClientTranslations();
+        } catch (err) {
+          cell.innerHTML = `<div class="text-sm text-red-600 dark:text-red-400">${escapeHtml(err instanceof Error ? err.message : "Error")}</div>`;
+        }
+      }
+
+      function renderDetail(chars, rels) {
+        const charsHtml = (chars && chars.length)
+          ? `<ul class="space-y-1">${chars.map((c) =>
+              `<li class="text-sm"><span class="font-medium" data-i18n="features.${escapeHtml(c.feature)}">${escapeHtml(c.feature)}</span>: ${escapeHtml(c.value ?? "")}</li>`).join("")}</ul>`
+          : `<p class="text-sm text-gray-400" data-i18n="asset_table.detail_empty">—</p>`;
+        const relsHtml = (rels && rels.length)
+          ? `<ul class="space-y-1">${rels.map((r) =>
+              `<li class="text-sm">${escapeHtml(nameById.get(Number(r.target)) ?? r.target)}<span class="ml-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">${escapeHtml(relTypeLabel(r.type))}</span>${r.rationale ? ` <span class="text-gray-500 dark:text-gray-400">— ${escapeHtml(r.rationale)}</span>` : ""}</li>`).join("")}</ul>`
+          : `<p class="text-sm text-gray-400" data-i18n="asset_table.detail_empty">—</p>`;
+        return `
+          <div class="grid gap-4 md:grid-cols-2">
+            <div>
+              <h5 class="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500" data-i18n="asset_table.detail_characterizations">Characterizations</h5>
+              ${charsHtml}
+            </div>
+            <div>
+              <h5 class="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500" data-i18n="asset_table.detail_related">Related Assets</h5>
+              ${relsHtml}
+            </div>
+          </div>`;
+      }
 
       // Toast helper
       function showToast(message, variant = "info") {
@@ -230,6 +387,14 @@ const fieldKeys = deleteFields.map((f) => f.key);
           filterOptions={categories}
           columnFilter2="status"
           filterOptions2={status.map((s) => ({ value: s.value, label: s.label }))}
+          columnFilter3="favorite"
+          filter3AllLabel="asset_table.fav_filter_all"
+          filterOptions3={[
+            { value: "yes", label: "My favorites", i18n: "asset_table.fav_filter_mine" },
+          ]}
+          favoriteAction={true}
+          favoriteKey="favorite"
+          detailExpand={true}
         />
       </div>
     </div>

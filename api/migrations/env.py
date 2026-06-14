@@ -1,10 +1,11 @@
 """Alembic migration environment configuration."""
-import os
 import logging
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 from sqlmodel import SQLModel
+
+from app.core.config import settings
 
 # Import all models so that Alembic can detect them for autogenerate
 from app.admin.internal.models import (
@@ -23,13 +24,9 @@ if config.config_file_name is not None:
 
 logger = logging.getLogger('alembic.env')
 
-# Set SQLAlchemy URL from environment
-database_url = os.getenv("DATABASE_URL") or (
-    f"postgresql://{os.getenv('DB_USER', '')}:{os.getenv('DB_PASSWORD', '')}"
-    f"@{os.getenv('DB_HOST', 'db')}:{os.getenv('DB_PORT', '5432')}/"
-    f"{os.getenv('DB_SCHEMA', 'synapxia')}"
-)
-config.set_main_option("sqlalchemy.url", database_url)
+# Single source of truth for the DB URL — same resolver the app uses.
+# Precedence: DATABASE_URL → POSTGRES_URL (alias) → composed DB_* vars.
+config.set_main_option("sqlalchemy.url", settings.database_url)
 
 # Set up target metadata (all SQLModel tables)
 target_metadata = SQLModel.metadata

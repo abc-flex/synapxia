@@ -1,10 +1,90 @@
 # Changelog
 
-All notable changes to SynapxIA are recorded here.
-Entries are written automatically when AI-assisted changes are merged to `develop`, `main`, or `production`.
-Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+Append-only project log. Newest entries at the top.
+
+**Every important group of changes gets an entry** — every PR, every merge commit, and every direct push to `develop` / `main` / `production`. A direct push is not exempt just because there is no PR; it is still a change set that needs to be logged, before or alongside the push.
+
+**One PR / merge / direct-push = one entry.** Don't append per individual commit. If you commit again on the same branch (review fixups, follow-ups), **update the entry you already added on that branch** instead of appending a new one. Never edit entries from *other* PRs.
+
+Format (note the **time** — needed so same-day entries stay ordered and traceable):
+
+```
+## YYYY-MM-DD HH:MM — Short descriptive title
+- What changed and why (1–3 bullets).
+- Files affected: `path/to/file.ts`
+```
+
+Use 24-hour local time (Colombia/America for this team). Agents: if you don't have the current time loaded, run `date '+%Y-%m-%d %H:%M'`.
+
+Historical entries below (before the switchover) use a Keep-a-Changelog–style auto-generated format from the old git-hook flow. They are kept as-is for traceability; new entries follow the format above.
 
 ---
+
+## 2026-06-10 01:58 — Adopt human-written CHANGELOG flow (mirror safe-transfers)
+
+- Dropped the `.githooks/post-commit` + `.githooks/post-merge` + `.claude/hooks/update-changelog.sh` automation. From now on, Claude (and humans) write **one entry per PR / merge / direct push** here by hand, before or alongside the change — the rule is documented in `AGENTS.md` "Mandatory update rules" and reminded in `CLAUDE.md` (which `@`-imports both `AGENTS.md` and `memory/MEMORY.md` so every session loads them).
+- Format change: switched from Keep-a-Changelog `### Added / Changed / Fixed` blocks driven by commit subjects to a hand-written `## YYYY-MM-DD HH:MM — Title` block with 1–3 narrative bullets and an explicit `Files affected:` list. Historical entries below this one are preserved unchanged.
+- Each clone that previously ran `make hooks` needs `git config --unset core.hooksPath` once to stop pointing at the (now-deleted) `.githooks/` dir; the `hooks` Make target is removed.
+- Files affected: `memory/CHANGELOG.md`, `AGENTS.md`, `CLAUDE.md`, `Makefile`, `.githooks/post-commit` (deleted), `.githooks/post-merge` (deleted), `.claude/hooks/update-changelog.sh` (deleted).
+
+---
+
+## [develop] — 2026-06-10 01:27 · 7016f33
+
+### Added
+- `e06680d` unify database URL resolution and update environment variable d… (#42)
+- `58e00a7` **(ui)** filter items from lists by the current language, or lang='en' in CrudModal form
+- `3d00d54` update LanguageSwitcher component to include forceDropdown prop
+
+### Changed
+- `e2eba13` **(ui)** add filterLang: true to lists that are loaded with getListItemsbyList()
+- `e7cbeae` **(ui)** default selected value for filters applied on page load
+- `49a0869` refactor admin/list_items by add lang field
+- `6733ca0` update dependencies and remove bun.lockb (#40)
+
+### Other
+- `7016f33` Ci/unify db url env var (#43)
+- `e78a869` Style: lading page (#41)
+
+---
+
+
+## [develop] — 2026-06-10 00:54 · d4e20a6
+
+### Added
+- `58e00a7` **(ui)** filter items from lists by the current language, or lang='en' in CrudModal form
+- `3d00d54` update LanguageSwitcher component to include forceDropdown prop
+
+### Changed
+- `e2eba13` **(ui)** add filterLang: true to lists that are loaded with getListItemsbyList()
+- `e7cbeae` **(ui)** default selected value for filters applied on page load
+- `49a0869` refactor admin/list_items by add lang field
+- `6733ca0` update dependencies and remove bun.lockb (#40)
+
+### Other
+- `e78a869` Style: lading page (#41)
+
+---
+
+
+## [develop] — 2026-06-09 23:11 · e2eba13
+
+### Added
+- `3d00d54` update LanguageSwitcher component to include forceDropdown prop
+
+### Changed
+- `e2eba13` **(ui)** add filterLang: true to lists that are loaded with getListItemsbyList()
+
+---
+
+
+## [develop] — 2026-06-09 21:48 · 3d00d54
+
+### Added
+- `3d00d54` update LanguageSwitcher component to include forceDropdown prop
+
+---
+
 
 ## [develop] — 2026-06-09 18:30 · e78a869
 

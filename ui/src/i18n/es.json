@@ -368,6 +368,15 @@
   "status_modal": {
     "filter_title": "Todos los estados"
   },
+  "asset_table": {
+    "favorite": "Favorito",
+    "fav_filter_all": "Todos los activos",
+    "fav_filter_mine": "Mis favoritos",
+    "detail_expand": "Ver detalles",
+    "detail_characterizations": "Caracterizaciones",
+    "detail_related": "Activos relacionados",
+    "detail_empty": "—"
+  },
   "asset_detail_modal": {
     "title_create": "Nuevo Activo",
     "title_edit": "Editar Activo",

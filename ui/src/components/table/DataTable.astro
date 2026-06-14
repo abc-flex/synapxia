@@ -27,9 +27,22 @@ const {
   filterOptions2 = [],
   // Default selected value for the second filter (applied on page load).
   filterDefaultValue2 = "",
+  // Optional third filter (e.g. a favorites/permissions toggle). Each option
+  // may carry an `i18n` key so the label localizes at runtime.
+  columnFilter3 = null,
+  filterOptions3 = [],
+  filterDefaultValue3 = "",
+  // i18n key for the third filter's "all" (empty) option.
+  filter3AllLabel = null,
   masterPage = null,
   detailPage = null,
   mdItem = null,
+  // Per-row favorite star toggle (emits data-action="favorite").
+  favoriteAction = false,
+  // Key on each row holding "yes"/"no" for the initial star state.
+  favoriteKey = "favorite",
+  // Per-row master-detail expand button (emits data-action="detail").
+  detailExpand = false,
 } = Astro.props;
 
 // Filtrar columnas visibles (ocultar si visible: false)
@@ -105,6 +118,26 @@ const visibleColumns = columns.filter((col) => col.visible !== false);
               <option value="" data-i18n={`${columnFilter2}_modal.filter_title`}></option>
               {filterOptions2.map((opt) => (
                 <option value={opt.value || opt.code} selected={(opt.value || opt.code) === filterDefaultValue2}>
+                  {opt.label || opt.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )
+      }
+      {
+        columnFilter3 && data.length > 0 && (
+          <div class="relative">
+            <select
+              id={`${tableId}-filter3`}
+              data-column-key={columnFilter3}
+              class="w-100 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800
+                  focus:border-indigo-500 focus:ring-indigo-500
+                  dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:focus:border-indigo-400"
+            >
+              <option value="" data-i18n={filter3AllLabel || `${columnFilter3}_modal.filter_title`}></option>
+              {filterOptions3.map((opt) => (
+                <option value={opt.value || opt.code} data-i18n={opt.i18n} selected={(opt.value || opt.code) === filterDefaultValue3}>
                   {opt.label || opt.name}
                 </option>
               ))}
@@ -246,6 +279,36 @@ const visibleColumns = columns.filter((col) => col.visible !== false);
                     </a>
                     <span class="dot">•</span>
                   )}
+                  {detailExpand && (
+                    <button
+                      class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded detail-expand-btn"
+                      data-id={row.id}
+                      data-action="detail"
+                      data-i18n-title="asset_table.detail_expand"
+                      title=""
+                    >
+                      <span class="w-5 h-5 inline-block">
+                        <Fragment set:html={listSvg} />
+                      </span>
+                    </button>
+                  )}
+                  {favoriteAction && (
+                    <button
+                      class="p-1 hover:bg-yellow-50 dark:hover:bg-gray-800 rounded favorite-btn"
+                      data-id={row.id}
+                      data-action="favorite"
+                      data-fav={row[favoriteKey] === "yes" ? "1" : "0"}
+                      aria-pressed={row[favoriteKey] === "yes" ? "true" : "false"}
+                      data-i18n-title="asset_table.favorite"
+                      title=""
+                    >
+                      <span class={`w-5 h-5 inline-block ${row[favoriteKey] === "yes" ? "text-yellow-400" : "text-gray-400"}`}>
+                        <svg viewBox="0 0 20 20" fill={row[favoriteKey] === "yes" ? "currentColor" : "none"} stroke="currentColor" stroke-width="1.5">
+                          <path d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.3 4.02a1 1 0 00.95.69h4.22c.97 0 1.37 1.24.59 1.81l-3.42 2.48a1 1 0 00-.36 1.12l1.3 4.02c.3.92-.75 1.69-1.54 1.12l-3.41-2.48a1 1 0 00-1.18 0l-3.41 2.48c-.78.57-1.84-.2-1.54-1.12l1.3-4.02a1 1 0 00-.36-1.12L2 9.45c-.78-.57-.38-1.81.6-1.81h4.21a1 1 0 00.95-.69l1.3-4.02z" />
+                        </svg>
+                      </span>
+                    </button>
+                  )}
                   <button
                     class="p-1 hover:bg-blue-100 rounded edit-btn"
                     data-id={row.id}
@@ -340,7 +403,7 @@ const visibleColumns = columns.filter((col) => col.visible !== false);
 
 </div>
 
-<script type="module" define:vars={{ tableId, data, columns, visibleColumns, columnFilter, columnFilter2, filterDefaultValue, filterDefaultValue2 }}>
+<script type="module" define:vars={{ tableId, data, columns, visibleColumns, columnFilter, columnFilter2, filterDefaultValue, filterDefaultValue2, columnFilter3, filterDefaultValue3 }}>
   import { initAdvancedTable } from "/src/components/table/advancedTable";
-  initAdvancedTable(tableId, data, columns, visibleColumns, columnFilter, columnFilter2, filterDefaultValue, filterDefaultValue2);
+  initAdvancedTable(tableId, data, columns, visibleColumns, columnFilter, columnFilter2, filterDefaultValue, filterDefaultValue2, columnFilter3, filterDefaultValue3);
 </script>

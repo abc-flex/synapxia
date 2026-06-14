@@ -368,6 +368,15 @@
   "status_modal": {
     "filter_title": "All Statuses"
   },
+  "asset_table": {
+    "favorite": "Favorite",
+    "fav_filter_all": "All assets",
+    "fav_filter_mine": "My favorites",
+    "detail_expand": "Show details",
+    "detail_characterizations": "Characterizations",
+    "detail_related": "Related Assets",
+    "detail_empty": "—"
+  },
   "asset_detail_modal": {
     "title_create": "New Asset",
     "title_edit": "Edit Asset",

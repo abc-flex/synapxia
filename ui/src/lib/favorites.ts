@@ -13,6 +13,13 @@
 import { apiGet, apiPost, apiPut, apiDelete } from "./api";
 import type { Favorite, FavoriteCreate, FavoriteUpdate } from "../types/api";
 
+/** A single user's active favorites (powers the "my favorites" filter). */
+export async function getFavoritesByUser(userId: number): Promise<Favorite[]> {
+  return apiGet<Favorite[]>(
+    `/api/favorites/user/${encodeURIComponent(String(userId))}`,
+  );
+}
+
 export async function getFavorite(
   userId: number,
   assetId: number,

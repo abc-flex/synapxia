@@ -33,6 +33,28 @@ def get_all(
     return favorites
 
 
+# Registered BEFORE the composite /{user_id}/{asset_id} route so that
+# GET /user/5 matches here instead of parsing "user" as an int user_id.
+@router.get("/user/{user_id}", response_model=List[Favorite])
+def get_by_user(
+    user_id: int, skip: int = 0, limit: int = 1000,
+    session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
+) -> List[Favorite]:
+    """
+    List a single user's active favorites (for the "my favorites" filter).
+
+    - **user_id**: User id
+    - **skip** / **limit**: pagination
+    """
+    return session.exec(
+        select(Favorite)
+        .where(Favorite.user_id == user_id, Favorite.is_active == True)
+        .offset(skip).limit(limit)
+        .order_by(Favorite.asset)
+    ).all()
+
+
 @router.get("/{user_id}/{asset_id}", response_model=Favorite)
 def get(
     user_id: int, asset_id: int, session: Session = Depends(get_db_session),

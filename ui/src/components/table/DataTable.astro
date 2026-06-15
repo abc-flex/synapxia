@@ -53,6 +53,23 @@ const {
 const visibleColumns = columns.filter((col) => col.visible !== false);
 // How many column filters are configured — drives the mobile "Filtros" button.
 const filterCount = [columnFilter, columnFilter2, columnFilter3].filter(Boolean).length;
+
+// Semantic colors for status pills (columns flagged `as: "status"`). Tone is
+// inferred from the status text so it works across entities/locales. Literal
+// class strings so Tailwind's JIT keeps them.
+const TONE: Record<string, string> = {
+  green: "bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-300",
+  red: "bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-300",
+  amber: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+  indigo: "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300",
+};
+const STATUS_TONE = (val: unknown): string => {
+  const v = String(val ?? "").toLowerCase();
+  if (/(in[\s-]?use|en uso|activ|active|publi|aprob|approv|complet|done|live)/.test(v)) return TONE.green;
+  if (/(deprecat|obsolet|retir|inactiv|archiv|reject|rechaz|error|fail|cancel)/.test(v)) return TONE.red;
+  if (/(review|revisi|pending|pendiente|draft|borrador|progress|proceso|hold|espera)/.test(v)) return TONE.amber;
+  return TONE.indigo;
+};
 ---
 
 <div class="space-y-2">
@@ -279,8 +296,24 @@ const filterCount = [columnFilter, columnFilter2, columnFilter3].filter(Boolean)
           data.map((row) => (
             <tr class="border-b border-gray-200 dark:border-gray-800">
               {visibleColumns.map((col) => (
-                <td class="px-2 py-1" data-label={t(locale, col.label)}>
-                  {row[col.key] === true || row[col.key] === "true" ? (
+                <td class="px-2 py-1" data-label={t(locale, col.label)} data-col={col.as}>
+                  {col.as === "status" && row[col.key] ? (
+                    <span class={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_TONE(row[col.key])}`}>
+                      {row[col.key]}
+                    </span>
+                  ) : col.as === "tags" ? (
+                    <span class="flex flex-wrap gap-1.5">
+                      {String(row[col.key] ?? "")
+                        .split(",")
+                        .map((tg) => tg.trim())
+                        .filter(Boolean)
+                        .map((tag) => (
+                          <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                            {tag}
+                          </span>
+                        ))}
+                    </span>
+                  ) : row[col.key] === true || row[col.key] === "true" ? (
                     <span class="w-5 h-5 inline-block text-blue-600">
                       <Fragment set:html={checkSvg} />
                     </span>

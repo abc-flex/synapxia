@@ -611,6 +611,14 @@
     content: "";
   }
 
+  /* Tags cell: label on its own line, chips wrap left-aligned below. */
+  .datatable-dense tbody td[data-col="tags"] {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+    text-align: left;
+  }
+
   .datatable-dense tbody td.actions-cell {
     justify-content: flex-end;
     border-top: 1px solid #f1f5f9;

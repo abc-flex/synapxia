@@ -4,9 +4,13 @@ from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
-from ..internal.models import Metric, MetricCreate, MetricUpdate, Dimension, Assignment
+from ..internal.models import (
+    Metric, MetricCreate, MetricUpdate, MetricByDimension,
+    Dimension, Assignment, Role, Team,
+)
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
 from ...internal.permissions import require_privilege
@@ -31,6 +35,68 @@ def get_all(
                            .offset(skip).limit(limit)
                            .order_by(Metric.measured_at.desc())).all()
     return metrics
+
+
+@router.get("/dimension/{code}", response_model=List[MetricByDimension])
+def get_by_dimension(
+    code: str, date: datetime, session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("COLLAB", "METRICS", can_edit=False))
+) -> List[MetricByDimension]:
+    """
+    Latest metric value per assignment for a dimension, as of a date.
+
+    Returns one row per assignment — the most recent active measurement on or
+    before the cut-off ``date`` — joined with the assigned user, role and team.
+
+    - **code**: Dimension code to filter metrics
+    - **date**: Cut-off timestamp (ISO 8601); only metrics measured on or before it count
+    """
+    # Latest measurement per assignment for this dimension, up to the cut-off.
+    latest = (
+        select(
+            Metric.assignment.label("assignment"),
+            func.max(Metric.measured_at).label("measured_at"),
+        )
+        .where(Metric.dimension == code)
+        .where(Metric.is_active == True)
+        .where(Metric.measured_at <= date)
+        .group_by(Metric.assignment)
+        .subquery()
+    )
+
+    rows = session.exec(
+        select(Metric, User, Assignment.role, Assignment.team)
+        .join(
+            latest,
+            (Metric.assignment == latest.c.assignment)
+            & (Metric.measured_at == latest.c.measured_at),
+        )
+        .join(Assignment, Metric.assignment == Assignment.id)
+        .join(User, Assignment.user_id == User.id)
+        .where(Metric.dimension == code)
+        .where(Metric.is_active == True)
+    ).all()
+
+    # Dedupe in case two metrics share the same assignment + measured_at (keep highest id).
+    by_assignment: dict[int, tuple[MetricByDimension, int]] = {}
+    for metric, user, role, team in rows:
+        existing = by_assignment.get(metric.assignment)
+        if existing is not None and (existing[1] >= metric.id):
+            continue
+        by_assignment[metric.assignment] = (
+            MetricByDimension(
+                name=f"{user.first_name} {user.last_name}".strip(),
+                email=user.email,
+                role=role or "",
+                team=team or "",
+                metric=metric.value,
+                date=metric.measured_at.strftime("%d/%m/%Y"),
+                observation=metric.observation or "",
+            ),
+            metric.id,
+        )
+
+    return [item[0] for item in by_assignment.values()]
 
 
 @router.get("/{id}", response_model=Metric)

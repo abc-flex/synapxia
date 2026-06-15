@@ -663,6 +663,40 @@ export interface AssetRelationUpdate {
 }
 
 // ============================================================================
+// Asset permissions — surrogate-id rows granting a target (USER/ROLE/TEAM/
+// UNIT/PROJECT/PUBLIC × access level) access to an asset. `asset` is the
+// asset id; `target_code` is the target entity's id/code ("PUBLIC" for PUBLIC).
+// ============================================================================
+
+export interface AssetPermission {
+  id: number;
+  asset: number;
+  target_type: string;
+  target_code: string;
+  access_level: string;
+  valid_from?: string;
+  valid_to?: string | null;
+  is_active?: boolean;
+}
+
+export interface AssetPermissionCreate {
+  asset: number;
+  target_type: string;
+  target_code: string;
+  access_level: string;
+  valid_to?: string | null;
+  is_active?: boolean;
+}
+
+export interface AssetPermissionUpdate {
+  target_type?: string;
+  target_code?: string;
+  access_level?: string;
+  valid_to?: string | null;
+  is_active?: boolean;
+}
+
+// ============================================================================
 // Favorites — composite-key (user_id, asset) bookmark rows. `asset` is the
 // asset id (assets.id).
 // ============================================================================

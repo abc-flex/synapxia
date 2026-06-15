@@ -578,6 +578,39 @@
     content: "";
   }
 
+  /* First column = card title, second = subtitle. No labels, left-aligned,
+     with a divider under the subtitle — gives the fields hierarchy instead of
+     a uniform label/value list (matches the asset-card mockup). */
+  .datatable-dense tbody td:first-child:not(.actions-cell) {
+    display: block;
+    text-align: left;
+    padding: 0.15rem 0 0 !important;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #0f172a;
+  }
+  .dark .datatable-dense tbody td:first-child:not(.actions-cell) {
+    color: #f1f5f9;
+  }
+  .datatable-dense tbody td:nth-child(2):not(.actions-cell) {
+    display: block;
+    text-align: left;
+    margin-bottom: 0.4rem;
+    padding: 0 0 0.6rem !important;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 0.8125rem;
+    font-weight: 400;
+    color: #64748b;
+  }
+  .dark .datatable-dense tbody td:nth-child(2):not(.actions-cell) {
+    border-bottom-color: #1e293b;
+    color: #94a3b8;
+  }
+  .datatable-dense tbody td:first-child:not(.actions-cell)::before,
+  .datatable-dense tbody td:nth-child(2):not(.actions-cell)::before {
+    content: "";
+  }
+
   .datatable-dense tbody td.actions-cell {
     justify-content: flex-end;
     border-top: 1px solid #f1f5f9;

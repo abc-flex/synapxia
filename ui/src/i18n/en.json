@@ -17,7 +17,9 @@
     "edit_profile": "Edit profile",
     "account_settings": "Account settings",
     "support": "Support",
-    "sign_out": "Sign out"
+    "sign_out": "Sign out",
+    "theme": "Theme",
+    "language": "Language"
   },
   "notification_menu": {
     "title": "Notification"

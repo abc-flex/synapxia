@@ -129,10 +129,14 @@ const currentModuleName = pathSegments[0] || "";
     if (typeof window === "undefined") return;
 
     const storageKey = "theme";
-    // Multiple toggles exist (header switcher + account-menu row on mobile);
-    // bind them all and keep their pressed-state in sync.
+    // Multiple controls exist: header switcher (toggle) + account-menu segmented
+    // light/dark buttons. Bind them all and keep their state in sync.
     const toggles = document.querySelectorAll<HTMLElement>("[data-theme-toggle]");
+    const segs = document.querySelectorAll<HTMLElement>("[data-theme-set]");
     const root = document.documentElement;
+
+    // Active-segment styling for the account-menu light/dark pill.
+    const SEG_ACTIVE = ["bg-white", "text-indigo-600", "shadow-sm", "dark:bg-gray-900", "dark:text-indigo-300"];
 
     const apply = (theme: "light" | "dark") => {
       if (theme === "dark") {
@@ -141,6 +145,12 @@ const currentModuleName = pathSegments[0] || "";
         root.classList.remove("dark");
       }
       toggles.forEach((el) => el.setAttribute("aria-pressed", String(theme === "dark")));
+      segs.forEach((el) => {
+        const active = el.getAttribute("data-theme-set") === theme;
+        el.setAttribute("aria-pressed", String(active));
+        if (active) el.classList.add(...SEG_ACTIVE);
+        else el.classList.remove(...SEG_ACTIVE);
+      });
       localStorage.setItem(storageKey, theme);
     };
 
@@ -154,6 +164,12 @@ const currentModuleName = pathSegments[0] || "";
       toggle.addEventListener("click", () => {
         const next = root.classList.contains("dark") ? "light" : "dark";
         apply(next as "light" | "dark");
+      });
+    });
+    segs.forEach((seg) => {
+      seg.addEventListener("click", () => {
+        const set = seg.getAttribute("data-theme-set");
+        if (set === "light" || set === "dark") apply(set);
       });
     });
   })();

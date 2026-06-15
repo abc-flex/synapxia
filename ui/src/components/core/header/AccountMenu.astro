@@ -77,21 +77,32 @@ const initials = name
     </div>
 
     {/* Mobile-only preferences — on desktop these live in the header. */}
-    <div class="sm:hidden mb-3 space-y-3 border-b border-gray-200 pb-3 dark:border-gray-800">
-      <button type="button" data-theme-toggle aria-pressed="false" class="account-link w-full">
-        <span class="account-link-icon w-4 h-4 inline-block text-current shrink-0" aria-hidden="true">
-          <span class="hidden dark:block"><Fragment set:html={SunIcon} /></span>
-          <span class="dark:hidden"><Fragment set:html={MoonIcon} /></span>
+    <div class="sm:hidden mb-2 space-y-1 border-b border-gray-200 pb-3 dark:border-gray-800">
+      {/* Theme */}
+      <div class="flex items-center justify-between gap-3 px-3 py-1.5">
+        <span class="text-sm font-medium text-gray-700 dark:text-gray-300" data-i18n="account_menu.theme">
+          {t(locale, "account_menu.theme")}
         </span>
-        <span data-i18n="header.toggle_theme">{t(locale, "header.toggle_theme")}</span>
-      </button>
+        <div role="group" aria-label="Theme" data-i18n-aria-label="account_menu.theme"
+          class="inline-flex items-center gap-0.5 rounded-full border border-gray-200 bg-gray-100 p-0.5 dark:border-gray-700 dark:bg-gray-800">
+          <button type="button" data-theme-set="light" aria-label="Light"
+            class="theme-seg flex h-7 w-7 items-center justify-center rounded-full text-gray-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:text-gray-400">
+            <span class="h-4 w-4 inline-block"><Fragment set:html={SunIcon} /></span>
+          </button>
+          <button type="button" data-theme-set="dark" aria-label="Dark"
+            class="theme-seg flex h-7 w-7 items-center justify-center rounded-full text-gray-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:text-gray-400">
+            <span class="h-4 w-4 inline-block"><Fragment set:html={MoonIcon} /></span>
+          </button>
+        </div>
+      </div>
 
-      <div class="px-3">
-        <p class="mb-1.5 text-xs font-medium text-gray-400 dark:text-gray-500" data-i18n="header.change_language">
-          {t(locale, "header.change_language")}
-        </p>
-        <div role="radiogroup" aria-label="Language" data-i18n-aria-label="header.change_language"
-          class="inline-flex items-center gap-0.5 rounded-full border border-gray-200 bg-gray-100 p-1 dark:border-gray-700 dark:bg-gray-800">
+      {/* Language */}
+      <div class="flex items-center justify-between gap-3 px-3 py-1.5">
+        <span class="text-sm font-medium text-gray-700 dark:text-gray-300" data-i18n="account_menu.language">
+          {t(locale, "account_menu.language")}
+        </span>
+        <div role="radiogroup" aria-label="Language" data-i18n-aria-label="account_menu.language"
+          class="inline-flex items-center gap-0.5 rounded-full border border-gray-200 bg-gray-100 p-0.5 dark:border-gray-700 dark:bg-gray-800">
           {languagesData.map((lang) => (
             <button
               type="button"
@@ -99,7 +110,7 @@ const initials = name
               aria-checked="false"
               data-acct-lang={lang.code}
               title={lang.label}
-              class="acct-lang-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-gray-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:text-gray-400"
+              class="acct-lang-pill inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold text-gray-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:text-gray-400"
             >
               <span aria-hidden="true" class="text-sm leading-none">{lang.flag}</span>
               <span>{lang.code.toUpperCase()}</span>

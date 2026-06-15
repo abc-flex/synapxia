@@ -49,16 +49,31 @@ import SearchBar from "./SearchBar.astro";
       </span>
     </button>
 
-    {/* The brand lives in the sidebar (desktop) and the slide-in drawer (mobile),
-        so the header stays a single uncluttered row of: toggle · search · controls. */}
+    {/* Brand — shown on mobile (the sidebar carries it on desktop). Matches the
+        mockup: logo + name on the left of the bar. */}
+    {
+      showBrandOnMobile ? (
+        <a href="/" class="flex min-w-0 items-center gap-2 lg:hidden" aria-label={title}>
+          <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-sm font-semibold text-white">
+            IA
+          </span>
+          <span class="truncate text-base font-bold text-gray-900 dark:text-white">
+            {title}
+          </span>
+        </a>
+      ) : null
+    }
+
     <SearchBar />
 
     {/* Spacer pushes the controls to the right edge */}
     <div class="flex-1"></div>
 
     <div class="flex shrink-0 items-center gap-1.5 sm:gap-2">
-      <ThemeSwitcher />
-      <LanguageSwitcher />
+      {/* Theme + language live in the header on tablet/desktop; on phones the bar
+          stays clean (bell + account only), matching the mockup. */}
+      <span class="hidden sm:flex"><ThemeSwitcher /></span>
+      <span class="hidden sm:flex"><LanguageSwitcher /></span>
       <NotificationMenu />
 
       <AccountMenu

@@ -140,7 +140,8 @@
     "delete_confirmation": "Are you sure you want to delete record",
     "delete_warning": "This action cannot be undone.",
     "export": "Export",
-    "no_results": "No results"
+    "no_results": "No results",
+    "filters": "Filters"
   },
   "business_unit_modal": {
     "code": "Code",

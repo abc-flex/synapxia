@@ -431,7 +431,21 @@
     "favorite_add": "Añadir a favoritos",
     "favorite_remove": "Quitar de favoritos",
     "error_relations": "No se pudieron cargar los activos relacionados.",
-    "error_favorite": "No se pudo actualizar el favorito."
+    "error_favorite": "No se pudo actualizar el favorito.",
+    "tab_permissions": "Permisos",
+    "perm_target_type": "Tipo de destino",
+    "perm_target": "Destino",
+    "perm_access": "Nivel de acceso",
+    "perm_choose_target_type": "— elige tipo —",
+    "perm_choose_target": "— elige destino —",
+    "perm_choose_access": "— elige acceso —",
+    "perm_add": "Añadir permiso",
+    "perm_remove": "Quitar",
+    "perm_empty": "Aún no hay permisos.",
+    "perm_duplicate": "Este destino ya tiene un permiso.",
+    "perm_missing_fields": "Elige tipo de destino, destino y nivel de acceso.",
+    "perm_public": "Público",
+    "error_permissions": "No se pudieron cargar los permisos."
   },
   "features": {
     "LANGUAGE": "Lenguaje",

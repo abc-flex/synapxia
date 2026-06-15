@@ -431,7 +431,21 @@
     "favorite_add": "Add to favorites",
     "favorite_remove": "Remove from favorites",
     "error_relations": "Could not load related assets.",
-    "error_favorite": "Could not update favorite."
+    "error_favorite": "Could not update favorite.",
+    "tab_permissions": "Permissions",
+    "perm_target_type": "Target type",
+    "perm_target": "Target",
+    "perm_access": "Access level",
+    "perm_choose_target_type": "— choose type —",
+    "perm_choose_target": "— choose target —",
+    "perm_choose_access": "— choose access —",
+    "perm_add": "Add permission",
+    "perm_remove": "Remove",
+    "perm_empty": "No permissions yet.",
+    "perm_duplicate": "This target already has a permission.",
+    "perm_missing_fields": "Pick a target type, target and access level.",
+    "perm_public": "Public",
+    "error_permissions": "Could not load permissions."
   },
   "features": {
     "LANGUAGE": "Language",

@@ -18,6 +18,19 @@ export async function getProjects(team?: string, skip: number = 0, limit: number
   return apiGet<Project[]>(`/api/projects/${queryString}`);
 }
 
+export interface ProjectSelectOption {
+  value: string; // project code
+  label: string; // project name
+}
+
+/**
+ * Lightweight {value,label} list of active projects for UI dropdowns
+ * (e.g. the PROJECT target in the asset permissions composer).
+ */
+export async function getProjectsSelect(): Promise<ProjectSelectOption[]> {
+  return apiGet<ProjectSelectOption[]>('/api/projects/select');
+}
+
 /**
  * Fetch a single project by its code
  * @param code - Unique project code

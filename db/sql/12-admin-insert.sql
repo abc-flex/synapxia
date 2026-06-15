@@ -111,15 +111,15 @@ INSERT INTO options (module, code, name, description, sort_order, type, path, ic
 
 -- ===== Module: PROCESSES =====
 INSERT INTO options (module, code, name, description, sort_order, type, path, icon) VALUES
+    ('PROC','PROCESSES','Process Catalog',
+     'Catalog of available processes.',
+     10,'FORM','/proc/process_catalog','rectangle-group'),
     ('PROC','VALUE_CHAIN','Value Chain',
      'Identify stages where AI can create impact.',
-     10,'FORM','/proc/value_chain','link'),
+     20,'FORM','/proc/value_chain','link'),
     ('PROC','MAP','Process Map',
      'High-level process landscape representation.',
-     20,'FORM','/proc/process_map','map'),
-    ('PROC','MODELS','Process Models',
-     'Document and relate detailed process models.',
-     30,'FORM','/proc/process_models','rectangle-group');
+     30,'FORM','/proc/process_map','map');
 
 -- **********************************
 -- ******** Table: Profiles *********
@@ -163,7 +163,7 @@ VALUES
     ('ADMINISTRATOR','COLLAB','TEAMS',      TRUE),
     ('ADMINISTRATOR','COLLAB','PROJECTS',   TRUE),
     ('ADMINISTRATOR','COLLAB','DIMENSIONS', TRUE),
-    ('ADMINISTRATOR','COLLAB','ASSIGNMENT',  TRUE),
+    ('ADMINISTRATOR','COLLAB','ASSIGNMENT', TRUE),
 
     -- LIB
     ('ADMINISTRATOR','LIB','ASSETS',     TRUE),
@@ -178,16 +178,16 @@ VALUES
 
     -- INITS
     ('ADMINISTRATOR','INITS','PROPOSE', TRUE),
-    ('ADMINISTRATOR','INITS','EXPLORE',  TRUE),
+    ('ADMINISTRATOR','INITS','EXPLORE', TRUE),
 
     -- ANA
     ('ADMINISTRATOR','ANA','DASHBOARDS', TRUE),
     ('ADMINISTRATOR','ANA','USAGE',      TRUE),
 
     -- PROC
+    ('ADMINISTRATOR','PROC','PROCESSES',   TRUE),
     ('ADMINISTRATOR','PROC','VALUE_CHAIN', TRUE),
-    ('ADMINISTRATOR','PROC','MAP',         TRUE),
-    ('ADMINISTRATOR','PROC','MODELS',      TRUE);
+    ('ADMINISTRATOR','PROC','MAP',         TRUE);
 
 -- ===== Profile: ADMINISTRATIVE =====
 INSERT INTO privileges (profile, module, option, can_edit)
@@ -200,7 +200,7 @@ VALUES
     ('ADMINISTRATIVE','COLLAB','TEAMS',      TRUE),
     ('ADMINISTRATIVE','COLLAB','PROJECTS',   TRUE),
     ('ADMINISTRATIVE','COLLAB','DIMENSIONS', TRUE),
-    ('ADMINISTRATIVE','COLLAB','ASSIGNMENT',  TRUE),
+    ('ADMINISTRATIVE','COLLAB','ASSIGNMENT', TRUE),
 
     -- LIB
     ('ADMINISTRATIVE','LIB','ASSETS',     TRUE),
@@ -215,16 +215,16 @@ VALUES
 
     -- INITS
     ('ADMINISTRATIVE','INITS','PROPOSE', TRUE),
-    ('ADMINISTRATIVE','INITS','EXPLORE',  TRUE),
+    ('ADMINISTRATIVE','INITS','EXPLORE', TRUE),
 
     -- ANA
     ('ADMINISTRATIVE','ANA','DASHBOARDS', TRUE),
     ('ADMINISTRATIVE','ANA','USAGE',      TRUE),
 
     -- PROC
+    ('ADMINISTRATIVE','PROC','PROCESSES',   TRUE),
     ('ADMINISTRATIVE','PROC','VALUE_CHAIN', TRUE),
-    ('ADMINISTRATIVE','PROC','MAP',         TRUE),
-    ('ADMINISTRATIVE','PROC','MODELS',      TRUE);
+    ('ADMINISTRATIVE','PROC','MAP',         TRUE);
 
 -- ===== Profile: COLLABORATOR =====
 INSERT INTO privileges (profile, module, option, can_edit)
@@ -237,7 +237,7 @@ VALUES
     ('COLLABORATOR','COLLAB','TEAMS',      FALSE),
     ('COLLABORATOR','COLLAB','PROJECTS',   FALSE),
     ('COLLABORATOR','COLLAB','DIMENSIONS', FALSE),
-    ('COLLABORATOR','COLLAB','ASSIGNMENT',  FALSE),
+    ('COLLABORATOR','COLLAB','ASSIGNMENT', FALSE),
 
     -- LIB (read-only)
     ('COLLABORATOR','LIB','ASSETS',     FALSE),
@@ -251,7 +251,7 @@ VALUES
     ('COLLABORATOR','LIB','MODELS',     FALSE),
 
     -- INITS (read-only)
-    ('COLLABORATOR','INITS','PROPOSE', TRUE),
+    ('COLLABORATOR','INITS','PROPOSE',  TRUE),
     ('COLLABORATOR','INITS','EXPLORE',  FALSE),
 
     -- ANA (read-only)
@@ -259,9 +259,9 @@ VALUES
     ('COLLABORATOR','ANA','USAGE',      FALSE),
 
     -- PROC (read-only)
+    ('COLLABORATOR','PROC','PROCESSES',   FALSE),
     ('COLLABORATOR','PROC','VALUE_CHAIN', FALSE),
-    ('COLLABORATOR','PROC','MAP',         FALSE),
-    ('COLLABORATOR','PROC','MODELS',      FALSE);
+    ('COLLABORATOR','PROC','MAP',         FALSE);
 
 -- **********************************
 -- ********** Table Units ***********

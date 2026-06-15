@@ -21,8 +21,8 @@ try {
 }
 
 const columns = [
-  { key: "code", label: "profile_modal.code", as: "title", subtitleKey: "name", subtitleFormat: "text" },
-  { key: "name", label: "profile_modal.name", visible: false },
+  { key: "code", label: "profile_modal.code", visible: false },
+  { key: "name", label: "profile_modal.name", as: "title", subtitleKey: "code", subtitleFormat: "text" },
 ];
 const data = profiles.map((item) => ({
   id: item.code,

@@ -25,8 +25,8 @@ let types: any[] = [];
 types = await getListItemsbyList('BIZ_UNIT_TYPE');
 
 const columns = [
-  { key: "code", label: "business_unit_modal.code", as: "title", subtitleKey: "name", subtitleFormat: "text" },
-  { key: "name", label: "business_unit_modal.name", visible: false },
+  { key: "code", label: "business_unit_modal.code", visible: false },
+  { key: "name", label: "business_unit_modal.name", as: "title", subtitleKey: "code", subtitleFormat: "text" },
   { key: "type", label: "business_unit_modal.type", visible: false },
   { key: "type_name", label: "business_unit_modal.type" },
   { key: "parent", label: "business_unit_modal.parent", visible: false },

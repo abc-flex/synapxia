@@ -43,8 +43,8 @@ try {
 }
 
 const columns = [
-  { key: "code", label: "project_modal.code", as: "title", subtitleKey: "name", subtitleFormat: "text" },
-  { key: "name", label: "project_modal.name", visible: false },
+  { key: "code", label: "project_modal.code", visible: false },
+  { key: "name", label: "project_modal.name", as: "title", subtitleKey: "code", subtitleFormat: "text" },
   { key: "team", label: "project_modal.team", visible: false },
   { key: "team_name", label: "project_modal.team" },
   { key: "status_label", label: "project_modal.status", as: "status" },

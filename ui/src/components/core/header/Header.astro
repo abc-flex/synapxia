@@ -34,64 +34,43 @@ import SearchBar from "./SearchBar.astro";
 ---
 
 <header
-  class="sticky top-0 z-50 flex w-full items-center border-gray-200 bg-white lg:border-b dark:border-gray-800 dark:bg-gray-900"
+  class="sticky top-0 z-50 flex w-full items-center border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
 >
-  <div class="flex grow flex-col justify-between lg:flex-row lg:px-6">
-    <div
-      class="flex w-full min-w-0 items-center gap-3 border-b border-gray-200 px-3 py-3 sm:gap-4 lg:justify-normal lg:border-b-0 lg:px-0 lg:py-4 dark:border-gray-800"
+  <div class="flex w-full items-center gap-2 px-3 py-2.5 sm:gap-3 lg:px-6 lg:py-3">
+    <button
+      class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-gray-800"
+      aria-label={t(locale, "header.toggle_sidebar")}
+      aria-pressed="false"
+      type="button"
+      data-sidebar-toggle
     >
-      <button
-        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-500 dark:border-gray-800 dark:text-gray-400"
-        aria-label={t(locale, "header.toggle_sidebar")}
-        aria-pressed="false"
-        type="button"
-        data-sidebar-toggle
-      >
-        <span class="h-5 w-5">
-          <Fragment set:html={Menu} />
-        </span>
-      </button>
+      <span class="h-5 w-5">
+        <Fragment set:html={Menu} />
+      </span>
+    </button>
 
-      {
-        showBrandOnMobile ? (
-          <div class="flex min-w-0 items-center gap-3 lg:hidden">
-            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white font-semibold">
-              IA
-            </div>
-            <div class="min-w-0 leading-tight">
-              <p class="truncate text-xs font-semibold text-gray-500 dark:text-gray-300">
-                {title}
-              </p>
-              <p class="truncate text-base font-bold text-gray-900 dark:text-white">
-                {subtitle}
-              </p>
-            </div>
-          </div>
-        ) : null
-      }
+    {/* The brand lives in the sidebar (desktop) and the slide-in drawer (mobile),
+        so the header stays a single uncluttered row of: toggle · search · controls. */}
+    <SearchBar />
 
-      <SearchBar />
-    </div>
+    {/* Spacer pushes the controls to the right edge */}
+    <div class="flex-1"></div>
 
-    <div
-      class="flex items-center justify-between gap-4 px-3 py-4 lg:justify-end lg:px-0"
-    >
-      <div class="flex items-center gap-2">
-        <ThemeSwitcher />
-        <LanguageSwitcher />
-        <NotificationMenu />
+    <div class="flex shrink-0 items-center gap-1.5 sm:gap-2">
+      <ThemeSwitcher />
+      <LanguageSwitcher />
+      <NotificationMenu />
 
-        <AccountMenu
-          name={userName}
-          email={userEmail}
-          avatarUrl={userAvatarUrl}
-          menuItems={[
-            { label: "account_menu.edit_profile", href: "/profile" },
-            { label: "account_menu.account_settings" },
-            { label: "account_menu.support" },
-          ]}
-        />
-      </div>
+      <AccountMenu
+        name={userName}
+        email={userEmail}
+        avatarUrl={userAvatarUrl}
+        menuItems={[
+          { label: "account_menu.edit_profile", href: "/profile" },
+          { label: "account_menu.account_settings" },
+          { label: "account_menu.support" },
+        ]}
+      />
     </div>
   </div>
 </header>

@@ -20,6 +20,15 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-06-15 05:56 — Responsive UI refresh: design preview + implementation plan
+
+Branch `feat/responsive-ui-refresh`. Design-first step (mockups + plan) before code; no app behavior changed yet.
+
+- Added a private design preview (`design/responsive-preview.html`, **outside** `ui/public` so it never deploys) covering the refined responsive look for every key surface: desktop app shell + Asset Repository table, mobile card-view table, mobile slide-in nav drawer, CrudModal (desktop two-column + mobile stacked), and Dashboard (desktop + mobile). Scope is *refine current look + full mobile responsiveness*, not a rebrand.
+- Added `docs/responsive-ui-implementation-plan.md` mapping the mockups onto the code (workstreams A–G: mobile drawer, card-view DataTable, layout padding fix, header touch targets, CrudModal, dashboard grid, shared style primitives). Notes the Tailwind-v3 `max-w-(--breakpoint-2xl)` no-op bug and the `advancedTable.ts` `.hidden` pagination constraint for the CSS card view.
+- Companion Figma mockups created in a private personal Drafts file (app shell + 2 mobile frames); CrudModal + Dashboard frames pending Figma free-plan MCP quota reset.
+- Files affected: `design/responsive-preview.html`, `docs/responsive-ui-implementation-plan.md`
+
 ## 2026-06-13 23:22 — Tabbed asset modal + asset-table enhancements (filters, favorites, master-detail)
 
 PR #45. One rollup for the whole branch (modal + table work).

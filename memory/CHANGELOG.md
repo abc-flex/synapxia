@@ -20,6 +20,13 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-06-15 21:48 — Reusable parametrized DataTable column types + new desktop table design (all CRUD pages)
+- Extended the shared `DataTable` column config (extend-only, no renamed keys) with parametrized field types via `as`: `title` (bold name + optional muted subtitle line), `status` (semantic pill), `tags` (chips), `date` (locale-formatted / relative), `badge`, `boolean`, `text`. New per-page `subtitleKey` + `subtitleFormat` (`relative`|`text`|`date`) drive the subtitle; added SSR `formatDate`/`formatRelative`/`renderSubtitle` helpers (locale-aware, reuse the existing `t`/`getLocale`).
+- Redesigned the desktop `.datatable-dense` look in place (roomier rows, clean uppercase muted header, title+subtitle, `.dt-title`/`.dt-subtitle` hooks, dark-mode mirrored). Moved the mobile card-view title/subtitle off `:first-child`/`:nth-child(2)` heuristics onto the explicit `td[data-col="title"]` type, so column order no longer matters.
+- Migrated all 19 CRUD pages to annotate their title/status/tags/date/boolean columns. The secondary field used as a subtitle is set `visible:false` (kept in `data` for export/filter/search) to avoid showing it twice. `advancedTable.ts` unchanged — search/filter/pagination/export/actions/detail-expand contract preserved (`getColumnIndex` is dead code; filters read the `data` object).
+- Added `data_table` i18n keys (`updated`/`created`/`rel_ago`/`rel_now`/`unit_*`) to both `en.json` and `es.json`. Verified via `bun run build` + a throwaway sample page rendered through the dev server (title+subtitle, "Updated 2 d ago" relative, pill, date "Jan 15, 2026", check icon, chips all correct). UI-only → manual verification per Constitution III.
+- Files affected: `ui/src/components/table/DataTable.astro`, `ui/src/styles/globals.css`, `ui/src/i18n/{en,es}.json`, and `ui/src/pages/{admin/{users,profiles,privileges,business_units,modules,options,lists,list_items,item_translations},taxo/{categories,specifications,features},lib/assets,collab/{teams,projects,assignments,dimensions,metrics,roles}}.astro`
+
 ## 2026-06-15 19:25 — Responsive UI refresh: mobile drawer, card-view tables, modal, layout, dashboard + mobile header/toolbar cleanup
 
 Branch `feat/responsive-ui-refresh`. Refine current look + full mobile responsiveness (no rebrand). UI-only; `bun run build` passes.

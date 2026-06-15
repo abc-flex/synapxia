@@ -43,13 +43,13 @@ try {
 }
 
 const columns = [
-  { key: "code", label: "project_modal.code" },
-  { key: "name", label: "project_modal.name" },
+  { key: "code", label: "project_modal.code", as: "title", subtitleKey: "name", subtitleFormat: "text" },
+  { key: "name", label: "project_modal.name", visible: false },
   { key: "team", label: "project_modal.team", visible: false },
   { key: "team_name", label: "project_modal.team" },
-  { key: "status_label", label: "project_modal.status" },
-  { key: "start_date", label: "project_modal.start_date" },
-  { key: "end_date", label: "project_modal.end_date" },
+  { key: "status_label", label: "project_modal.status", as: "status" },
+  { key: "start_date", label: "project_modal.start_date", as: "date" },
+  { key: "end_date", label: "project_modal.end_date", as: "date" },
 ];
 
 const data = projects.map((item) => ({

@@ -143,7 +143,17 @@
     "delete_warning": "This action cannot be undone.",
     "export": "Export",
     "no_results": "No results",
-    "filters": "Filters"
+    "filters": "Filters",
+    "updated": "Updated",
+    "created": "Created",
+    "rel_ago": "ago",
+    "rel_now": "just now",
+    "unit_min": "min",
+    "unit_hour": "h",
+    "unit_day": "d",
+    "unit_week": "w",
+    "unit_month": "mo",
+    "unit_year": "y"
   },
   "business_unit_modal": {
     "code": "Code",

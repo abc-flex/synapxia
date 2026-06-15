@@ -67,7 +67,7 @@ const resolveStatusLabel = (raw: string): string => {
 
 // Columns shown in the table
 const columns = [
-  { key: "name", label: "asset_modal.name" },
+  { key: "name", label: "asset_modal.name", as: "title", subtitleKey: "updated_at", subtitleFormat: "relative" },
   { key: "category", label: "asset_modal.category", visible: false },
   { key: "category_name", label: "asset_modal.category" },
   { key: "status", label: "asset_modal.status", visible: false },

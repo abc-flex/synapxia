@@ -55,6 +55,7 @@ Run everything: `make dev`. Verify: `make test`.
 
 | Date | Decision | Rationale |
 |------|----------|-----------|
+| 2026-06-15 | `DataTable` column config gained parametrized field types via `as` (`title`/`status`/`tags`/`date`/`badge`/`boolean`/`text`) + per-page `subtitleKey`/`subtitleFormat` | One reusable config drives both the desktop table and the mobile card; pages only annotate their `columns`. `title` renders bold name + muted subtitle (`.dt-title`/`.dt-subtitle`); the subtitle's source column is set `visible:false` so it isn't shown twice (still in `data` for export/filter). Card view keys off `td[data-col="title"]`, not column order. `advancedTable.ts` untouched. |
 | 2026-06-07 | Added `ui/src/layouts/Layout.astro` (minimal shell) | `dashboard.astro` used a standalone full-screen design, not the sidebar BaseLayout; the file was simply missing. |
 | 2026-06-07 | Hardened `@` alias to `fileURLToPath(new URL('./src', import.meta.url))` | Literal `/src` is filesystem-absolute and breaks Vercel builds. |
 | 2026-06-07 | Created `AGENTS.md` per project + root, thin `CLAUDE.md` pointers | AI tools need a curated single entry point; Constitution and patterns were undiscoverable. |

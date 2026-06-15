@@ -70,6 +70,75 @@ const STATUS_TONE = (val: unknown): string => {
   if (/(review|revisi|pending|pendiente|draft|borrador|progress|proceso|hold|espera)/.test(v)) return TONE.amber;
   return TONE.indigo;
 };
+
+/**
+ * Column config schema (extend-only; never rename existing keys):
+ *   {
+ *     key: string,           // data field — drives export, filter, getColumnIndex
+ *     label: string,         // i18n key
+ *     visible?: boolean,     // false → kept in data/export context but no <th>/<td>
+ *     as?: "title" | "status" | "tags" | "date" | "badge" | "boolean" | "text",
+ *     subtitleKey?: string,  // ONLY for as:"title" — field for the muted 2nd line
+ *     subtitleFormat?: "relative" | "text" | "date",   // default "text"
+ *     dateFormat?: "date" | "relative",                // ONLY for as:"date"; default "date"
+ *   }
+ * Render behavior (same markup; CSS differentiates desktop row vs mobile card):
+ *   title   → bold name + optional muted subtitle line
+ *   status  → semantic colored pill (STATUS_TONE)
+ *   tags    → comma-split gray chips
+ *   date    → locale-formatted date (or relative)
+ *   badge   → single gray chip
+ *   boolean → check icon when truthy (implicit fallback kept for unflagged columns)
+ *   text    → raw value (default)
+ */
+
+// Locale-aware short date (e.g. "Jun 7, 2026" / "7 jun 2026"). Guards invalid → "".
+const formatDate = (raw: any): string => {
+  if (raw === null || raw === undefined || raw === "") return "";
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return "";
+  return new Intl.DateTimeFormat(locale === "es" ? "es-ES" : "en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(d);
+};
+
+// Relative span without prefix: "2 d ago" / "hace 2 d". Empty on invalid input.
+const formatRelative = (raw: any): string => {
+  if (raw === null || raw === undefined || raw === "") return "";
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return "";
+  const sec = Math.max(0, Math.floor((Date.now() - d.getTime()) / 1000));
+  if (sec < 60) return t(locale, "data_table.rel_now");
+  const min = Math.floor(sec / 60);
+  let n: number;
+  let unit: string;
+  if (min < 60) { n = min; unit = t(locale, "data_table.unit_min"); }
+  else if (min < 1440) { n = Math.floor(min / 60); unit = t(locale, "data_table.unit_hour"); }
+  else if (min < 10080) { n = Math.floor(min / 1440); unit = t(locale, "data_table.unit_day"); }
+  else if (min < 43200) { n = Math.floor(min / 10080); unit = t(locale, "data_table.unit_week"); }
+  else if (min < 525600) { n = Math.floor(min / 43200); unit = t(locale, "data_table.unit_month"); }
+  else { n = Math.floor(min / 525600); unit = t(locale, "data_table.unit_year"); }
+  const ago = t(locale, "data_table.rel_ago");
+  // Word order differs per locale: "2 d ago" vs "hace 2 d".
+  return locale === "es" ? `${ago} ${n} ${unit}` : `${n} ${unit} ${ago}`;
+};
+
+// Muted subtitle line under a title cell. Dispatches on subtitleFormat.
+const renderSubtitle = (col: any, row: any): string => {
+  if (!col.subtitleKey) return "";
+  const raw = row[col.subtitleKey];
+  if (raw === null || raw === undefined || raw === "") return "";
+  const fmt = col.subtitleFormat ?? "text";
+  if (fmt === "relative") {
+    const prefix = t(locale, col.subtitleKey === "created_at" ? "data_table.created" : "data_table.updated");
+    const rel = formatRelative(raw);
+    return rel ? `${prefix} ${rel}` : "";
+  }
+  if (fmt === "date") return formatDate(raw);
+  return String(raw);
+};
 ---
 
 <div class="space-y-2">
@@ -296,8 +365,15 @@ const STATUS_TONE = (val: unknown): string => {
           data.map((row) => (
             <tr class="border-b border-gray-200 dark:border-gray-800">
               {visibleColumns.map((col) => (
-                <td class="px-2 py-1" data-label={t(locale, col.label)} data-col={col.as}>
-                  {col.as === "status" && row[col.key] ? (
+                <td class="px-2 py-1" data-label={t(locale, col.label)} data-col={col.as ?? "text"}>
+                  {col.as === "title" ? (
+                    <>
+                      <span class="dt-title">{row[col.key]}</span>
+                      {col.subtitleKey && renderSubtitle(col, row) && (
+                        <span class="dt-subtitle">{renderSubtitle(col, row)}</span>
+                      )}
+                    </>
+                  ) : col.as === "status" && row[col.key] ? (
                     <span class={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_TONE(row[col.key])}`}>
                       {row[col.key]}
                     </span>
@@ -313,10 +389,20 @@ const STATUS_TONE = (val: unknown): string => {
                           </span>
                         ))}
                     </span>
-                  ) : row[col.key] === true || row[col.key] === "true" ? (
-                    <span class="w-5 h-5 inline-block text-blue-600">
-                      <Fragment set:html={checkSvg} />
+                  ) : col.as === "date" ? (
+                    col.dateFormat === "relative" ? formatRelative(row[col.key]) : formatDate(row[col.key])
+                  ) : col.as === "badge" && row[col.key] ? (
+                    <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                      {row[col.key]}
                     </span>
+                  ) : col.as === "boolean" || row[col.key] === true || row[col.key] === "true" ? (
+                    row[col.key] === true || row[col.key] === "true" ? (
+                      <span class="w-5 h-5 inline-block text-blue-600">
+                        <Fragment set:html={checkSvg} />
+                      </span>
+                    ) : (
+                      ""
+                    )
                   ) : (
                     row[col.key]
                   )}

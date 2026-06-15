@@ -11,6 +11,10 @@ import jsonSvg from "@/images/icons/file-json.svg?raw";
 import txtSvg from "@/images/icons/file-txt.svg?raw";
 import sqlSvg from "@/images/icons/file-sql.svg?raw";
 import checkSvg from "@/images/icons/check.svg?raw";
+import { t } from "@/i18n";
+import { getLocale } from "@/utils/getLocale";
+
+const locale = getLocale(Astro);
 
 const {
   columns = [],
@@ -47,15 +51,35 @@ const {
 
 // Filtrar columnas visibles (ocultar si visible: false)
 const visibleColumns = columns.filter((col) => col.visible !== false);
+// How many column filters are configured — drives the mobile "Filtros" button.
+const filterCount = [columnFilter, columnFilter2, columnFilter3].filter(Boolean).length;
+
+// Semantic colors for status pills (columns flagged `as: "status"`). Tone is
+// inferred from the status text so it works across entities/locales. Literal
+// class strings so Tailwind's JIT keeps them.
+const TONE: Record<string, string> = {
+  green: "bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-300",
+  red: "bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-300",
+  amber: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+  indigo: "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300",
+};
+const STATUS_TONE = (val: unknown): string => {
+  const v = String(val ?? "").toLowerCase();
+  if (/(in[\s-]?use|en uso|activ|active|publi|aprob|approv|complet|done|live)/.test(v)) return TONE.green;
+  if (/(deprecat|obsolet|retir|inactiv|archiv|reject|rechaz|error|fail|cancel)/.test(v)) return TONE.red;
+  if (/(review|revisi|pending|pendiente|draft|borrador|progress|proceso|hold|espera)/.test(v)) return TONE.amber;
+  return TONE.indigo;
+};
 ---
 
 <div class="space-y-2">
   <!-- 🔹 TOP BAR -->
   <div
-    class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+    class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
   >
     <!-- Left -->
-    <div class="flex items-center gap-3">
+    <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+      <div class="flex items-center gap-3">
       {masterPage && (
         <a
           href={masterPage}
@@ -72,7 +96,7 @@ const visibleColumns = columns.filter((col) => col.visible !== false);
         showAddButton && (
           <button
             type="button"
-            class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-1 text-sm font-semibold text-white hover:bg-indigo-700"
+            class="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 sm:flex-none sm:py-1.5"
             data-modal-open={`${i18Item}-create-modal`}
             data-filter-key={columnFilter}
             data-i18n-title={`${i18Item}_modal.one_title`}
@@ -85,13 +109,30 @@ const visibleColumns = columns.filter((col) => col.visible !== false);
           </button>
         )
       }
+      </div>
+      {filterCount > 0 && data.length > 0 && (
+        <button
+          type="button"
+          data-filters-toggle={`${tableId}-filters`}
+          class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 sm:hidden dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+        >
+          <span class="w-4 h-4 inline-block">
+            <Fragment set:html={listSvg} />
+          </span>
+          <span data-i18n="data_table.filters">data_table.filters</span>
+          <span class="rounded-full bg-indigo-50 px-1.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">
+            {filterCount}
+          </span>
+        </button>
+      )}
+      <div id={`${tableId}-filters`} class="hidden w-full space-y-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:gap-3 sm:space-y-0">
       {
         columnFilter && data.length > 0 && (
-          <div class="relative">
+          <div class="relative flex-1 basis-[45%] sm:flex-none sm:basis-auto">
             <select
               id={`${tableId}-filter`}
               data-column-key={columnFilter}
-              class="w-100 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800
+              class="w-full sm:w-auto sm:min-w-[10rem] rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800
                   focus:border-indigo-500 focus:ring-indigo-500
                   dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:focus:border-indigo-400"
             >
@@ -107,11 +148,11 @@ const visibleColumns = columns.filter((col) => col.visible !== false);
       }
       {
         columnFilter2 && data.length > 0 && (
-          <div class="relative">
+          <div class="relative flex-1 basis-[45%] sm:flex-none sm:basis-auto">
             <select
               id={`${tableId}-filter2`}
               data-column-key={columnFilter2}
-              class="w-100 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800
+              class="w-full sm:w-auto sm:min-w-[10rem] rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800
                   focus:border-indigo-500 focus:ring-indigo-500
                   dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:focus:border-indigo-400"
             >
@@ -127,11 +168,11 @@ const visibleColumns = columns.filter((col) => col.visible !== false);
       }
       {
         columnFilter3 && data.length > 0 && (
-          <div class="relative">
+          <div class="relative flex-1 basis-[45%] sm:flex-none sm:basis-auto">
             <select
               id={`${tableId}-filter3`}
               data-column-key={columnFilter3}
-              class="w-100 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800
+              class="w-full sm:w-auto sm:min-w-[10rem] rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800
                   focus:border-indigo-500 focus:ring-indigo-500
                   dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:focus:border-indigo-400"
             >
@@ -145,17 +186,18 @@ const visibleColumns = columns.filter((col) => col.visible !== false);
           </div>
         )
       }
+      </div>
     </div>
 
     <!-- Right: Search & Export -->
     {data.length > 0 && (
-    <div class="flex items-center gap-3 relative">
+    <div class="flex items-center gap-2 relative w-full sm:w-auto">
       <input
         id={`${tableId}-search`}
         type="search"
         placeholder="data_table.search"
         data-i18n-placeholder="data_table.search"
-        class="w-56 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400
+        class="min-w-0 flex-1 sm:w-56 sm:flex-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400
                focus:border-indigo-500 focus:ring-indigo-500
                dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-indigo-400"
       />
@@ -163,7 +205,7 @@ const visibleColumns = columns.filter((col) => col.visible !== false);
       <button
         id={`${tableId}-export-btn`}
         type="button"
-        class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+        class="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
       >
         <span class="w-5 h-5 inline-block">
           <Fragment set:html={downloadSvg} />
@@ -254,8 +296,24 @@ const visibleColumns = columns.filter((col) => col.visible !== false);
           data.map((row) => (
             <tr class="border-b border-gray-200 dark:border-gray-800">
               {visibleColumns.map((col) => (
-                <td class="px-2 py-1">
-                  {row[col.key] === true || row[col.key] === "true" ? (
+                <td class="px-2 py-1" data-label={t(locale, col.label)} data-col={col.as}>
+                  {col.as === "status" && row[col.key] ? (
+                    <span class={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_TONE(row[col.key])}`}>
+                      {row[col.key]}
+                    </span>
+                  ) : col.as === "tags" ? (
+                    <span class="flex flex-wrap gap-1.5">
+                      {String(row[col.key] ?? "")
+                        .split(",")
+                        .map((tg) => tg.trim())
+                        .filter(Boolean)
+                        .map((tag) => (
+                          <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                            {tag}
+                          </span>
+                        ))}
+                    </span>
+                  ) : row[col.key] === true || row[col.key] === "true" ? (
                     <span class="w-5 h-5 inline-block text-blue-600">
                       <Fragment set:html={checkSvg} />
                     </span>
@@ -352,7 +410,7 @@ const visibleColumns = columns.filter((col) => col.visible !== false);
     <div id={`${tableId}-pagination-info`} class="text-sm text-gray-600 dark:text-gray-400"></div>
     <select
       id={`${tableId}-per-page`}
-      class="ml-3 rounded-lg border border-gray-300 bg-white px-2 py-2 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+      class="w-full sm:w-auto rounded-lg border border-gray-300 bg-white px-2 py-2 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
     >
       <option value="5">5</option>
       <option value="10" selected>10</option>
@@ -364,7 +422,7 @@ const visibleColumns = columns.filter((col) => col.visible !== false);
     <div class="flex items-center gap-1">
       <button
         id={`${tableId}-prev`}
-        class="h-8 w-8 px-0 py-0 text-sm border border-gray-300 rounded flex items-center justify-center text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+        class="h-11 w-11 sm:h-8 sm:w-8 px-0 py-0 text-sm border border-gray-300 rounded flex items-center justify-center text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
       >
         <span class="w-5 h-5 inline-block">
           <Fragment set:html={leftSvg} />
@@ -373,7 +431,7 @@ const visibleColumns = columns.filter((col) => col.visible !== false);
       <div id={`${tableId}-pages`} class="flex items-center gap-1"></div>
       <button
         id={`${tableId}-next`}
-        class="h-8 w-8 px-0 py-0 text-sm border border-gray-300 rounded flex items-center justify-center text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+        class="h-11 w-11 sm:h-8 sm:w-8 px-0 py-0 text-sm border border-gray-300 rounded flex items-center justify-center text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
       >
         <span class="w-5 h-5 inline-block">
           <Fragment set:html={rightSvg} />
@@ -403,6 +461,19 @@ const visibleColumns = columns.filter((col) => col.visible !== false);
   )}
 
 </div>
+
+<script>
+  // Mobile "Filtros" toggle — reveals/hides the column-filter panel (<sm only;
+  // the panel is always visible at sm+ via the sm:flex utility). Delegated so
+  // it works for every DataTable instance on the page.
+  document.addEventListener("click", (event) => {
+    const btn = (event.target as HTMLElement).closest("[data-filters-toggle]");
+    if (!btn) return;
+    const id = btn.getAttribute("data-filters-toggle");
+    const panel = id ? document.getElementById(id) : null;
+    panel?.classList.toggle("hidden");
+  });
+</script>
 
 <script type="module" define:vars={{ tableId, data, columns, visibleColumns, columnFilter, columnFilter2, filterDefaultValue, filterDefaultValue2, columnFilter3, filterDefaultValue3 }}>
   import { initAdvancedTable } from "/src/components/table/advancedTable";

@@ -71,8 +71,8 @@ const columns = [
   { key: "category", label: "asset_modal.category", visible: false },
   { key: "category_name", label: "asset_modal.category" },
   { key: "status", label: "asset_modal.status", visible: false },
-  { key: "status_name", label: "asset_modal.status" },
-  { key: "tags_display", label: "asset_modal.tags" },
+  { key: "status_name", label: "asset_modal.status", as: "status" },
+  { key: "tags_display", label: "asset_modal.tags", as: "tags" },
 ];
 
 // Flatten rows for the table; keep raw category/status as hidden columns so
@@ -109,7 +109,7 @@ const fieldKeys = deleteFields.map((f) => f.key);
 <BaseLayout>
   {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
 
-  <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
+  <div class="mx-auto w-full max-w-full md:p-0">
     <Breadcrumb
       moduleName="AI Library"
       pageName="Assets"

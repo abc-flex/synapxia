@@ -17,7 +17,9 @@
     "edit_profile": "Editar perfil",
     "account_settings": "Configuración de cuenta",
     "support": "Soporte",
-    "sign_out": "Cerrar sesión"
+    "sign_out": "Cerrar sesión",
+    "theme": "Tema",
+    "language": "Idioma"
   },
   "notification_menu": {
     "title": "Notificaciones"
@@ -27,6 +29,29 @@
     "title": "Estamos trabajando en esto",
     "subtitle": "Esta funcionalidad aún no está lista — la estamos construyendo y pronto estará disponible.",
     "go_back": "Volver"
+  },
+  "dashboard_page": {
+    "title": "Panel de Control",
+    "subtitle": "Resumen de tu espacio de gobernanza de IA",
+    "kpi_total_assets": "Activos totales",
+    "kpi_in_use": "En uso",
+    "kpi_teams": "Equipos activos",
+    "kpi_compliance": "Cumplimiento",
+    "delta_assets": "+12 este mes",
+    "delta_in_use": "39% del total",
+    "delta_teams": "+2 este trimestre",
+    "delta_compliance": "objetivo 90%",
+    "activity_title": "Actividad de activos",
+    "activity_subtitle": "Últimos 12 meses",
+    "recent_title": "Actividad reciente",
+    "recent_1": "Se creó GitHub MCP Server",
+    "recent_1_meta": "hace 2 horas",
+    "recent_2": "Se actualizó Vector Search Retriever",
+    "recent_2_meta": "hace 5 horas",
+    "recent_3": "Se archivó Eval Suite v1",
+    "recent_3_meta": "Ayer",
+    "recent_4": "Se aprobó Data Lineage Tracker",
+    "recent_4_meta": "Ayer"
   },
   "modules": {
     "ADMIN": "Administración",
@@ -117,7 +142,8 @@
     "delete_confirmation": "¿Está seguro de que desea eliminar el registro",
     "delete_warning": "Esta acción no se puede deshacer.",
     "export": "Exportar",
-    "no_results": "No hay resultados"
+    "no_results": "No hay resultados",
+    "filters": "Filtros"
   },
   "business_unit_modal": {
     "code": "Código",

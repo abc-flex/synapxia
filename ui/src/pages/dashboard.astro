@@ -1,0 +1,78 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+// NOTE: KPI figures and the activity feed below are placeholder/sample values.
+// There is no aggregates endpoint yet — wire these to the API (e.g. counts from
+// /api/assets, /api/teams) once a dashboard summary route exists. The markup,
+// i18n keys and responsive grid are production-ready.
+const kpis = [
+  { label: "dashboard_page.kpi_total_assets", value: "248", delta: "dashboard_page.delta_assets", tone: "indigo" },
+  { label: "dashboard_page.kpi_in_use", value: "96", delta: "dashboard_page.delta_in_use", tone: "green" },
+  { label: "dashboard_page.kpi_teams", value: "12", delta: "dashboard_page.delta_teams", tone: "indigo" },
+  { label: "dashboard_page.kpi_compliance", value: "92%", delta: "dashboard_page.delta_compliance", tone: "green" },
+];
+const bars = [35, 52, 30, 68, 48, 80, 58, 86, 68, 95, 80, 100];
+const recent = [
+  { text: "dashboard_page.recent_1", meta: "dashboard_page.recent_1_meta" },
+  { text: "dashboard_page.recent_2", meta: "dashboard_page.recent_2_meta" },
+  { text: "dashboard_page.recent_3", meta: "dashboard_page.recent_3_meta" },
+  { text: "dashboard_page.recent_4", meta: "dashboard_page.recent_4_meta" },
+];
+const toneClass = (tone: string) =>
+  tone === "green"
+    ? "text-green-700 bg-green-50 dark:text-green-300 dark:bg-green-500/15"
+    : "text-indigo-700 bg-indigo-50 dark:text-indigo-300 dark:bg-indigo-500/15";
+---
+
+<BaseLayout title="SynapxIA">
+  <div class="space-y-6">
+    <!-- Page heading -->
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white" data-i18n="dashboard_page.title">Dashboard</h1>
+      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400" data-i18n="dashboard_page.subtitle">
+        Overview of your AI governance workspace
+      </p>
+    </div>
+
+    <!-- KPI cards -->
+    <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      {kpis.map((k) => (
+        <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:p-5">
+          <p class="text-sm text-gray-500 dark:text-gray-400" data-i18n={k.label}>{k.label}</p>
+          <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">{k.value}</p>
+          <span class={`mt-2 inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${toneClass(k.tone)}`} data-i18n={k.delta}>{k.delta}</span>
+        </div>
+      ))}
+    </div>
+
+    <!-- Panels -->
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <!-- Activity chart -->
+      <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900 lg:col-span-2">
+        <p class="font-semibold text-gray-900 dark:text-white" data-i18n="dashboard_page.activity_title">Asset activity</p>
+        <p class="text-xs text-gray-500 dark:text-gray-400" data-i18n="dashboard_page.activity_subtitle">Last 12 months</p>
+        <div class="mt-5 flex h-40 items-end gap-1.5 sm:gap-2">
+          {bars.map((h) => (
+            <div class="flex-1 rounded-md bg-indigo-600/90 dark:bg-indigo-500" style={`height:${h}%`}></div>
+          ))}
+        </div>
+      </div>
+
+      <!-- Recent activity -->
+      <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <p class="mb-4 font-semibold text-gray-900 dark:text-white" data-i18n="dashboard_page.recent_title">Recent activity</p>
+        <ul class="space-y-3 text-sm">
+          {recent.map((r) => (
+            <li class="flex items-start gap-3">
+              <span class="h-8 w-8 shrink-0 rounded-full bg-indigo-50 dark:bg-indigo-500/15"></span>
+              <span>
+                <span class="block font-medium text-gray-700 dark:text-gray-200" data-i18n={r.text}>{r.text}</span>
+                <span class="block text-xs text-gray-400" data-i18n={r.meta}>{r.meta}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

@@ -17,7 +17,9 @@
     "edit_profile": "Edit profile",
     "account_settings": "Account settings",
     "support": "Support",
-    "sign_out": "Sign out"
+    "sign_out": "Sign out",
+    "theme": "Theme",
+    "language": "Language"
   },
   "notification_menu": {
     "title": "Notification"
@@ -27,6 +29,29 @@
     "title": "We're working on this",
     "subtitle": "This feature isn't ready yet — we're building it and it will be available soon.",
     "go_back": "Go back"
+  },
+  "dashboard_page": {
+    "title": "Dashboard",
+    "subtitle": "Overview of your AI governance workspace",
+    "kpi_total_assets": "Total assets",
+    "kpi_in_use": "In use",
+    "kpi_teams": "Active teams",
+    "kpi_compliance": "Compliance",
+    "delta_assets": "+12 this month",
+    "delta_in_use": "39% of total",
+    "delta_teams": "+2 this quarter",
+    "delta_compliance": "target 90%",
+    "activity_title": "Asset activity",
+    "activity_subtitle": "Last 12 months",
+    "recent_title": "Recent activity",
+    "recent_1": "GitHub MCP Server was created",
+    "recent_1_meta": "2 hours ago",
+    "recent_2": "Vector Search Retriever updated",
+    "recent_2_meta": "5 hours ago",
+    "recent_3": "Eval Suite v1 archived",
+    "recent_3_meta": "Yesterday",
+    "recent_4": "Data Lineage Tracker approved",
+    "recent_4_meta": "Yesterday"
   },
   "modules": {
     "ADMIN": "Administration",
@@ -117,7 +142,8 @@
     "delete_confirmation": "Are you sure you want to delete record",
     "delete_warning": "This action cannot be undone.",
     "export": "Export",
-    "no_results": "No results"
+    "no_results": "No results",
+    "filters": "Filters"
   },
   "business_unit_modal": {
     "code": "Code",

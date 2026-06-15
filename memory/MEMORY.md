@@ -115,6 +115,7 @@ Run everything: `make dev`. Verify: `make test`.
 | Task | Primary doc | Supporting |
 |------|-------------|------------|
 | Onboarding / what is this | `README.md` | `memory/memory.md` (this file) |
+| User stories (by module) | `docs/user-stories/README.md` | `docs/diagrams/`, source `Control H de U.xlsx` |
 | API changes | `api/CLAUDE.md` | `AGENTS.md` |
 | UI changes | `ui/CLAUDE.md` | `AGENTS.md` |
 | DB / schema changes | `db/CLAUDE.md` | `AGENTS.md` |

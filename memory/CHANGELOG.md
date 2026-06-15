@@ -20,14 +20,16 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
-## 2026-06-15 05:56 — Responsive UI refresh: design preview + implementation plan
+## 2026-06-15 06:05 — Responsive UI refresh: mobile drawer, card-view tables, modal + layout fixes
 
-Branch `feat/responsive-ui-refresh`. Design-first step (mockups + plan) before code; no app behavior changed yet.
+Branch `feat/responsive-ui-refresh`. Refine current look + full mobile responsiveness (no rebrand). UI-only; `bun run build` passes.
 
-- Added a private design preview (`design/responsive-preview.html`, **outside** `ui/public` so it never deploys) covering the refined responsive look for every key surface: desktop app shell + Asset Repository table, mobile card-view table, mobile slide-in nav drawer, CrudModal (desktop two-column + mobile stacked), and Dashboard (desktop + mobile). Scope is *refine current look + full mobile responsiveness*, not a rebrand.
-- Added `docs/responsive-ui-implementation-plan.md` mapping the mockups onto the code (workstreams A–G: mobile drawer, card-view DataTable, layout padding fix, header touch targets, CrudModal, dashboard grid, shared style primitives). Notes the Tailwind-v3 `max-w-(--breakpoint-2xl)` no-op bug and the `advancedTable.ts` `.hidden` pagination constraint for the CSS card view.
-- Companion Figma mockups created in a private personal Drafts file (app shell + 2 mobile frames); CrudModal + Dashboard frames pending Figma free-plan MCP quota reset.
-- Files affected: `design/responsive-preview.html`, `docs/responsive-ui-implementation-plan.md`
+- **Mobile nav drawer**: the sidebar is now an off-canvas slide-in drawer (<lg) with a dimmed backdrop, opened by the hamburger and closed on backdrop click / nav-link tap / Escape / resize-to-desktop, with page scroll lock. Desktop static sidebar + persisted collapse-to-90px behavior unchanged. New ephemeral `body.sidebar-open` state, orthogonal to `sidebar-collapsed`. (`SideBar.astro` aside classes, `BaseLayout.astro` backdrop + rewritten toggle IIFE, `globals.css` `@media (max-width:1023px)`.)
+- **Responsive DataTable**: <sm each row collapses into a labeled card via CSS only — `advancedTable.ts` untouched, so pagination/search/filter keep working (`tbody tr:not(.hidden)` preserves the `.hidden` pagination; `thead` visually hidden but kept in DOM for `getColumnIndex()`). Each `<td>` gets a server-resolved `data-label`. Fixed the invalid `w-100` filter selects → `w-full sm:w-auto`, search `w-56` → `w-full sm:w-56`, toolbar `flex-wrap`, per-page `ml-3` removed, pagination buttons 44px on mobile. (`DataTable.astro`, `globals.css` `@media (max-width:639px)`.)
+- **Layout/padding fix**: replaced the no-op Tailwind-v4 class `max-w-(--breakpoint-2xl)` (a no-op in this v3 repo) + `md:p-0` with `max-w-screen-2xl p-4 sm:p-6 lg:p-8` in `BaseLayout`, and normalized the duplicated `mx-auto max-w-(--breakpoint-2xl) md:p-6` wrapper across all 22 pages to `mx-auto w-full max-w-full md:p-0`.
+- **CrudModal**: labels stack above inputs on mobile (`flex-col sm:flex-row`, `sm:w-32` label); dialog is height-capped (`max-h-[calc(100dvh-2rem)]`) with a scrollable body and pinned header/footer. **Header**: hamburger bumped to 44px.
+- Design refs added: private `design/responsive-preview.html` (outside `ui/public`, never deploys) + `docs/responsive-ui-implementation-plan.md`. Companion Figma mockups in a private personal Drafts file (app shell + 2 mobile frames; CrudModal + Dashboard frames pending Figma free-plan MCP quota). Note: there is no `/dashboard` page in the repo yet, so the dashboard mockup is forward-looking only.
+- Files affected: `ui/src/layouts/BaseLayout.astro`, `ui/src/components/core/sidebar/SideBar.astro`, `ui/src/components/core/header/Header.astro`, `ui/src/components/table/DataTable.astro`, `ui/src/components/forms/CrudModal.astro`, `ui/src/styles/globals.css`, all `ui/src/pages/**/*.astro` wrappers, `design/responsive-preview.html`, `docs/responsive-ui-implementation-plan.md`
 
 ## 2026-06-13 23:22 — Tabbed asset modal + asset-table enhancements (filters, favorites, master-detail)
 

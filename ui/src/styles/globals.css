@@ -488,3 +488,110 @@
 .dark .datatable-dense .pagination button:hover {
   background-color: #1e293b;
 }
+
+/* ===============================
+   RESPONSIVE — MOBILE DRAWER (<lg)
+================================ */
+@media (max-width: 1023px) {
+  /* Slide the off-canvas sidebar in. Scoped <lg so the desktop static sidebar
+     (translate-x-0 via the lg: utility) is never affected. */
+  .sidebar-open .sidebar {
+    transform: translateX(0);
+  }
+  /* The desktop collapse (90px) must never shrink the mobile drawer — a stale
+     `sidebar-collapsed` in localStorage would otherwise render a broken 90px drawer. */
+  .sidebar-collapsed .sidebar {
+    width: 290px;
+  }
+  .sidebar-open [data-sidebar-backdrop] {
+    display: block;
+  }
+  /* Lock the page scroll behind the open drawer. */
+  body.sidebar-open {
+    overflow: hidden;
+  }
+}
+
+/* ===============================
+   RESPONSIVE — DATATABLE CARD VIEW (<sm)
+   Each visible row collapses into a labeled card. Pure presentation:
+   advancedTable.ts keeps toggling `.hidden` / `.hidden-by-filter` on <tr>,
+   so pagination/search/filter are untouched.
+================================ */
+@media (max-width: 639px) {
+  /* Visually hide the header but KEEP it in the DOM — advancedTable's
+     getColumnIndex() reads `thead th[data-column-key]`. */
+  .datatable-dense thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .datatable-dense,
+  .datatable-dense tbody {
+    display: block;
+    width: 100%;
+  }
+
+  /* `:not(.hidden)` is critical: paginated/filtered-out rows must stay hidden. */
+  .datatable-dense tbody tr:not(.hidden) {
+    display: block;
+    margin-bottom: 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    padding: 0.5rem 0.85rem;
+    background: #fff;
+  }
+  .dark .datatable-dense tbody tr:not(.hidden) {
+    border-color: #1e293b;
+    background: #0f172a;
+  }
+
+  .datatable-dense tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.4rem 0 !important;
+    border: 0;
+    text-align: right;
+    font-size: 0.8125rem;
+  }
+  .datatable-dense tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.6875rem;
+    letter-spacing: 0.03em;
+    color: #64748b;
+    text-align: left;
+    flex: 0 0 auto;
+  }
+  /* Cells with no label (actions cell, detail-expansion colspan rows) drop the ::before. */
+  .datatable-dense tbody td:not([data-label])::before {
+    content: "";
+  }
+
+  .datatable-dense tbody td.actions-cell {
+    justify-content: flex-end;
+    border-top: 1px solid #f1f5f9;
+    margin-top: 0.25rem;
+    padding-top: 0.6rem !important;
+  }
+  .dark .datatable-dense tbody td.actions-cell {
+    border-top-color: #1e293b;
+  }
+
+  /* ~44px touch targets for row actions on mobile. */
+  .datatable-dense .actions-wrapper .action-btn,
+  .datatable-dense .actions-wrapper a,
+  .datatable-dense .actions-wrapper button {
+    padding: 0.5rem;
+  }
+}

@@ -129,7 +129,9 @@ const currentModuleName = pathSegments[0] || "";
     if (typeof window === "undefined") return;
 
     const storageKey = "theme";
-    const toggle = document.querySelector<HTMLElement>("[data-theme-toggle]");
+    // Multiple toggles exist (header switcher + account-menu row on mobile);
+    // bind them all and keep their pressed-state in sync.
+    const toggles = document.querySelectorAll<HTMLElement>("[data-theme-toggle]");
     const root = document.documentElement;
 
     const apply = (theme: "light" | "dark") => {
@@ -138,7 +140,7 @@ const currentModuleName = pathSegments[0] || "";
       } else {
         root.classList.remove("dark");
       }
-      toggle?.setAttribute("aria-pressed", String(theme === "dark"));
+      toggles.forEach((el) => el.setAttribute("aria-pressed", String(theme === "dark")));
       localStorage.setItem(storageKey, theme);
     };
 
@@ -148,9 +150,11 @@ const currentModuleName = pathSegments[0] || "";
       window.matchMedia("(prefers-color-scheme: dark)").matches;
     apply(saved ?? (prefersDark ? "dark" : "light"));
 
-    toggle?.addEventListener("click", () => {
-      const next = root.classList.contains("dark") ? "light" : "dark";
-      apply(next as "light" | "dark");
+    toggles.forEach((toggle) => {
+      toggle.addEventListener("click", () => {
+        const next = root.classList.contains("dark") ? "light" : "dark";
+        apply(next as "light" | "dark");
+      });
     });
   })();
 </script>

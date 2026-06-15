@@ -6,6 +6,9 @@ import EditIcon from "@/images/icons/edit.svg?raw";
 import SettingsIcon from "@/images/icons/cog-6-tooth.svg?raw";
 import SupportIcon from "@/images/icons/information-circle.svg?raw";
 import SignOutIcon from "@/images/icons/arrow-left-sign-out.svg?raw";
+import SunIcon from "@/images/icons/sun.svg?raw";
+import MoonIcon from "@/images/icons/moon.svg?raw";
+import languagesData from "@/data/languages.json";
 
 const locale = getLocale(Astro);
 
@@ -73,6 +76,39 @@ const initials = name
       <span id="account-email" class="mt-1 block text-xs text-gray-500 dark:text-gray-400">{email}</span>
     </div>
 
+    {/* Mobile-only preferences — on desktop these live in the header. */}
+    <div class="sm:hidden mb-3 space-y-3 border-b border-gray-200 pb-3 dark:border-gray-800">
+      <button type="button" data-theme-toggle aria-pressed="false" class="account-link w-full">
+        <span class="account-link-icon w-4 h-4 inline-block text-current shrink-0" aria-hidden="true">
+          <span class="hidden dark:block"><Fragment set:html={SunIcon} /></span>
+          <span class="dark:hidden"><Fragment set:html={MoonIcon} /></span>
+        </span>
+        <span data-i18n="header.toggle_theme">{t(locale, "header.toggle_theme")}</span>
+      </button>
+
+      <div class="px-3">
+        <p class="mb-1.5 text-xs font-medium text-gray-400 dark:text-gray-500" data-i18n="header.change_language">
+          {t(locale, "header.change_language")}
+        </p>
+        <div role="radiogroup" aria-label="Language" data-i18n-aria-label="header.change_language"
+          class="inline-flex items-center gap-0.5 rounded-full border border-gray-200 bg-gray-100 p-1 dark:border-gray-700 dark:bg-gray-800">
+          {languagesData.map((lang) => (
+            <button
+              type="button"
+              role="radio"
+              aria-checked="false"
+              data-acct-lang={lang.code}
+              title={lang.label}
+              class="acct-lang-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-gray-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:text-gray-400"
+            >
+              <span aria-hidden="true" class="text-sm leading-none">{lang.flag}</span>
+              <span>{lang.code.toUpperCase()}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+
     <ul class="flex flex-col gap-1 border-b border-gray-200 pb-3 dark:border-gray-800">
       {menuItems.map((item) => (
         <li>
@@ -97,6 +133,45 @@ const initials = name
 
 <script>
   import { getUser, logout } from "@/lib/auth";
+  import { getClientLocale, setClientLocale } from "@/utils/clientLocale";
+  import { loadClientTranslations } from "@/utils/i18nClient";
+
+  // Mobile-only language pills inside the account dropdown. The theme button
+  // (data-theme-toggle) is wired globally by BaseLayout's theme script.
+  const ACTIVE_CLASSES = ["bg-white", "text-gray-900", "shadow-sm", "dark:bg-gray-900", "dark:text-white"];
+  const INACTIVE_CLASSES = ["text-gray-500", "dark:text-gray-400"];
+
+  const paintAcctLang = (code: string) => {
+    document.querySelectorAll<HTMLButtonElement>(".acct-lang-pill").forEach((pill) => {
+      const active = pill.getAttribute("data-acct-lang") === code;
+      pill.setAttribute("aria-checked", String(active));
+      if (active) {
+        pill.classList.add(...ACTIVE_CLASSES);
+        pill.classList.remove(...INACTIVE_CLASSES);
+      } else {
+        pill.classList.remove(...ACTIVE_CLASSES);
+        pill.classList.add(...INACTIVE_CLASSES);
+      }
+    });
+  };
+
+  paintAcctLang(getClientLocale());
+
+  document.querySelectorAll<HTMLButtonElement>(".acct-lang-pill").forEach((pill) => {
+    pill.addEventListener("click", () => {
+      const lang = pill.getAttribute("data-acct-lang");
+      if (!lang || lang === getClientLocale()) return;
+      setClientLocale(lang);
+      loadClientTranslations();
+      paintAcctLang(lang);
+      document.dispatchEvent(new CustomEvent("synapxia:locale-changed", { detail: lang }));
+    });
+  });
+
+  // Stay in sync if the language is changed elsewhere (e.g. the header switcher).
+  document.addEventListener("synapxia:locale-changed", (e) => {
+    paintAcctLang((e as CustomEvent<string>).detail);
+  });
 
   // Patch placeholder name/email/initials with real cached user on mount.
   const user = getUser();

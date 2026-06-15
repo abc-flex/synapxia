@@ -152,9 +152,7 @@ const fieldKeys = deleteFields.map((f) => f.key);
       import { deleteAsset } from "/src/lib/assets";
       import { setFavorite } from "/src/lib/favorites";
       import { getUser } from "/src/lib/auth";
-      import { getCharacterizationsByAsset } from "/src/lib/characterizations";
-      import { getAssetRelationsBySource } from "/src/lib/asset_relations";
-      import { getListItemsbyList } from "/src/lib/list_items";
+      import { initAssetDetailTabs } from "/src/lib/assetDetailTabs";
       import { loadClientTranslations } from "/src/utils/i18nClient";
 
       // CrudClient drives the delete modal's prefill flow. The table rows
@@ -171,30 +169,8 @@ const fieldKeys = deleteFields.map((f) => f.key);
           .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
           .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 
-      // id → name map from the SSR-embedded rows (for related-asset labels).
-      let nameById = new Map();
-      try {
-        const rows = JSON.parse(
-          decodeURIComponent(document.getElementById("assets-data")?.dataset.rows || "[]"),
-        );
-        nameById = new Map(rows.map((r) => [Number(r.id), r.name]));
-      } catch { /* leave empty */ }
-
-      // RELATION_TYPE code → label, fetched once and cached.
-      let relTypeMap = null;
-      async function ensureRelTypes() {
-        if (relTypeMap) return;
-        relTypeMap = new Map();
-        try {
-          const lang = localStorage.getItem("lang") || "en";
-          const items = await getListItemsbyList("RELATION_TYPE");
-          const byLang = items.filter((li) => li.lang === lang);
-          for (const li of (byLang.length ? byLang : items)) {
-            relTypeMap.set(li.value, li.label || li.value);
-          }
-        } catch { /* fall back to raw codes */ }
-      }
-      const relTypeLabel = (code) => relTypeMap?.get(code) || code;
+      // The single live inline-detail editor (one open at a time).
+      let openController = null;
 
       // ── Per-row favorite star toggle ──────────────────────────────────────
       const paintStar = (btn, on) => {
@@ -242,64 +218,82 @@ const fieldKeys = deleteFields.map((f) => f.key);
         true /* capture so we beat advancedTable's bubble delegation */,
       );
 
-      // ── Master-detail inline expand row ───────────────────────────────────
+      // ── Master-detail inline expand row (EDITABLE, shared module) ─────────
+      function collapseOpen() {
+        try { openController?.destroy(); } catch { /* ignore */ }
+        openController = null;
+        document
+          .querySelectorAll('#assets tbody tr[data-detail-row]')
+          .forEach((r) => r.remove());
+      }
+
       async function toggleDetailRow(btn) {
         const tr = btn.closest("tr");
         if (!tr) return;
 
-        // Collapse if this row's detail is already open.
+        // If advancedTable purged the open row on a re-render, drop the stale ref.
+        if (openController && !document.contains(openController.root)) {
+          openController = null;
+        }
+
+        // Collapse if THIS row's detail is already open.
         const sib = tr.nextElementSibling;
         if (sib && sib.hasAttribute("data-detail-row")) {
-          sib.remove();
+          collapseOpen();
           return;
         }
-        // Only one open at a time.
-        document
-          .querySelectorAll('#assets tbody tr[data-detail-row]')
-          .forEach((r) => r.remove());
+        // One open at a time.
+        collapseOpen();
 
         const id = Number(btn.getAttribute("data-id"));
         const colCount = tr.children.length;
         const detail = document.createElement("tr");
         detail.setAttribute("data-detail-row", "");
-        detail.innerHTML = `<td colspan="${colCount}" class="bg-gray-50 dark:bg-gray-900/40 px-4 py-3">
-          <div class="text-sm text-gray-400" data-i18n="common.loading">Loading…</div></td>`;
+        detail.innerHTML = `
+          <td colspan="${colCount}" class="bg-gray-50 dark:bg-gray-900/40 px-4 py-4">
+            <div id="asset-detail-row-${id}-tabs"></div>
+            <div class="mt-4 flex items-center justify-end gap-3 border-t border-gray-200 dark:border-gray-800 pt-3">
+              <button type="button" data-detail-cancel
+                class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                data-i18n="common.cancel">Cancel</button>
+              <button type="button" data-detail-save
+                class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                data-i18n="common.save">Save</button>
+            </div>
+          </td>`;
         tr.after(detail);
-        const cell = detail.firstElementChild;
+
+        const tabsRoot = detail.querySelector(`#asset-detail-row-${id}-tabs`);
+        const saveBtn = detail.querySelector("[data-detail-save]");
+        const cancelBtn = detail.querySelector("[data-detail-cancel]");
+
+        const tabs = initAssetDetailTabs(tabsRoot, {
+          idPrefix: `asset-detail-row-${id}`,
+          assetId: id,
+          mode: "inline",
+          onError: (m) => showToast(m, "error"),
+        });
+        openController = tabs;
 
         try {
-          await ensureRelTypes();
-          const [chars, rels] = await Promise.all([
-            getCharacterizationsByAsset(id),
-            getAssetRelationsBySource(id),
-          ]);
-          cell.innerHTML = renderDetail(chars, rels);
+          await tabs.hydrate(id);
           loadClientTranslations();
         } catch (err) {
-          cell.innerHTML = `<div class="text-sm text-red-600 dark:text-red-400">${escapeHtml(err instanceof Error ? err.message : "Error")}</div>`;
+          showToast(err instanceof Error ? err.message : "Could not load details", "error");
         }
-      }
 
-      function renderDetail(chars, rels) {
-        const charsHtml = (chars && chars.length)
-          ? `<ul class="space-y-1">${chars.map((c) =>
-              `<li class="text-sm"><span class="font-medium" data-i18n="features.${escapeHtml(c.feature)}">${escapeHtml(c.feature)}</span>: ${escapeHtml(c.value ?? "")}</li>`).join("")}</ul>`
-          : `<p class="text-sm text-gray-400" data-i18n="asset_table.detail_empty">—</p>`;
-        const relsHtml = (rels && rels.length)
-          ? `<ul class="space-y-1">${rels.map((r) =>
-              `<li class="text-sm">${escapeHtml(nameById.get(Number(r.target)) ?? r.target)}<span class="ml-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">${escapeHtml(relTypeLabel(r.type))}</span>${r.rationale ? ` <span class="text-gray-500 dark:text-gray-400">— ${escapeHtml(r.rationale)}</span>` : ""}</li>`).join("")}</ul>`
-          : `<p class="text-sm text-gray-400" data-i18n="asset_table.detail_empty">—</p>`;
-        return `
-          <div class="grid gap-4 md:grid-cols-2">
-            <div>
-              <h5 class="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500" data-i18n="asset_table.detail_characterizations">Characterizations</h5>
-              ${charsHtml}
-            </div>
-            <div>
-              <h5 class="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500" data-i18n="asset_table.detail_related">Related Assets</h5>
-              ${relsHtml}
-            </div>
-          </div>`;
+        cancelBtn?.addEventListener("click", () => collapseOpen());
+        saveBtn?.addEventListener("click", async () => {
+          saveBtn.disabled = true;
+          try {
+            await tabs.flush(id);
+            showToast("Details saved!");
+          } catch (err) {
+            showToast(err instanceof Error ? err.message : "Could not save details", "error");
+          } finally {
+            saveBtn.disabled = false;
+          }
+        });
       }
 
       // Toast helper

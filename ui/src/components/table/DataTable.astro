@@ -309,6 +309,7 @@ const visibleColumns = columns.filter((col) => col.visible !== false);
                       </span>
                     </button>
                   )}
+                  {(detailExpand || favoriteAction) && <span class="dot">•</span>}
                   <button
                     class="p-1 hover:bg-blue-100 rounded edit-btn"
                     data-id={row.id}

@@ -468,6 +468,19 @@ export interface MetricUpdate {
   is_active?: boolean;
 }
 
+// Latest metric value per assignment for a dimension, as of a date.
+// Read-only projection returned by GET /api/metrics/dimension/{code}.
+export interface MetricByDimension {
+  name: string;
+  email: string;
+  role: string;
+  team: string;
+  metric: string;
+  date: string;
+  observation: string;
+}
+
+
 // Team types
 export interface Team {
   code: string;

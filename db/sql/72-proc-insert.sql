@@ -191,22 +191,22 @@ INSERT INTO related_processes (source, target, type, rationale) VALUES
     ('INFR', 'SERV', 'USED_BY', 'Firm infrastructure governs and supports the service activity.');
 
 -- **********************************
--- ********* Related Assets **********
+-- ********* Process Assets **********
 -- **********************************
 -- Link processes to digital library assets (assets.id 1..3).
 
-INSERT INTO related_assets (process, asset, rationale) VALUES
+INSERT INTO process_assets (process, asset, rationale) VALUES
     ('OPER-DEVELOP', 1, 'Python web development prompt used during software development.'),
     ('OPER-DEVELOP', 3, 'Python web developer agent supporting the development process.'),
     ('INBL-CODEMGT', 2, 'GitHub MCP server backing centralized source code management.'),
     ('TECH-AIPLATF', 2, 'GitHub MCP server reused while building AI platform tooling.');
 
 -- **********************************
--- ********* Related Inits ***********
+-- ********* Process Inits ***********
 -- **********************************
 -- Link processes to GenAI initiatives (initiatives.id 1..5).
 
-INSERT INTO related_inits (process, init, rationale) VALUES
+INSERT INTO process_inits (process, init, rationale) VALUES
     ('TECH-RESEARC', 1, 'R&D drives the Organizational Knowledge Management Platform.'),
     ('INFR-GOVERNA', 2, 'Governance oversees the Centralized Knowledge Base.'),
     ('TECH-AIPLATF', 3, 'AI platform engineering powers the Knowledge Assistant (RAG).'),

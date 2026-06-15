@@ -21,15 +21,15 @@ CREATE TABLE processes (
     CONSTRAINT pk_processes PRIMARY KEY (code)
 );
 
--- Table related_assets
-CREATE TABLE related_assets (
+-- Table process_assets
+CREATE TABLE process_assets (
     process     VARCHAR(50)   NOT NULL,
     asset       BIGINT        NOT NULL,
     rationale   TEXT,
     is_active   BOOLEAN       NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ,
-    CONSTRAINT pk_related_assets PRIMARY KEY (process, asset)
+    CONSTRAINT pk_process_assets PRIMARY KEY (process, asset)
 );
 
 -- Table related_processes
@@ -44,15 +44,15 @@ CREATE TABLE related_processes (
     CONSTRAINT pk_related_processes PRIMARY KEY (source, target)
 );
 
--- Table related_inits
-CREATE TABLE related_inits (
+-- Table process_inits
+CREATE TABLE process_inits (
     process     VARCHAR(50)   NOT NULL,
     init        BIGINT        NOT NULL,
     rationale   TEXT,
     is_active   BOOLEAN       NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ,
-    CONSTRAINT pk_related_inits PRIMARY KEY (process, init)
+    CONSTRAINT pk_process_inits PRIMARY KEY (process, init)
 );
 
 -- ****************************************
@@ -77,15 +77,15 @@ ALTER TABLE processes
     FOREIGN KEY (owner)
     REFERENCES users (id);
 
--- related_assets.process → processes.code
-ALTER TABLE related_assets
-    ADD CONSTRAINT fk_related_assets_processes
+-- process_assets.process → processes.code
+ALTER TABLE process_assets
+    ADD CONSTRAINT fk_process_assets_processes
     FOREIGN KEY (process)
     REFERENCES processes (code);
 
--- related_assets.asset → assets.id
-ALTER TABLE related_assets
-    ADD CONSTRAINT fk_related_assets_assets
+-- process_assets.asset → assets.id
+ALTER TABLE process_assets
+    ADD CONSTRAINT fk_process_assets_assets
     FOREIGN KEY (asset)
     REFERENCES assets (id);
 
@@ -101,15 +101,15 @@ ALTER TABLE related_processes
     FOREIGN KEY (target)
     REFERENCES processes (code);
 
--- related_inits.process → processes.code
-ALTER TABLE related_inits
-    ADD CONSTRAINT fk_related_inits_processes
+-- process_inits.process → processes.code
+ALTER TABLE process_inits
+    ADD CONSTRAINT fk_process_inits_processes
     FOREIGN KEY (process)
     REFERENCES processes (code);
 
--- related_inits.init → initiatives.id
-ALTER TABLE related_inits
-    ADD CONSTRAINT fk_related_inits_initiatives
+-- process_inits.init → initiatives.id
+ALTER TABLE process_inits
+    ADD CONSTRAINT fk_process_inits_initiatives
     FOREIGN KEY (init)
     REFERENCES initiatives (id);
 

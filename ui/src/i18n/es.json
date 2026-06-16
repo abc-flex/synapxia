@@ -385,6 +385,11 @@
     "empty_message": "No se encontraron Asignaciones",
     "delete_confirmation": "¿Está seguro de que desea eliminar esta Asignación?"
   },
+  "assignment_dashboard": {
+    "dimension": "Dimensión",
+    "date": "Fecha de corte",
+    "empty_message": "No se encontraron asignaciones para esta dimensión y fecha"
+  },
   "asset_modal": {
     "name": "Nombre",
     "description": "Descripción",

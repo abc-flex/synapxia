@@ -22,6 +22,10 @@ interface Props {
   filterOptions3?: FilterOption[];
   filterDefaultValue3?: string;
   filter3AllLabel?: string | null;
+  columnFilter4?: string | null;
+  filterOptions4?: FilterOption[];
+  filterDefaultValue4?: string;
+  filter4AllLabel?: string | null;
 }
 const {
   tableId,
@@ -40,10 +44,14 @@ const {
   filterOptions3 = [],
   filterDefaultValue3 = "",
   filter3AllLabel = null,
+  columnFilter4 = null,
+  filterOptions4 = [],
+  filterDefaultValue4 = "",
+  filter4AllLabel = null,
 } = Astro.props as Props;
 
 // How many column filters are configured — drives the mobile "Filtros" button.
-const filterCount = [columnFilter, columnFilter2, columnFilter3].filter(Boolean).length;
+const filterCount = [columnFilter, columnFilter2, columnFilter3, columnFilter4].filter(Boolean).length;
 ---
 <div
   class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
@@ -109,6 +117,10 @@ const filterCount = [columnFilter, columnFilter2, columnFilter3].filter(Boolean)
       filterOptions3={filterOptions3}
       filterDefaultValue3={filterDefaultValue3}
       filter3AllLabel={filter3AllLabel}
+      columnFilter4={columnFilter4}
+      filterOptions4={filterOptions4}
+      filterDefaultValue4={filterDefaultValue4}
+      filter4AllLabel={filter4AllLabel}
     />
   </div>
 

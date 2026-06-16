@@ -4,10 +4,12 @@ from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select, SQLModel
-from sqlalchemy import cast, String
+from sqlalchemy import cast, String, func
 from sqlalchemy.exc import IntegrityError
 
-from ..internal.models import Asset, AssetCreate, AssetUpdate
+from ..internal.models import (
+    Asset, AssetCreate, AssetUpdate, AssetPermission, AssetWithAccessLevels,
+)
 from ...taxo.internal.models import Category
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
@@ -33,6 +35,65 @@ def get_all(
                           .offset(skip).limit(limit)
                           .order_by(Asset.name)).all()
     return assets
+
+
+# NOTE: declared before any `/{...}` dynamic route so "with-access" isn't
+# captured as a path parameter.
+@router.get("/with-access", response_model=List[AssetWithAccessLevels])
+def get_all_with_access(
+    skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
+) -> List[AssetWithAccessLevels]:
+    """
+    List assets with an aggregated per-asset access summary.
+
+    Each row adds `access_levels` (distinct active access levels granted on the
+    asset, e.g. VIEW/MANAGE) and `is_public` (any active permission targeting
+    PUBLIC). The existing `GET /api/assets/` contract is unchanged.
+
+    - **skip**: Number of records to skip (default: 0)
+    - **limit**: Maximum number of records to return (default: 100)
+    """
+    # Aggregate active permissions per asset (distinct access levels + public flag).
+    access_agg = (
+        select(
+            AssetPermission.asset.label("asset"),
+            func.array_agg(func.distinct(AssetPermission.access_level)).label(
+                "access_levels"),
+            func.bool_or(AssetPermission.target_type == "PUBLIC").label(
+                "is_public"),
+        )
+        .where(AssetPermission.is_active == True)
+        .group_by(AssetPermission.asset)
+        .subquery()
+    )
+
+    rows = session.exec(
+        select(Asset, access_agg.c.access_levels, access_agg.c.is_public)
+        .outerjoin(access_agg, Asset.id == access_agg.c.asset)
+        .where(Asset.is_active == True)
+        .offset(skip).limit(limit)
+        .order_by(Asset.name)
+    ).all()
+
+    result: List[AssetWithAccessLevels] = []
+    for asset, access_levels, is_public in rows:
+        result.append(AssetWithAccessLevels(
+            id=asset.id,
+            name=asset.name,
+            description=asset.description,
+            category=asset.category,
+            reference=asset.reference,
+            status=asset.status,
+            tags=asset.tags,
+            detail=asset.detail,
+            is_active=asset.is_active,
+            created_at=asset.created_at,
+            updated_at=asset.updated_at,
+            access_levels=list(access_levels) if access_levels else [],
+            is_public=bool(is_public),
+        ))
+    return result
 
 
 class AssetBasic(SQLModel):

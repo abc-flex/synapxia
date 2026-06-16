@@ -5,7 +5,7 @@ import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
 import AssetDetailModal from "../../components/lib/AssetDetailModal.astro";
-import { getAssets } from "@/lib/assets";
+import { getAssetsWithAccess } from "@/lib/assets";
 import { getCategoriesSelect } from "@/lib/categories";
 import { getListItemsbyList } from "@/lib/list_items";
 import { getCurrentUser } from "@/lib/auth";
@@ -16,7 +16,7 @@ let assets: any[] = [];
 let errorMessage: string | null = null;
 
 try {
-  assets = await getAssets();
+  assets = await getAssetsWithAccess();
 } catch (error) {
   console.error("Failed to fetch assets:", error);
   errorMessage =
@@ -97,6 +97,11 @@ const data = assets.map((item) => ({
   updated_at: item.updated_at,
   // "yes"/"no" string so the columnFilter3 equality check works.
   favorite: favIds.has(item.id) ? "yes" : "no",
+  // Comma-separated access tokens for the membership-based access filter
+  // (columnFilter4): e.g. "VIEW,MANAGE,PUBLIC".
+  access: [...(item.access_levels ?? []), item.is_public ? "PUBLIC" : ""]
+    .filter(Boolean)
+    .join(","),
 }));
 
 // Delete-only fields for the small confirmation CrudModal
@@ -385,6 +390,13 @@ const fieldKeys = deleteFields.map((f) => f.key);
           filter3AllLabel="asset_table.fav_filter_all"
           filterOptions3={[
             { value: "yes", label: "My favorites", i18n: "asset_table.fav_filter_mine" },
+          ]}
+          columnFilter4="access"
+          filter4AllLabel="asset_table.access_filter_all"
+          filterOptions4={[
+            { value: "VIEW", label: "View only", i18n: "asset_table.access_filter_view" },
+            { value: "MANAGE", label: "Can manage", i18n: "asset_table.access_filter_manage" },
+            { value: "PUBLIC", label: "Public", i18n: "asset_table.access_filter_public" },
           ]}
           favoriteAction={true}
           favoriteKey="favorite"

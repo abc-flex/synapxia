@@ -150,7 +150,8 @@
     "unit_day": "d",
     "unit_week": "sem",
     "unit_month": "mes",
-    "unit_year": "a"
+    "unit_year": "a",
+    "reset": "Restablecer"
   },
   "business_unit_modal": {
     "code": "Código",
@@ -413,7 +414,11 @@
     "detail_expand": "Ver detalles",
     "detail_characterizations": "Caracterizaciones",
     "detail_related": "Activos relacionados",
-    "detail_empty": "—"
+    "detail_empty": "—",
+    "access_filter_all": "Todos los niveles de acceso",
+    "access_filter_view": "Solo lectura",
+    "access_filter_manage": "Puede gestionar",
+    "access_filter_public": "Público"
   },
   "asset_detail_modal": {
     "title_create": "Nuevo Activo",

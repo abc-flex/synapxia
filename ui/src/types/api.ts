@@ -616,6 +616,12 @@ export interface AssetUpdate {
   is_active?: boolean;
 }
 
+// Read projection from GET /api/assets/with-access: Asset + aggregated access summary.
+export interface AssetWithAccessLevels extends Asset {
+  access_levels: string[]; // distinct active access levels, e.g. ["VIEW","MANAGE"]
+  is_public: boolean;       // true if any active permission targets PUBLIC
+}
+
 // ============================================================================
 // Characterizations — composite-key (asset, feature) rows that hold the
 // per-feature value for an asset (e.g. asset #3 + feature MODE → "Remote").

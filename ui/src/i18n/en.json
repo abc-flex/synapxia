@@ -150,7 +150,8 @@
     "unit_day": "d",
     "unit_week": "w",
     "unit_month": "mo",
-    "unit_year": "y"
+    "unit_year": "y",
+    "reset": "Reset"
   },
   "business_unit_modal": {
     "code": "Code",
@@ -413,7 +414,11 @@
     "detail_expand": "Show details",
     "detail_characterizations": "Characterizations",
     "detail_related": "Related Assets",
-    "detail_empty": "—"
+    "detail_empty": "—",
+    "access_filter_all": "All access levels",
+    "access_filter_view": "View only",
+    "access_filter_manage": "Can manage",
+    "access_filter_public": "Public"
   },
   "asset_detail_modal": {
     "title_create": "New Asset",

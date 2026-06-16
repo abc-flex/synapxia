@@ -90,6 +90,7 @@
     "skills": "Catálogo de Habilidades",
     "assistants": "Asistentes",
     "rag_apps": "Aplicaciones RAG",
+    "models": "Modelos",
     "criterias": "Criterios",
     "propose": "Proponer",
     "explore": "Explorar",
@@ -97,8 +98,7 @@
     "usage": "Métricas de Uso",
     "processes": "Catálogo de Procesos",
     "value_chain": "Cadena de Valor",
-    "map": "Mapa de Procesos",
-    "models": "Modelos de Procesos"
+    "map": "Mapa de Procesos"
   },
   "crud_modal": {
     "add": "Agregar",

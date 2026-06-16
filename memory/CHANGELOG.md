@@ -29,6 +29,19 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 - Follow-up: made the human `name` the bold principal (title) with `code` as the muted subtitle across all 11 code+name tables (profiles, business_units, modules, options, lists, categories, features, teams, projects, dimensions, roles); previously code was the title. Pages whose entity label is a resolved `*_name` (users, privileges, assignments, specifications, assets) already lead with it. The principal/subtitle remain fully per-page configurable via `as:"title"` + `subtitleKey`/`subtitleFormat`.
 - Follow-up: **modular split of the monolithic `DataTable.astro`** (god component) into an orchestrator shell + 9 sub-parts under `components/table/partials/` (`DataTableToolbar`, `DataTableFilters`, `DataTableSearchExport`, `DataTableHead`, `DataTableBody`, `DataTableCell`, `DataTableActions`, `DataTablePagination`, `DataTableEmpty`), plus extracted pure helpers in `lib/datatable.ts` (`statusTone`/`formatDate`/`formatRelative`/`renderSubtitle`) and shared types in `types/datatable.ts`. The 3 duplicated filter `<select>`s collapsed into one loop. **DOM contract is byte-identical** (proved by diffing the dev-server-rendered DOM before/after — only time/cache-buster noise differed), so `advancedTable.ts` and the card-view CSS are untouched and search/filter/pagination/export/actions/detail-expand still work.
 - Files affected: `ui/src/components/table/DataTable.astro`, `ui/src/components/table/partials/*.astro` (9 new), `ui/src/lib/datatable.ts` (new), `ui/src/types/datatable.ts` (new), `ui/src/styles/globals.css`, `ui/src/i18n/{en,es}.json`, and `ui/src/pages/{admin/{users,profiles,privileges,business_units,modules,options,lists,list_items,item_translations},taxo/{categories,specifications,features},lib/assets,collab/{teams,projects,assignments,dimensions,metrics,roles}}.astro`
+## 2026-06-15 18:50 — Add metrics-by-dimension endpoint
+
+- Added `GET /api/metrics/dimension/{code}?date=` returning `List[MetricByDimension]`: latest active metric per assignment for a dimension as of the cut-off date, joined with user (name/email), role and team. The UI (`assignment.astro` → `getMetricsByDimension`) already called this route, but only the response model existed — the endpoint itself was missing, causing the browser 404.
+- Dedupes assignments that share the same `measured_at` (keeps highest metric id); returns `team`/`observation` as `""` when null so the grid renders.
+- Files affected: `api/app/collab/routes/metrics.py`
+---
+
+## 2026-06-15 18:40 — Assignments dashboard loads from metrics-by-dimension endpoint
+
+- API: reworked `GET /api/metrics/dimension/{dimension_code}` to return the latest metric per assignment as of a `date` cut-off (new required query param) via a `DISTINCT ON (assignment)` join over `assignments` + `users`, instead of all raw `Metric` rows. Added a read-only `MetricByDimension` projection schema. **Contract change** on an existing endpoint: response shape changed and `date` is now required.
+- UI: `collab/assignment.astro` now renders client-side from the API (dimension selector populated from `getDimensions()`, plus an as-of date picker) instead of the static `data/assignments.json` mock. Added `getMetricsByDimension()` service and `MetricByDimension` type. Saving a metric in the modal still only updates the in-memory grid — persisting edits back to the API is a separate, not-yet-wired step.
+- i18n: added `assignment_dashboard` keys (`dimension`, `date`, `empty_message`) to `en.json` + `es.json`.
+- Files affected: `api/app/collab/routes/metrics.py`, `api/app/collab/internal/models.py`, `ui/src/lib/metrics.ts`, `ui/src/lib/dimensions.ts`, `ui/src/types/api.ts`, `ui/src/pages/collab/assignment.astro`, `ui/src/i18n/en.json`, `ui/src/i18n/es.json`
 
 ## 2026-06-15 19:25 — Responsive UI refresh: mobile drawer, card-view tables, modal, layout, dashboard + mobile header/toolbar cleanup
 

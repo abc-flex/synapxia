@@ -4,7 +4,7 @@
  */
 
 import { apiGet, apiPost, apiPut, apiDelete, buildQueryString } from './api';
-import type { Metric, MetricCreate, MetricUpdate } from '../types/api';
+import type { Metric, MetricCreate, MetricUpdate, MetricByDimension } from '../types/api';
 
 /**
  * Fetch all metrics with optional pagination
@@ -24,6 +24,23 @@ export async function getMetrics(skip: number = 0, limit: number = 100): Promise
  */
 export async function getMetric(id: number): Promise<Metric> {
   return apiGet<Metric>(`/api/metrics/${id}`);
+}
+
+/**
+ * Fetch the latest metric value per assignment for a dimension, as of a date.
+ * Returns one row per assignment — the most recent measurement on or before the cut-off.
+ * @param dimensionCode - Dimension code to filter metrics
+ * @param date - Cut-off timestamp (ISO 8601); only metrics measured on or before it count
+ * @returns Promise with array of per-assignment metric projections
+ */
+export async function getMetricsByDimension(
+  dimensionCode: string,
+  date: string,
+): Promise<MetricByDimension[]> {
+  const queryString = buildQueryString({ date });
+  return apiGet<MetricByDimension[]>(
+    `/api/metrics/dimension/${encodeURIComponent(dimensionCode)}${queryString}`,
+  );
 }
 
 /**

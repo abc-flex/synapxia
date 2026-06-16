@@ -1,98 +1,20 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumb from "../../components/core/Breadcrumb.astro";
-import Toast from "../../components/Toast.astro";
-import assignmentsData from "@/data/assignments.json";
 
-// Get dimension query param for pre-filter
+// Dimension + as-of date are chosen client-side; the secured endpoint
+// (GET /api/metrics/dimension/{code}?date=...) needs the JWT from localStorage,
+// so the grid is fetched and rendered in the browser, not at build time.
 const dimensionFilter = Astro.url.searchParams.get("dimension") || "";
-
-// Normalize and process assignments data
-interface Assignment {
-  name: string;
-  email: string;
-  role: string;
-  team: string;
-  metric: string;
-  date: string;
-  observation: string;
-}
-
-// Metric levels for normalization
-const METRIC_LEVELS = ["UNDEFINED", "NO_USAGE", "LOW", "MODERATE", "HIGH", "VERY_HIGH"];
-const LEGACY_METRIC_MAP: Record<string, string> = {
-  ALTO: "HIGH",
-  ALTA: "HIGH",
-  MEDIO: "MODERATE",
-  MEDIA: "MODERATE",
-  BAJO: "LOW",
-  BAJA: "LOW",
-};
-
-// Normalize metric value
-function normalizeMetricValue(metric: string): string {
-  if (!metric) return "NO_USAGE";
-  const candidate = metric.toString().trim().toUpperCase().replace(/\s+/g, "_");
-  if (METRIC_LEVELS.includes(candidate)) return candidate;
-  if (LEGACY_METRIC_MAP[candidate]) return LEGACY_METRIC_MAP[candidate];
-  return "NO_USAGE";
-}
-
-// Normalize assignments data
-const assignments: Assignment[] = assignmentsData.map((emp: any) => ({
-  ...emp,
-  metric: normalizeMetricValue(emp.metric),
-}));
-
-// Get unique dimensions
-const dimensions = [{ name: "Adopción GenAI para Devs" }, { name: "Adopción GenAI para QA" }];
-
-// Get unique roles and teams
-const assignmentsWithTeam = assignments.filter((emp) => emp.team && emp.team.trim() !== "");
-const assignmentsWithoutTeam = assignments.filter((emp) => !emp.team || emp.team.trim() === "");
-const roles = [...new Set(assignmentsWithTeam.map((emp) => emp.role))];
-const teams = [...new Set(assignmentsWithTeam.map((emp) => emp.team))].filter(Boolean);
-
-// Get initial assignments (without team filter for now)
-
-// Helper to get initials
-function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 3)
-    .toUpperCase();
-}
-
-// Helper to get employees by role and team
-function getEmployeesByRoleAndTeam(role: string, team: string, list: Assignment[]): Assignment[] {
-  return list.filter((emp) => emp.role === role && emp.team === team);
-}
-
-// Get metric color class
-function getMetricColorClass(metric: string): string {
-  const colorMap: Record<string, string> = {
-    UNDEFINED: "bg-slate-100 text-slate-700 border border-slate-300",
-    NO_USAGE: "bg-red-300 text-red-700 border border-red-500",
-    LOW: "bg-orange-300 text-orange-700 border border-orange-500",
-    MODERATE: "bg-yellow-200 text-yellow-700 border border-yellow-500",
-    HIGH: "bg-lime-300 text-lime-700 border border-lime-500",
-    VERY_HIGH: "bg-green-300 text-green-700 border border-green-500",
-  };
-  return colorMap[metric] || "bg-gray-400";
-}
 ---
 
 <BaseLayout>
-  <div class="mx-auto w-full max-w-full md:p-0">
+  <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
     <!-- Breadcrumb Start -->
     <Breadcrumb
       moduleName="Collaboration"
       pageName="Assignments Dashboard"
       pageTitle="Assigments Dashboard"
-      homeLink="/"
       homeLink="/"
       moduleNameKey="modules.COLLAB"
       pageNameKey="menu_options.assignment"
@@ -101,111 +23,48 @@ function getMetricColorClass(metric: string): string {
     <!-- Breadcrumb End -->
 
     <div class="space-y-5 sm:space-y-6">
-      <!-- Page Title Section -->
-      <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <select
-          id="dimensionSelect"
-          class="px-4 py-2 border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition shadow-sm"
-        >
-          {dimensions.map((dim) => <option value={dim.name}>{dim.name}</option>)}
-        </select>
+      <!-- Filters Section -->
+      <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div class="flex flex-col gap-1">
+          <label
+            for="dimensionSelect"
+            class="text-sm font-semibold text-slate-600"
+            data-i18n="assignment_dashboard.dimension"
+          >
+            Dimension
+          </label>
+          <select
+            id="dimensionSelect"
+            data-initial-dimension={dimensionFilter}
+            class="px-4 py-2 border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition shadow-sm"
+          >
+          </select>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label
+            for="asOfDate"
+            class="text-sm font-semibold text-slate-600"
+            data-i18n="assignment_dashboard.date"
+          >
+            As-of date
+          </label>
+          <input
+            id="asOfDate"
+            type="date"
+            class="px-4 py-2 border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition shadow-sm"
+          />
+        </div>
       </div>
 
       <!-- Dashboard Grid Section -->
+      <div class="overflow-x-auto">
         <table class="w-full border-collapse text-sm min-w-[800px] datatable-dense">
-          <thead class="bg-gray-200 text-sm uppercase text-gray-700 border-b border-black">
-            <tr class="border-b border-slate-200">
-              <th class="text-white text-center px-2 py-3 font-semibold sticky top-0 z-10 border border-slate-200">
-                <span data-i18n="team_modal.one_title" class="uppercase">Team</span> &#11208;
-                <br> 
-                <span data-i18n="role_modal.one_title" class="uppercase">Role</span> &#11206;
-              </th>
-              {
-                teams.map((team) => (
-                  <th class="text-slate-900 px-4 py-3 font-semibold text-center border border-slate-200 sticky top-0 z-10">
-                    {team.toUpperCase()}
-                  </th>
-                ))
-              }
-            </tr>
+          <thead
+            id="assignmentThead"
+            class="bg-gray-200 text-sm uppercase text-gray-700 border-b border-black"
+          >
           </thead>
-          <tbody>
-            {
-              roles.map((role) => (
-                <tr class="border-b border-slate-200 hover:bg-slate-50">
-                  <td class="bg-gray-50 text-slate-900 text-center text-sm uppercase px-4 py-3 font-semibold border border-slate-200">
-                    {role}
-                  </td>
-                  {teams.map((team) => {
-                    const employees = getEmployeesByRoleAndTeam(role, team, assignmentsWithTeam);
-                    return (
-                      <td class="px-4 py-3 border border-slate-200 text-center">
-                        {employees.length > 0 && (
-                          <div class="flex flex-wrap gap-2 justify-center items-center min-h-[80px]">
-                            {employees.map((emp) => {
-                              const initials = getInitials(emp.name);
-                              const metricClass = getMetricColorClass(emp.metric);
-                              return (
-                                <div class="avatar-wrapper relative inline-block group">
-                                  <button
-                                    class={`avatar w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer transition-transform hover:scale-110 ${metricClass}`}
-                                    data-email={emp.email}
-                                    data-name={emp.name}
-                                  >
-                                    {initials}
-                                  </button>
-                                  <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 text-white text-xs px-3 py-2 rounded whitespace-nowrap z-50 pointer-events-none shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                    {emp.name}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))
-            }
-            <!-- Employees without team row -->
-            {
-              assignmentsWithoutTeam.length > 0 && (
-                <tr class="border-b border-slate-200">
-                  <td class="px-4 py-3 font-semibold border border-slate-200">
-                    --
-                  </td>
-                  <td colspan={teams.length} class="px-4 py-3 border border-slate-200">
-                    <div class="grid grid-cols-4 gap-4 md:grid-cols-6 lg:grid-cols-8 justify-items-center min-h-[120px]">
-                      {assignmentsWithoutTeam.map((emp) => {
-                        const initials = getInitials(emp.name);
-                        const metricClass = getMetricColorClass(emp.metric);
-                        return (
-                          <div class="flex flex-col items-center gap-2">
-                            <div class="avatar-wrapper relative inline-block group">
-                              <button
-                                class={`avatar w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer transition-transform hover:scale-110 ${metricClass}`}
-                                data-email={emp.email}
-                                data-name={emp.name}
-                              >
-                                {initials}
-                              </button>
-                              <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 text-white text-xs px-3 py-2 rounded whitespace-nowrap z-50 pointer-events-none shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                {emp.name}
-                              </div>
-                            </div>
-                            <span class="text-xs font-medium text-slate-600 max-w-[70px] text-center line-clamp-2">
-                              {emp.role}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </td>
-                </tr>
-              )
-            }
-          </tbody>
+          <tbody id="assignmentTbody"></tbody>
         </table>
       </div>
     </div>
@@ -301,119 +160,302 @@ function getMetricColorClass(metric: string): string {
     }
   </style>
 
-  <script define:vars={{ assignments, METRIC_LEVELS }}>
-    // Application state
-    const STORAGE_KEY = "assignmentsData";
-    let currentAssignment = null;
+  <script>
+    import { getDimensions } from "@/lib/dimensions";
+    import { getMetricsByDimension } from "@/lib/metrics";
+    import type { MetricByDimension } from "@/types/api";
 
-    // Initialize application
+    // ----- Constants & helpers (ported from former server-side frontmatter) -----
+    const METRIC_LEVELS = ["UNDEFINED", "NO_USAGE", "LOW", "MODERATE", "HIGH", "VERY_HIGH"];
+    const LEGACY_METRIC_MAP: Record<string, string> = {
+      ALTO: "HIGH",
+      ALTA: "HIGH",
+      MEDIO: "MODERATE",
+      MEDIA: "MODERATE",
+      BAJO: "LOW",
+      BAJA: "LOW",
+    };
+
+    function normalizeMetricValue(metric: string): string {
+      if (!metric) return "NO_USAGE";
+      const candidate = metric.toString().trim().toUpperCase().replace(/\s+/g, "_");
+      if (METRIC_LEVELS.includes(candidate)) return candidate;
+      if (LEGACY_METRIC_MAP[candidate]) return LEGACY_METRIC_MAP[candidate];
+      return "NO_USAGE";
+    }
+
+    function getInitials(name: string): string {
+      return name
+        .split(" ")
+        .filter(Boolean)
+        .map((part) => part[0])
+        .join("")
+        .slice(0, 3)
+        .toUpperCase();
+    }
+
+    function getMetricColorClass(metric: string): string {
+      const colorMap: Record<string, string> = {
+        UNDEFINED: "bg-slate-100 text-slate-700 border border-slate-300",
+        NO_USAGE: "bg-red-300 text-red-700 border border-red-500",
+        LOW: "bg-orange-300 text-orange-700 border border-orange-500",
+        MODERATE: "bg-yellow-200 text-yellow-700 border border-yellow-500",
+        HIGH: "bg-lime-300 text-lime-700 border border-lime-500",
+        VERY_HIGH: "bg-green-300 text-green-700 border border-green-500",
+      };
+      return colorMap[metric] || "bg-gray-400";
+    }
+
+    // Minimal i18n lookup against the dict injected by ClientTranslations.astro
+    function t(key: string, fallback: string): string {
+      const dict = (window as any).__I18N__;
+      if (!dict) return fallback;
+      const value = key.split(".").reduce((acc: any, part) => (acc ? acc[part] : undefined), dict);
+      return typeof value === "string" ? value : fallback;
+    }
+
+    function showNotification(message: string, variant: "info" | "error" = "info") {
+      const palette =
+        variant === "error"
+          ? "bg-red-50 text-red-600 border-red-200"
+          : "bg-blue-50 text-blue-600 border-blue-200";
+      const notification = document.createElement("div");
+      notification.className = `fixed top-6 right-6 z-[1100] animate-slideIn px-5 py-3 rounded-lg shadow-lg border font-semibold ${palette}`;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 3000);
+    }
+
+    function escapeHtml(value: string): string {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    // ----- Application state -----
+    let assignments: MetricByDimension[] = [];
+    let currentAssignment: MetricByDimension | null = null;
+
     document.addEventListener("DOMContentLoaded", async () => {
-      setupEventListeners();
-      loadAssignmentsData();
+      setupStaticListeners();
+      initDateInput();
+      await loadDimensions();
+      await reload();
     });
 
-    // Load assignments from localStorage or use the provided data
-    function loadAssignmentsData() {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        window.assignmentsData = JSON.parse(stored);
-      } else {
-        window.assignmentsData = assignments;
-        persistAssignmentsData();
+    // Default the as-of date to today (local).
+    function initDateInput() {
+      const input = document.getElementById("asOfDate") as HTMLInputElement | null;
+      if (input && !input.value) {
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, "0");
+        const dd = String(now.getDate()).padStart(2, "0");
+        input.value = `${yyyy}-${mm}-${dd}`;
       }
     }
 
-    // Persist assignments to localStorage
-    function persistAssignmentsData() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(window.assignmentsData));
+    // Populate the dimension selector from the API.
+    async function loadDimensions() {
+      const select = document.getElementById("dimensionSelect") as HTMLSelectElement | null;
+      if (!select) return;
+      try {
+        const dimensions = await getDimensions();
+        const initial = select.getAttribute("data-initial-dimension") || "";
+        select.innerHTML = dimensions
+          .map(
+            (dim) =>
+              `<option value="${escapeHtml(dim.code)}"${
+                dim.code === initial ? " selected" : ""
+              }>${escapeHtml(dim.name)}</option>`,
+          )
+          .join("");
+      } catch (err) {
+        console.error("Failed to load dimensions", err);
+        showNotification("Error loading dimensions", "error");
+      }
     }
 
-    // Setup event listeners
-    function setupEventListeners() {
-      // Avatar buttons - open modal
-      document.querySelectorAll(".avatar").forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-          const email = btn.getAttribute("data-email");
+    // Fetch the assignments grid for the selected dimension + as-of date.
+    async function reload() {
+      const dimensionSelect = document.getElementById("dimensionSelect") as HTMLSelectElement | null;
+      const dateInput = document.getElementById("asOfDate") as HTMLInputElement | null;
+      const dimensionCode = dimensionSelect?.value || "";
+      const dateValue = dateInput?.value || "";
+      if (!dimensionCode || !dateValue) {
+        assignments = [];
+        renderGrid();
+        return;
+      }
+      // Make the cut-off inclusive of the whole selected day.
+      const cutoff = `${dateValue}T23:59:59`;
+      try {
+        const rows = await getMetricsByDimension(dimensionCode, cutoff);
+        assignments = rows.map((row) => ({ ...row, metric: normalizeMetricValue(row.metric) }));
+        (window as any).assignmentsData = assignments;
+      } catch (err) {
+        console.error("Failed to load metrics by dimension", err);
+        showNotification("Error loading assignments", "error");
+        assignments = [];
+      }
+      renderGrid();
+    }
+
+    // ----- Rendering -----
+    function renderGrid() {
+      const thead = document.getElementById("assignmentThead");
+      const tbody = document.getElementById("assignmentTbody");
+      if (!thead || !tbody) return;
+
+      const withTeam = assignments.filter((a) => a.team && a.team.trim() !== "");
+      const withoutTeam = assignments.filter((a) => !a.team || a.team.trim() === "");
+      const roles = [...new Set(withTeam.map((a) => a.role))];
+      const teams = [...new Set(withTeam.map((a) => a.team))].filter(Boolean);
+
+      if (assignments.length === 0) {
+        thead.innerHTML = "";
+        tbody.innerHTML = `<tr><td class="px-4 py-10 text-center text-slate-500">${escapeHtml(
+          t("assignment_dashboard.empty_message", "No assignments found"),
+        )}</td></tr>`;
+        return;
+      }
+
+      // Header
+      thead.innerHTML = `
+        <tr class="border-b border-slate-200">
+          <th class="text-slate-900 text-center px-2 py-3 font-semibold sticky top-0 z-10 border border-slate-200">
+            <span class="uppercase">Team</span> &#11208;<br>
+            <span class="uppercase">Role</span> &#11206;
+          </th>
+          ${teams
+            .map(
+              (team) =>
+                `<th class="text-slate-900 px-4 py-3 font-semibold text-center border border-slate-200 sticky top-0 z-10">${escapeHtml(
+                  team.toUpperCase(),
+                )}</th>`,
+            )
+            .join("")}
+        </tr>`;
+
+      // Body: role × team matrix
+      const roleRows = roles
+        .map((role) => {
+          const cells = teams
+            .map((team) => {
+              const employees = withTeam.filter((a) => a.role === role && a.team === team);
+              const avatars = employees.map((emp) => avatarMarkup(emp)).join("");
+              return `<td class="px-4 py-3 border border-slate-200 text-center">${
+                employees.length > 0
+                  ? `<div class="flex flex-wrap gap-2 justify-center items-center min-h-[80px]">${avatars}</div>`
+                  : ""
+              }</td>`;
+            })
+            .join("");
+          return `<tr class="border-b border-slate-200 hover:bg-slate-50">
+            <td class="bg-gray-50 text-slate-900 text-center text-sm uppercase px-4 py-3 font-semibold border border-slate-200">${escapeHtml(
+              role,
+            )}</td>${cells}</tr>`;
+        })
+        .join("");
+
+      // No-team row
+      let noTeamRow = "";
+      if (withoutTeam.length > 0) {
+        const items = withoutTeam
+          .map(
+            (emp) =>
+              `<div class="flex flex-col items-center gap-2">${avatarMarkup(
+                emp,
+              )}<span class="text-xs font-medium text-slate-600 max-w-[70px] text-center line-clamp-2">${escapeHtml(
+                emp.role,
+              )}</span></div>`,
+          )
+          .join("");
+        noTeamRow = `<tr class="border-b border-slate-200">
+          <td class="px-4 py-3 font-semibold border border-slate-200">--</td>
+          <td colspan="${teams.length}" class="px-4 py-3 border border-slate-200">
+            <div class="grid grid-cols-4 gap-4 md:grid-cols-6 lg:grid-cols-8 justify-items-center min-h-[120px]">${items}</div>
+          </td></tr>`;
+      }
+
+      tbody.innerHTML = roleRows + noTeamRow;
+      wireAvatars();
+    }
+
+    function avatarMarkup(emp: MetricByDimension): string {
+      const initials = getInitials(emp.name);
+      const metricClass = getMetricColorClass(emp.metric);
+      return `<div class="avatar-wrapper relative inline-block group">
+        <button class="avatar w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer transition-transform hover:scale-110 ${metricClass}" data-email="${escapeHtml(
+          emp.email,
+        )}" data-name="${escapeHtml(emp.name)}">${escapeHtml(initials)}</button>
+        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 text-white text-xs px-3 py-2 rounded whitespace-nowrap z-50 pointer-events-none shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200">${escapeHtml(
+          emp.name,
+        )}</div>
+      </div>`;
+    }
+
+    // ----- Listeners -----
+    function setupStaticListeners() {
+      document.getElementById("closeModalBtn")?.addEventListener("click", closeModal);
+      document.getElementById("assignmentModal")?.addEventListener("click", (e) => {
+        if ((e.target as HTMLElement).id === "assignmentModal") closeModal();
+      });
+      document.getElementById("saveMetricBtn")?.addEventListener("click", saveMetric);
+      document.getElementById("dimensionSelect")?.addEventListener("change", reload);
+      document.getElementById("asOfDate")?.addEventListener("change", reload);
+    }
+
+    function wireAvatars() {
+      document.querySelectorAll<HTMLButtonElement>(".avatar").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const email = btn.getAttribute("data-email") || "";
           openAssignmentModal(email);
         });
       });
-
-      // Modal close button
-      document.getElementById("closeModalBtn").addEventListener("click", closeModal);
-
-      // Modal backdrop click
-      document.getElementById("assignmentModal").addEventListener("click", (e) => {
-        if (e.target.id === "assignmentModal") {
-          closeModal();
-        }
-      });
-
-      // Save metric button
-      document.getElementById("saveMetricBtn").addEventListener("click", saveMetric);
-
-      // Dimension filter
-      document.getElementById("dimensionSelect").addEventListener("change", (e) => {
-        // Future: implement dimension-specific filtering
-        console.log("Dimension selected:", e.target.value);
-      });
     }
 
-    // Open assignment modal
-    function openAssignmentModal(email) {
-      const assignment = window.assignmentsData.find((a) => a.email === email);
+    // ----- Modal -----
+    function openAssignmentModal(email: string) {
+      const assignment = assignments.find((a) => a.email === email);
       if (!assignment) return;
-
       currentAssignment = assignment;
 
-      document.getElementById("modalAssignmentName").textContent = assignment.name;
-      document.getElementById("modalAssignmentEmail").textContent = assignment.email;
-      document.getElementById("modalAssignmentRole").textContent = assignment.role;
-      document.getElementById("modalAssignmentTeam").textContent = assignment.team || "-";
-      document.getElementById("modalAssignmentDate").textContent = assignment.date;
-      document.getElementById("modalAssignmentObservation").value = assignment.observation || "";
-      document.getElementById("modalMetricSelect").value = assignment.metric;
+      (document.getElementById("modalAssignmentName") as HTMLElement).textContent = assignment.name;
+      (document.getElementById("modalAssignmentEmail") as HTMLElement).textContent = assignment.email;
+      (document.getElementById("modalAssignmentRole") as HTMLElement).textContent = assignment.role;
+      (document.getElementById("modalAssignmentTeam") as HTMLElement).textContent = assignment.team || "-";
+      (document.getElementById("modalAssignmentDate") as HTMLElement).textContent = assignment.date;
+      (document.getElementById("modalAssignmentObservation") as HTMLTextAreaElement).value =
+        assignment.observation || "";
+      (document.getElementById("modalMetricSelect") as HTMLSelectElement).value = assignment.metric;
 
-      document.getElementById("assignmentModal").classList.remove("hidden");
+      document.getElementById("assignmentModal")?.classList.remove("hidden");
     }
 
-    // Close modal
     function closeModal() {
-      document.getElementById("assignmentModal").classList.add("hidden");
+      document.getElementById("assignmentModal")?.classList.add("hidden");
       currentAssignment = null;
     }
 
-    // Save metric
+    // Updates the in-memory grid only. Persisting the edit back to the API
+    // (POST/PUT a metric) is a separate, not-yet-wired step.
     function saveMetric() {
       if (!currentAssignment) return;
+      const newMetric = (document.getElementById("modalMetricSelect") as HTMLSelectElement).value;
+      const newObservation = (document.getElementById("modalAssignmentObservation") as HTMLTextAreaElement)
+        .value;
 
-      const newMetric = document.getElementById("modalMetricSelect").value;
-      const newObservation = document.getElementById("modalAssignmentObservation").value;
-
-      const index = window.assignmentsData.findIndex((a) => a.email === currentAssignment.email);
+      const index = assignments.findIndex((a) => a.email === currentAssignment!.email);
       if (index !== -1) {
-        window.assignmentsData[index].metric = newMetric;
-        window.assignmentsData[index].observation = newObservation;
-        persistAssignmentsData();
-
-        showNotification("Métrica actualizada correctamente");
+        assignments[index].metric = newMetric;
+        assignments[index].observation = newObservation;
+        showNotification("Métrica actualizada (solo en pantalla)", "info");
         closeModal();
-
-        // Reload to reflect changes
-        setTimeout(() => window.location.reload(), 1500);
+        renderGrid();
       }
-    }
-
-    // Show notification
-    function showNotification(message) {
-      const notification = document.createElement("div");
-      notification.className =
-        "fixed top-6 right-6 z-[1100] animate-slideIn bg-blue-50 text-blue-600 px-5 py-3 rounded-lg shadow-lg border border-blue-200 font-semibold";
-      notification.textContent = message;
-      document.body.appendChild(notification);
-
-      setTimeout(() => {
-        notification.remove();
-      }, 3000);
     }
   </script>
 </BaseLayout>

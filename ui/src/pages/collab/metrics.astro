@@ -51,10 +51,10 @@ const assignmentOptions = assignments.map((a: any) => ({
 }));
 
 const columns = [
-  { key: "dimension", label: "metric_modal.dimension", visible: true },
-  { key: "assignment", label: "metric_modal.assignment", visible: true },
+  { key: "dimension", label: "metric_modal.dimension", as: "title", subtitleKey: "assignment", subtitleFormat: "text" },
+  { key: "assignment", label: "metric_modal.assignment", visible: false },
   { key: "value", label: "metric_modal.value", visible: true },
-  { key: "measured_at", label: "metric_modal.measured_at", visible: true },
+  { key: "measured_at", label: "metric_modal.measured_at", as: "date" },
 ];
 const data = metrics.map((item) => ({
   id: item.id,

@@ -48,9 +48,9 @@ try {
 
 const columns = [
   { key: "category", label: "specification_modal.category", visible: false },
-  { key: "category_name", label: "specification_modal.category" },
+  { key: "category_name", label: "specification_modal.category", as: "title", subtitleKey: "feature_name", subtitleFormat: "text" },
   { key: "feature", label: "specification_modal.feature", visible: false },
-  { key: "feature_name", label: "specification_modal.feature" },
+  { key: "feature_name", label: "specification_modal.feature", visible: false },
   { key: "default_value", label: "specification_modal.default_value" },
 ];
 const data = specifications.map((item) => ({

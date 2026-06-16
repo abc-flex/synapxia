@@ -319,14 +319,15 @@
    DATATABLE STYLES
 ================================ */
 
-/* Dense table (default) */
+/* Roomier default rows (matches the refreshed desktop design) */
 .datatable-dense th,
 .datatable-dense td {
-  padding: 0.25rem 0.5rem !important;
-  /* py-1 px-2 */
-  font-size: 0.75rem;
-  /* text-xs */
-  line-height: 1.25rem;
+  padding: 0.875rem 1rem !important;
+  /* ~py-3.5 px-4 */
+  font-size: 0.875rem;
+  /* text-sm */
+  line-height: 1.35rem;
+  vertical-align: middle;
 }
 
 /* Optional compact variant */
@@ -338,18 +339,45 @@
   /* text-sm */
 }
 
-/* Header style */
+/* Header style — clean uppercase, light divider */
 .datatable-dense thead th {
-  border-bottom: 2px solid #000;
+  border-bottom: 1px solid #e5e7eb;
+  /* gray-200 */
   font-weight: 600;
-  color: #1f2937;
-  /* gray-800 */
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  /* gray-500 */
 }
 
 /* Body rows */
 .datatable-dense tbody tr {
-  border-bottom: 1px solid #e5e7eb;
-  /* gray-200 */
+  border-bottom: 1px solid #f1f5f9;
+  /* slate-100 — subtle separator */
+}
+
+/* Title cell: bold primary name + muted subtitle line */
+.datatable-dense .dt-title {
+  display: block;
+  font-weight: 600;
+  color: #0f172a;
+  /* slate-900 */
+}
+.datatable-dense .dt-subtitle {
+  display: block;
+  font-size: 0.75rem;
+  color: #64748b;
+  /* slate-500 */
+  margin-top: 1px;
+}
+.dark .datatable-dense .dt-title {
+  color: #f1f5f9;
+  /* slate-100 */
+}
+.dark .datatable-dense .dt-subtitle {
+  color: #94a3b8;
+  /* slate-400 */
 }
 
 /* Actions column tighter */
@@ -416,19 +444,16 @@
 }
 
 .dark .datatable-dense thead th {
-  padding: 0.5rem 0.75rem;
-  /* un poco más que body */
-  font-size: 0.75rem;
-  /* text-xs */
+  font-size: 0.6875rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 
-  color: #93c5fd;
-  /* blue-300 / slate-blue look */
+  color: #94a3b8;
+  /* slate-400 — muted, matches light header */
 
-  border-bottom: 1px solid #475569;
-  /* slate-600 */
+  border-bottom: 1px solid #334155;
+  /* slate-700 */
 }
 
 .dark .datatable-dense tbody tr {
@@ -578,37 +603,40 @@
     content: "";
   }
 
-  /* First column = card title, second = subtitle. No labels, left-aligned,
-     with a divider under the subtitle — gives the fields hierarchy instead of
-     a uniform label/value list (matches the asset-card mockup). */
-  .datatable-dense tbody td:first-child:not(.actions-cell) {
+  /* Explicit title cell (column flagged `as: "title"`) = card header: bold name
+     + muted subtitle line stacked, left-aligned, with a bottom divider. Driven
+     by the column type, not column order (so the 2nd column is a normal field). */
+  .datatable-dense tbody td[data-col="title"] {
     display: block;
     text-align: left;
-    padding: 0.15rem 0 0 !important;
+    margin-bottom: 0.4rem;
+    padding: 0.15rem 0 0.6rem !important;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .dark .datatable-dense tbody td[data-col="title"] {
+    border-bottom-color: #1e293b;
+  }
+  .datatable-dense tbody td[data-col="title"]::before {
+    content: "";
+  }
+  .datatable-dense tbody td[data-col="title"] .dt-title {
+    display: block;
     font-size: 0.95rem;
     font-weight: 600;
     color: #0f172a;
   }
-  .dark .datatable-dense tbody td:first-child:not(.actions-cell) {
+  .dark .datatable-dense tbody td[data-col="title"] .dt-title {
     color: #f1f5f9;
   }
-  .datatable-dense tbody td:nth-child(2):not(.actions-cell) {
+  .datatable-dense tbody td[data-col="title"] .dt-subtitle {
     display: block;
-    text-align: left;
-    margin-bottom: 0.4rem;
-    padding: 0 0 0.6rem !important;
-    border-bottom: 1px solid #e5e7eb;
+    margin-top: 2px;
     font-size: 0.8125rem;
     font-weight: 400;
     color: #64748b;
   }
-  .dark .datatable-dense tbody td:nth-child(2):not(.actions-cell) {
-    border-bottom-color: #1e293b;
+  .dark .datatable-dense tbody td[data-col="title"] .dt-subtitle {
     color: #94a3b8;
-  }
-  .datatable-dense tbody td:first-child:not(.actions-cell)::before,
-  .datatable-dense tbody td:nth-child(2):not(.actions-cell)::before {
-    content: "";
   }
 
   /* Tags cell: label on its own line, chips wrap left-aligned below. */

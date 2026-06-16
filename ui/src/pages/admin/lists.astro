@@ -39,8 +39,8 @@ types = await getListItemsbyList('LIST_TYPE');
 
 
 const columns = [
-  { key: "code", label: "list_modal.code", visible: true },
-  { key: "name", label: "list_modal.name", visible: true },
+  { key: "code", label: "list_modal.code", visible: false },
+  { key: "name", label: "list_modal.name", as: "title", subtitleKey: "code", subtitleFormat: "text" },
   { key: "type", label: "list_modal.type", visible: false },
   { key: "type_label", label: "list_modal.type", visible: true },
   { key: "module", label: "list_modal.module", visible: false },

@@ -34,8 +34,8 @@ try {
 }
 
 const columns = [
-  { key: "code", label: "team_modal.code", visible: true },
-  { key: "name", label: "team_modal.name", visible: true },
+  { key: "code", label: "team_modal.code", visible: false },
+  { key: "name", label: "team_modal.name", as: "title", subtitleKey: "code", subtitleFormat: "text" },
   { key: "lead_name", label: "team_modal.lead", visible: true },
 ];
 const data = teams.map((item) => ({

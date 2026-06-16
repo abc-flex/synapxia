@@ -38,8 +38,8 @@ try {
 
 const columns = [
   { key: "sort_order", label: "#" },
-  { key: "lang", label: "list_item_modal.lang" },
-  { key: "value", label: "list_item_modal.value" },
+  { key: "lang", label: "list_item_modal.lang", as: "title", subtitleKey: "value", subtitleFormat: "text" },
+  { key: "value", label: "list_item_modal.value", visible: false },
   { key: "label", label: "list_item_modal.label" },
   { key: "list", label: "list_item_modal.list", visible: false },
   { key: "list_name", label: "list_item_modal.list" },

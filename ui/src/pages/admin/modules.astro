@@ -22,8 +22,8 @@ try {
 
 const columns = [
   { key: "sort_order", label: "module_modal.sort_order" },
-  { key: "code", label: "module_modal.code" },
-  { key: "name", label: "module_modal.name" },
+  { key: "code", label: "module_modal.code", visible: false },
+  { key: "name", label: "module_modal.name", as: "title", subtitleKey: "code", subtitleFormat: "text" },
 ];
 const data = modules.map((item) => ({
   id: item.code,

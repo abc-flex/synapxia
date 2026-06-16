@@ -1,0 +1,50 @@
+---
+import DataTableCell from "./DataTableCell.astro";
+import DataTableActions from "./DataTableActions.astro";
+import type { ColumnConfig } from "@/types/datatable";
+
+interface Props {
+  data: Record<string, any>[];
+  visibleColumns: ColumnConfig[];
+  locale: string;
+  i18Item: string;
+  mdItem?: string | null;
+  detailPage?: string | null;
+  detailExpand?: boolean;
+  favoriteAction?: boolean;
+  favoriteKey?: string;
+}
+const {
+  data,
+  visibleColumns,
+  locale,
+  i18Item,
+  mdItem = null,
+  detailPage = null,
+  detailExpand = false,
+  favoriteAction = false,
+  favoriteKey = "favorite",
+} = Astro.props as Props;
+---
+<tbody
+  class="[&>tr:nth-child(even)]:bg-gray-50 [&>tr:hover]:bg-gray-100 dark:[&>tr:nth-child(even)]:bg-gray-800/40 dark:[&>tr:hover]:bg-gray-800/70"
+>
+  {
+    data.map((row) => (
+      <tr class="border-b border-gray-200 dark:border-gray-800">
+        {visibleColumns.map((col) => (
+          <DataTableCell col={col} row={row} locale={locale} />
+        ))}
+        <DataTableActions
+          row={row}
+          i18Item={i18Item}
+          mdItem={mdItem}
+          detailPage={detailPage}
+          detailExpand={detailExpand}
+          favoriteAction={favoriteAction}
+          favoriteKey={favoriteKey}
+        />
+      </tr>
+    ))
+  }
+</tbody>

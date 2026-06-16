@@ -156,7 +156,52 @@ const hasData = data.length > 0;
   });
 </script>
 
-<script type="module" define:vars={{ tableId, data, columns, visibleColumns, columnFilter, columnFilter2, filterDefaultValue, filterDefaultValue2, columnFilter3, filterDefaultValue3, columnFilter4, filterDefaultValue4 }}>
-  import { initAdvancedTable } from "/src/components/table/advancedTable";
-  initAdvancedTable(tableId, data, columns, visibleColumns, columnFilter, columnFilter2, filterDefaultValue, filterDefaultValue2, columnFilter3, filterDefaultValue3, columnFilter4, filterDefaultValue4);
+<!-- Per-table config carrier. A `define:vars` <script> would be emitted inline and
+     could not bundle its `initAdvancedTable` import — the literal `/src/...` URL 404s
+     in the production (Vercel) build. Instead we serialize the config into an inert
+     JSON tag and let a single bundled module script (below) read every table's config.
+     `<` is escaped so a `</script>` inside any string (e.g. an asset name) can't break out. -->
+<script
+  type="application/json"
+  data-dt-config
+  set:html={JSON.stringify({
+    tableId,
+    data,
+    columns,
+    visibleColumns,
+    columnFilter,
+    columnFilter2,
+    filterDefaultValue,
+    filterDefaultValue2,
+    columnFilter3,
+    filterDefaultValue3,
+    columnFilter4,
+    filterDefaultValue4,
+  }).replace(/</g, "\\u003c")}
+/>
+
+<script>
+  // Processed (bundled) by Astro → the import resolves to a hashed asset that exists in
+  // the production build, and Astro dedupes this to once per page. It initializes every
+  // DataTable on the page from its JSON config tag (works for multiple tables too).
+  import { initAdvancedTable } from "@/components/table/advancedTable";
+  document
+    .querySelectorAll('script[type="application/json"][data-dt-config]')
+    .forEach((el) => {
+      const c = JSON.parse(el.textContent || "{}");
+      initAdvancedTable(
+        c.tableId,
+        c.data,
+        c.columns,
+        c.visibleColumns,
+        c.columnFilter,
+        c.columnFilter2,
+        c.filterDefaultValue,
+        c.filterDefaultValue2,
+        c.columnFilter3,
+        c.filterDefaultValue3,
+        c.columnFilter4,
+        c.filterDefaultValue4,
+      );
+    });
 </script>

@@ -10,7 +10,9 @@ export function initAdvancedTable(
     filterDefaultValue: string = "",
     filterDefaultValue2: string = "",
     columnFilter3: string | null = null,
-    filterDefaultValue3: string = ""
+    filterDefaultValue3: string = "",
+    columnFilter4: string | null = null,
+    filterDefaultValue4: string = ""
 ) {
     // Normalize a value for filter comparison: strip a leading `N-` ordinal
     // prefix so a bare seeded code (e.g. `IN_USE`) matches the prefixed
@@ -82,10 +84,47 @@ export function initAdvancedTable(
     const filterSelect3 = document.getElementById(
         `${tableId}-filter3`
     ) as HTMLSelectElement | null;
+    const filterSelect4 = document.getElementById(
+        `${tableId}-filter4`
+    ) as HTMLSelectElement | null;
 
     let filterKey: string | null = null;
     let filterKey2: string | null = null;
     let filterKey3: string | null = null;
+    let filterKey4: string | null = null;
+
+    /* ======================
+       RESET FILTERS
+       Clears search + every filter select; shown only when something is active.
+       Declared before the filter-init blocks because those call applyFilters()
+       on load, and applyFilters() calls updateResetVisibility().
+    ====================== */
+    const resetBtn = document.getElementById(`${tableId}-reset`);
+
+    const isFilterActive = (): boolean =>
+        Boolean(
+            (searchInput?.value ?? "") ||
+            (filterSelect?.value ?? "") ||
+            (filterSelect2?.value ?? "") ||
+            (filterSelect3?.value ?? "") ||
+            (filterSelect4?.value ?? "")
+        );
+
+    const updateResetVisibility = () => {
+        if (!resetBtn) return;
+        resetBtn.classList.toggle("hidden", !isFilterActive());
+    };
+
+    if (resetBtn) {
+        resetBtn.addEventListener("click", () => {
+            if (searchInput) searchInput.value = "";
+            if (filterSelect) filterSelect.value = "";
+            if (filterSelect2) filterSelect2.value = "";
+            if (filterSelect3) filterSelect3.value = "";
+            if (filterSelect4) filterSelect4.value = "";
+            applyFilters();
+        });
+    }
 
     if (filterSelect) {
         filterKey = filterSelect.dataset.columnKey ?? null;
@@ -145,6 +184,28 @@ export function initAdvancedTable(
         }
     }
 
+    if (filterSelect4) {
+        filterKey4 = filterSelect4.dataset.columnKey ?? null;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const filterParam4 = columnFilter4 ? urlParams.get(columnFilter4) : null;
+        const initialValue4 = filterParam4 ?? filterDefaultValue4;
+        if (initialValue4) {
+            filterSelect4.value = initialValue4;
+        }
+
+        filterSelect4.addEventListener("change", () => {
+            applyFilters();
+        });
+
+        if (initialValue4) {
+            applyFilters();
+        }
+    }
+
+    // Reflect initial state (e.g. a filterDefaultValue applied above, or none).
+    updateResetVisibility();
+
     /* ======================
        FILTRO COMBINADO
     ====================== */
@@ -157,6 +218,7 @@ export function initAdvancedTable(
         const filterValue = filterSelect?.value ?? "";
         const filterValue2 = filterSelect2?.value ?? "";
         const filterValue3 = filterSelect3?.value ?? "";
+        const filterValue4 = filterSelect4?.value ?? "";
 
         const rows = Array.from(tbody.querySelectorAll("tr")) as HTMLTableRowElement[];
 
@@ -189,10 +251,22 @@ export function initAdvancedTable(
                 visible = visible && normFilter(cellValue3) === normFilter(filterValue3);
             }
 
+            // 🏷️ Cuarto filtro (AND) — membership match: the cell may hold a
+            // comma-separated multi-value field (e.g. access "VIEW,MANAGE,PUBLIC").
+            // A single-token field still matches (superset of exact equality).
+            if (filterValue4 && filterKey4 && rowData) {
+                const tokens = String(rowData[filterKey4] ?? "")
+                    .split(",")
+                    .map((s) => normFilter(s.trim()))
+                    .filter(Boolean);
+                visible = visible && tokens.includes(normFilter(filterValue4));
+            }
+
             row.classList.toggle("hidden-by-filter", !visible);
         });
         currentPage = 1;
         renderPagination();
+        updateResetVisibility();
     }
 
     /* ======================

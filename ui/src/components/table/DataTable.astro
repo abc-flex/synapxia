@@ -36,6 +36,12 @@ const {
   filterDefaultValue3 = "",
   // i18n key for the third filter's "all" (empty) option.
   filter3AllLabel = null,
+  // Optional fourth filter. Matches by membership (the row value may be a
+  // comma-separated multi-value field, e.g. asset access "VIEW,MANAGE,PUBLIC").
+  columnFilter4 = null,
+  filterOptions4 = [],
+  filterDefaultValue4 = "",
+  filter4AllLabel = null,
   masterPage = null,
   detailPage = null,
   mdItem = null,
@@ -61,6 +67,10 @@ const {
   filterOptions3?: FilterOption[];
   filterDefaultValue3?: string;
   filter3AllLabel?: string | null;
+  columnFilter4?: string | null;
+  filterOptions4?: FilterOption[];
+  filterDefaultValue4?: string;
+  filter4AllLabel?: string | null;
   masterPage?: string | null;
   detailPage?: string | null;
   mdItem?: string | null;
@@ -93,6 +103,10 @@ const hasData = data.length > 0;
     filterOptions3={filterOptions3}
     filterDefaultValue3={filterDefaultValue3}
     filter3AllLabel={filter3AllLabel}
+    columnFilter4={columnFilter4}
+    filterOptions4={filterOptions4}
+    filterDefaultValue4={filterDefaultValue4}
+    filter4AllLabel={filter4AllLabel}
   />
 
   {hasData && (
@@ -142,7 +156,7 @@ const hasData = data.length > 0;
   });
 </script>
 
-<script type="module" define:vars={{ tableId, data, columns, visibleColumns, columnFilter, columnFilter2, filterDefaultValue, filterDefaultValue2, columnFilter3, filterDefaultValue3 }}>
+<script type="module" define:vars={{ tableId, data, columns, visibleColumns, columnFilter, columnFilter2, filterDefaultValue, filterDefaultValue2, columnFilter3, filterDefaultValue3, columnFilter4, filterDefaultValue4 }}>
   import { initAdvancedTable } from "/src/components/table/advancedTable";
-  initAdvancedTable(tableId, data, columns, visibleColumns, columnFilter, columnFilter2, filterDefaultValue, filterDefaultValue2, columnFilter3, filterDefaultValue3);
+  initAdvancedTable(tableId, data, columns, visibleColumns, columnFilter, columnFilter2, filterDefaultValue, filterDefaultValue2, columnFilter3, filterDefaultValue3, columnFilter4, filterDefaultValue4);
 </script>

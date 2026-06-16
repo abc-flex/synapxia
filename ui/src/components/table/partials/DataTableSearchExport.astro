@@ -1,5 +1,6 @@
 ---
 import downloadSvg from "@/images/icons/arrow-down-tray.svg?raw";
+import resetSvg from "@/images/icons/arrow-uturn-left.svg?raw";
 import csvSvg from "@/images/icons/file-csv.svg?raw";
 import jsonSvg from "@/images/icons/file-json.svg?raw";
 import txtSvg from "@/images/icons/file-txt.svg?raw";
@@ -20,6 +21,20 @@ const { tableId } = Astro.props as Props;
            focus:border-indigo-500 focus:ring-indigo-500
            dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-indigo-400"
   />
+
+  <!-- Reset filters — hidden until a filter/search is active (toggled by advancedTable.ts). -->
+  <button
+    id={`${tableId}-reset`}
+    type="button"
+    class="hidden inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border border-gray-300 px-3 py-2 sm:py-1.5 text-sm text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+    data-i18n-title="data_table.reset"
+    title=""
+  >
+    <span class="w-5 h-5 inline-block">
+      <Fragment set:html={resetSvg} />
+    </span>
+    <span class="sr-only sm:not-sr-only" data-i18n="data_table.reset">data_table.reset</span>
+  </button>
 
   <button
     id={`${tableId}-export-btn`}

@@ -133,22 +133,22 @@ export function initAssetDetailTabs(
   // ── Build the tabs DOM ────────────────────────────────────────────────
   rootEl.innerHTML = `
     <div class="border-b border-gray-200 dark:border-gray-800">
-      <div role="tablist" aria-label="Asset detail sections" class="-mb-px flex gap-6 text-sm font-medium">
+      <div role="tablist" aria-label="Asset detail sections" class="-mb-px flex flex-wrap gap-x-4 gap-y-1 text-sm font-medium sm:flex-nowrap sm:gap-6">
         <button type="button" role="tab" id="${idPrefix}-tab-chars" aria-controls="${idPrefix}-panel-chars"
                 aria-selected="true" data-tab="chars"
-                class="border-b-2 border-indigo-600 px-1 pb-3 text-indigo-600 dark:text-indigo-400">
+                class="whitespace-nowrap border-b-2 border-indigo-600 px-1 pb-3 text-indigo-600 dark:text-indigo-400">
           <span data-i18n="asset_detail_modal.characterizations_section">Characterizations</span>
           <span id="${idPrefix}-spec-count" class="ml-1 hidden rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-300"></span>
         </button>
         <button type="button" role="tab" id="${idPrefix}-tab-related" aria-controls="${idPrefix}-panel-related"
                 aria-selected="false" tabindex="-1" data-tab="related"
-                class="border-b-2 border-transparent px-1 pb-3 text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                class="whitespace-nowrap border-b-2 border-transparent px-1 pb-3 text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
           <span data-i18n="asset_detail_modal.tab_related">Related Assets</span>
           <span id="${idPrefix}-rel-count" class="ml-1 hidden rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300"></span>
         </button>
         <button type="button" role="tab" id="${idPrefix}-tab-permissions" aria-controls="${idPrefix}-panel-permissions"
                 aria-selected="false" tabindex="-1" data-tab="permissions"
-                class="border-b-2 border-transparent px-1 pb-3 text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                class="whitespace-nowrap border-b-2 border-transparent px-1 pb-3 text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
           <span data-i18n="asset_detail_modal.tab_permissions">Permissions</span>
           <span id="${idPrefix}-perm-count" class="ml-1 hidden rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300"></span>
         </button>
@@ -416,16 +416,16 @@ export function initAssetDetailTabs(
         "rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-white/[0.02] p-3";
 
       const labelRow = document.createElement("div");
-      labelRow.className = "flex items-baseline justify-between mb-1.5";
+      labelRow.className = "flex flex-wrap items-baseline justify-between gap-x-2 mb-1.5";
       labelRow.innerHTML = `
-        <label class="block text-sm font-semibold text-gray-800 dark:text-gray-200" data-i18n="features.${featureCode}" for="${idPrefix}-char-${featureCode}">${escapeHtml(labelText)}</label>
-        <span class="text-[10px] uppercase tracking-wide text-gray-400">${escapeHtml(spec.featureObj.type || "")}</span>
+        <label class="block min-w-0 break-words text-sm font-semibold text-gray-800 dark:text-gray-200" data-i18n="features.${featureCode}" for="${idPrefix}-char-${featureCode}">${escapeHtml(labelText)}</label>
+        <span class="shrink-0 text-[10px] uppercase tracking-wide text-gray-400">${escapeHtml(spec.featureObj.type || "")}</span>
       `;
       wrap.appendChild(labelRow);
 
       if (descText) {
         const desc = document.createElement("p");
-        desc.className = "mb-2 text-xs text-gray-500 dark:text-gray-400";
+        desc.className = "mb-2 text-xs text-gray-500 dark:text-gray-400 break-words";
         desc.textContent = descText;
         wrap.appendChild(desc);
       }

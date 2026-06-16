@@ -4,7 +4,7 @@
  */
 
 import { apiGet, apiPost, apiPut, apiDelete, buildQueryString } from './api';
-import type { Asset, AssetCreate, AssetUpdate } from '../types/api';
+import type { Asset, AssetCreate, AssetUpdate, AssetWithAccessLevels } from '../types/api';
 
 /**
  * Fetch all assets with optional pagination
@@ -15,6 +15,15 @@ import type { Asset, AssetCreate, AssetUpdate } from '../types/api';
 export async function getAssets(skip: number = 0, limit: number = 100): Promise<Asset[]> {
   const queryString = buildQueryString({ skip, limit });
   return apiGet<Asset[]>(`/api/assets/${queryString}`);
+}
+
+/**
+ * Fetch all assets with an aggregated per-asset access summary
+ * (access_levels + is_public), used to drive the access-level table filter.
+ */
+export async function getAssetsWithAccess(skip: number = 0, limit: number = 100): Promise<AssetWithAccessLevels[]> {
+  const queryString = buildQueryString({ skip, limit });
+  return apiGet<AssetWithAccessLevels[]>(`/api/assets/with-access${queryString}`);
 }
 
 export interface AssetSelectOption {

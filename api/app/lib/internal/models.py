@@ -1,7 +1,7 @@
 """Models for Asset Library module"""
 from sqlmodel import Field, SQLModel, Column, String, ForeignKey
 from sqlalchemy import JSON, BigInteger
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from datetime import datetime
 
 # Assets Models
@@ -268,3 +268,25 @@ class AssetPermissionUpdate(SQLModel):
     access_level: Optional[str] = Field(default=None, max_length=100)
     valid_to: Optional[datetime] = Field(default=None)
     is_active: Optional[bool] = Field(default=None)
+
+
+class AssetWithAccessLevels(SQLModel):
+    """Asset read projection augmented with an aggregated permission summary.
+
+    `access_levels` holds the distinct active access levels granted on the asset
+    (e.g. VIEW, MANAGE); `is_public` is true when any active permission targets
+    PUBLIC. Read-only projection — does not change the `Asset` table contract.
+    """
+    id: int
+    name: str
+    description: Optional[str] = None
+    category: Optional[str] = None
+    reference: Optional[str] = None
+    status: str
+    tags: Optional[Any] = None
+    detail: Optional[str] = None
+    is_active: bool = True
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    access_levels: List[str] = Field(default_factory=list)
+    is_public: bool = False

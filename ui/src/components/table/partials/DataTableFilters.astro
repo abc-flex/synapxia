@@ -1,8 +1,8 @@
 ---
-// The column-filter <select> panel (1–3 dropdowns). Collapses the previously
+// The column-filter <select> panel (1–4 dropdowns). Collapses the previously
 // duplicated markup into a single loop. `data-i18n={opt.i18n}` is omitted by
 // Astro when undefined, and `f.allLabel || ...` falls back to the modal title —
-// so filters 1 & 2 render identically to before, filter 3 keeps its i18n hooks.
+// so filters 1 & 2 render identically to before, filters 3 & 4 keep their i18n hooks.
 import type { FilterConfig, FilterOption } from "@/types/datatable";
 
 interface Props {
@@ -18,6 +18,10 @@ interface Props {
   filterOptions3?: FilterOption[];
   filterDefaultValue3?: string;
   filter3AllLabel?: string | null;
+  columnFilter4?: string | null;
+  filterOptions4?: FilterOption[];
+  filterDefaultValue4?: string;
+  filter4AllLabel?: string | null;
 }
 const {
   tableId,
@@ -32,12 +36,17 @@ const {
   filterOptions3 = [],
   filterDefaultValue3 = "",
   filter3AllLabel = null,
+  columnFilter4 = null,
+  filterOptions4 = [],
+  filterDefaultValue4 = "",
+  filter4AllLabel = null,
 } = Astro.props as Props;
 
 const filters: FilterConfig[] = [
   { id: `${tableId}-filter`, key: columnFilter, options: filterOptions, defaultValue: filterDefaultValue },
   { id: `${tableId}-filter2`, key: columnFilter2, options: filterOptions2, defaultValue: filterDefaultValue2 },
   { id: `${tableId}-filter3`, key: columnFilter3, options: filterOptions3, defaultValue: filterDefaultValue3, allLabel: filter3AllLabel },
+  { id: `${tableId}-filter4`, key: columnFilter4, options: filterOptions4, defaultValue: filterDefaultValue4, allLabel: filter4AllLabel },
 ];
 ---
 <div id={`${tableId}-filters`} class="hidden w-full space-y-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:gap-3 sm:space-y-0">

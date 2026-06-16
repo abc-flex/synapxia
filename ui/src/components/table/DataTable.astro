@@ -1,18 +1,16 @@
 ---
-import editSvg from "@/images/icons/edit.svg?raw";
-import deleteSvg from "@/images/icons/delete.svg?raw";
-import listSvg from "@/images/icons/list-bullet.svg?raw";
-import downloadSvg from "@/images/icons/arrow-down-tray.svg?raw";
-import leftSvg from "@/images/icons/chevron-left.svg?raw";
-import rightSvg from "@/images/icons/chevron-right.svg?raw";
-import infoSvg from "@/images/icons/information-circle.svg?raw";
-import csvSvg from "@/images/icons/file-csv.svg?raw";
-import jsonSvg from "@/images/icons/file-json.svg?raw";
-import txtSvg from "@/images/icons/file-txt.svg?raw";
-import sqlSvg from "@/images/icons/file-sql.svg?raw";
-import checkSvg from "@/images/icons/check.svg?raw";
-import { t } from "@/i18n";
+// Orchestrator shell — composes the toolbar, table (head + body), pagination,
+// and empty state, then bootstraps the client logic (advancedTable.ts). The
+// emitted DOM (ids, classes, structure) is the contract advancedTable.ts and
+// the card-view CSS depend on — keep it stable. Pure helpers live in
+// `@/lib/datatable`, types in `@/types/datatable`, sub-parts in `./parts/`.
 import { getLocale } from "@/utils/getLocale";
+import DataTableToolbar from "./partials/DataTableToolbar.astro";
+import DataTableHead from "./partials/DataTableHead.astro";
+import DataTableBody from "./partials/DataTableBody.astro";
+import DataTablePagination from "./partials/DataTablePagination.astro";
+import DataTableEmpty from "./partials/DataTableEmpty.astro";
+import type { ColumnConfig, FilterOption } from "@/types/datatable";
 
 const locale = getLocale(Astro);
 
@@ -47,417 +45,86 @@ const {
   favoriteKey = "favorite",
   // Per-row master-detail expand button (emits data-action="detail").
   detailExpand = false,
-} = Astro.props;
+} = Astro.props as {
+  columns?: ColumnConfig[];
+  data?: Record<string, any>[];
+  tableId?: string;
+  i18Item?: string;
+  showAddButton?: boolean;
+  columnFilter?: string | null;
+  filterOptions?: FilterOption[];
+  filterDefaultValue?: string;
+  columnFilter2?: string | null;
+  filterOptions2?: FilterOption[];
+  filterDefaultValue2?: string;
+  columnFilter3?: string | null;
+  filterOptions3?: FilterOption[];
+  filterDefaultValue3?: string;
+  filter3AllLabel?: string | null;
+  masterPage?: string | null;
+  detailPage?: string | null;
+  mdItem?: string | null;
+  favoriteAction?: boolean;
+  favoriteKey?: string;
+  detailExpand?: boolean;
+};
 
 // Filtrar columnas visibles (ocultar si visible: false)
 const visibleColumns = columns.filter((col) => col.visible !== false);
-// How many column filters are configured — drives the mobile "Filtros" button.
-const filterCount = [columnFilter, columnFilter2, columnFilter3].filter(Boolean).length;
-
-// Semantic colors for status pills (columns flagged `as: "status"`). Tone is
-// inferred from the status text so it works across entities/locales. Literal
-// class strings so Tailwind's JIT keeps them.
-const TONE: Record<string, string> = {
-  green: "bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-300",
-  red: "bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-300",
-  amber: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
-  indigo: "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300",
-};
-const STATUS_TONE = (val: unknown): string => {
-  const v = String(val ?? "").toLowerCase();
-  if (/(in[\s-]?use|en uso|activ|active|publi|aprob|approv|complet|done|live)/.test(v)) return TONE.green;
-  if (/(deprecat|obsolet|retir|inactiv|archiv|reject|rechaz|error|fail|cancel)/.test(v)) return TONE.red;
-  if (/(review|revisi|pending|pendiente|draft|borrador|progress|proceso|hold|espera)/.test(v)) return TONE.amber;
-  return TONE.indigo;
-};
+const hasData = data.length > 0;
 ---
 
 <div class="space-y-2">
   <!-- 🔹 TOP BAR -->
-  <div
-    class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-  >
-    <!-- Left -->
-    <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
-      <div class="flex items-center gap-3">
-      {masterPage && (
-        <a
-          href={masterPage}
-          class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-          data-i18n-title={`${mdItem}_modal.many_title`}
-          title=""
-        >
-          <span class="w-5 h-5 inline-block">
-          <Fragment set:html={leftSvg} />
-        </span>
-        </a>
-      )}
-      {
-        showAddButton && (
-          <button
-            type="button"
-            class="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 sm:flex-none sm:py-1.5"
-            data-modal-open={`${i18Item}-create-modal`}
-            data-filter-key={columnFilter}
-            data-i18n-title={`${i18Item}_modal.one_title`}
-            title=""
-          >
-            <span class="text-lg">+</span>
-            <span data-i18n={`${i18Item}_modal.one_title`}>
-              {`${i18Item}_modal.one_title`}
-            </span>
-          </button>
-        )
-      }
-      </div>
-      {filterCount > 0 && data.length > 0 && (
-        <button
-          type="button"
-          data-filters-toggle={`${tableId}-filters`}
-          class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 sm:hidden dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-        >
-          <span class="w-4 h-4 inline-block">
-            <Fragment set:html={listSvg} />
-          </span>
-          <span data-i18n="data_table.filters">data_table.filters</span>
-          <span class="rounded-full bg-indigo-50 px-1.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">
-            {filterCount}
-          </span>
-        </button>
-      )}
-      <div id={`${tableId}-filters`} class="hidden w-full space-y-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:gap-3 sm:space-y-0">
-      {
-        columnFilter && data.length > 0 && (
-          <div class="relative flex-1 basis-[45%] sm:flex-none sm:basis-auto">
-            <select
-              id={`${tableId}-filter`}
-              data-column-key={columnFilter}
-              class="w-full sm:w-auto sm:min-w-[10rem] rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800
-                  focus:border-indigo-500 focus:ring-indigo-500
-                  dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:focus:border-indigo-400"
-            >
-              <option value="" data-i18n={`${columnFilter}_modal.filter_title`}></option>
-              {filterOptions.map((opt) => (
-                <option value={opt.value || opt.code} selected={(opt.value || opt.code) === filterDefaultValue}>
-                  {opt.label || opt.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )
-      }
-      {
-        columnFilter2 && data.length > 0 && (
-          <div class="relative flex-1 basis-[45%] sm:flex-none sm:basis-auto">
-            <select
-              id={`${tableId}-filter2`}
-              data-column-key={columnFilter2}
-              class="w-full sm:w-auto sm:min-w-[10rem] rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800
-                  focus:border-indigo-500 focus:ring-indigo-500
-                  dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:focus:border-indigo-400"
-            >
-              <option value="" data-i18n={`${columnFilter2}_modal.filter_title`}></option>
-              {filterOptions2.map((opt) => (
-                <option value={opt.value || opt.code} selected={(opt.value || opt.code) === filterDefaultValue2}>
-                  {opt.label || opt.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )
-      }
-      {
-        columnFilter3 && data.length > 0 && (
-          <div class="relative flex-1 basis-[45%] sm:flex-none sm:basis-auto">
-            <select
-              id={`${tableId}-filter3`}
-              data-column-key={columnFilter3}
-              class="w-full sm:w-auto sm:min-w-[10rem] rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800
-                  focus:border-indigo-500 focus:ring-indigo-500
-                  dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:focus:border-indigo-400"
-            >
-              <option value="" data-i18n={filter3AllLabel || `${columnFilter3}_modal.filter_title`}></option>
-              {filterOptions3.map((opt) => (
-                <option value={opt.value || opt.code} data-i18n={opt.i18n} selected={(opt.value || opt.code) === filterDefaultValue3}>
-                  {opt.label || opt.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )
-      }
-      </div>
-    </div>
+  <DataTableToolbar
+    tableId={tableId}
+    i18Item={i18Item}
+    mdItem={mdItem}
+    showAddButton={showAddButton}
+    hasData={hasData}
+    masterPage={masterPage}
+    columnFilter={columnFilter}
+    filterOptions={filterOptions}
+    filterDefaultValue={filterDefaultValue}
+    columnFilter2={columnFilter2}
+    filterOptions2={filterOptions2}
+    filterDefaultValue2={filterDefaultValue2}
+    columnFilter3={columnFilter3}
+    filterOptions3={filterOptions3}
+    filterDefaultValue3={filterDefaultValue3}
+    filter3AllLabel={filter3AllLabel}
+  />
 
-    <!-- Right: Search & Export -->
-    {data.length > 0 && (
-    <div class="flex items-center gap-2 relative w-full sm:w-auto">
-      <input
-        id={`${tableId}-search`}
-        type="search"
-        placeholder="data_table.search"
-        data-i18n-placeholder="data_table.search"
-        class="min-w-0 flex-1 sm:w-56 sm:flex-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400
-               focus:border-indigo-500 focus:ring-indigo-500
-               dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-indigo-400"
-      />
-
-      <button
-        id={`${tableId}-export-btn`}
-        type="button"
-        class="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-      >
-        <span class="w-5 h-5 inline-block">
-          <Fragment set:html={downloadSvg} />
-        </span>
-        <span data-i18n="data_table.export">data_table.export</span>
-      </button>
-
-      <div
-        id={`${tableId}-export-menu`}
-        class="absolute right-0 top-full z-20 mt-2 hidden w-44 rounded-lg bg-white shadow-lg ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-700"
-      >
-        <ul class="py-1 text-sm">
-          <li>
-            <button
-              data-export="csv"
-              class="flex items-center gap-2 w-full px-4 py-2 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
-            >
-              <span class="w-4 h-4 inline-block flex-shrink-0">
-                <Fragment set:html={csvSvg} />
-              </span>
-              <p data-i18n="data_table.export_csv">data_table.export_csv</p>
-            </button>
-          </li>
-          <li>
-            <button
-              data-export="json"
-              class="flex items-center gap-2 w-full px-4 py-2 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
-              >
-              <span class="w-4 h-4 inline-block flex-shrink-0">
-                <Fragment set:html={jsonSvg} />
-              </span>
-              <p data-i18n="data_table.export_json">data_table.export_json</p>
-            </button>
-          </li>
-          <li>
-            <button
-              data-export="txt"
-              class="flex items-center gap-2 w-full px-4 py-2 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
-              >
-              <span class="w-4 h-4 inline-block flex-shrink-0 color-gray-500">
-                <Fragment set:html={txtSvg} />
-              </span>
-              <p data-i18n="data_table.export_txt">data_table.export_txt</p>
-            </button>
-          </li>
-          <li>
-            <button
-              data-export="sql"
-              class="flex items-center gap-2 w-full px-4 py-2 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
-            >
-              <span class="w-4 h-4 inline-block flex-shrink-0">
-                <Fragment set:html={sqlSvg} />
-              </span>
-              <p data-i18n="data_table.export_sql">data_table.export_sql</p>
-            </button>
-          </li>
-        </ul>
-      </div>
-    </div>
-    )}
-  </div>
-
-  {data.length > 0 && (
+  {hasData && (
   <!-- 🔹 TABLE -->
   <div class="overflow-x-auto">
     <table
       id={tableId}
       class="w-full text-sm text-left text-gray-700 dark:text-gray-300 datatable-dense"
     >
-      <thead
-        class="bg-gray-100 text-xs uppercase text-gray-700 border-b border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
-      >
-        <tr>
-          {
-            visibleColumns.map((col) => (
-              <th class="px-2 py-1 font-semibold tracking-wide" data-i18n={col.label} data-column-key={col.key}>{col.label}</th>
-            ))
-          }
-          <th class="px-4 py-4 text-right" data-i18n="data_table.actions">
-            data_table.actions
-          </th>
-        </tr>
-      </thead>
-      <tbody
-        class="[&>tr:nth-child(even)]:bg-gray-50 [&>tr:hover]:bg-gray-100 dark:[&>tr:nth-child(even)]:bg-gray-800/40 dark:[&>tr:hover]:bg-gray-800/70"
-      >
-        {
-          data.map((row) => (
-            <tr class="border-b border-gray-200 dark:border-gray-800">
-              {visibleColumns.map((col) => (
-                <td class="px-2 py-1" data-label={t(locale, col.label)} data-col={col.as}>
-                  {col.as === "status" && row[col.key] ? (
-                    <span class={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_TONE(row[col.key])}`}>
-                      {row[col.key]}
-                    </span>
-                  ) : col.as === "tags" ? (
-                    <span class="flex flex-wrap gap-1.5">
-                      {String(row[col.key] ?? "")
-                        .split(",")
-                        .map((tg) => tg.trim())
-                        .filter(Boolean)
-                        .map((tag) => (
-                          <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
-                            {tag}
-                          </span>
-                        ))}
-                    </span>
-                  ) : row[col.key] === true || row[col.key] === "true" ? (
-                    <span class="w-5 h-5 inline-block text-blue-600">
-                      <Fragment set:html={checkSvg} />
-                    </span>
-                  ) : (
-                    row[col.key]
-                  )}
-                </td>
-              ))}
-              <td class="actions-cell px-2 py-1 text-right space-x-0">
-                <div class="actions-wrapper">
-                  {detailPage && (
-                    <a
-                      href={detailPage + "?" + i18Item + "=" + row.id}
-                      class="detail-btn action-btn"
-                      data-i18n-title={`${mdItem}_modal.many_title`}
-                      title=""
-                    >
-                      <span class="w-5 h-5 inline-block">
-                        <Fragment set:html={listSvg} />
-                      </span>
-                    </a>
-                    <span class="dot">•</span>
-                  )}
-                  {detailExpand && (
-                    <button
-                      class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded detail-expand-btn"
-                      data-id={row.id}
-                      data-action="detail"
-                      data-i18n-title="asset_table.detail_expand"
-                      title=""
-                    >
-                      <span class="w-5 h-5 inline-block">
-                        <Fragment set:html={listSvg} />
-                      </span>
-                    </button>
-                  )}
-                  {favoriteAction && (
-                    <button
-                      class="p-1 hover:bg-yellow-50 dark:hover:bg-gray-800 rounded favorite-btn"
-                      data-id={row.id}
-                      data-action="favorite"
-                      data-fav={row[favoriteKey] === "yes" ? "1" : "0"}
-                      aria-pressed={row[favoriteKey] === "yes" ? "true" : "false"}
-                      data-i18n-title="asset_table.favorite"
-                      title=""
-                    >
-                      <span class={`w-5 h-5 inline-block ${row[favoriteKey] === "yes" ? "text-yellow-400" : "text-gray-400"}`}>
-                        <svg viewBox="0 0 20 20" fill={row[favoriteKey] === "yes" ? "currentColor" : "none"} stroke="currentColor" stroke-width="1.5">
-                          <path d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.3 4.02a1 1 0 00.95.69h4.22c.97 0 1.37 1.24.59 1.81l-3.42 2.48a1 1 0 00-.36 1.12l1.3 4.02c.3.92-.75 1.69-1.54 1.12l-3.41-2.48a1 1 0 00-1.18 0l-3.41 2.48c-.78.57-1.84-.2-1.54-1.12l1.3-4.02a1 1 0 00-.36-1.12L2 9.45c-.78-.57-.38-1.81.6-1.81h4.21a1 1 0 00.95-.69l1.3-4.02z" />
-                        </svg>
-                      </span>
-                    </button>
-                  )}
-                  {(detailExpand || favoriteAction) && <span class="dot">•</span>}
-                  <button
-                    class="p-1 hover:bg-blue-100 rounded edit-btn"
-                    data-id={row.id}
-                    data-action="edit"
-                    data-modal-open={`${i18Item}-edit-modal`}
-                    data-i18n-title={`${i18Item}_modal.edit`}
-                    title=""
-                  >
-                    <span class="w-5 h-5 inline-block">
-                      <Fragment set:html={editSvg} />
-                    </span>
-                  </button>
-                  <button
-                    class="p-1 hover:bg-red-100 rounded delete-btn"
-                    data-id={row.id}
-                    data-action="delete"
-                    data-modal-open={`${i18Item}-delete-modal`}
-                    data-i18n-title={`${i18Item}_modal.delete`}
-                    title=""
-                  >
-                  <span class="w-5 h-5 inline-block">
-                    <Fragment set:html={deleteSvg} />
-                  </span>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))
-        }
-      </tbody>
+      <DataTableHead visibleColumns={visibleColumns} />
+      <DataTableBody
+        data={data}
+        visibleColumns={visibleColumns}
+        locale={locale}
+        i18Item={i18Item}
+        mdItem={mdItem}
+        detailPage={detailPage}
+        detailExpand={detailExpand}
+        favoriteAction={favoriteAction}
+        favoriteKey={favoriteKey}
+      />
     </table>
-  </div>
-
-  <!-- 🔹 PAGINATION -->
-  <div
-    id={`${tableId}-pagination`}
-    class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-  >
-    <!-- Info -->
-    <div id={`${tableId}-pagination-info`} class="text-sm text-gray-600 dark:text-gray-400"></div>
-    <select
-      id={`${tableId}-per-page`}
-      class="w-full sm:w-auto rounded-lg border border-gray-300 bg-white px-2 py-2 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-    >
-      <option value="5">5</option>
-      <option value="10" selected>10</option>
-      <option value="25">25</option>
-      <option value="50">50</option>
-    </select>
-
-    <!-- Controls -->
-    <div class="flex items-center gap-1">
-      <button
-        id={`${tableId}-prev`}
-        class="h-11 w-11 sm:h-8 sm:w-8 px-0 py-0 text-sm border border-gray-300 rounded flex items-center justify-center text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-      >
-        <span class="w-5 h-5 inline-block">
-          <Fragment set:html={leftSvg} />
-        </span>
-      </button>
-      <div id={`${tableId}-pages`} class="flex items-center gap-1"></div>
-      <button
-        id={`${tableId}-next`}
-        class="h-11 w-11 sm:h-8 sm:w-8 px-0 py-0 text-sm border border-gray-300 rounded flex items-center justify-center text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-      >
-        <span class="w-5 h-5 inline-block">
-          <Fragment set:html={rightSvg} />
-        </span>
-      </button>
-    </div>
   </div>
   )}
 
-  {data.length == 0 && (
-  <div class="rounded-xl no-border p-4">
-    <div class="flex items-center gap-3">
-      <div class="-mt-0.5 text-blue-light-500">
-        <span class="h-6 w-6 text-gray-100 bg-color-gray-100 dark:bg-gray-800 flex items-center justify-center rounded-md mr-0">
-          <span class="w-5 h-5 inline-block">
-          <Fragment set:html={infoSvg} />
-        </span>
-        </span>
-      </div>
-      <div>
-        <p class="text-sm text-gray-500 dark:text-gray-400" data-i18n={`${i18Item}_modal.empty_message`}>
-            {`${i18Item}_modal.empty_message`}
-          </p>
-      </div>
-    </div>
-  </div>
+  {hasData && (
+  <!-- 🔹 PAGINATION -->
+  <DataTablePagination tableId={tableId} />
+  )}
+
+  {!hasData && (
+  <DataTableEmpty i18Item={i18Item} />
   )}
 
 </div>

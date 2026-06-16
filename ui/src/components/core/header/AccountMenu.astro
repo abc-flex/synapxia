@@ -84,7 +84,7 @@ const initials = name
           {t(locale, "account_menu.theme")}
         </span>
         <div role="group" aria-label="Theme" data-i18n-aria-label="account_menu.theme"
-          class="inline-flex items-center gap-0.5 rounded-full border border-gray-200 bg-gray-100 p-0.5 dark:border-gray-700 dark:bg-gray-800">
+          class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-100 p-1.5 dark:border-gray-700 dark:bg-gray-800">
           <button type="button" data-theme-set="light" aria-label="Light"
             class="theme-seg flex h-7 w-7 items-center justify-center rounded-full text-gray-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:text-gray-400">
             <span class="h-4 w-4 inline-block"><Fragment set:html={SunIcon} /></span>
@@ -102,7 +102,7 @@ const initials = name
           {t(locale, "account_menu.language")}
         </span>
         <div role="radiogroup" aria-label="Language" data-i18n-aria-label="account_menu.language"
-          class="inline-flex items-center gap-0.5 rounded-full border border-gray-200 bg-gray-100 p-0.5 dark:border-gray-700 dark:bg-gray-800">
+          class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-100 p-1.5 dark:border-gray-700 dark:bg-gray-800">
           {languagesData.map((lang) => (
             <button
               type="button"

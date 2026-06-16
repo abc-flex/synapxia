@@ -102,12 +102,23 @@ ui/
     │   │   ├── FileInputCard.astro
     │   │   └── DropzoneCard.astro
     │   ├── table/
-    │   │   ├── DataTable.astro         # ⭐ Paginated/filtered/exportable table
-    │   │   └── advancedTable.ts        # simple-datatables init, export, filter logic
+    │   │   ├── DataTable.astro         # ⭐ Orchestrator shell (props + bootstraps advancedTable)
+    │   │   ├── advancedTable.ts        # simple-datatables init, export, filter logic
+    │   │   └── parts/                  # DataTable sub-components (DOM-identical split)
+    │   │       ├── DataTableToolbar.astro        # top bar: add/master/filters-toggle + filters + search/export
+    │   │       ├── DataTableFilters.astro        # the 1–3 column-filter <select>s (single loop)
+    │   │       ├── DataTableSearchExport.astro   # search input + export menu
+    │   │       ├── DataTableHead.astro           # <thead>
+    │   │       ├── DataTableBody.astro           # <tbody> rows (uses Cell + Actions)
+    │   │       ├── DataTableCell.astro           # the `as`-dispatch cell renderer
+    │   │       ├── DataTableActions.astro        # row action buttons (detail/expand/favorite/edit/delete)
+    │   │       ├── DataTablePagination.astro     # footer (info, per-page, prev/next)
+    │   │       └── DataTableEmpty.astro          # empty-state panel
     │   ├── Toast.astro                 # Top-right notifications
     │   └── ClientTranslations.astro    # Injects i18n dict into window for runtime patch
     ├── lib/                            # API service wrappers (one file per entity)
     │   ├── api.ts                      # ⭐ Fetch wrapper: GET/POST/PUT/DELETE + auth header
+    │   ├── datatable.ts                # Pure DataTable cell helpers (statusTone/formatDate/formatRelative/renderSubtitle)
     │   ├── auth.ts                     # login/register/logout/getCurrentUser + token storage
     │   ├── navigation.ts               # Builds sidebar from modules + options API
     │   ├── users.ts                    # Canonical example — copy when adding a new entity
@@ -131,6 +142,7 @@ ui/
     │   └── index.ts                    # Barrel re-exports
     ├── types/
     │   ├── api.ts                      # ⭐ Entity / EntityCreate / EntityUpdate interfaces
+    │   ├── datatable.ts                # ColumnConfig / FilterOption / FilterConfig for DataTable
     │   ├── nav.ts                      # NavModule, NavOption
     │   └── category.ts
     ├── i18n/

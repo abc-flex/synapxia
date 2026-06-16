@@ -42,8 +42,8 @@ try {
 }
 
 const columns = [
-  { key: "code", label: "dimension_modal.code" },
-  { key: "name", label: "dimension_modal.name" },
+  { key: "code", label: "dimension_modal.code", visible: false },
+  { key: "name", label: "dimension_modal.name", as: "title", subtitleKey: "code", subtitleFormat: "text" },
   { key: "scale_label", label: "dimension_modal.scale" },
   { key: "unit_label", label: "dimension_modal.unit" },
 ];

@@ -63,13 +63,13 @@ try {
 const columns = [
   { key: "id", label: "assignment_modal.id", visible: true },
   { key: "team", label: "assignment_modal.team", visible: false },
-  { key: "team_name", label: "assignment_modal.team" },
+  { key: "team_name", label: "assignment_modal.team", as: "title", subtitleKey: "user_name", subtitleFormat: "text" },
   { key: "user_id", label: "assignment_modal.user_id", visible: false },
-  { key: "user_name", label: "assignment_modal.user_id" },
+  { key: "user_name", label: "assignment_modal.user_id", visible: false },
   { key: "role", label: "assignment_modal.role", visible: false },
   { key: "role_name", label: "assignment_modal.role"},
-  { key: "valid_from", label: "assignment_modal.valid_from" },
-  { key: "valid_to", label: "assignment_modal.valid_to" },
+  { key: "valid_from", label: "assignment_modal.valid_from", as: "date" },
+  { key: "valid_to", label: "assignment_modal.valid_to", as: "date" },
 ];
 
 const data = assignments.map((item) => ({

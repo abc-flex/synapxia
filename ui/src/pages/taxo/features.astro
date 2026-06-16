@@ -30,8 +30,8 @@ let lists: any[] = [];
 lists = await getListsbyType('FEATURE');
 
 const columns = [
-  { key: "code", label: "feature_modal.code" },
-  { key: "name", label: "feature_modal.name" },
+  { key: "code", label: "feature_modal.code", visible: false },
+  { key: "name", label: "feature_modal.name", as: "title", subtitleKey: "code", subtitleFormat: "text" },
   { key: "type", label: "feature_modal.type", visible: false },
   { key: "type_name", label: "feature_modal.type" },
 ];

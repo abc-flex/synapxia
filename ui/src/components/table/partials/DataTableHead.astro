@@ -1,0 +1,22 @@
+---
+import type { ColumnConfig } from "@/types/datatable";
+
+interface Props {
+  visibleColumns: ColumnConfig[];
+}
+const { visibleColumns } = Astro.props as Props;
+---
+<thead
+  class="bg-gray-100 text-xs uppercase text-gray-700 border-b border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
+>
+  <tr>
+    {
+      visibleColumns.map((col) => (
+        <th class="px-2 py-1 font-semibold tracking-wide" data-i18n={col.label} data-column-key={col.key}>{col.label}</th>
+      ))
+    }
+    <th class="px-4 py-4 text-right" data-i18n="data_table.actions">
+      data_table.actions
+    </th>
+  </tr>
+</thead>

@@ -35,8 +35,8 @@ try {
 
 const columns = [
   { key: "sort_order", label: "#" },
-  { key: "value", label: "list_item_modal.value" },
-  { key: "label", label: "list_item_modal.label" },
+  { key: "value", label: "list_item_modal.value", as: "title", subtitleKey: "label", subtitleFormat: "text" },
+  { key: "label", label: "list_item_modal.label", visible: false },
   { key: "list", label: "list_item_modal.list", visible: false },
   { key: "list_name", label: "list_item_modal.list" },
 ];

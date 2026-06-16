@@ -1,0 +1,86 @@
+---
+import downloadSvg from "@/images/icons/arrow-down-tray.svg?raw";
+import csvSvg from "@/images/icons/file-csv.svg?raw";
+import jsonSvg from "@/images/icons/file-json.svg?raw";
+import txtSvg from "@/images/icons/file-txt.svg?raw";
+import sqlSvg from "@/images/icons/file-sql.svg?raw";
+
+interface Props {
+  tableId: string;
+}
+const { tableId } = Astro.props as Props;
+---
+<div class="flex items-center gap-2 relative w-full sm:w-auto">
+  <input
+    id={`${tableId}-search`}
+    type="search"
+    placeholder="data_table.search"
+    data-i18n-placeholder="data_table.search"
+    class="min-w-0 flex-1 sm:w-56 sm:flex-none rounded-lg border border-gray-300 bg-white px-3 py-2 sm:py-1.5 text-sm text-gray-800 placeholder:text-gray-400
+           focus:border-indigo-500 focus:ring-indigo-500
+           dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-indigo-400"
+  />
+
+  <button
+    id={`${tableId}-export-btn`}
+    type="button"
+    class="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border border-gray-300 px-3 py-2 sm:py-1.5 text-sm text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+  >
+    <span class="w-5 h-5 inline-block">
+      <Fragment set:html={downloadSvg} />
+    </span>
+    <span data-i18n="data_table.export">data_table.export</span>
+  </button>
+
+  <div
+    id={`${tableId}-export-menu`}
+    class="absolute right-0 top-full z-20 mt-2 hidden w-44 rounded-lg bg-white shadow-lg ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-700"
+  >
+    <ul class="py-1 text-sm">
+      <li>
+        <button
+          data-export="csv"
+          class="flex items-center gap-2 w-full px-4 py-2 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+        >
+          <span class="w-4 h-4 inline-block flex-shrink-0">
+            <Fragment set:html={csvSvg} />
+          </span>
+          <p data-i18n="data_table.export_csv">data_table.export_csv</p>
+        </button>
+      </li>
+      <li>
+        <button
+          data-export="json"
+          class="flex items-center gap-2 w-full px-4 py-2 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+          >
+          <span class="w-4 h-4 inline-block flex-shrink-0">
+            <Fragment set:html={jsonSvg} />
+          </span>
+          <p data-i18n="data_table.export_json">data_table.export_json</p>
+        </button>
+      </li>
+      <li>
+        <button
+          data-export="txt"
+          class="flex items-center gap-2 w-full px-4 py-2 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+          >
+          <span class="w-4 h-4 inline-block flex-shrink-0 color-gray-500">
+            <Fragment set:html={txtSvg} />
+          </span>
+          <p data-i18n="data_table.export_txt">data_table.export_txt</p>
+        </button>
+      </li>
+      <li>
+        <button
+          data-export="sql"
+          class="flex items-center gap-2 w-full px-4 py-2 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+        >
+          <span class="w-4 h-4 inline-block flex-shrink-0">
+            <Fragment set:html={sqlSvg} />
+          </span>
+          <p data-i18n="data_table.export_sql">data_table.export_sql</p>
+        </button>
+      </li>
+    </ul>
+  </div>
+</div>

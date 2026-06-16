@@ -46,8 +46,8 @@ try {
 }
 
 const columns = [
-  { key: "name", label: "user_modal.first_name" },
-  { key: "username", label: "user_modal.username" },
+  { key: "name", label: "user_modal.first_name", as: "title", subtitleKey: "username", subtitleFormat: "text" },
+  { key: "username", label: "user_modal.username", visible: false },
   { key: "profile", label: "user_modal.profile", visible: false },
   { key: "profile_name", label: "user_modal.profile" },
   { key: "unit", label: "user_modal.unit", visible: false },

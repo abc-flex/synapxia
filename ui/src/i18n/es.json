@@ -140,7 +140,17 @@
     "delete_warning": "Esta acción no se puede deshacer.",
     "export": "Exportar",
     "no_results": "No hay resultados",
-    "filters": "Filtros"
+    "filters": "Filtros",
+    "updated": "Actualizado",
+    "created": "Creado",
+    "rel_ago": "hace",
+    "rel_now": "ahora mismo",
+    "unit_min": "min",
+    "unit_hour": "h",
+    "unit_day": "d",
+    "unit_week": "sem",
+    "unit_month": "mes",
+    "unit_year": "a"
   },
   "business_unit_modal": {
     "code": "Código",

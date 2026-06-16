@@ -21,8 +21,8 @@ try {
 }
 
 const columns = [
-  { key: "code", label: "role_modal.code" },
-  { key: "name", label: "role_modal.name" },
+  { key: "code", label: "role_modal.code", visible: false },
+  { key: "name", label: "role_modal.name", as: "title", subtitleKey: "code", subtitleFormat: "text" },
   { key: "icon", label: "role_modal.icon" },
 ];
 const data = roles.map((item) => ({

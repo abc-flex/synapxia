@@ -41,7 +41,7 @@ CREATE TABLE related_processes (
     is_active   BOOLEAN       NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ,
-    CONSTRAINT pk_related_processes PRIMARY KEY (source, target)
+    CONSTRAINT pk_related_processes PRIMARY KEY (source, target, type)
 );
 
 -- Table process_inits
@@ -135,12 +135,12 @@ INSERT INTO lists (code, name, description, type, module) VALUES (
     'List that classifies the statuses of processes in SynapxIA.',
     'LIST_OF_VALUES', 'PROC');
 INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
-    ('PROCESS_STATUS', 'en', '1-DRAFT',      '1-Draft',      10),
-    ('PROCESS_STATUS', 'en', '2-REVIEW',     '2-Review',     20),
-    ('PROCESS_STATUS', 'en', '3-PUBLISHED',  '3-Published',  30),
-    ('PROCESS_STATUS', 'en', '4-DEPRECATED', '4-Deprecated', 40);
+    ('PROCESS_STATUS', 'en', 'DRAFT',      'Draft',      10),
+    ('PROCESS_STATUS', 'en', 'REVIEW',     'Review',     20),
+    ('PROCESS_STATUS', 'en', 'PUBLISHED',  'Published',  30),
+    ('PROCESS_STATUS', 'en', 'DEPRECATED', 'Deprecated', 40);
 INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
-    ('PROCESS_STATUS', 'es', '1-DRAFT',      '1-Borrador',    10),
-    ('PROCESS_STATUS', 'es', '2-REVIEW',     '2-Revisión',    20),
-    ('PROCESS_STATUS', 'es', '3-PUBLISHED',  '3-Publicado',   30),
-    ('PROCESS_STATUS', 'es', '4-DEPRECATED', '4-Obsoleto',    40);
+    ('PROCESS_STATUS', 'es', 'DRAFT',      'Borrador',    10),
+    ('PROCESS_STATUS', 'es', 'REVIEW',     'Revisión',    20),
+    ('PROCESS_STATUS', 'es', 'PUBLISHED',  'Publicado',   30),
+    ('PROCESS_STATUS', 'es', 'DEPRECATED', 'Obsoleto',    40);

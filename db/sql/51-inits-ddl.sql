@@ -80,7 +80,7 @@ CREATE TABLE related_inits (
     is_active   BOOLEAN       NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ,
-    CONSTRAINT pk_related_inits PRIMARY KEY (source, target) 
+    CONSTRAINT pk_related_inits PRIMARY KEY (source, target, type) 
 );
 
 -- Table init_permissions

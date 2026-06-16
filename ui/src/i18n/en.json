@@ -90,18 +90,15 @@
     "skills": "Skill Catalog",
     "assistants": "Assistants",
     "rag_apps": "RAG Apps",
-    "proposal": "Proposal",
-    "explore": "Explore",
+    "models": "Models",
     "criterias": "Criteria",
     "propose": "Propose",
+    "explore": "Explore",
     "dashboards": "Dashboard Catalog",
     "usage": "Usage Metrics",
-    "by_units": "Analytics by Unit",
-    "by_teams": "Analytics by Team",
-    "by_role": "Analytics by Role",
+    "processes": "Process Catalog",
     "value_chain": "Value Chain",
-    "map": "Process Map",
-    "models": "Process Models"
+    "map": "Process Map"
   },
   "crud_modal": {
     "add": "Add",

@@ -101,7 +101,8 @@
     "by_role": "Analyticas por Rol",
     "value_chain": "Cadena de Valor",
     "map": "Mapa de Procesos",
-    "models": "Modelos de Procesos"
+    "models": "Modelos de Procesos",
+    "processes": "Processes"
   },
   "crud_modal": {
     "add": "Agregar",

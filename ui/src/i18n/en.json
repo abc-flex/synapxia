@@ -101,7 +101,8 @@
     "by_role": "Analytics by Role",
     "value_chain": "Value Chain",
     "map": "Process Map",
-    "models": "Process Models"
+    "models": "Process Models",
+    "processes": "Processes"
   },
   "crud_modal": {
     "add": "Add",

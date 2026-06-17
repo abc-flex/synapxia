@@ -1,0 +1,211 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import CrudModal from "../../components/forms/CrudModal.astro";
+import Toast from "../../components/Toast.astro";
+import CardGallery from "../../components/lib/gallery/CardGallery.astro";
+import PromptCard from "../../components/lib/PromptCard.astro";
+import PromptFormModal from "../../components/lib/PromptFormModal.astro";
+import { getAssetsbyCategory } from "@/lib/assets";
+import { getCharacterizations } from "@/lib/characterizations";
+import { getListItemsbyList } from "@/lib/list_items";
+import { getCurrentUser } from "@/lib/auth";
+import { getFavoritesByUser } from "@/lib/favorites";
+import { getLocale } from "@/utils/getLocale";
+import { formatRelative } from "@/lib/datatable";
+
+const CATEGORY = "PROMPTS";
+const locale = getLocale(Astro);
+
+// ── Prompts (assets in the PROMPTS category) ───────────────────────────────
+let prompts: any[] = [];
+let errorMessage: string | null = null;
+try {
+  prompts = await getAssetsbyCategory(CATEGORY);
+} catch (error) {
+  console.error("Failed to fetch prompts:", error);
+  errorMessage = error instanceof Error ? error.message : "Failed to fetch prompts from API";
+  prompts = [];
+}
+
+// ── Characterizations → map<assetId, {feature: value}> for the card chips ──
+// One bounded fetch + client-side group (a dedicated /by-asset endpoint is a
+// future optimization if catalogs grow large).
+let charsByAsset = new Map<number, Record<string, string>>();
+try {
+  const chars = await getCharacterizations(0, 1000);
+  for (const c of chars) {
+    const aid = Number(c.asset);
+    const bag = charsByAsset.get(aid) ?? {};
+    bag[c.feature] = c.value ?? "";
+    charsByAsset.set(aid, bag);
+  }
+} catch {
+  charsByAsset = new Map();
+}
+
+// ── Current user's favorites (SSR) → pre-fill the card stars ───────────────
+let favIds = new Set<number>();
+try {
+  const me = await getCurrentUser();
+  const favs = await getFavoritesByUser(Number(me.id));
+  favIds = new Set(favs.map((f) => Number(f.asset)));
+} catch {
+  favIds = new Set();
+}
+
+// ── Status list (ASSET_STATUS) for labels + the status filter ──────────────
+let status: any[] = [];
+try {
+  status = await getListItemsbyList("ASSET_STATUS");
+} catch {
+  status = [];
+}
+const statuses = status.map((s) => ({ value: s.value, label: s.label }));
+
+// Resolve a status code to its label, tolerating legacy rows that stored the
+// bare code without the list_items `N-` sort-prefix (mirrors assets.astro).
+const resolveStatusLabel = (raw: string): string => {
+  if (!raw) return "";
+  const direct = status.find((s) => s.value === raw);
+  if (direct) return direct.label;
+  const stripped = status.find((s) => s.value.replace(/^\d+-/, "") === raw);
+  return stripped?.label ?? raw;
+};
+
+// ── Flatten rows for the cards ─────────────────────────────────────────────
+const rows = prompts.map((item) => {
+  const chars = charsByAsset.get(Number(item.id)) ?? {};
+  const tags = Array.isArray(item.tags) ? item.tags : [];
+  return {
+    id: item.id,
+    name: item.name,
+    description: item.description ?? "",
+    subtitle: formatRelative(item.updated_at ?? item.created_at, locale),
+    statusValue: item.status,
+    statusLabel: resolveStatusLabel(item.status),
+    favorite: favIds.has(item.id) ? "yes" : "no",
+    model: chars.SUGGESTED_MODEL,
+    platform: chars.PLATFORM,
+    temperature: chars.SUGGESTED_TEMPERATURE,
+    tags,
+    searchText: [item.name, item.description, tags.join(" ")].filter(Boolean).join(" "),
+  };
+});
+
+// Delete confirmation modal field (name shown disabled; id prefilled at runtime).
+const deleteFields = [{ key: "name", label: "asset_modal.name", pk: true, disabled: true }];
+---
+
+<BaseLayout title="menu_options.prompts">
+  {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
+
+  <div class="mx-auto w-full max-w-full">
+    <Breadcrumb
+      moduleName="AI Library"
+      pageName="Prompt Gallery"
+      pageTitle="Prompt Gallery"
+      homeLink="/"
+      moduleNameKey="modules.LIB"
+      pageNameKey="menu_options.prompts"
+      pageTitleKey="menu_options.prompts"
+    />
+
+    {/* Custom prompt create/edit modal */}
+    <PromptFormModal modalId="prompt-detail-modal" statuses={statuses} />
+
+    {/* Slim delete confirmation (reuses CrudModal) */}
+    <CrudModal
+      mode="delete"
+      modalId="prompt-delete-modal"
+      entityName="Prompt"
+      fields={deleteFields}
+      showTrigger={false}
+    />
+
+    <CardGallery
+      galleryId="prompts-gallery"
+      newModalId="prompt-detail-modal"
+      newLabelKey="prompt_modal.new"
+      emptyKey="prompt_modal.empty"
+      statuses={statuses}
+    >
+      {rows.map((r) => (
+        <PromptCard
+          id={r.id}
+          name={r.name}
+          subtitle={r.subtitle}
+          description={r.description}
+          statusLabel={r.statusLabel}
+          statusValue={r.statusValue}
+          favorite={r.favorite}
+          searchText={r.searchText}
+          editModalId="prompt-detail-modal"
+          model={r.model}
+          platform={r.platform}
+          temperature={r.temperature}
+          tags={r.tags}
+        />
+      ))}
+    </CardGallery>
+  </div>
+
+  <script>
+    // Bundled module (Astro resolves @/ + TS and dedupes it). We deliberately
+    // avoid the inline `<script type="module">` + `/src/...` import pattern,
+    // which 404s in the production build (see memory/CHANGELOG.md 2026-06-15).
+    import { initCardGallery } from "@/lib/catalogGallery";
+    import { deleteAsset } from "@/lib/assets";
+    import { loadClientTranslations } from "@/utils/i18nClient";
+
+    initCardGallery({ galleryId: "prompts-gallery", pageSize: 12 });
+    loadClientTranslations();
+
+    function showToast(message: string, variant = "info") {
+      const toast = document.createElement("div");
+      toast.className = `fixed top-4 right-4 z-50 max-w-md p-4 rounded-lg border shadow-lg transition-all duration-300 ${
+        variant === "error"
+          ? "bg-red-50 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+          : "bg-green-50 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+      }`;
+      toast.innerHTML = `
+        <div class="flex items-start gap-3">
+          <div class="flex-1 text-sm font-medium">${message}</div>
+          <button type="button" class="text-gray-400 hover:text-gray-600" onclick="this.parentElement.parentElement.remove()">✕</button>
+        </div>`;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateX(100%)";
+        setTimeout(() => toast.remove(), 300);
+      }, 5000);
+    }
+    (window as any).showToast = showToast;
+
+    // Open + prefill the delete confirmation modal when a card's delete button
+    // fires (the gallery dispatches `gallery-delete` with id + name).
+    const delDialog = document.getElementById("prompt-delete-modal") as HTMLDialogElement | null;
+    document.addEventListener("gallery-delete", (e) => {
+      if (!delDialog) return;
+      const { id, name } = (e as CustomEvent).detail;
+      const idInput = delDialog.querySelector('[name="id"]') as HTMLInputElement | null;
+      const nameInput = delDialog.querySelector('[name="name"]') as HTMLInputElement | null;
+      if (idInput) idInput.value = String(id);
+      if (nameInput) nameInput.value = String(name ?? "");
+      if (!delDialog.open) delDialog.showModal();
+    });
+
+    // Delete handler (create/edit handled by PromptFormModal).
+    document.addEventListener("crud-submit", async (e) => {
+      const { mode, data } = (e as CustomEvent).detail;
+      if (mode !== "delete") return;
+      try {
+        await deleteAsset(Number(data.id));
+        showToast("Prompt deleted successfully!");
+        setTimeout(() => window.location.reload(), 800);
+      } catch (error) {
+        showToast(error instanceof Error ? error.message : "An error occurred", "error");
+      }
+    });
+  </script>
+</BaseLayout>

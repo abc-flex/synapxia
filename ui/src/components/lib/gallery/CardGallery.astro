@@ -1,0 +1,122 @@
+---
+/**
+ * CardGallery — consumer-facing shell for a LIB curated catalog. Renders the
+ * toolbar (search, status filter, "my favorites" toggle, "New" button) + a
+ * responsive card grid (cards go in the default <slot>) + an empty state + a
+ * "show more" pager. Catalog-agnostic; the behavior is wired by
+ * `lib/catalogGallery.ts` keyed off `galleryId`.
+ *
+ * USAGE:
+ *   <CardGallery galleryId="prompts-gallery" newModalId="prompt-detail-modal"
+ *                newLabelKey="prompt_modal.new" emptyKey="prompt_modal.empty"
+ *                statuses={statuses}>
+ *     {rows.map((r) => <PromptCard {...r} editModalId="prompt-detail-modal" />)}
+ *   </CardGallery>
+ */
+export interface Props {
+  galleryId: string;
+  /** Dialog id opened by the "New" button (with data-asset-mode="create"). */
+  newModalId?: string;
+  newLabelKey?: string;
+  emptyKey?: string;
+  showFavorites?: boolean;
+  statuses?: { value: string; label: string }[];
+  searchPlaceholderKey?: string;
+  statusAllKey?: string;
+  favLabelKey?: string;
+}
+
+const {
+  galleryId,
+  newModalId,
+  newLabelKey = "prompt_modal.new",
+  emptyKey = "prompt_modal.empty",
+  showFavorites = true,
+  statuses = [],
+  searchPlaceholderKey = "gallery.search_placeholder",
+  statusAllKey = "gallery.status_all",
+  favLabelKey = "gallery.favorites_only",
+} = Astro.props as Props;
+---
+
+<section id={galleryId}>
+  {/* Toolbar */}
+  <div class="mb-5 flex flex-wrap items-center gap-3">
+    <div class="relative min-w-[200px] flex-1">
+      <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400">
+        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="9" cy="9" r="6" /><path d="m20 20-4.5-4.5" />
+        </svg>
+      </span>
+      <input
+        id={`${galleryId}-search`}
+        type="search"
+        placeholder="Search…"
+        data-i18n-placeholder={searchPlaceholderKey}
+        class="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+      />
+    </div>
+
+    {statuses.length > 0 && (
+      <select
+        id={`${galleryId}-status`}
+        class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+      >
+        <option value="" data-i18n={statusAllKey}>All statuses</option>
+        {statuses.map((s) => <option value={s.value}>{s.label}</option>)}
+      </select>
+    )}
+
+    {showFavorites && (
+      <button
+        id={`${galleryId}-fav-filter`}
+        type="button"
+        aria-pressed="false"
+        class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+      >
+        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.3 4.02a1 1 0 00.95.69h4.22c.97 0 1.37 1.24.59 1.81l-3.42 2.48a1 1 0 00-.36 1.12l1.3 4.02c.3.92-.75 1.69-1.54 1.12l-3.41-2.48a1 1 0 00-1.18 0l-3.41 2.48c-.78.57-1.84-.2-1.54-1.12l1.3-4.02a1 1 0 00-.36-1.12L2 9.45c-.78-.57-.38-1.81.6-1.81h4.21a1 1 0 00.95-.69l1.3-4.02z" />
+        </svg>
+        <span data-i18n={favLabelKey}>My favorites</span>
+      </button>
+    )}
+
+    {newModalId && (
+      <button
+        type="button"
+        data-modal-open={newModalId}
+        data-asset-mode="create"
+        class="ml-auto inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+      >
+        <span class="text-lg leading-none">+</span>
+        <span data-i18n={newLabelKey}>New</span>
+      </button>
+    )}
+  </div>
+
+  {/* Card grid */}
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <slot />
+  </div>
+
+  {/* Empty state */}
+  <div
+    id={`${galleryId}-empty`}
+    class="hidden rounded-2xl border border-dashed border-gray-300 p-12 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400"
+    data-i18n={emptyKey}
+  >
+    Nothing here yet
+  </div>
+
+  {/* Pager */}
+  <div class="mt-6 flex justify-center">
+    <button
+      id={`${galleryId}-more`}
+      type="button"
+      class="hidden rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+      data-i18n="gallery.show_more"
+    >
+      Show more
+    </button>
+  </div>
+</section>

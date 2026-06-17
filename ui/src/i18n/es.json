@@ -707,5 +707,41 @@
     "nav_user_profile": "Perfil de usuario",
     "nav_tables": "Tablas",
     "nav_pages": "Páginas"
+  },
+  "gallery": {
+    "search_placeholder": "Buscar prompts…",
+    "status_all": "Todos los estados",
+    "favorites_only": "Mis favoritos",
+    "show_more": "Ver más",
+    "empty": "Aún no hay nada aquí"
+  },
+  "prompt_modal": {
+    "title_create": "Nuevo Prompt",
+    "title_edit": "Editar Prompt",
+    "subtitle": "Campos principales + la configuración reutilizable del prompt.",
+    "new": "Nuevo Prompt",
+    "details_section": "Detalles del prompt",
+    "platform": "Plataforma",
+    "suggested_model": "Modelo sugerido",
+    "suggested_temperature": "Temperatura sugerida",
+    "prompt_template": "Plantilla del prompt",
+    "example_output": "Salida de ejemplo",
+    "favorite_add": "Agregar a favoritos",
+    "favorite_remove": "Quitar de favoritos",
+    "saved": "Prompt guardado.",
+    "error_save": "No se pudo guardar el prompt.",
+    "error_load": "No se pudo cargar el prompt.",
+    "empty": "No se encontraron prompts",
+    "one_title": "Prompt",
+    "many_title": "Prompts",
+    "add_new": "Nuevo Prompt",
+    "edit": "Editar Prompt",
+    "delete": "Eliminar Prompt",
+    "delete_confirmation": "¿Estás seguro de que deseas eliminar este Prompt"
+  },
+  "prompt_card": {
+    "model": "Modelo",
+    "platform": "Plataforma",
+    "temperature": "Temp"
   }
 }

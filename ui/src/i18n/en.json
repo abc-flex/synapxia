@@ -707,5 +707,41 @@
     "nav_user_profile": "User Profile",
     "nav_tables": "Tables",
     "nav_pages": "Pages"
+  },
+  "gallery": {
+    "search_placeholder": "Search prompts…",
+    "status_all": "All statuses",
+    "favorites_only": "My favorites",
+    "show_more": "Show more",
+    "empty": "Nothing here yet"
+  },
+  "prompt_modal": {
+    "title_create": "New Prompt",
+    "title_edit": "Edit Prompt",
+    "subtitle": "Core fields + the prompt's reusable settings.",
+    "new": "New Prompt",
+    "details_section": "Prompt details",
+    "platform": "Platform",
+    "suggested_model": "Suggested model",
+    "suggested_temperature": "Suggested temperature",
+    "prompt_template": "Prompt template",
+    "example_output": "Example output",
+    "favorite_add": "Add to favorites",
+    "favorite_remove": "Remove from favorites",
+    "saved": "Prompt saved.",
+    "error_save": "Could not save prompt.",
+    "error_load": "Could not load prompt.",
+    "empty": "No prompts found",
+    "one_title": "Prompt",
+    "many_title": "Prompts",
+    "add_new": "New Prompt",
+    "edit": "Edit Prompt",
+    "delete": "Delete Prompt",
+    "delete_confirmation": "Are you sure you want to delete this Prompt"
+  },
+  "prompt_card": {
+    "model": "Model",
+    "platform": "Platform",
+    "temperature": "Temp"
   }
 }

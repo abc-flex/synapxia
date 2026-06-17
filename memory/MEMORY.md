@@ -55,6 +55,7 @@ Run everything: `make dev`. Verify: `make test`.
 
 | Date | Decision | Rationale |
 |------|----------|-----------|
+| 2026-06-17 | LIB **curated catalogs** (Prompt Gallery first) are final-user **card galleries**, not admin `DataTable` pages. Reusable foundation: `components/lib/gallery/{CardGallery,GalleryCard,CatalogFormModal}.astro` + `lib/{catalogGallery,catalogModal}.ts`. The page uses a **bundled `@/` `<script>`**, never inline `type="module"` + `/src/...` imports (those 404 in the Vercel build). | Catalogs are discovery/reuse surfaces for devs/tech users; one card framework, per-catalog custom card+modal rendering. **Extension recipe** for HU-LI13–19 (MCP/Agent/Flow/Skill/Assistant/RAG/Model): add `{X}Card.astro` (wrap `GalleryCard` + custom chips), `{X}FormModal.astro` (wrap `CatalogFormModal` + that category's feature inputs + `mountCatalogModal({category, features})`), a `lib/{x}.astro` page, and i18n keys. No backend work — all categories+specs are seeded. |
 | 2026-06-15 | `DataTable.astro` split into an orchestrator shell + `components/table/partials/` (Toolbar, Filters, SearchExport, Head, Body, Cell, Actions, Pagination, Empty) + pure helpers in `lib/datatable.ts` + types in `types/datatable.ts` | The 567-line monolith was a "god component". Split is **DOM-identical** (verified by before/after dev-render diff), so `advancedTable.ts` (which binds by `${tableId}-*` ids + DOM structure) and the card-view CSS are untouched. Sub-parts take `tableId`/props and rebuild the same ids. The 3 filter selects are now one loop. |
 | 2026-06-15 | `DataTable` column config gained parametrized field types via `as` (`title`/`status`/`tags`/`date`/`badge`/`boolean`/`text`) + per-page `subtitleKey`/`subtitleFormat` | One reusable config drives both the desktop table and the mobile card; pages only annotate their `columns`. `title` renders bold name + muted subtitle (`.dt-title`/`.dt-subtitle`); the subtitle's source column is set `visible:false` so it isn't shown twice (still in `data` for export/filter). Card view keys off `td[data-col="title"]`, not column order. `advancedTable.ts` untouched. |
 | 2026-06-07 | Added `ui/src/layouts/Layout.astro` (minimal shell) | `dashboard.astro` used a standalone full-screen design, not the sidebar BaseLayout; the file was simply missing. |
@@ -75,6 +76,8 @@ Run everything: `make dev`. Verify: `make test`.
 | Taxonomy (categories hierarchical, features) | taxo | ✅ done |
 | Team collaboration (teams, roles, assignments, projects, dimensions, metrics) | collab | ✅ done |
 | Asset library (assets, characterizations, favorites, actions, asset_relations) | lib | ✅ done |
+| Prompt Gallery (HU-LI12) — final-user card gallery on the reusable gallery framework | lib | ✅ done |
+| Curated catalogs HU-LI13–19 (MCP/Agent/Flow/Skill/Assistant/RAG/Model) — framework ready, pages pending | lib | ⬜ pending (use the gallery extension recipe) |
 | Auth (JWT HS256 + bcrypt, /me, register, change-password) | auth | ✅ done |
 | Vercel deployment (API serverless via Mangum + UI static + Neon DB) | infra | ✅ done |
 | Per-service CLAUDE.md (api/ui/db ~800 lines each) | docs | ✅ done |

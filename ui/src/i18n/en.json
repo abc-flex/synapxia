@@ -709,11 +709,13 @@
     "nav_pages": "Pages"
   },
   "gallery": {
-    "search_placeholder": "Search prompts…",
+    "search_placeholder": "Search…",
     "status_all": "All statuses",
     "favorites_only": "My favorites",
     "show_more": "Show more",
-    "empty": "Nothing here yet"
+    "empty": "Nothing here yet",
+    "favorite_add": "Add to favorites",
+    "favorite_remove": "Remove from favorites"
   },
   "prompt_modal": {
     "title_create": "New Prompt",
@@ -743,5 +745,33 @@
     "model": "Model",
     "platform": "Platform",
     "temperature": "Temp"
+  },
+  "mcp_modal": {
+    "title_create": "New MCP Server",
+    "title_edit": "Edit MCP Server",
+    "subtitle": "Core fields + the MCP's connection details.",
+    "new": "New MCP",
+    "details_section": "MCP details",
+    "mode": "Mode",
+    "overview": "Overview",
+    "content": "Content",
+    "tools": "Tools",
+    "tools_help": "Comma- or newline-separated list of tools.",
+    "server_config": "Server configuration (JSON)",
+    "saved": "MCP saved.",
+    "error_save": "Could not save MCP.",
+    "error_load": "Could not load MCP.",
+    "empty": "No MCP servers found",
+    "one_title": "MCP",
+    "many_title": "MCPs",
+    "add_new": "New MCP",
+    "edit": "Edit MCP",
+    "delete": "Delete MCP",
+    "delete_confirmation": "Are you sure you want to delete this MCP"
+  },
+  "mcp_card": {
+    "copy_config": "Copy config",
+    "copied": "Server config copied",
+    "tools_more": "more"
   }
 }

@@ -77,7 +77,8 @@ Run everything: `make dev`. Verify: `make test`.
 | Team collaboration (teams, roles, assignments, projects, dimensions, metrics) | collab | ✅ done |
 | Asset library (assets, characterizations, favorites, actions, asset_relations) | lib | ✅ done |
 | Prompt Gallery (HU-LI12) — final-user card gallery on the reusable gallery framework | lib | ✅ done |
-| Curated catalogs HU-LI13–19 (MCP/Agent/Flow/Skill/Assistant/RAG/Model) — framework ready, pages pending | lib | ⬜ pending (use the gallery extension recipe) |
+| MCP Directory (HU-LI13) — second card catalog (Mode chip, tool chips, Copy-config) | lib | ✅ done |
+| Curated catalogs HU-LI14–19 (Agent/Flow/Skill/Assistant/RAG/Model) — framework ready, pages pending | lib | ⬜ pending (use the gallery extension recipe) |
 | Auth (JWT HS256 + bcrypt, /me, register, change-password) | auth | ✅ done |
 | Vercel deployment (API serverless via Mangum + UI static + Neon DB) | infra | ✅ done |
 | Per-service CLAUDE.md (api/ui/db ~800 lines each) | docs | ✅ done |

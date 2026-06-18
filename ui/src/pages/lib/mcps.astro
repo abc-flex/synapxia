@@ -1,0 +1,232 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import CrudModal from "../../components/forms/CrudModal.astro";
+import Toast from "../../components/Toast.astro";
+import CardGallery from "../../components/lib/gallery/CardGallery.astro";
+import McpCard from "../../components/lib/McpCard.astro";
+import McpFormModal from "../../components/lib/McpFormModal.astro";
+import { getAssetsbyCategory } from "@/lib/assets";
+import { getCharacterizations } from "@/lib/characterizations";
+import { getListItemsbyList } from "@/lib/list_items";
+import { getCurrentUser } from "@/lib/auth";
+import { getFavoritesByUser } from "@/lib/favorites";
+import { getLocale } from "@/utils/getLocale";
+import { formatRelative } from "@/lib/datatable";
+
+const CATEGORY = "MCPS";
+const locale = getLocale(Astro);
+
+// Tolerant list parser for the TOOLS feature: handles `['a','b']`, `["a","b"]`,
+// comma- or newline-separated plain text → string[].
+const parseList = (raw: unknown): string[] => {
+  if (!raw) return [];
+  let s = String(raw).trim();
+  if (s.startsWith("[") && s.endsWith("]")) s = s.slice(1, -1);
+  return s
+    .split(/[,\n]/)
+    .map((t) => t.trim().replace(/^['"]|['"]$/g, "").trim())
+    .filter(Boolean);
+};
+
+// ── MCP assets (assets in the MCPS category) ───────────────────────────────
+let mcps: any[] = [];
+let errorMessage: string | null = null;
+try {
+  mcps = await getAssetsbyCategory(CATEGORY);
+} catch (error) {
+  console.error("Failed to fetch MCPs:", error);
+  errorMessage = error instanceof Error ? error.message : "Failed to fetch MCPs from API";
+  mcps = [];
+}
+
+// ── Characterizations → map<assetId, {feature: value}> for the card chips ──
+let charsByAsset = new Map<number, Record<string, string>>();
+try {
+  const chars = await getCharacterizations(0, 1000);
+  for (const c of chars) {
+    const aid = Number(c.asset);
+    const bag = charsByAsset.get(aid) ?? {};
+    bag[c.feature] = c.value ?? "";
+    charsByAsset.set(aid, bag);
+  }
+} catch {
+  charsByAsset = new Map();
+}
+
+// ── Current user's favorites (SSR) → pre-fill the card stars ───────────────
+let favIds = new Set<number>();
+try {
+  const me = await getCurrentUser();
+  const favs = await getFavoritesByUser(Number(me.id));
+  favIds = new Set(favs.map((f) => Number(f.asset)));
+} catch {
+  favIds = new Set();
+}
+
+// ── Status list (ASSET_STATUS) for labels + the status filter ──────────────
+let status: any[] = [];
+try {
+  status = await getListItemsbyList("ASSET_STATUS");
+} catch {
+  status = [];
+}
+const statuses = status.map((s) => ({ value: s.value, label: s.label }));
+
+// ── Execution modes (EXECUTION_MODE) for the MODE select. Options use the
+// label as value to match the seeded/spec data ("Remote"/"Local"). ─────────
+let modes: { value: string; label: string }[] = [];
+try {
+  const items = await getListItemsbyList("EXECUTION_MODE");
+  modes = items.map((m) => ({ value: m.label, label: m.label }));
+} catch {
+  modes = [];
+}
+
+const resolveStatusLabel = (raw: string): string => {
+  if (!raw) return "";
+  const direct = status.find((s) => s.value === raw);
+  if (direct) return direct.label;
+  const stripped = status.find((s) => s.value.replace(/^\d+-/, "") === raw);
+  return stripped?.label ?? raw;
+};
+
+// ── Flatten rows for the cards ─────────────────────────────────────────────
+const rows = mcps.map((item) => {
+  const chars = charsByAsset.get(Number(item.id)) ?? {};
+  const tags = Array.isArray(item.tags) ? item.tags : [];
+  const tools = parseList(chars.TOOLS);
+  return {
+    id: item.id,
+    name: item.name,
+    description: chars.OVERVIEW || item.description || "",
+    subtitle: formatRelative(item.updated_at ?? item.created_at, locale),
+    statusValue: item.status,
+    statusLabel: resolveStatusLabel(item.status),
+    favorite: favIds.has(item.id) ? "yes" : "no",
+    mode: chars.MODE,
+    tools,
+    serverConfig: chars.SERVER_CONFIG,
+    tags,
+    searchText: [item.name, chars.OVERVIEW, item.description, tools.join(" "), tags.join(" ")]
+      .filter(Boolean)
+      .join(" "),
+  };
+});
+
+// Delete confirmation modal field (name shown disabled; id prefilled at runtime).
+const deleteFields = [{ key: "name", label: "asset_modal.name", pk: true, disabled: true }];
+---
+
+<BaseLayout title="menu_options.mcps">
+  {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
+
+  <div class="mx-auto w-full max-w-full">
+    <Breadcrumb
+      moduleName="AI Library"
+      pageName="MCP Directory"
+      pageTitle="MCP Directory"
+      homeLink="/"
+      moduleNameKey="modules.LIB"
+      pageNameKey="menu_options.mcps"
+      pageTitleKey="menu_options.mcps"
+    />
+
+    {/* Custom MCP create/edit modal */}
+    <McpFormModal modalId="mcp-detail-modal" statuses={statuses} modes={modes} />
+
+    {/* Slim delete confirmation (reuses CrudModal) */}
+    <CrudModal
+      mode="delete"
+      modalId="mcp-delete-modal"
+      entityName="Mcp"
+      fields={deleteFields}
+      showTrigger={false}
+    />
+
+    <CardGallery
+      galleryId="mcps-gallery"
+      newModalId="mcp-detail-modal"
+      newLabelKey="mcp_modal.new"
+      emptyKey="mcp_modal.empty"
+      statuses={statuses}
+    >
+      {rows.map((r) => (
+        <McpCard
+          id={r.id}
+          name={r.name}
+          subtitle={r.subtitle}
+          description={r.description}
+          statusLabel={r.statusLabel}
+          statusValue={r.statusValue}
+          favorite={r.favorite}
+          searchText={r.searchText}
+          editModalId="mcp-detail-modal"
+          mode={r.mode}
+          tools={r.tools}
+          serverConfig={r.serverConfig}
+          tags={r.tags}
+        />
+      ))}
+    </CardGallery>
+  </div>
+
+  <script>
+    // Bundled module (Astro resolves @/ + TS and dedupes it). We deliberately
+    // avoid the inline `<script type="module">` + `/src/...` import pattern,
+    // which 404s in the production build (see memory/CHANGELOG.md 2026-06-15).
+    import { initCardGallery } from "@/lib/catalogGallery";
+    import { deleteAsset } from "@/lib/assets";
+    import { loadClientTranslations } from "@/utils/i18nClient";
+
+    initCardGallery({ galleryId: "mcps-gallery", pageSize: 12 });
+    loadClientTranslations();
+
+    function showToast(message: string, variant = "info") {
+      const toast = document.createElement("div");
+      toast.className = `fixed top-4 right-4 z-50 max-w-md p-4 rounded-lg border shadow-lg transition-all duration-300 ${
+        variant === "error"
+          ? "bg-red-50 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+          : "bg-green-50 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+      }`;
+      toast.innerHTML = `
+        <div class="flex items-start gap-3">
+          <div class="flex-1 text-sm font-medium">${message}</div>
+          <button type="button" class="text-gray-400 hover:text-gray-600" onclick="this.parentElement.parentElement.remove()">✕</button>
+        </div>`;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateX(100%)";
+        setTimeout(() => toast.remove(), 300);
+      }, 5000);
+    }
+    (window as any).showToast = showToast;
+
+    // Open + prefill the delete confirmation modal when a card's delete button
+    // fires (the gallery dispatches `gallery-delete` with id + name).
+    const delDialog = document.getElementById("mcp-delete-modal") as HTMLDialogElement | null;
+    document.addEventListener("gallery-delete", (e) => {
+      if (!delDialog) return;
+      const { id, name } = (e as CustomEvent).detail;
+      const idInput = delDialog.querySelector('[name="id"]') as HTMLInputElement | null;
+      const nameInput = delDialog.querySelector('[name="name"]') as HTMLInputElement | null;
+      if (idInput) idInput.value = String(id);
+      if (nameInput) nameInput.value = String(name ?? "");
+      if (!delDialog.open) delDialog.showModal();
+    });
+
+    // Delete handler (create/edit handled by McpFormModal).
+    document.addEventListener("crud-submit", async (e) => {
+      const { mode, data } = (e as CustomEvent).detail;
+      if (mode !== "delete") return;
+      try {
+        await deleteAsset(Number(data.id));
+        showToast("MCP deleted successfully!");
+        setTimeout(() => window.location.reload(), 800);
+      } catch (error) {
+        showToast(error instanceof Error ? error.message : "An error occurred", "error");
+      }
+    });
+  </script>
+</BaseLayout>

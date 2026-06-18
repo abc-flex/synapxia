@@ -709,11 +709,13 @@
     "nav_pages": "Páginas"
   },
   "gallery": {
-    "search_placeholder": "Buscar prompts…",
+    "search_placeholder": "Buscar…",
     "status_all": "Todos los estados",
     "favorites_only": "Mis favoritos",
     "show_more": "Ver más",
-    "empty": "Aún no hay nada aquí"
+    "empty": "Aún no hay nada aquí",
+    "favorite_add": "Agregar a favoritos",
+    "favorite_remove": "Quitar de favoritos"
   },
   "prompt_modal": {
     "title_create": "Nuevo Prompt",
@@ -743,5 +745,33 @@
     "model": "Modelo",
     "platform": "Plataforma",
     "temperature": "Temp"
+  },
+  "mcp_modal": {
+    "title_create": "Nuevo servidor MCP",
+    "title_edit": "Editar servidor MCP",
+    "subtitle": "Campos principales + los detalles de conexión del MCP.",
+    "new": "Nuevo MCP",
+    "details_section": "Detalles del MCP",
+    "mode": "Modo",
+    "overview": "Resumen",
+    "content": "Contenido",
+    "tools": "Herramientas",
+    "tools_help": "Lista de herramientas separada por comas o saltos de línea.",
+    "server_config": "Configuración del servidor (JSON)",
+    "saved": "MCP guardado.",
+    "error_save": "No se pudo guardar el MCP.",
+    "error_load": "No se pudo cargar el MCP.",
+    "empty": "No se encontraron servidores MCP",
+    "one_title": "MCP",
+    "many_title": "MCPs",
+    "add_new": "Nuevo MCP",
+    "edit": "Editar MCP",
+    "delete": "Eliminar MCP",
+    "delete_confirmation": "¿Estás seguro de que deseas eliminar este MCP"
+  },
+  "mcp_card": {
+    "copy_config": "Copiar config",
+    "copied": "Configuración del servidor copiada",
+    "tools_more": "más"
   }
 }

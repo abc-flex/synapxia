@@ -121,6 +121,22 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
       return;
     }
 
+    // Generic copy-to-clipboard action (e.g. an MCP card's "Copy config").
+    const copyBtn = target.closest<HTMLElement>('[data-action="copy"]');
+    if (copyBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const text = copyBtn.dataset.copy ?? "";
+      const okMsg = copyBtn.dataset.copyOk || "Copied";
+      try {
+        await navigator.clipboard.writeText(text);
+        (window as any).showToast?.(okMsg, "success");
+      } catch {
+        (window as any).showToast?.("Could not copy", "error");
+      }
+      return;
+    }
+
     const delBtn = target.closest<HTMLElement>('[data-action="delete"]');
     if (delBtn) {
       e.preventDefault();

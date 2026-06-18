@@ -98,7 +98,8 @@
     "usage": "Usage Metrics",
     "processes": "Process Catalog",
     "value_chain": "Value Chain",
-    "map": "Process Map"
+    "map": "Process Map",
+    "specifications": "Specification"
   },
   "crud_modal": {
     "add": "Add",

@@ -98,7 +98,8 @@
     "usage": "Métricas de Uso",
     "processes": "Catálogo de Procesos",
     "value_chain": "Cadena de Valor",
-    "map": "Mapa de Procesos"
+    "map": "Mapa de Procesos",
+    "specifications": "Especificacion"
   },
   "crud_modal": {
     "add": "Agregar",

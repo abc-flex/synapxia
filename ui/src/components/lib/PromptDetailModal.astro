@@ -1,0 +1,40 @@
+---
+/**
+ * PromptDetailModal — the Prompt Gallery's read-only "big card" view. Wraps the
+ * reusable CatalogDetailModal and configures the prompt-specific sections: the
+ * meta chips (platform / model / temperature) plus the full prompt template
+ * (with Copy) and example output — the parts clamped on the card.
+ */
+import CatalogDetailModal from "@/components/lib/gallery/CatalogDetailModal.astro";
+
+export interface Props {
+  modalId?: string;
+  statuses?: { value: string; label: string }[];
+}
+
+const { modalId = "prompt-view-modal", statuses = [] } = Astro.props as Props;
+---
+
+<CatalogDetailModal modalId={modalId} statuses={statuses} accentClass="text-indigo-500">
+  <span slot="icon" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
+    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+      <path d="M8 10h8M8 14h5M21 12a8 8 0 0 1-8 8H7l-4 3v-5a8 8 0 1 1 18-6z" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  </span>
+</CatalogDetailModal>
+
+<script>
+  import { mountCatalogDetail } from "@/lib/catalogDetail";
+
+  mountCatalogDetail({
+    modalId: "prompt-view-modal",
+    editModalId: "prompt-detail-modal",
+    sections: [
+      { type: "inline", labelKey: "prompt_modal.platform", feature: "PLATFORM" },
+      { type: "inline", labelKey: "prompt_modal.suggested_model", feature: "SUGGESTED_MODEL" },
+      { type: "inline", labelKey: "prompt_modal.suggested_temperature", feature: "SUGGESTED_TEMPERATURE" },
+      { type: "code", labelKey: "prompt_modal.prompt_template", feature: "PROMPT_TEMPLATE", column: "detail" },
+      { type: "block", labelKey: "prompt_modal.example_output", feature: "EXAMPLE_OUTPUT", column: "detail" },
+    ],
+  });
+</script>

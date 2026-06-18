@@ -98,7 +98,8 @@
     "usage": "Usage Metrics",
     "processes": "Process Catalog",
     "value_chain": "Value Chain",
-    "map": "Process Map"
+    "map": "Process Map",
+    "specifications": "Specification"
   },
   "crud_modal": {
     "add": "Add",
@@ -707,5 +708,106 @@
     "nav_user_profile": "User Profile",
     "nav_tables": "Tables",
     "nav_pages": "Pages"
+  },
+  "gallery": {
+    "search_placeholder": "Search…",
+    "status_all": "All statuses",
+    "favorites_only": "My favorites",
+    "show_more": "Show more",
+    "empty": "Nothing here yet",
+    "favorite_add": "Add to favorites",
+    "favorite_remove": "Remove from favorites"
+  },
+  "prompt_modal": {
+    "title_create": "New Prompt",
+    "title_edit": "Edit Prompt",
+    "subtitle": "Core fields + the prompt's reusable settings.",
+    "new": "New Prompt",
+    "details_section": "Prompt details",
+    "platform": "Platform",
+    "suggested_model": "Suggested model",
+    "suggested_temperature": "Suggested temperature",
+    "prompt_template": "Prompt template",
+    "example_output": "Example output",
+    "favorite_add": "Add to favorites",
+    "favorite_remove": "Remove from favorites",
+    "saved": "Prompt saved.",
+    "error_save": "Could not save prompt.",
+    "error_load": "Could not load prompt.",
+    "empty": "No prompts found",
+    "one_title": "Prompt",
+    "many_title": "Prompts",
+    "add_new": "New Prompt",
+    "edit": "Edit Prompt",
+    "delete": "Delete Prompt",
+    "delete_confirmation": "Are you sure you want to delete this Prompt"
+  },
+  "prompt_card": {
+    "model": "Model",
+    "platform": "Platform",
+    "temperature": "Temp"
+  },
+  "mcp_modal": {
+    "title_create": "New MCP Server",
+    "title_edit": "Edit MCP Server",
+    "subtitle": "Core fields + the MCP's connection details.",
+    "new": "New MCP",
+    "details_section": "MCP details",
+    "mode": "Mode",
+    "overview": "Overview",
+    "content": "Content",
+    "tools": "Tools",
+    "tools_help": "Comma- or newline-separated list of tools.",
+    "server_config": "Server configuration (JSON)",
+    "saved": "MCP saved.",
+    "error_save": "Could not save MCP.",
+    "error_load": "Could not load MCP.",
+    "empty": "No MCP servers found",
+    "one_title": "MCP",
+    "many_title": "MCPs",
+    "add_new": "New MCP",
+    "edit": "Edit MCP",
+    "delete": "Delete MCP",
+    "delete_confirmation": "Are you sure you want to delete this MCP"
+  },
+  "mcp_card": {
+    "copy_config": "Copy config",
+    "copied": "Server config copied",
+    "tools_more": "more"
+  },
+  "catalog_detail": {
+    "copy": "Copy",
+    "copied": "Copied to clipboard",
+    "error_load": "Could not load."
+  },
+  "agent_modal": {
+    "title_create": "New Agent",
+    "title_edit": "Edit Agent",
+    "subtitle": "Core fields + the agent's model settings and behavior.",
+    "new": "New Agent",
+    "model_settings": "Model settings",
+    "behavior": "Behavior",
+    "platform": "Platform",
+    "suggested_model": "Suggested model",
+    "suggested_temperature": "Suggested temperature",
+    "tools": "Tools",
+    "tools_help": "Comma- or newline-separated list of tools.",
+    "instructions": "Instructions",
+    "saved": "Agent saved.",
+    "error_save": "Could not save agent.",
+    "error_load": "Could not load agent.",
+    "empty": "No agents found",
+    "one_title": "Agent",
+    "many_title": "Agents",
+    "add_new": "New Agent",
+    "edit": "Edit Agent",
+    "delete": "Delete Agent",
+    "delete_confirmation": "Are you sure you want to delete this Agent"
+  },
+  "agent_card": {
+    "model": "Model",
+    "tools_more": "more",
+    "instructions": "Instructions",
+    "instructions_copied": "Instructions copied"
   }
 }

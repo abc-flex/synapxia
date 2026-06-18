@@ -272,3 +272,13 @@ class MetricUpdate(SQLModel):
         default=None, description="Measurement date")
     is_active: Optional[bool] = Field(
         default=None, description="Indicates if the metric is active")
+
+class MetricByDimension(SQLModel):
+    """Latest metric value per assignment for a dimension, as of a date."""
+    name: str = Field(description="Full name of the assigned user")
+    email: str = Field(description="Email of the assigned user")
+    role: str = Field(description="Assignment role code")
+    team: str = Field(description="Assignment team code")
+    metric: str = Field(description="Metric value")
+    date: str = Field(description="Measurement date (DD/MM/YYYY)")
+    observation: str = Field(description="Metric observation")

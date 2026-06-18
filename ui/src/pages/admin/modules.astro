@@ -22,8 +22,8 @@ try {
 
 const columns = [
   { key: "sort_order", label: "module_modal.sort_order" },
-  { key: "code", label: "module_modal.code" },
-  { key: "name", label: "module_modal.name" },
+  { key: "code", label: "module_modal.code", visible: false },
+  { key: "name", label: "module_modal.name", as: "title", subtitleKey: "code", subtitleFormat: "text" },
 ];
 const data = modules.map((item) => ({
   id: item.code,
@@ -53,7 +53,7 @@ const fieldKeys = formFields.map((f) => f.key);
 <BaseLayout>
   {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
 
-  <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
+  <div class="mx-auto w-full max-w-full md:p-0">
     <Breadcrumb
       moduleName="Administration"
       pageName="Modules"

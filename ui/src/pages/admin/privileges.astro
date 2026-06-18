@@ -62,12 +62,12 @@ try {
 
 const columns = [
   { key: "profile", label: "privilege_modal.profile", visible: false },
-  { key: "profile_name", label: "privilege_modal.profile" },
+  { key: "profile_name", label: "privilege_modal.profile", as: "title", subtitleKey: "module_name", subtitleFormat: "text" },
   { key: "module", label: "privilege_modal.module", visible: false },
-  { key: "module_name", label: "privilege_modal.module" },
+  { key: "module_name", label: "privilege_modal.module", visible: false },
   { key: "option", label: "privilege_modal.option", visible: false },
   { key: "option_name", label: "privilege_modal.option" },
-  { key: "can_edit", label: "privilege_modal.can_edit" },
+  { key: "can_edit", label: "privilege_modal.can_edit", as: "boolean" },
 ];
 const data = privileges.map((item) => ({
   id: `${item.profile}::${item.module}::${item.option}`,
@@ -94,7 +94,7 @@ const fieldKeys = ["id", ...formFields.map((f) => f.key)];
 <BaseLayout>
   {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
 
-  <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
+  <div class="mx-auto w-full max-w-full md:p-0">
     <!-- Breadcrumb Start -->
     <Breadcrumb
       moduleName="Administration"

@@ -1,0 +1,83 @@
+---
+/**
+ * AgentFormModal — the Agent Index's create/edit modal. Uses the reusable
+ * CatalogFormModal scaffold but hides its default "Details" heading and renders
+ * its own two grouped sub-sections inside the feature-fields slot:
+ *   • Model settings — platform / suggested model / suggested temperature
+ *   • Behavior       — tools + the large INSTRUCTIONS editor
+ *
+ * Category is fixed to AGENTS by `mountCatalogModal`. TOOLS + INSTRUCTIONS are
+ * stored in the characterization `detail` column (the rich payload), matching
+ * the seed.
+ */
+import CatalogFormModal from "@/components/lib/gallery/CatalogFormModal.astro";
+
+export interface Props {
+  modalId?: string;
+  statuses?: { value: string; label: string }[];
+}
+
+const { modalId = "agent-detail-modal", statuses = [] } = Astro.props as Props;
+
+const inputClass =
+  "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white";
+const labelClass = "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300";
+const groupClass =
+  "md:col-span-2 mb-1 text-sm font-semibold uppercase tracking-wide text-gray-500";
+---
+
+<CatalogFormModal
+  modalId={modalId}
+  statuses={statuses}
+  titleCreateKey="agent_modal.title_create"
+  subtitleKey="agent_modal.subtitle"
+  hideDetailsHeading={true}
+>
+  {/* Group: Model settings */}
+  <h4 class={groupClass} data-i18n="agent_modal.model_settings">Model settings</h4>
+  <div>
+    <label class={labelClass} data-i18n="agent_modal.platform">Platform</label>
+    <input name="PLATFORM" type="text" class={inputClass} />
+  </div>
+  <div>
+    <label class={labelClass} data-i18n="agent_modal.suggested_model">Suggested model</label>
+    <input name="SUGGESTED_MODEL" type="text" class={inputClass} />
+  </div>
+  <div>
+    <label class={labelClass} data-i18n="agent_modal.suggested_temperature">Suggested temperature</label>
+    <input name="SUGGESTED_TEMPERATURE" type="text" inputmode="decimal" class={inputClass} />
+  </div>
+
+  {/* Group: Behavior */}
+  <h4 class={`${groupClass} mt-4`} data-i18n="agent_modal.behavior">Behavior</h4>
+  <div class="md:col-span-2">
+    <label class={labelClass} data-i18n="agent_modal.tools">Tools</label>
+    <textarea name="TOOLS" rows={2} placeholder="tool1, tool2, tool3" data-i18n-placeholder="agent_modal.tools_help" class={inputClass}></textarea>
+  </div>
+  <div class="md:col-span-2">
+    <label class={labelClass} data-i18n="agent_modal.instructions">Instructions</label>
+    <textarea name="INSTRUCTIONS" rows={10} class={`${inputClass} font-mono`}></textarea>
+  </div>
+</CatalogFormModal>
+
+<script>
+  import { mountCatalogModal } from "@/lib/catalogModal";
+
+  mountCatalogModal({
+    modalId: "agent-detail-modal",
+    category: "AGENTS",
+    features: [
+      "PLATFORM",
+      "SUGGESTED_MODEL",
+      "SUGGESTED_TEMPERATURE",
+      // Rich payloads live in the characterization `detail` column (seed convention).
+      { name: "TOOLS", column: "detail" },
+      { name: "INSTRUCTIONS", column: "detail" },
+    ],
+    titleCreateKey: "agent_modal.title_create",
+    titleEditKey: "agent_modal.title_edit",
+    savedKey: "agent_modal.saved",
+    errorSaveKey: "agent_modal.error_save",
+    errorLoadKey: "agent_modal.error_load",
+  });
+</script>

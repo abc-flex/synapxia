@@ -51,10 +51,10 @@ const assignmentOptions = assignments.map((a: any) => ({
 }));
 
 const columns = [
-  { key: "dimension", label: "metric_modal.dimension", visible: true },
-  { key: "assignment", label: "metric_modal.assignment", visible: true },
+  { key: "dimension", label: "metric_modal.dimension", as: "title", subtitleKey: "assignment", subtitleFormat: "text" },
+  { key: "assignment", label: "metric_modal.assignment", visible: false },
   { key: "value", label: "metric_modal.value", visible: true },
-  { key: "measured_at", label: "metric_modal.measured_at", visible: true },
+  { key: "measured_at", label: "metric_modal.measured_at", as: "date" },
 ];
 const data = metrics.map((item) => ({
   id: item.id,
@@ -99,7 +99,7 @@ const fieldKeys = ["id", ...tableFields.map((f) => f.key)];
 <BaseLayout>
   {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
 
-  <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
+  <div class="mx-auto w-full max-w-full md:p-0">
     <!-- Breadcrumb Start -->
     <Breadcrumb
       moduleName="Collaboration"

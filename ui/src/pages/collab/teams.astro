@@ -34,8 +34,8 @@ try {
 }
 
 const columns = [
-  { key: "code", label: "team_modal.code", visible: true },
-  { key: "name", label: "team_modal.name", visible: true },
+  { key: "code", label: "team_modal.code", visible: false },
+  { key: "name", label: "team_modal.name", as: "title", subtitleKey: "code", subtitleFormat: "text" },
   { key: "lead_name", label: "team_modal.lead", visible: true },
 ];
 const data = teams.map((item) => ({
@@ -69,7 +69,7 @@ const fieldKeys = formFields.map((f) => f.key);
 <BaseLayout>
   {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
 
-  <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
+  <div class="mx-auto w-full max-w-full md:p-0">
     <Breadcrumb
       moduleName="Collaboration"
       pageName="Teams"

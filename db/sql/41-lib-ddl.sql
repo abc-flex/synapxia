@@ -65,7 +65,7 @@ CREATE TABLE related_assets (
     is_active   BOOLEAN       NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ,
-    CONSTRAINT pk_related_assets PRIMARY KEY (source, target) 
+    CONSTRAINT pk_related_assets PRIMARY KEY (source, target, type) 
 );
 
 -- Table asset_permissions

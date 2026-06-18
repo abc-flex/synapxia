@@ -468,6 +468,19 @@ export interface MetricUpdate {
   is_active?: boolean;
 }
 
+// Latest metric value per assignment for a dimension, as of a date.
+// Read-only projection returned by GET /api/metrics/dimension/{code}.
+export interface MetricByDimension {
+  name: string;
+  email: string;
+  role: string;
+  team: string;
+  metric: string;
+  date: string;
+  observation: string;
+}
+
+
 // Team types
 export interface Team {
   code: string;
@@ -603,6 +616,12 @@ export interface AssetUpdate {
   is_active?: boolean;
 }
 
+// Read projection from GET /api/assets/with-access: Asset + aggregated access summary.
+export interface AssetWithAccessLevels extends Asset {
+  access_levels: string[]; // distinct active access levels, e.g. ["VIEW","MANAGE"]
+  is_public: boolean;       // true if any active permission targets PUBLIC
+}
+
 // ============================================================================
 // Characterizations — composite-key (asset, feature) rows that hold the
 // per-feature value for an asset (e.g. asset #3 + feature MODE → "Remote").
@@ -659,6 +678,40 @@ export interface AssetRelationCreate {
 export interface AssetRelationUpdate {
   type?: string;
   rationale?: string | null;
+  is_active?: boolean;
+}
+
+// ============================================================================
+// Asset permissions — surrogate-id rows granting a target (USER/ROLE/TEAM/
+// UNIT/PROJECT/PUBLIC × access level) access to an asset. `asset` is the
+// asset id; `target_code` is the target entity's id/code ("PUBLIC" for PUBLIC).
+// ============================================================================
+
+export interface AssetPermission {
+  id: number;
+  asset: number;
+  target_type: string;
+  target_code: string;
+  access_level: string;
+  valid_from?: string;
+  valid_to?: string | null;
+  is_active?: boolean;
+}
+
+export interface AssetPermissionCreate {
+  asset: number;
+  target_type: string;
+  target_code: string;
+  access_level: string;
+  valid_to?: string | null;
+  is_active?: boolean;
+}
+
+export interface AssetPermissionUpdate {
+  target_type?: string;
+  target_code?: string;
+  access_level?: string;
+  valid_to?: string | null;
   is_active?: boolean;
 }
 

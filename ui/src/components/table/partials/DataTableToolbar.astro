@@ -1,0 +1,131 @@
+---
+import leftSvg from "@/images/icons/chevron-left.svg?raw";
+import listSvg from "@/images/icons/list-bullet.svg?raw";
+import DataTableFilters from "./DataTableFilters.astro";
+import DataTableSearchExport from "./DataTableSearchExport.astro";
+import type { FilterOption } from "@/types/datatable";
+
+interface Props {
+  tableId: string;
+  i18Item: string;
+  mdItem?: string | null;
+  showAddButton?: boolean;
+  hasData: boolean;
+  masterPage?: string | null;
+  columnFilter?: string | null;
+  filterOptions?: FilterOption[];
+  filterDefaultValue?: string;
+  columnFilter2?: string | null;
+  filterOptions2?: FilterOption[];
+  filterDefaultValue2?: string;
+  columnFilter3?: string | null;
+  filterOptions3?: FilterOption[];
+  filterDefaultValue3?: string;
+  filter3AllLabel?: string | null;
+  columnFilter4?: string | null;
+  filterOptions4?: FilterOption[];
+  filterDefaultValue4?: string;
+  filter4AllLabel?: string | null;
+}
+const {
+  tableId,
+  i18Item,
+  mdItem = null,
+  showAddButton = true,
+  hasData,
+  masterPage = null,
+  columnFilter = null,
+  filterOptions = [],
+  filterDefaultValue = "",
+  columnFilter2 = null,
+  filterOptions2 = [],
+  filterDefaultValue2 = "",
+  columnFilter3 = null,
+  filterOptions3 = [],
+  filterDefaultValue3 = "",
+  filter3AllLabel = null,
+  columnFilter4 = null,
+  filterOptions4 = [],
+  filterDefaultValue4 = "",
+  filter4AllLabel = null,
+} = Astro.props as Props;
+
+// How many column filters are configured — drives the mobile "Filtros" button.
+const filterCount = [columnFilter, columnFilter2, columnFilter3, columnFilter4].filter(Boolean).length;
+---
+<div
+  class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+>
+  <!-- Left -->
+  <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+    <div class="flex items-center gap-3">
+    {masterPage && (
+      <a
+        href={masterPage}
+        class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 sm:py-1.5 text-sm text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+        data-i18n-title={`${mdItem}_modal.many_title`}
+        title=""
+      >
+        <span class="w-5 h-5 inline-block">
+        <Fragment set:html={leftSvg} />
+      </span>
+      </a>
+    )}
+    {
+      showAddButton && (
+        <button
+          type="button"
+          class="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 sm:flex-none sm:py-1.5"
+          data-modal-open={`${i18Item}-create-modal`}
+          data-filter-key={columnFilter}
+          data-i18n-title={`${i18Item}_modal.one_title`}
+          title=""
+        >
+          <span class="text-lg">+</span>
+          <span data-i18n={`${i18Item}_modal.one_title`}>
+            {`${i18Item}_modal.one_title`}
+          </span>
+        </button>
+      )
+    }
+    </div>
+    {filterCount > 0 && hasData && (
+      <button
+        type="button"
+        data-filters-toggle={`${tableId}-filters`}
+        class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 sm:hidden dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+      >
+        <span class="w-4 h-4 inline-block">
+          <Fragment set:html={listSvg} />
+        </span>
+        <span data-i18n="data_table.filters">data_table.filters</span>
+        <span class="rounded-full bg-indigo-50 px-1.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">
+          {filterCount}
+        </span>
+      </button>
+    )}
+    <DataTableFilters
+      tableId={tableId}
+      hasData={hasData}
+      columnFilter={columnFilter}
+      filterOptions={filterOptions}
+      filterDefaultValue={filterDefaultValue}
+      columnFilter2={columnFilter2}
+      filterOptions2={filterOptions2}
+      filterDefaultValue2={filterDefaultValue2}
+      columnFilter3={columnFilter3}
+      filterOptions3={filterOptions3}
+      filterDefaultValue3={filterDefaultValue3}
+      filter3AllLabel={filter3AllLabel}
+      columnFilter4={columnFilter4}
+      filterOptions4={filterOptions4}
+      filterDefaultValue4={filterDefaultValue4}
+      filter4AllLabel={filter4AllLabel}
+    />
+  </div>
+
+  <!-- Right: Search & Export -->
+  {hasData && (
+    <DataTableSearchExport tableId={tableId} />
+  )}
+</div>

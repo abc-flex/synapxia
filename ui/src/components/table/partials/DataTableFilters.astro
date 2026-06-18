@@ -1,0 +1,73 @@
+---
+// The column-filter <select> panel (1–4 dropdowns). Collapses the previously
+// duplicated markup into a single loop. `data-i18n={opt.i18n}` is omitted by
+// Astro when undefined, and `f.allLabel || ...` falls back to the modal title —
+// so filters 1 & 2 render identically to before, filters 3 & 4 keep their i18n hooks.
+import type { FilterConfig, FilterOption } from "@/types/datatable";
+
+interface Props {
+  tableId: string;
+  hasData: boolean;
+  columnFilter?: string | null;
+  filterOptions?: FilterOption[];
+  filterDefaultValue?: string;
+  columnFilter2?: string | null;
+  filterOptions2?: FilterOption[];
+  filterDefaultValue2?: string;
+  columnFilter3?: string | null;
+  filterOptions3?: FilterOption[];
+  filterDefaultValue3?: string;
+  filter3AllLabel?: string | null;
+  columnFilter4?: string | null;
+  filterOptions4?: FilterOption[];
+  filterDefaultValue4?: string;
+  filter4AllLabel?: string | null;
+}
+const {
+  tableId,
+  hasData,
+  columnFilter = null,
+  filterOptions = [],
+  filterDefaultValue = "",
+  columnFilter2 = null,
+  filterOptions2 = [],
+  filterDefaultValue2 = "",
+  columnFilter3 = null,
+  filterOptions3 = [],
+  filterDefaultValue3 = "",
+  filter3AllLabel = null,
+  columnFilter4 = null,
+  filterOptions4 = [],
+  filterDefaultValue4 = "",
+  filter4AllLabel = null,
+} = Astro.props as Props;
+
+const filters: FilterConfig[] = [
+  { id: `${tableId}-filter`, key: columnFilter, options: filterOptions, defaultValue: filterDefaultValue },
+  { id: `${tableId}-filter2`, key: columnFilter2, options: filterOptions2, defaultValue: filterDefaultValue2 },
+  { id: `${tableId}-filter3`, key: columnFilter3, options: filterOptions3, defaultValue: filterDefaultValue3, allLabel: filter3AllLabel },
+  { id: `${tableId}-filter4`, key: columnFilter4, options: filterOptions4, defaultValue: filterDefaultValue4, allLabel: filter4AllLabel },
+];
+---
+<div id={`${tableId}-filters`} class="hidden w-full space-y-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:gap-3 sm:space-y-0">
+{
+  filters.map((f) => f.key && hasData && (
+    <div class="relative flex-1 basis-[45%] sm:flex-none sm:basis-auto">
+      <select
+        id={f.id}
+        data-column-key={f.key}
+        class="w-full sm:w-auto sm:min-w-[10rem] rounded-lg border border-gray-300 bg-white px-3 py-2 sm:py-1.5 text-sm text-gray-800
+            focus:border-indigo-500 focus:ring-indigo-500
+            dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:focus:border-indigo-400"
+      >
+        <option value="" data-i18n={f.allLabel || `${f.key}_modal.filter_title`}></option>
+        {f.options.map((opt) => (
+          <option value={opt.value || opt.code} data-i18n={opt.i18n} selected={(opt.value || opt.code) === f.defaultValue}>
+            {opt.label || opt.name}
+          </option>
+        ))}
+      </select>
+    </div>
+  ))
+}
+</div>

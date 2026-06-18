@@ -21,8 +21,8 @@ try {
 }
 
 const columns = [
-  { key: "code", label: "profile_modal.code" },
-  { key: "name", label: "profile_modal.name" },
+  { key: "code", label: "profile_modal.code", visible: false },
+  { key: "name", label: "profile_modal.name", as: "title", subtitleKey: "code", subtitleFormat: "text" },
 ];
 const data = profiles.map((item) => ({
   id: item.code,
@@ -49,7 +49,7 @@ const fieldKeys = tableFields.map((f) => f.key);
 <BaseLayout>
   {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
 
-  <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
+  <div class="mx-auto w-full max-w-full md:p-0">
     <!-- Breadcrumb Start -->
     <Breadcrumb
       moduleName="Administration"

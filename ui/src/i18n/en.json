@@ -17,7 +17,9 @@
     "edit_profile": "Edit profile",
     "account_settings": "Account settings",
     "support": "Support",
-    "sign_out": "Sign out"
+    "sign_out": "Sign out",
+    "theme": "Theme",
+    "language": "Language"
   },
   "notification_menu": {
     "title": "Notification"
@@ -27,6 +29,29 @@
     "title": "We're working on this",
     "subtitle": "This feature isn't ready yet — we're building it and it will be available soon.",
     "go_back": "Go back"
+  },
+  "dashboard_page": {
+    "title": "Dashboard",
+    "subtitle": "Overview of your AI governance workspace",
+    "kpi_total_assets": "Total assets",
+    "kpi_in_use": "In use",
+    "kpi_teams": "Active teams",
+    "kpi_compliance": "Compliance",
+    "delta_assets": "+12 this month",
+    "delta_in_use": "39% of total",
+    "delta_teams": "+2 this quarter",
+    "delta_compliance": "target 90%",
+    "activity_title": "Asset activity",
+    "activity_subtitle": "Last 12 months",
+    "recent_title": "Recent activity",
+    "recent_1": "GitHub MCP Server was created",
+    "recent_1_meta": "2 hours ago",
+    "recent_2": "Vector Search Retriever updated",
+    "recent_2_meta": "5 hours ago",
+    "recent_3": "Eval Suite v1 archived",
+    "recent_3_meta": "Yesterday",
+    "recent_4": "Data Lineage Tracker approved",
+    "recent_4_meta": "Yesterday"
   },
   "modules": {
     "ADMIN": "Administration",
@@ -65,18 +90,16 @@
     "skills": "Skill Catalog",
     "assistants": "Assistants",
     "rag_apps": "RAG Apps",
-    "proposal": "Proposal",
-    "explore": "Explore",
+    "models": "Models",
     "criterias": "Criteria",
     "propose": "Propose",
+    "explore": "Explore",
     "dashboards": "Dashboard Catalog",
     "usage": "Usage Metrics",
-    "by_units": "Analytics by Unit",
-    "by_teams": "Analytics by Team",
-    "by_role": "Analytics by Role",
+    "processes": "Process Catalog",
     "value_chain": "Value Chain",
     "map": "Process Map",
-    "models": "Process Models"
+    "specifications": "Specification"
   },
   "crud_modal": {
     "add": "Add",
@@ -117,7 +140,19 @@
     "delete_confirmation": "Are you sure you want to delete record",
     "delete_warning": "This action cannot be undone.",
     "export": "Export",
-    "no_results": "No results"
+    "no_results": "No results",
+    "filters": "Filters",
+    "updated": "Updated",
+    "created": "Created",
+    "rel_ago": "ago",
+    "rel_now": "just now",
+    "unit_min": "min",
+    "unit_hour": "h",
+    "unit_day": "d",
+    "unit_week": "w",
+    "unit_month": "mo",
+    "unit_year": "y",
+    "reset": "Reset"
   },
   "business_unit_modal": {
     "code": "Code",
@@ -348,6 +383,11 @@
     "empty_message": "No Assignments found",
     "delete_confirmation": "Are you sure you want to delete this Assignment"
   },
+  "assignment_dashboard": {
+    "dimension": "Dimension",
+    "date": "As-of date",
+    "empty_message": "No assignments found for this dimension and date"
+  },
   "asset_modal": {
     "name": "Name",
     "description": "Description",
@@ -375,7 +415,11 @@
     "detail_expand": "Show details",
     "detail_characterizations": "Characterizations",
     "detail_related": "Related Assets",
-    "detail_empty": "—"
+    "detail_empty": "—",
+    "access_filter_all": "All access levels",
+    "access_filter_view": "View only",
+    "access_filter_manage": "Can manage",
+    "access_filter_public": "Public"
   },
   "asset_detail_modal": {
     "title_create": "New Asset",
@@ -408,7 +452,21 @@
     "favorite_add": "Add to favorites",
     "favorite_remove": "Remove from favorites",
     "error_relations": "Could not load related assets.",
-    "error_favorite": "Could not update favorite."
+    "error_favorite": "Could not update favorite.",
+    "tab_permissions": "Permissions",
+    "perm_target_type": "Target type",
+    "perm_target": "Target",
+    "perm_access": "Access level",
+    "perm_choose_target_type": "— choose type —",
+    "perm_choose_target": "— choose target —",
+    "perm_choose_access": "— choose access —",
+    "perm_add": "Add permission",
+    "perm_remove": "Remove",
+    "perm_empty": "No permissions yet.",
+    "perm_duplicate": "This target already has a permission.",
+    "perm_missing_fields": "Pick a target type, target and access level.",
+    "perm_public": "Public",
+    "error_permissions": "Could not load permissions."
   },
   "features": {
     "LANGUAGE": "Language",
@@ -650,5 +708,106 @@
     "nav_user_profile": "User Profile",
     "nav_tables": "Tables",
     "nav_pages": "Pages"
+  },
+  "gallery": {
+    "search_placeholder": "Search…",
+    "status_all": "All statuses",
+    "favorites_only": "My favorites",
+    "show_more": "Show more",
+    "empty": "Nothing here yet",
+    "favorite_add": "Add to favorites",
+    "favorite_remove": "Remove from favorites"
+  },
+  "prompt_modal": {
+    "title_create": "New Prompt",
+    "title_edit": "Edit Prompt",
+    "subtitle": "Core fields + the prompt's reusable settings.",
+    "new": "New Prompt",
+    "details_section": "Prompt details",
+    "platform": "Platform",
+    "suggested_model": "Suggested model",
+    "suggested_temperature": "Suggested temperature",
+    "prompt_template": "Prompt template",
+    "example_output": "Example output",
+    "favorite_add": "Add to favorites",
+    "favorite_remove": "Remove from favorites",
+    "saved": "Prompt saved.",
+    "error_save": "Could not save prompt.",
+    "error_load": "Could not load prompt.",
+    "empty": "No prompts found",
+    "one_title": "Prompt",
+    "many_title": "Prompts",
+    "add_new": "New Prompt",
+    "edit": "Edit Prompt",
+    "delete": "Delete Prompt",
+    "delete_confirmation": "Are you sure you want to delete this Prompt"
+  },
+  "prompt_card": {
+    "model": "Model",
+    "platform": "Platform",
+    "temperature": "Temp"
+  },
+  "mcp_modal": {
+    "title_create": "New MCP Server",
+    "title_edit": "Edit MCP Server",
+    "subtitle": "Core fields + the MCP's connection details.",
+    "new": "New MCP",
+    "details_section": "MCP details",
+    "mode": "Mode",
+    "overview": "Overview",
+    "content": "Content",
+    "tools": "Tools",
+    "tools_help": "Comma- or newline-separated list of tools.",
+    "server_config": "Server configuration (JSON)",
+    "saved": "MCP saved.",
+    "error_save": "Could not save MCP.",
+    "error_load": "Could not load MCP.",
+    "empty": "No MCP servers found",
+    "one_title": "MCP",
+    "many_title": "MCPs",
+    "add_new": "New MCP",
+    "edit": "Edit MCP",
+    "delete": "Delete MCP",
+    "delete_confirmation": "Are you sure you want to delete this MCP"
+  },
+  "mcp_card": {
+    "copy_config": "Copy config",
+    "copied": "Server config copied",
+    "tools_more": "more"
+  },
+  "catalog_detail": {
+    "copy": "Copy",
+    "copied": "Copied to clipboard",
+    "error_load": "Could not load."
+  },
+  "agent_modal": {
+    "title_create": "New Agent",
+    "title_edit": "Edit Agent",
+    "subtitle": "Core fields + the agent's model settings and behavior.",
+    "new": "New Agent",
+    "model_settings": "Model settings",
+    "behavior": "Behavior",
+    "platform": "Platform",
+    "suggested_model": "Suggested model",
+    "suggested_temperature": "Suggested temperature",
+    "tools": "Tools",
+    "tools_help": "Comma- or newline-separated list of tools.",
+    "instructions": "Instructions",
+    "saved": "Agent saved.",
+    "error_save": "Could not save agent.",
+    "error_load": "Could not load agent.",
+    "empty": "No agents found",
+    "one_title": "Agent",
+    "many_title": "Agents",
+    "add_new": "New Agent",
+    "edit": "Edit Agent",
+    "delete": "Delete Agent",
+    "delete_confirmation": "Are you sure you want to delete this Agent"
+  },
+  "agent_card": {
+    "model": "Model",
+    "tools_more": "more",
+    "instructions": "Instructions",
+    "instructions_copied": "Instructions copied"
   }
 }

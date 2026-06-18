@@ -1,16 +1,18 @@
 ---
-import editSvg from "@/images/icons/edit.svg?raw";
-import deleteSvg from "@/images/icons/delete.svg?raw";
-import listSvg from "@/images/icons/list-bullet.svg?raw";
-import downloadSvg from "@/images/icons/arrow-down-tray.svg?raw";
-import leftSvg from "@/images/icons/chevron-left.svg?raw";
-import rightSvg from "@/images/icons/chevron-right.svg?raw";
-import infoSvg from "@/images/icons/information-circle.svg?raw";
-import csvSvg from "@/images/icons/file-csv.svg?raw";
-import jsonSvg from "@/images/icons/file-json.svg?raw";
-import txtSvg from "@/images/icons/file-txt.svg?raw";
-import sqlSvg from "@/images/icons/file-sql.svg?raw";
-import checkSvg from "@/images/icons/check.svg?raw";
+// Orchestrator shell — composes the toolbar, table (head + body), pagination,
+// and empty state, then bootstraps the client logic (advancedTable.ts). The
+// emitted DOM (ids, classes, structure) is the contract advancedTable.ts and
+// the card-view CSS depend on — keep it stable. Pure helpers live in
+// `@/lib/datatable`, types in `@/types/datatable`, sub-parts in `./parts/`.
+import { getLocale } from "@/utils/getLocale";
+import DataTableToolbar from "./partials/DataTableToolbar.astro";
+import DataTableHead from "./partials/DataTableHead.astro";
+import DataTableBody from "./partials/DataTableBody.astro";
+import DataTablePagination from "./partials/DataTablePagination.astro";
+import DataTableEmpty from "./partials/DataTableEmpty.astro";
+import type { ColumnConfig, FilterOption } from "@/types/datatable";
+
+const locale = getLocale(Astro);
 
 const {
   columns = [],
@@ -34,6 +36,12 @@ const {
   filterDefaultValue3 = "",
   // i18n key for the third filter's "all" (empty) option.
   filter3AllLabel = null,
+  // Optional fourth filter. Matches by membership (the row value may be a
+  // comma-separated multi-value field, e.g. asset access "VIEW,MANAGE,PUBLIC").
+  columnFilter4 = null,
+  filterOptions4 = [],
+  filterDefaultValue4 = "",
+  filter4AllLabel = null,
   masterPage = null,
   detailPage = null,
   mdItem = null,
@@ -43,367 +51,157 @@ const {
   favoriteKey = "favorite",
   // Per-row master-detail expand button (emits data-action="detail").
   detailExpand = false,
-} = Astro.props;
+} = Astro.props as {
+  columns?: ColumnConfig[];
+  data?: Record<string, any>[];
+  tableId?: string;
+  i18Item?: string;
+  showAddButton?: boolean;
+  columnFilter?: string | null;
+  filterOptions?: FilterOption[];
+  filterDefaultValue?: string;
+  columnFilter2?: string | null;
+  filterOptions2?: FilterOption[];
+  filterDefaultValue2?: string;
+  columnFilter3?: string | null;
+  filterOptions3?: FilterOption[];
+  filterDefaultValue3?: string;
+  filter3AllLabel?: string | null;
+  columnFilter4?: string | null;
+  filterOptions4?: FilterOption[];
+  filterDefaultValue4?: string;
+  filter4AllLabel?: string | null;
+  masterPage?: string | null;
+  detailPage?: string | null;
+  mdItem?: string | null;
+  favoriteAction?: boolean;
+  favoriteKey?: string;
+  detailExpand?: boolean;
+};
 
 // Filtrar columnas visibles (ocultar si visible: false)
 const visibleColumns = columns.filter((col) => col.visible !== false);
+const hasData = data.length > 0;
 ---
 
 <div class="space-y-2">
   <!-- 🔹 TOP BAR -->
-  <div
-    class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-  >
-    <!-- Left -->
-    <div class="flex items-center gap-3">
-      {masterPage && (
-        <a
-          href={masterPage}
-          class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-          data-i18n-title={`${mdItem}_modal.many_title`}
-          title=""
-        >
-          <span class="w-5 h-5 inline-block">
-          <Fragment set:html={leftSvg} />
-        </span>
-        </a>
-      )}
-      {
-        showAddButton && (
-          <button
-            type="button"
-            class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-1 text-sm font-semibold text-white hover:bg-indigo-700"
-            data-modal-open={`${i18Item}-create-modal`}
-            data-filter-key={columnFilter}
-            data-i18n-title={`${i18Item}_modal.one_title`}
-            title=""
-          >
-            <span class="text-lg">+</span>
-            <span data-i18n={`${i18Item}_modal.one_title`}>
-              {`${i18Item}_modal.one_title`}
-            </span>
-          </button>
-        )
-      }
-      {
-        columnFilter && data.length > 0 && (
-          <div class="relative">
-            <select
-              id={`${tableId}-filter`}
-              data-column-key={columnFilter}
-              class="w-100 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800
-                  focus:border-indigo-500 focus:ring-indigo-500
-                  dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:focus:border-indigo-400"
-            >
-              <option value="" data-i18n={`${columnFilter}_modal.filter_title`}></option>
-              {filterOptions.map((opt) => (
-                <option value={opt.value || opt.code} selected={(opt.value || opt.code) === filterDefaultValue}>
-                  {opt.label || opt.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )
-      }
-      {
-        columnFilter2 && data.length > 0 && (
-          <div class="relative">
-            <select
-              id={`${tableId}-filter2`}
-              data-column-key={columnFilter2}
-              class="w-100 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800
-                  focus:border-indigo-500 focus:ring-indigo-500
-                  dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:focus:border-indigo-400"
-            >
-              <option value="" data-i18n={`${columnFilter2}_modal.filter_title`}></option>
-              {filterOptions2.map((opt) => (
-                <option value={opt.value || opt.code} selected={(opt.value || opt.code) === filterDefaultValue2}>
-                  {opt.label || opt.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )
-      }
-      {
-        columnFilter3 && data.length > 0 && (
-          <div class="relative">
-            <select
-              id={`${tableId}-filter3`}
-              data-column-key={columnFilter3}
-              class="w-100 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800
-                  focus:border-indigo-500 focus:ring-indigo-500
-                  dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:focus:border-indigo-400"
-            >
-              <option value="" data-i18n={filter3AllLabel || `${columnFilter3}_modal.filter_title`}></option>
-              {filterOptions3.map((opt) => (
-                <option value={opt.value || opt.code} data-i18n={opt.i18n} selected={(opt.value || opt.code) === filterDefaultValue3}>
-                  {opt.label || opt.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )
-      }
-    </div>
+  <DataTableToolbar
+    tableId={tableId}
+    i18Item={i18Item}
+    mdItem={mdItem}
+    showAddButton={showAddButton}
+    hasData={hasData}
+    masterPage={masterPage}
+    columnFilter={columnFilter}
+    filterOptions={filterOptions}
+    filterDefaultValue={filterDefaultValue}
+    columnFilter2={columnFilter2}
+    filterOptions2={filterOptions2}
+    filterDefaultValue2={filterDefaultValue2}
+    columnFilter3={columnFilter3}
+    filterOptions3={filterOptions3}
+    filterDefaultValue3={filterDefaultValue3}
+    filter3AllLabel={filter3AllLabel}
+    columnFilter4={columnFilter4}
+    filterOptions4={filterOptions4}
+    filterDefaultValue4={filterDefaultValue4}
+    filter4AllLabel={filter4AllLabel}
+  />
 
-    <!-- Right: Search & Export -->
-    {data.length > 0 && (
-    <div class="flex items-center gap-3 relative">
-      <input
-        id={`${tableId}-search`}
-        type="search"
-        placeholder="data_table.search"
-        data-i18n-placeholder="data_table.search"
-        class="w-56 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400
-               focus:border-indigo-500 focus:ring-indigo-500
-               dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-indigo-400"
-      />
-
-      <button
-        id={`${tableId}-export-btn`}
-        type="button"
-        class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-      >
-        <span class="w-5 h-5 inline-block">
-          <Fragment set:html={downloadSvg} />
-        </span>
-        <span data-i18n="data_table.export">data_table.export</span>
-      </button>
-
-      <div
-        id={`${tableId}-export-menu`}
-        class="absolute right-0 top-full z-20 mt-2 hidden w-44 rounded-lg bg-white shadow-lg ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-700"
-      >
-        <ul class="py-1 text-sm">
-          <li>
-            <button
-              data-export="csv"
-              class="flex items-center gap-2 w-full px-4 py-2 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
-            >
-              <span class="w-4 h-4 inline-block flex-shrink-0">
-                <Fragment set:html={csvSvg} />
-              </span>
-              <p data-i18n="data_table.export_csv">data_table.export_csv</p>
-            </button>
-          </li>
-          <li>
-            <button
-              data-export="json"
-              class="flex items-center gap-2 w-full px-4 py-2 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
-              >
-              <span class="w-4 h-4 inline-block flex-shrink-0">
-                <Fragment set:html={jsonSvg} />
-              </span>
-              <p data-i18n="data_table.export_json">data_table.export_json</p>
-            </button>
-          </li>
-          <li>
-            <button
-              data-export="txt"
-              class="flex items-center gap-2 w-full px-4 py-2 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
-              >
-              <span class="w-4 h-4 inline-block flex-shrink-0 color-gray-500">
-                <Fragment set:html={txtSvg} />
-              </span>
-              <p data-i18n="data_table.export_txt">data_table.export_txt</p>
-            </button>
-          </li>
-          <li>
-            <button
-              data-export="sql"
-              class="flex items-center gap-2 w-full px-4 py-2 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
-            >
-              <span class="w-4 h-4 inline-block flex-shrink-0">
-                <Fragment set:html={sqlSvg} />
-              </span>
-              <p data-i18n="data_table.export_sql">data_table.export_sql</p>
-            </button>
-          </li>
-        </ul>
-      </div>
-    </div>
-    )}
-  </div>
-
-  {data.length > 0 && (
+  {hasData && (
   <!-- 🔹 TABLE -->
   <div class="overflow-x-auto">
     <table
       id={tableId}
       class="w-full text-sm text-left text-gray-700 dark:text-gray-300 datatable-dense"
     >
-      <thead
-        class="bg-gray-100 text-xs uppercase text-gray-700 border-b border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
-      >
-        <tr>
-          {
-            visibleColumns.map((col) => (
-              <th class="px-2 py-1 font-semibold tracking-wide" data-i18n={col.label} data-column-key={col.key}>{col.label}</th>
-            ))
-          }
-          <th class="px-4 py-4 text-right" data-i18n="data_table.actions">
-            data_table.actions
-          </th>
-        </tr>
-      </thead>
-      <tbody
-        class="[&>tr:nth-child(even)]:bg-gray-50 [&>tr:hover]:bg-gray-100 dark:[&>tr:nth-child(even)]:bg-gray-800/40 dark:[&>tr:hover]:bg-gray-800/70"
-      >
-        {
-          data.map((row) => (
-            <tr class="border-b border-gray-200 dark:border-gray-800">
-              {visibleColumns.map((col) => (
-                <td class="px-2 py-1">
-                  {row[col.key] === true || row[col.key] === "true" ? (
-                    <span class="w-5 h-5 inline-block text-blue-600">
-                      <Fragment set:html={checkSvg} />
-                    </span>
-                  ) : (
-                    row[col.key]
-                  )}
-                </td>
-              ))}
-              <td class="actions-cell px-2 py-1 text-right space-x-0">
-                <div class="actions-wrapper">
-                  {detailPage && (
-                    <a
-                      href={detailPage + "?" + i18Item + "=" + row.id}
-                      class="detail-btn action-btn"
-                      data-i18n-title={`${mdItem}_modal.many_title`}
-                      title=""
-                    >
-                      <span class="w-5 h-5 inline-block">
-                        <Fragment set:html={listSvg} />
-                      </span>
-                    </a>
-                    <span class="dot">•</span>
-                  )}
-                  {detailExpand && (
-                    <button
-                      class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded detail-expand-btn"
-                      data-id={row.id}
-                      data-action="detail"
-                      data-i18n-title="asset_table.detail_expand"
-                      title=""
-                    >
-                      <span class="w-5 h-5 inline-block">
-                        <Fragment set:html={listSvg} />
-                      </span>
-                    </button>
-                  )}
-                  {favoriteAction && (
-                    <button
-                      class="p-1 hover:bg-yellow-50 dark:hover:bg-gray-800 rounded favorite-btn"
-                      data-id={row.id}
-                      data-action="favorite"
-                      data-fav={row[favoriteKey] === "yes" ? "1" : "0"}
-                      aria-pressed={row[favoriteKey] === "yes" ? "true" : "false"}
-                      data-i18n-title="asset_table.favorite"
-                      title=""
-                    >
-                      <span class={`w-5 h-5 inline-block ${row[favoriteKey] === "yes" ? "text-yellow-400" : "text-gray-400"}`}>
-                        <svg viewBox="0 0 20 20" fill={row[favoriteKey] === "yes" ? "currentColor" : "none"} stroke="currentColor" stroke-width="1.5">
-                          <path d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.3 4.02a1 1 0 00.95.69h4.22c.97 0 1.37 1.24.59 1.81l-3.42 2.48a1 1 0 00-.36 1.12l1.3 4.02c.3.92-.75 1.69-1.54 1.12l-3.41-2.48a1 1 0 00-1.18 0l-3.41 2.48c-.78.57-1.84-.2-1.54-1.12l1.3-4.02a1 1 0 00-.36-1.12L2 9.45c-.78-.57-.38-1.81.6-1.81h4.21a1 1 0 00.95-.69l1.3-4.02z" />
-                        </svg>
-                      </span>
-                    </button>
-                  )}
-                  <button
-                    class="p-1 hover:bg-blue-100 rounded edit-btn"
-                    data-id={row.id}
-                    data-action="edit"
-                    data-modal-open={`${i18Item}-edit-modal`}
-                    data-i18n-title={`${i18Item}_modal.edit`}
-                    title=""
-                  >
-                    <span class="w-5 h-5 inline-block">
-                      <Fragment set:html={editSvg} />
-                    </span>
-                  </button>
-                  <button
-                    class="p-1 hover:bg-red-100 rounded delete-btn"
-                    data-id={row.id}
-                    data-action="delete"
-                    data-modal-open={`${i18Item}-delete-modal`}
-                    data-i18n-title={`${i18Item}_modal.delete`}
-                    title=""
-                  >
-                  <span class="w-5 h-5 inline-block">
-                    <Fragment set:html={deleteSvg} />
-                  </span>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))
-        }
-      </tbody>
+      <DataTableHead visibleColumns={visibleColumns} />
+      <DataTableBody
+        data={data}
+        visibleColumns={visibleColumns}
+        locale={locale}
+        i18Item={i18Item}
+        mdItem={mdItem}
+        detailPage={detailPage}
+        detailExpand={detailExpand}
+        favoriteAction={favoriteAction}
+        favoriteKey={favoriteKey}
+      />
     </table>
-  </div>
-
-  <!-- 🔹 PAGINATION -->
-  <div
-    id={`${tableId}-pagination`}
-    class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-  >
-    <!-- Info -->
-    <div id={`${tableId}-pagination-info`} class="text-sm text-gray-600 dark:text-gray-400"></div>
-    <select
-      id={`${tableId}-per-page`}
-      class="ml-3 rounded-lg border border-gray-300 bg-white px-2 py-2 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-    >
-      <option value="5">5</option>
-      <option value="10" selected>10</option>
-      <option value="25">25</option>
-      <option value="50">50</option>
-    </select>
-
-    <!-- Controls -->
-    <div class="flex items-center gap-1">
-      <button
-        id={`${tableId}-prev`}
-        class="h-8 w-8 px-0 py-0 text-sm border border-gray-300 rounded flex items-center justify-center text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-      >
-        <span class="w-5 h-5 inline-block">
-          <Fragment set:html={leftSvg} />
-        </span>
-      </button>
-      <div id={`${tableId}-pages`} class="flex items-center gap-1"></div>
-      <button
-        id={`${tableId}-next`}
-        class="h-8 w-8 px-0 py-0 text-sm border border-gray-300 rounded flex items-center justify-center text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-      >
-        <span class="w-5 h-5 inline-block">
-          <Fragment set:html={rightSvg} />
-        </span>
-      </button>
-    </div>
   </div>
   )}
 
-  {data.length == 0 && (
-  <div class="rounded-xl no-border p-4">
-    <div class="flex items-center gap-3">
-      <div class="-mt-0.5 text-blue-light-500">
-        <span class="h-6 w-6 text-gray-100 bg-color-gray-100 dark:bg-gray-800 flex items-center justify-center rounded-md mr-0">
-          <span class="w-5 h-5 inline-block">
-          <Fragment set:html={infoSvg} />
-        </span>
-        </span>
-      </div>
-      <div>
-        <p class="text-sm text-gray-500 dark:text-gray-400" data-i18n={`${i18Item}_modal.empty_message`}>
-            {`${i18Item}_modal.empty_message`}
-          </p>
-      </div>
-    </div>
-  </div>
+  {hasData && (
+  <!-- 🔹 PAGINATION -->
+  <DataTablePagination tableId={tableId} />
+  )}
+
+  {!hasData && (
+  <DataTableEmpty i18Item={i18Item} />
   )}
 
 </div>
 
-<script type="module" define:vars={{ tableId, data, columns, visibleColumns, columnFilter, columnFilter2, filterDefaultValue, filterDefaultValue2, columnFilter3, filterDefaultValue3 }}>
-  import { initAdvancedTable } from "/src/components/table/advancedTable";
-  initAdvancedTable(tableId, data, columns, visibleColumns, columnFilter, columnFilter2, filterDefaultValue, filterDefaultValue2, columnFilter3, filterDefaultValue3);
+<script>
+  // Mobile "Filtros" toggle — reveals/hides the column-filter panel (<sm only;
+  // the panel is always visible at sm+ via the sm:flex utility). Delegated so
+  // it works for every DataTable instance on the page.
+  document.addEventListener("click", (event) => {
+    const btn = (event.target as HTMLElement).closest("[data-filters-toggle]");
+    if (!btn) return;
+    const id = btn.getAttribute("data-filters-toggle");
+    const panel = id ? document.getElementById(id) : null;
+    panel?.classList.toggle("hidden");
+  });
+</script>
+
+<!-- Per-table config carrier. A `define:vars` <script> would be emitted inline and
+     could not bundle its `initAdvancedTable` import — the literal `/src/...` URL 404s
+     in the production (Vercel) build. Instead we serialize the config into an inert
+     JSON tag and let a single bundled module script (below) read every table's config.
+     `<` is escaped so a `</script>` inside any string (e.g. an asset name) can't break out. -->
+<script
+  type="application/json"
+  data-dt-config
+  set:html={JSON.stringify({
+    tableId,
+    data,
+    columns,
+    visibleColumns,
+    columnFilter,
+    columnFilter2,
+    filterDefaultValue,
+    filterDefaultValue2,
+    columnFilter3,
+    filterDefaultValue3,
+    columnFilter4,
+    filterDefaultValue4,
+  }).replace(/</g, "\\u003c")}
+/>
+
+<script>
+  // Processed (bundled) by Astro → the import resolves to a hashed asset that exists in
+  // the production build, and Astro dedupes this to once per page. It initializes every
+  // DataTable on the page from its JSON config tag (works for multiple tables too).
+  import { initAdvancedTable } from "@/components/table/advancedTable";
+  document
+    .querySelectorAll('script[type="application/json"][data-dt-config]')
+    .forEach((el) => {
+      const c = JSON.parse(el.textContent || "{}");
+      initAdvancedTable(
+        c.tableId,
+        c.data,
+        c.columns,
+        c.visibleColumns,
+        c.columnFilter,
+        c.columnFilter2,
+        c.filterDefaultValue,
+        c.filterDefaultValue2,
+        c.columnFilter3,
+        c.filterDefaultValue3,
+        c.columnFilter4,
+        c.filterDefaultValue4,
+      );
+    });
 </script>

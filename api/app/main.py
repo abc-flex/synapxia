@@ -27,6 +27,7 @@ from .lib.routes import characterizations as characterizations_router
 from .lib.routes import favorites as favorites_router
 from .lib.routes import actions as actions_router
 from .lib.routes import asset_relations as asset_relations_router
+from .lib.routes import asset_permissions as asset_permissions_router
 
 from .collab.routes import teams as teams_router
 from .collab.routes import assignments as assignments_router
@@ -124,6 +125,10 @@ app = FastAPI(
         {
             "name": "asset_relations",
             "description": "Asset relation management operations",
+        },
+        {
+            "name": "asset_permissions",
+            "description": "Asset permission management operations",
         },
         {
             "name": "teams",
@@ -247,6 +252,7 @@ app.include_router(characterizations_router.router)
 app.include_router(favorites_router.router)
 app.include_router(actions_router.router)
 app.include_router(asset_relations_router.router)
+app.include_router(asset_permissions_router.router)
 
 # Collaboration module
 app.include_router(teams_router.router)
@@ -296,6 +302,7 @@ TAG_TO_MODULE: dict[str, str] = {
     "favorites": "lib",
     "actions": "lib",
     "asset_relations": "lib",
+    "asset_permissions": "lib",
     "teams": "collab",
     "roles": "collab",
     "assignments": "collab",

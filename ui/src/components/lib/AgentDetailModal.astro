@@ -1,0 +1,41 @@
+---
+/**
+ * AgentDetailModal — the Agent Index's read-only "big card" view. Wraps the
+ * reusable CatalogDetailModal and configures the agent sections: model settings
+ * (platform / model / temperature), the tool list, and the full INSTRUCTIONS
+ * (with Copy) shown at full size instead of the card's clamped preview.
+ */
+import CatalogDetailModal from "@/components/lib/gallery/CatalogDetailModal.astro";
+
+export interface Props {
+  modalId?: string;
+  statuses?: { value: string; label: string }[];
+}
+
+const { modalId = "agent-view-modal", statuses = [] } = Astro.props as Props;
+---
+
+<CatalogDetailModal modalId={modalId} statuses={statuses} accentClass="text-violet-500">
+  <span slot="icon" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300">
+    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+      <rect x="6" y="6" width="12" height="12" rx="2" />
+      <path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3" stroke-linecap="round" />
+    </svg>
+  </span>
+</CatalogDetailModal>
+
+<script>
+  import { mountCatalogDetail } from "@/lib/catalogDetail";
+
+  mountCatalogDetail({
+    modalId: "agent-view-modal",
+    editModalId: "agent-detail-modal",
+    sections: [
+      { type: "inline", labelKey: "agent_modal.platform", feature: "PLATFORM" },
+      { type: "inline", labelKey: "agent_modal.suggested_model", feature: "SUGGESTED_MODEL" },
+      { type: "inline", labelKey: "agent_modal.suggested_temperature", feature: "SUGGESTED_TEMPERATURE" },
+      { type: "tools", labelKey: "agent_modal.tools", feature: "TOOLS", column: "detail" },
+      { type: "code", labelKey: "agent_modal.instructions", feature: "INSTRUCTIONS", column: "detail", copyOkKey: "agent_card.instructions_copied" },
+    ],
+  });
+</script>

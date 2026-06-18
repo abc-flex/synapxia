@@ -52,11 +52,14 @@ const currentModuleName = pathSegments[0] || "";
     <div class="min-h-screen flex">
       <SideBar modules={primaryNav} options={itemsNav} brandTitle={title} currentPath={currentPath} currentModuleName={currentModuleName} />
 
-      <div class="flex-1 flex flex-col min-h-screen">
+      {/* Mobile drawer backdrop — shown only while the off-canvas sidebar is open (<lg). */}
+      <div data-sidebar-backdrop class="fixed inset-0 z-[9998] hidden bg-black/40 lg:hidden"></div>
+
+      <div class="flex-1 flex flex-col min-h-screen min-w-0">
         <Header title={title} subtitle="Dashboard" />
 
-        <main>
-          <div class="mx-auto max-w-(--breakpoint-2xl) md:p-0">
+        <main class="flex-1">
+          <div class="mx-auto w-full max-w-screen-2xl p-4 sm:p-6 lg:p-8">
             <slot />
           </div>
         </main>
@@ -76,21 +79,49 @@ const currentModuleName = pathSegments[0] || "";
     const body = document.body;
     const toggle = document.querySelector("[data-sidebar-toggle]");
     const sidebar = document.querySelector(".sidebar");
+    const backdrop = document.querySelector("[data-sidebar-backdrop]");
 
     if (!toggle || !sidebar) return;
 
-    const apply = (collapsed) => {
+    // Desktop (>=lg): hamburger collapses the static sidebar to icon width. Persisted.
+    const desktop = window.matchMedia("(min-width: 1024px)");
+
+    const applyCollapsed = (collapsed) => {
       body.classList.toggle("sidebar-collapsed", collapsed);
-      toggle.setAttribute("aria-pressed", String(collapsed));
+    };
+    applyCollapsed(localStorage.getItem(storageKey) === "true");
+
+    // Mobile (<lg): hamburger opens an off-canvas drawer over a backdrop. Ephemeral.
+    const openDrawer = () => {
+      body.classList.add("sidebar-open");
+      toggle.setAttribute("aria-pressed", "true");
+    };
+    const closeDrawer = () => {
+      body.classList.remove("sidebar-open");
+      toggle.setAttribute("aria-pressed", "false");
     };
 
-    const saved = localStorage.getItem(storageKey);
-    apply(saved === "true");
-
     toggle.addEventListener("click", () => {
-      const next = !body.classList.contains("sidebar-collapsed");
-      apply(next);
-      localStorage.setItem(storageKey, String(next));
+      if (desktop.matches) {
+        const next = !body.classList.contains("sidebar-collapsed");
+        applyCollapsed(next);
+        localStorage.setItem(storageKey, String(next));
+      } else {
+        body.classList.contains("sidebar-open") ? closeDrawer() : openDrawer();
+      }
+    });
+
+    backdrop?.addEventListener("click", closeDrawer);
+    // Close the drawer when a navigation link is tapped (parent <summary> toggles have no href).
+    sidebar.addEventListener("click", (event) => {
+      if (!desktop.matches && event.target.closest("a[href]")) closeDrawer();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && body.classList.contains("sidebar-open")) closeDrawer();
+    });
+    // Crossing into desktop must always clear the mobile drawer state.
+    desktop.addEventListener("change", (event) => {
+      if (event.matches) closeDrawer();
     });
   })();
 
@@ -98,8 +129,14 @@ const currentModuleName = pathSegments[0] || "";
     if (typeof window === "undefined") return;
 
     const storageKey = "theme";
-    const toggle = document.querySelector<HTMLElement>("[data-theme-toggle]");
+    // Multiple controls exist: header switcher (toggle) + account-menu segmented
+    // light/dark buttons. Bind them all and keep their state in sync.
+    const toggles = document.querySelectorAll<HTMLElement>("[data-theme-toggle]");
+    const segs = document.querySelectorAll<HTMLElement>("[data-theme-set]");
     const root = document.documentElement;
+
+    // Active-segment styling for the account-menu light/dark pill.
+    const SEG_ACTIVE = ["bg-white", "text-indigo-600", "shadow-sm", "dark:bg-gray-900", "dark:text-indigo-300"];
 
     const apply = (theme: "light" | "dark") => {
       if (theme === "dark") {
@@ -107,7 +144,13 @@ const currentModuleName = pathSegments[0] || "";
       } else {
         root.classList.remove("dark");
       }
-      toggle?.setAttribute("aria-pressed", String(theme === "dark"));
+      toggles.forEach((el) => el.setAttribute("aria-pressed", String(theme === "dark")));
+      segs.forEach((el) => {
+        const active = el.getAttribute("data-theme-set") === theme;
+        el.setAttribute("aria-pressed", String(active));
+        if (active) el.classList.add(...SEG_ACTIVE);
+        else el.classList.remove(...SEG_ACTIVE);
+      });
       localStorage.setItem(storageKey, theme);
     };
 
@@ -117,9 +160,17 @@ const currentModuleName = pathSegments[0] || "";
       window.matchMedia("(prefers-color-scheme: dark)").matches;
     apply(saved ?? (prefersDark ? "dark" : "light"));
 
-    toggle?.addEventListener("click", () => {
-      const next = root.classList.contains("dark") ? "light" : "dark";
-      apply(next as "light" | "dark");
+    toggles.forEach((toggle) => {
+      toggle.addEventListener("click", () => {
+        const next = root.classList.contains("dark") ? "light" : "dark";
+        apply(next as "light" | "dark");
+      });
+    });
+    segs.forEach((seg) => {
+      seg.addEventListener("click", () => {
+        const set = seg.getAttribute("data-theme-set");
+        if (set === "light" || set === "dark") apply(set);
+      });
     });
   })();
 </script>

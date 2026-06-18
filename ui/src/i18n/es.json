@@ -17,7 +17,9 @@
     "edit_profile": "Editar perfil",
     "account_settings": "Configuración de cuenta",
     "support": "Soporte",
-    "sign_out": "Cerrar sesión"
+    "sign_out": "Cerrar sesión",
+    "theme": "Tema",
+    "language": "Idioma"
   },
   "notification_menu": {
     "title": "Notificaciones"
@@ -27,6 +29,29 @@
     "title": "Estamos trabajando en esto",
     "subtitle": "Esta funcionalidad aún no está lista — la estamos construyendo y pronto estará disponible.",
     "go_back": "Volver"
+  },
+  "dashboard_page": {
+    "title": "Panel de Control",
+    "subtitle": "Resumen de tu espacio de gobernanza de IA",
+    "kpi_total_assets": "Activos totales",
+    "kpi_in_use": "En uso",
+    "kpi_teams": "Equipos activos",
+    "kpi_compliance": "Cumplimiento",
+    "delta_assets": "+12 este mes",
+    "delta_in_use": "39% del total",
+    "delta_teams": "+2 este trimestre",
+    "delta_compliance": "objetivo 90%",
+    "activity_title": "Actividad de activos",
+    "activity_subtitle": "Últimos 12 meses",
+    "recent_title": "Actividad reciente",
+    "recent_1": "Se creó GitHub MCP Server",
+    "recent_1_meta": "hace 2 horas",
+    "recent_2": "Se actualizó Vector Search Retriever",
+    "recent_2_meta": "hace 5 horas",
+    "recent_3": "Se archivó Eval Suite v1",
+    "recent_3_meta": "Ayer",
+    "recent_4": "Se aprobó Data Lineage Tracker",
+    "recent_4_meta": "Ayer"
   },
   "modules": {
     "ADMIN": "Administración",
@@ -61,22 +86,20 @@
     "prompts": "Galería de Prompts",
     "mcps": "Directorio de MCPs",
     "agents": "Índice de Agentes",
-    "flows": "Flujos Agenticos",
+    "flows": "Flujos Agénticos",
     "skills": "Catálogo de Habilidades",
     "assistants": "Asistentes",
     "rag_apps": "Aplicaciones RAG",
-    "proposal": "Propuesta de Valor",
-    "explore": "Explorar",
+    "models": "Modelos",
     "criterias": "Criterios",
     "propose": "Proponer",
+    "explore": "Explorar",
     "dashboards": "Catálogo de Tableros",
     "usage": "Métricas de Uso",
-    "by_units": "Analyticas por Unidad",
-    "by_teams": "Analyticas por Equipo",
-    "by_role": "Analyticas por Rol",
+    "processes": "Catálogo de Procesos",
     "value_chain": "Cadena de Valor",
     "map": "Mapa de Procesos",
-    "models": "Modelos de Procesos"
+    "specifications": "Especificacion"
   },
   "crud_modal": {
     "add": "Agregar",
@@ -117,7 +140,19 @@
     "delete_confirmation": "¿Está seguro de que desea eliminar el registro",
     "delete_warning": "Esta acción no se puede deshacer.",
     "export": "Exportar",
-    "no_results": "No hay resultados"
+    "no_results": "No hay resultados",
+    "filters": "Filtros",
+    "updated": "Actualizado",
+    "created": "Creado",
+    "rel_ago": "hace",
+    "rel_now": "ahora mismo",
+    "unit_min": "min",
+    "unit_hour": "h",
+    "unit_day": "d",
+    "unit_week": "sem",
+    "unit_month": "mes",
+    "unit_year": "a",
+    "reset": "Restablecer"
   },
   "business_unit_modal": {
     "code": "Código",
@@ -348,6 +383,11 @@
     "empty_message": "No se encontraron Asignaciones",
     "delete_confirmation": "¿Está seguro de que desea eliminar esta Asignación?"
   },
+  "assignment_dashboard": {
+    "dimension": "Dimensión",
+    "date": "Fecha de corte",
+    "empty_message": "No se encontraron asignaciones para esta dimensión y fecha"
+  },
   "asset_modal": {
     "name": "Nombre",
     "description": "Descripción",
@@ -375,7 +415,11 @@
     "detail_expand": "Ver detalles",
     "detail_characterizations": "Caracterizaciones",
     "detail_related": "Activos relacionados",
-    "detail_empty": "—"
+    "detail_empty": "—",
+    "access_filter_all": "Todos los niveles de acceso",
+    "access_filter_view": "Solo lectura",
+    "access_filter_manage": "Puede gestionar",
+    "access_filter_public": "Público"
   },
   "asset_detail_modal": {
     "title_create": "Nuevo Activo",
@@ -408,7 +452,21 @@
     "favorite_add": "Añadir a favoritos",
     "favorite_remove": "Quitar de favoritos",
     "error_relations": "No se pudieron cargar los activos relacionados.",
-    "error_favorite": "No se pudo actualizar el favorito."
+    "error_favorite": "No se pudo actualizar el favorito.",
+    "tab_permissions": "Permisos",
+    "perm_target_type": "Tipo de destino",
+    "perm_target": "Destino",
+    "perm_access": "Nivel de acceso",
+    "perm_choose_target_type": "— elige tipo —",
+    "perm_choose_target": "— elige destino —",
+    "perm_choose_access": "— elige acceso —",
+    "perm_add": "Añadir permiso",
+    "perm_remove": "Quitar",
+    "perm_empty": "Aún no hay permisos.",
+    "perm_duplicate": "Este destino ya tiene un permiso.",
+    "perm_missing_fields": "Elige tipo de destino, destino y nivel de acceso.",
+    "perm_public": "Público",
+    "error_permissions": "No se pudieron cargar los permisos."
   },
   "features": {
     "LANGUAGE": "Lenguaje",
@@ -650,5 +708,106 @@
     "nav_user_profile": "Perfil de usuario",
     "nav_tables": "Tablas",
     "nav_pages": "Páginas"
+  },
+  "gallery": {
+    "search_placeholder": "Buscar…",
+    "status_all": "Todos los estados",
+    "favorites_only": "Mis favoritos",
+    "show_more": "Ver más",
+    "empty": "Aún no hay nada aquí",
+    "favorite_add": "Agregar a favoritos",
+    "favorite_remove": "Quitar de favoritos"
+  },
+  "prompt_modal": {
+    "title_create": "Nuevo Prompt",
+    "title_edit": "Editar Prompt",
+    "subtitle": "Campos principales + la configuración reutilizable del prompt.",
+    "new": "Nuevo Prompt",
+    "details_section": "Detalles del prompt",
+    "platform": "Plataforma",
+    "suggested_model": "Modelo sugerido",
+    "suggested_temperature": "Temperatura sugerida",
+    "prompt_template": "Plantilla del prompt",
+    "example_output": "Salida de ejemplo",
+    "favorite_add": "Agregar a favoritos",
+    "favorite_remove": "Quitar de favoritos",
+    "saved": "Prompt guardado.",
+    "error_save": "No se pudo guardar el prompt.",
+    "error_load": "No se pudo cargar el prompt.",
+    "empty": "No se encontraron prompts",
+    "one_title": "Prompt",
+    "many_title": "Prompts",
+    "add_new": "Nuevo Prompt",
+    "edit": "Editar Prompt",
+    "delete": "Eliminar Prompt",
+    "delete_confirmation": "¿Estás seguro de que deseas eliminar este Prompt"
+  },
+  "prompt_card": {
+    "model": "Modelo",
+    "platform": "Plataforma",
+    "temperature": "Temp"
+  },
+  "mcp_modal": {
+    "title_create": "Nuevo servidor MCP",
+    "title_edit": "Editar servidor MCP",
+    "subtitle": "Campos principales + los detalles de conexión del MCP.",
+    "new": "Nuevo MCP",
+    "details_section": "Detalles del MCP",
+    "mode": "Modo",
+    "overview": "Resumen",
+    "content": "Contenido",
+    "tools": "Herramientas",
+    "tools_help": "Lista de herramientas separada por comas o saltos de línea.",
+    "server_config": "Configuración del servidor (JSON)",
+    "saved": "MCP guardado.",
+    "error_save": "No se pudo guardar el MCP.",
+    "error_load": "No se pudo cargar el MCP.",
+    "empty": "No se encontraron servidores MCP",
+    "one_title": "MCP",
+    "many_title": "MCPs",
+    "add_new": "Nuevo MCP",
+    "edit": "Editar MCP",
+    "delete": "Eliminar MCP",
+    "delete_confirmation": "¿Estás seguro de que deseas eliminar este MCP"
+  },
+  "mcp_card": {
+    "copy_config": "Copiar config",
+    "copied": "Configuración del servidor copiada",
+    "tools_more": "más"
+  },
+  "catalog_detail": {
+    "copy": "Copiar",
+    "copied": "Copiado al portapapeles",
+    "error_load": "No se pudo cargar."
+  },
+  "agent_modal": {
+    "title_create": "Nuevo agente",
+    "title_edit": "Editar agente",
+    "subtitle": "Campos principales + la configuración del modelo y el comportamiento del agente.",
+    "new": "Nuevo agente",
+    "model_settings": "Configuración del modelo",
+    "behavior": "Comportamiento",
+    "platform": "Plataforma",
+    "suggested_model": "Modelo sugerido",
+    "suggested_temperature": "Temperatura sugerida",
+    "tools": "Herramientas",
+    "tools_help": "Lista de herramientas separada por comas o saltos de línea.",
+    "instructions": "Instrucciones",
+    "saved": "Agente guardado.",
+    "error_save": "No se pudo guardar el agente.",
+    "error_load": "No se pudo cargar el agente.",
+    "empty": "No se encontraron agentes",
+    "one_title": "Agente",
+    "many_title": "Agentes",
+    "add_new": "Nuevo agente",
+    "edit": "Editar agente",
+    "delete": "Eliminar agente",
+    "delete_confirmation": "¿Estás seguro de que deseas eliminar este agente"
+  },
+  "agent_card": {
+    "model": "Modelo",
+    "tools_more": "más",
+    "instructions": "Instrucciones",
+    "instructions_copied": "Instrucciones copiadas"
   }
 }

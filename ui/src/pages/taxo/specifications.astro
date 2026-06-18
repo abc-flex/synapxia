@@ -48,9 +48,9 @@ try {
 
 const columns = [
   { key: "category", label: "specification_modal.category", visible: false },
-  { key: "category_name", label: "specification_modal.category" },
+  { key: "category_name", label: "specification_modal.category", as: "title", subtitleKey: "feature_name", subtitleFormat: "text" },
   { key: "feature", label: "specification_modal.feature", visible: false },
-  { key: "feature_name", label: "specification_modal.feature" },
+  { key: "feature_name", label: "specification_modal.feature", visible: false },
   { key: "default_value", label: "specification_modal.default_value" },
 ];
 const data = specifications.map((item) => ({
@@ -75,7 +75,7 @@ const fieldKeys = ["id", ...formFields.map((f) => f.key)];
 <BaseLayout>
   {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
 
-  <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
+  <div class="mx-auto w-full max-w-full md:p-0">
     <!-- Breadcrumb Start -->
     <Breadcrumb
       moduleName="Asset Taxonomy"

@@ -122,7 +122,14 @@ const currentDefault = languages[0].code;
     localStorage.setItem("lang", newLang);
     paintActive(newLang);
     loadClientTranslations();
+    // Notify other locale controls (e.g. the account-menu language pills on mobile).
+    document.dispatchEvent(new CustomEvent("synapxia:locale-changed", { detail: newLang }));
   };
+
+  // Repaint when the locale is changed elsewhere (e.g. from the account menu).
+  document.addEventListener("synapxia:locale-changed", (e) => {
+    paintActive((e as CustomEvent<string>).detail);
+  });
 
   // Initialize with the persisted/browser language.
   paintActive(getCurrentLanguage());

@@ -20,8 +20,8 @@ try {
 }
 // Fetch categories for select field
 const columns = [
-  { key: "code", label: "category_modal.code" },
-  { key: "name", label: "category_modal.name" },
+  { key: "code", label: "category_modal.code", visible: false },
+  { key: "name", label: "category_modal.name", as: "title", subtitleKey: "code", subtitleFormat: "text" },
   { key: "parent", label: "category_modal.parent", visible: false },
   { key: "parent_name", label: "category_modal.parent" },
 ];
@@ -62,7 +62,7 @@ const fieldKeys = formFields.map((f) => f.key);
 <BaseLayout>
   {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
 
-  <div class="mx-auto max-w-(--breakpoint-2xl) md:p-6">
+  <div class="mx-auto w-full max-w-full md:p-0">
     <!-- Breadcrumb Start -->
     <Breadcrumb
       moduleName="Asset Taxonomy"

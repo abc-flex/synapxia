@@ -1,0 +1,74 @@
+---
+/**
+ * PromptFormModal — the Prompt Gallery's custom create/edit modal. Uses the
+ * reusable CatalogFormModal scaffold (core asset fields + chrome) and supplies
+ * the 5 prompt-specific feature inputs as first-class fields. Category is fixed
+ * to PROMPTS by `mountCatalogModal`.
+ *
+ * Each feature input's `name` MUST equal its feature code so the orchestrator
+ * maps it to a characterization row.
+ */
+import CatalogFormModal from "@/components/lib/gallery/CatalogFormModal.astro";
+
+export interface Props {
+  modalId?: string;
+  statuses?: { value: string; label: string }[];
+}
+
+const { modalId = "prompt-detail-modal", statuses = [] } = Astro.props as Props;
+
+const inputClass =
+  "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white";
+const labelClass = "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300";
+---
+
+<CatalogFormModal
+  modalId={modalId}
+  statuses={statuses}
+  titleCreateKey="prompt_modal.title_create"
+  subtitleKey="prompt_modal.subtitle"
+  detailsSectionKey="prompt_modal.details_section"
+>
+  <div>
+    <label class={labelClass} data-i18n="prompt_modal.platform">Platform</label>
+    <input name="PLATFORM" type="text" class={inputClass} />
+  </div>
+  <div>
+    <label class={labelClass} data-i18n="prompt_modal.suggested_model">Suggested model</label>
+    <input name="SUGGESTED_MODEL" type="text" class={inputClass} />
+  </div>
+  <div>
+    <label class={labelClass} data-i18n="prompt_modal.suggested_temperature">Suggested temperature</label>
+    <input name="SUGGESTED_TEMPERATURE" type="text" inputmode="decimal" class={inputClass} />
+  </div>
+  <div class="md:col-span-2">
+    <label class={labelClass} data-i18n="prompt_modal.prompt_template">Prompt template</label>
+    <textarea name="PROMPT_TEMPLATE" rows={6} class={`${inputClass} font-mono`}></textarea>
+  </div>
+  <div class="md:col-span-2">
+    <label class={labelClass} data-i18n="prompt_modal.example_output">Example output</label>
+    <textarea name="EXAMPLE_OUTPUT" rows={3} class={inputClass}></textarea>
+  </div>
+</CatalogFormModal>
+
+<script>
+  import { mountCatalogModal } from "@/lib/catalogModal";
+
+  mountCatalogModal({
+    modalId: "prompt-detail-modal",
+    category: "PROMPTS",
+    features: [
+      "PLATFORM",
+      "SUGGESTED_MODEL",
+      "SUGGESTED_TEMPERATURE",
+      // Rich payloads live in the characterization `detail` column (seed convention).
+      { name: "PROMPT_TEMPLATE", column: "detail" },
+      { name: "EXAMPLE_OUTPUT", column: "detail" },
+    ],
+    titleCreateKey: "prompt_modal.title_create",
+    titleEditKey: "prompt_modal.title_edit",
+    savedKey: "prompt_modal.saved",
+    errorSaveKey: "prompt_modal.error_save",
+    errorLoadKey: "prompt_modal.error_load",
+  });
+</script>

@@ -1,7 +1,7 @@
 """Models for Asset Library module"""
 from sqlmodel import Field, SQLModel, Column, String, ForeignKey
 from sqlalchemy import JSON, BigInteger
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from datetime import datetime
 
 # Assets Models
@@ -221,3 +221,72 @@ class AssetRelationUpdate(SQLModel):
         default=None, description="Why the assets are related")
     is_active: Optional[bool] = Field(
         default=None, description="Indicates if the relation is active")
+
+
+# Asset Permissions Models
+
+
+class AssetPermissionBase(SQLModel):
+    # `asset` is BIGINT (FK to assets.id). The PK is a surrogate `id`
+    # (bigserial) — unlike relations' composite key. `target_type` /
+    # `access_level` come from the TARGET_TYPE / ACCESS_LEVEL lists;
+    # `target_code` is the target entity's id/code (literal "PUBLIC" when
+    # target_type=PUBLIC). `valid_from`/`valid_to` carry optional temporal
+    # validity; `is_active` drives logical delete (added in 43-lib-perms-active-ddl).
+    asset: int = Field(sa_column=Column(
+        'asset', BigInteger, ForeignKey('assets.id')))
+    target_type: str = Field(max_length=100)
+    target_code: str = Field(max_length=50)
+    access_level: str = Field(max_length=100)
+    valid_from: datetime = Field(default_factory=datetime.utcnow)
+    valid_to: Optional[datetime] = None
+    is_active: bool = Field(default=True)
+
+
+class AssetPermission(AssetPermissionBase, table=True):
+    __tablename__ = "asset_permissions"
+    id: Optional[int] = Field(default=None, primary_key=True)
+
+
+class AssetPermissionCreate(SQLModel):
+    asset: int = Field(description="Asset id (FK to assets.id)")
+    target_type: str = Field(
+        max_length=100, description="Target type (TARGET_TYPE list value)")
+    target_code: str = Field(
+        max_length=50, description="Target id/code, or 'PUBLIC'")
+    access_level: str = Field(
+        max_length=100, description="Access level (ACCESS_LEVEL list value)")
+    valid_to: Optional[datetime] = Field(
+        default=None, description="Optional expiry timestamp")
+    is_active: Optional[bool] = Field(
+        default=True, description="Indicates if the permission is active")
+
+
+class AssetPermissionUpdate(SQLModel):
+    target_type: Optional[str] = Field(default=None, max_length=100)
+    target_code: Optional[str] = Field(default=None, max_length=50)
+    access_level: Optional[str] = Field(default=None, max_length=100)
+    valid_to: Optional[datetime] = Field(default=None)
+    is_active: Optional[bool] = Field(default=None)
+
+
+class AssetWithAccessLevels(SQLModel):
+    """Asset read projection augmented with an aggregated permission summary.
+
+    `access_levels` holds the distinct active access levels granted on the asset
+    (e.g. VIEW, MANAGE); `is_public` is true when any active permission targets
+    PUBLIC. Read-only projection — does not change the `Asset` table contract.
+    """
+    id: int
+    name: str
+    description: Optional[str] = None
+    category: Optional[str] = None
+    reference: Optional[str] = None
+    status: str
+    tags: Optional[Any] = None
+    detail: Optional[str] = None
+    is_active: bool = True
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    access_levels: List[str] = Field(default_factory=list)
+    is_public: bool = False

@@ -1,0 +1,136 @@
+---
+/**
+ * McpCard — MCP Directory card. Wraps the reusable GalleryCard scaffold and
+ * supplies MCP-specific rendering: a server-stack icon (emerald accent to
+ * distinguish the catalog from prompts' indigo), a Mode chip, tool chips, tags,
+ * and a one-click "Copy config" action alongside edit/delete.
+ */
+import GalleryCard from "@/components/lib/gallery/GalleryCard.astro";
+
+export interface Props {
+  id: number | string;
+  name: string;
+  subtitle?: string;
+  description?: string;
+  statusLabel?: string;
+  statusValue?: string;
+  favorite?: string;
+  searchText?: string;
+  editModalId?: string;
+  detailModalId?: string;
+  mode?: string;
+  tools?: string[];
+  serverConfig?: string;
+  tags?: string[];
+}
+
+const {
+  id,
+  name,
+  subtitle,
+  description,
+  statusLabel,
+  statusValue,
+  favorite,
+  searchText,
+  editModalId = "mcp-detail-modal",
+  detailModalId = "mcp-view-modal",
+  mode,
+  tools = [],
+  serverConfig,
+  tags = [],
+} = Astro.props as Props;
+
+const MAX_TOOLS = 4;
+const shownTools = tools.slice(0, MAX_TOOLS);
+const extraTools = tools.length - shownTools.length;
+const isRemote = (mode ?? "").toLowerCase().includes("remote");
+---
+
+<GalleryCard
+  id={id}
+  name={name}
+  subtitle={subtitle}
+  statusLabel={statusLabel}
+  statusValue={statusValue}
+  favorite={favorite}
+  searchText={searchText}
+  editModalId={editModalId}
+  detailModalId={detailModalId}
+>
+  <span slot="icon" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300">
+    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+      <rect x="3" y="4" width="18" height="6" rx="1.5" /><rect x="3" y="14" width="18" height="6" rx="1.5" />
+      <path d="M7 7h.01M7 17h.01" stroke-linecap="round" />
+    </svg>
+  </span>
+
+  {description && (
+    <p slot="body" class="line-clamp-2 text-sm text-gray-500 dark:text-gray-400">{description}</p>
+  )}
+
+  <Fragment slot="chips">
+    {mode && (
+      <span class="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+        <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          {isRemote ? (
+            <path d="M7 18a5 5 0 0 1-1-9.9A6 6 0 0 1 18 9a4 4 0 0 1-1 7.9" stroke-linecap="round" stroke-linejoin="round" />
+          ) : (
+            <>
+              <rect x="3" y="4" width="18" height="12" rx="1.5" /><path d="M8 20h8M12 16v4" stroke-linecap="round" />
+            </>
+          )}
+        </svg>
+        {mode}
+      </span>
+    )}
+    {shownTools.map((tool) => (
+      <span class="inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300">{tool}</span>
+    ))}
+    {extraTools > 0 && (
+      <span class="inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+        +{extraTools} <span class="ml-1" data-i18n="mcp_card.tools_more">more</span>
+      </span>
+    )}
+    {tags.map((tag) => (
+      <span class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">#{tag}</span>
+    ))}
+  </Fragment>
+
+  <Fragment slot="actions">
+    {serverConfig && (
+      <button
+        type="button"
+        data-action="copy"
+        data-copy={serverConfig}
+        data-copy-ok="Server config copied"
+        class="mr-auto inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-900/20"
+      >
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" />
+        </svg>
+        <span data-i18n="mcp_card.copy_config">Copy config</span>
+      </button>
+    )}
+    <button
+      type="button"
+      data-modal-open={editModalId}
+      data-asset-mode="edit"
+      data-asset-id={String(id)}
+      class="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+      data-i18n="common.edit"
+    >
+      Edit
+    </button>
+    <button
+      type="button"
+      data-action="delete"
+      data-id={String(id)}
+      data-name={name}
+      class="rounded-lg px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+      data-i18n="common.delete"
+    >
+      Delete
+    </button>
+  </Fragment>
+</GalleryCard>

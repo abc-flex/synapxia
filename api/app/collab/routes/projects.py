@@ -3,7 +3,7 @@ from typing import List
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Depends
-from sqlmodel import Session, select
+from sqlmodel import Session, select, SQLModel
 from sqlalchemy.exc import IntegrityError
 
 from ..internal.models import Project, ProjectCreate, ProjectUpdate, Team
@@ -31,6 +31,26 @@ def get_all(
                             .offset(skip).limit(limit)
                             .order_by(Project.name)).all()
     return projects
+
+
+class ProjectBasic(SQLModel):
+    """Lightweight {value,label} shape for UI dropdowns."""
+    value: str
+    label: str
+
+
+# Registered BEFORE /{code} so "select" isn't parsed as a project code.
+@router.get("/select", response_model=List[ProjectBasic])
+def get_select(
+    session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("COLLAB", "PROJECTS", can_edit=False))
+) -> List[ProjectBasic]:
+    """Lightweight list of active projects for UI dropdowns: value=code, label=name."""
+    return session.exec(
+        select(Project.code.label("value"), Project.name.label("label"))
+        .where(Project.is_active == True)
+        .order_by(Project.name)
+    ).all()
 
 
 @router.get("/{code}", response_model=Project)

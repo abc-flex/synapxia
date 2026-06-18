@@ -64,6 +64,7 @@
   },
   "menu_options": {
     "business_units": "Business Units",
+    "hierarchy": "View Hierarchy",
     "profile": "Profile",
     "profiles": "Profiles",
     "privileges": "Privileges",

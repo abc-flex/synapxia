@@ -88,6 +88,7 @@ const filterCount = [columnFilter, columnFilter2, columnFilter3, columnFilter4].
         </button>
       )
     }
+    <slot name="actions" />
     </div>
     {filterCount > 0 && hasData && (
       <button

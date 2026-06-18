@@ -20,6 +20,11 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-06-18 12:48 — Tree-view popups on hierarchical CRUD pages (Business Units)
+- Added a secondary toolbar button (hierarchy/share icon) next to "+Business Unit" that opens an XL `<dialog>` rendering the existing `TreeChart` (ECharts) over the page's rows — no duplicate page, reuses the `taxonomy.astro` visualization. Categories uses `data-i18n-title`/`data-i18n="menu_options.taxonomy"` ("View Taxonomy"); Business Units uses `menu_options.hierarchy` ("View Hierarchy"). Both dispatch a `resize` on open so ECharts (initialized 0×0 inside the hidden dialog) lays out correctly. `TreeChart` default field keys (`code`/`parent`/`name`/`description`) match both models unchanged.
+- `DataTable` gained a forwarded named slot `toolbar-actions` → toolbar `actions` (renders nothing when unused, so all other pages are unaffected) for per-page toolbar buttons. No existing props/keys changed; UI-only, manual verification per Constitution III. Reused existing `menu_options.taxonomy` + `menu_options.hierarchy` i18n keys (no new keys).
+- Files affected: `ui/src/pages/admin/business_units.astro`, `ui/src/components/table/DataTable.astro`, `ui/src/components/table/partials/DataTableToolbar.astro`
+
 ## 2026-06-18 04:25 — Add static HTML design mockups for asset modals (Figma import)
 - Added `designs/` with self-contained HTML mockups of the asset create/edit modal (desktop + mobile 375) and the asset detail modal with its three tabs (Caracterización / Activos relacionados / Permisos), rendered from the app's Tailwind markup so a Figma import matches production.
 - `designs/README.md` documents how to import into Figma (html.to.design plugin, SVG paste, or screenshot) and lists the indigo/gray design tokens. Docs/asset-only; no app code touched.

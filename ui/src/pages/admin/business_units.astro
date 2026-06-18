@@ -4,6 +4,8 @@ import Breadcrumb from "../../components/core/Breadcrumb.astro";
 import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
+import TreeChart from "../../components/treeview/TreeChart.astro";
+import shareSvg from "@/images/icons/share.svg?raw";
 import { getBusinessUnits } from "@/lib/business_units";
 import { getListItemsbyList } from "@/lib/list_items";
 
@@ -205,9 +207,107 @@ const fieldKeys = formFields.map((f) => f.key);
           data={data}
           tableId="business_units"
           i18Item="business_unit"
-        />
+        >
+          <button
+            slot="toolbar-actions"
+            type="button"
+            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 sm:py-1.5 text-sm text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+            data-modal-open="hierarchy-modal"
+            data-i18n-title="menu_options.hierarchy"
+            title="View Hierarchy"
+          >
+            <span class="w-5 h-5 inline-block">
+              <Fragment set:html={shareSvg} />
+            </span>
+          </button>
+        </DataTable>
         <!-- ====== Table End -->
       </div>
     </div>
+
+    <!-- ====== View Hierarchy Modal -->
+    <dialog
+      id="hierarchy-modal"
+      class="modal h-[calc(100dvh-2rem)] max-h-[calc(100dvh-2rem)] w-[1100px] max-w-[calc(100vw-2rem)] rounded-2xl border border-gray-200 bg-white p-0 shadow-2xl backdrop:bg-black/40 dark:border-gray-800 dark:bg-gray-900"
+    >
+      <div class="flex h-full max-h-[calc(100dvh-2rem)] w-full flex-col">
+        <div
+          class="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-gray-800"
+        >
+          <h2
+            class="text-lg font-semibold text-gray-900 dark:text-white"
+            data-i18n="menu_options.hierarchy"
+          >
+            View Hierarchy
+          </h2>
+          <button
+            type="button"
+            class="p-1 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+            data-modal-close="hierarchy-modal"
+            aria-label="crud_modal.close"
+            data-i18n-aria-label="crud_modal.close"
+          >
+            ✕
+          </button>
+        </div>
+        <div class="flex-1 overflow-auto p-4">
+          {business_units.length > 0 ? (
+            <TreeChart items={business_units} height="calc(100dvh - 11rem)" orient="TB" boxed />
+          ) : (
+            <p class="p-6 text-center text-sm text-gray-500 dark:text-gray-400">
+              No hay datos para visualizar
+            </p>
+          )}
+        </div>
+      </div>
+    </dialog>
+
+    <script>
+      (() => {
+        const modal = document.getElementById("hierarchy-modal");
+        if (!modal) return;
+
+        const open = () => {
+          if (!modal.open) {
+            modal.showModal();
+            // The tree chart is rendered inside a hidden dialog, so ECharts
+            // initialized at 0×0. Force a resize once the modal is visible.
+            requestAnimationFrame(() =>
+              window.dispatchEvent(new Event("resize")),
+            );
+          }
+        };
+        const close = () => {
+          if (modal.open) modal.close();
+        };
+
+        document.addEventListener("click", (event) => {
+          if (event.target.closest('[data-modal-open="hierarchy-modal"]')) {
+            event.preventDefault();
+            open();
+          }
+          if (event.target.closest('[data-modal-close="hierarchy-modal"]')) {
+            event.preventDefault();
+            close();
+          }
+        });
+
+        // Close on backdrop click
+        modal.addEventListener("click", (event) => {
+          const rect = modal.getBoundingClientRect();
+          const inDialog =
+            rect.top <= event.clientY &&
+            event.clientY <= rect.top + rect.height &&
+            rect.left <= event.clientX &&
+            event.clientX <= rect.left + rect.width;
+          if (!inDialog) close();
+        });
+
+        modal.addEventListener("cancel", (e) => {
+          e.preventDefault();
+          close();
+        });
+      })();
+    </script>
   </div>
 </BaseLayout>

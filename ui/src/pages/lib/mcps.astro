@@ -118,7 +118,7 @@ const rows = mcps.map((item) => {
 const deleteFields = [{ key: "name", label: "asset_modal.name", pk: true, disabled: true }];
 ---
 
-<BaseLayout title="menu_options.mcps">
+<BaseLayout>
   {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
 
   <div class="mx-auto w-full max-w-full">

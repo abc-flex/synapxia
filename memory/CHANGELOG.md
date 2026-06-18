@@ -20,6 +20,10 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-06-18 04:25 — Add static HTML design mockups for asset modals (Figma import)
+- Added `designs/` with self-contained HTML mockups of the asset create/edit modal (desktop + mobile 375) and the asset detail modal with its three tabs (Caracterización / Activos relacionados / Permisos), rendered from the app's Tailwind markup so a Figma import matches production.
+- `designs/README.md` documents how to import into Figma (html.to.design plugin, SVG paste, or screenshot) and lists the indigo/gray design tokens. Docs/asset-only; no app code touched.
+- Files affected: `designs/create-edit-modal.html`, `designs/asset-detail-tabs.html`, `designs/README.md`
 ## 2026-06-18 01:42 — Agent Index (HU-LI14) + reusable "big card" detail view + wider cards + value/detail fix
 - **Agent Index (`/lib/agents`, HU-LI14)** shipped as the third final-user catalog and the first to use the new **hero card** (violet→indigo gradient header carrying the cpu-chip icon + name + favorite). Card face = model chip + tool chips (+N) + tags + a short INSTRUCTIONS preview; the whole card opens the detail view (Edit/Delete live there, so no per-card buttons). New `AgentCard.astro`, `AgentFormModal.astro` (grouped **Model settings** / **Behavior** sections, large INSTRUCTIONS editor), `AgentDetailModal.astro`, page `ui/src/pages/lib/agents.astro`. No backend/DB changes (menu option, `AGENTS` category + 5 specs + sample asset already seeded).
 - **Reusable read-only "big card" detail view** (`CatalogDetailModal.astro` + `lib/catalogDetail.ts`) — opened by a whole-card click via the card's `data-detail-modal`. Shows the full description + configured sections (`inline`/`block`/`code`+Copy/`tools` chips), wires favorite + Edit/Delete handoff. **Wired into Prompt + MCP + Agent** (per user feedback: "view in a bigger card where all the description/instructions are visible").

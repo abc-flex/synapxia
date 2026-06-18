@@ -4,9 +4,9 @@ import Breadcrumb from "../../components/core/Breadcrumb.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
 import CardGallery from "../../components/lib/gallery/CardGallery.astro";
-import McpCard from "../../components/lib/McpCard.astro";
-import McpFormModal from "../../components/lib/McpFormModal.astro";
-import McpDetailModal from "../../components/lib/McpDetailModal.astro";
+import AgentCard from "../../components/lib/AgentCard.astro";
+import AgentFormModal from "../../components/lib/AgentFormModal.astro";
+import AgentDetailModal from "../../components/lib/AgentDetailModal.astro";
 import { getAssetsbyCategory } from "@/lib/assets";
 import { getCharacterizations } from "@/lib/characterizations";
 import { getListItemsbyList } from "@/lib/list_items";
@@ -15,11 +15,11 @@ import { getFavoritesByUser } from "@/lib/favorites";
 import { getLocale } from "@/utils/getLocale";
 import { formatRelative } from "@/lib/datatable";
 
-const CATEGORY = "MCPS";
+const CATEGORY = "AGENTS";
 const locale = getLocale(Astro);
 
-// Tolerant list parser for the TOOLS feature: handles `['a','b']`, `["a","b"]`,
-// comma- or newline-separated plain text → string[].
+// Tolerant list parser for the TOOLS feature (array literal, comma- or
+// newline-separated) → string[].
 const parseList = (raw: unknown): string[] => {
   if (!raw) return [];
   let s = String(raw).trim();
@@ -30,20 +30,23 @@ const parseList = (raw: unknown): string[] => {
     .filter(Boolean);
 };
 
-// ── MCP assets (assets in the MCPS category) ───────────────────────────────
-let mcps: any[] = [];
+const truncate = (raw: string, max = 140): string => {
+  const s = (raw ?? "").trim().replace(/\s+/g, " ");
+  return s.length > max ? `${s.slice(0, max)}…` : s;
+};
+
+// ── Agent assets (assets in the AGENTS category) ───────────────────────────
+let agents: any[] = [];
 let errorMessage: string | null = null;
 try {
-  mcps = await getAssetsbyCategory(CATEGORY);
+  agents = await getAssetsbyCategory(CATEGORY);
 } catch (error) {
-  console.error("Failed to fetch MCPs:", error);
-  errorMessage = error instanceof Error ? error.message : "Failed to fetch MCPs from API";
-  mcps = [];
+  console.error("Failed to fetch agents:", error);
+  errorMessage = error instanceof Error ? error.message : "Failed to fetch agents from API";
+  agents = [];
 }
 
-// ── Characterizations → map<assetId, {feature: value}> for the card chips ──
-// Stores both columns per feature: `value` (short summary) + `detail` (rich
-// payload — e.g. TOOLS array, SERVER_CONFIG JSON).
+// ── Characterizations → map<assetId, {feature: {value, detail}}> ───────────
 type CharCols = { value: string; detail: string };
 let charsByAsset = new Map<number, Record<string, CharCols>>();
 try {
@@ -77,16 +80,6 @@ try {
 }
 const statuses = status.map((s) => ({ value: s.value, label: s.label }));
 
-// ── Execution modes (EXECUTION_MODE) for the MODE select. Options use the
-// label as value to match the seeded/spec data ("Remote"/"Local"). ─────────
-let modes: { value: string; label: string }[] = [];
-try {
-  const items = await getListItemsbyList("EXECUTION_MODE");
-  modes = items.map((m) => ({ value: m.label, label: m.label }));
-} catch {
-  modes = [];
-}
-
 const resolveStatusLabel = (raw: string): string => {
   if (!raw) return "";
   const direct = status.find((s) => s.value === raw);
@@ -96,26 +89,26 @@ const resolveStatusLabel = (raw: string): string => {
 };
 
 // ── Flatten rows for the cards ─────────────────────────────────────────────
-const rows = mcps.map((item) => {
+const rows = agents.map((item) => {
   const chars = charsByAsset.get(Number(item.id)) ?? {};
   const tags = Array.isArray(item.tags) ? item.tags : [];
-  // Tools + server config live in the `detail` column (the array / JSON);
-  // `value` is just a human summary.
+  // Tools + instructions live in the `detail` column (the array / full text);
+  // `value` is just a short summary.
   const tools = parseList(chars.TOOLS?.detail || chars.TOOLS?.value);
-  const overview = chars.OVERVIEW?.value;
+  const instructions = chars.INSTRUCTIONS?.detail || chars.INSTRUCTIONS?.value || "";
   return {
     id: item.id,
     name: item.name,
-    description: overview || item.description || "",
+    description: item.description ?? "",
     subtitle: formatRelative(item.updated_at ?? item.created_at, locale),
     statusValue: item.status,
     statusLabel: resolveStatusLabel(item.status),
     favorite: favIds.has(item.id) ? "yes" : "no",
-    mode: chars.MODE?.value,
+    model: chars.SUGGESTED_MODEL?.value,
     tools,
-    serverConfig: chars.SERVER_CONFIG?.detail || chars.SERVER_CONFIG?.value,
+    instructionsPreview: truncate(instructions),
     tags,
-    searchText: [item.name, overview, item.description, tools.join(" "), tags.join(" ")]
+    searchText: [item.name, item.description, tools.join(" "), instructions, tags.join(" ")]
       .filter(Boolean)
       .join(" "),
   };
@@ -131,38 +124,38 @@ const deleteFields = [{ key: "name", label: "asset_modal.name", pk: true, disabl
   <div class="mx-auto w-full max-w-full">
     <Breadcrumb
       moduleName="AI Library"
-      pageName="MCP Directory"
-      pageTitle="MCP Directory"
+      pageName="Agent Index"
+      pageTitle="Agent Index"
       homeLink="/"
       moduleNameKey="modules.LIB"
-      pageNameKey="menu_options.mcps"
-      pageTitleKey="menu_options.mcps"
+      pageNameKey="menu_options.agents"
+      pageTitleKey="menu_options.agents"
     />
 
-    {/* Custom MCP create/edit modal */}
-    <McpFormModal modalId="mcp-detail-modal" statuses={statuses} modes={modes} />
+    {/* Custom agent create/edit modal */}
+    <AgentFormModal modalId="agent-detail-modal" statuses={statuses} />
 
     {/* Read-only "big card" view (opened by a whole-card click) */}
-    <McpDetailModal modalId="mcp-view-modal" statuses={statuses} />
+    <AgentDetailModal modalId="agent-view-modal" statuses={statuses} />
 
     {/* Slim delete confirmation (reuses CrudModal) */}
     <CrudModal
       mode="delete"
-      modalId="mcp-delete-modal"
-      entityName="Mcp"
+      modalId="agent-delete-modal"
+      entityName="Agent"
       fields={deleteFields}
       showTrigger={false}
     />
 
     <CardGallery
-      galleryId="mcps-gallery"
-      newModalId="mcp-detail-modal"
-      newLabelKey="mcp_modal.new"
-      emptyKey="mcp_modal.empty"
+      galleryId="agents-gallery"
+      newModalId="agent-detail-modal"
+      newLabelKey="agent_modal.new"
+      emptyKey="agent_modal.empty"
       statuses={statuses}
     >
       {rows.map((r) => (
-        <McpCard
+        <AgentCard
           id={r.id}
           name={r.name}
           subtitle={r.subtitle}
@@ -171,10 +164,11 @@ const deleteFields = [{ key: "name", label: "asset_modal.name", pk: true, disabl
           statusValue={r.statusValue}
           favorite={r.favorite}
           searchText={r.searchText}
-          editModalId="mcp-detail-modal"
-          mode={r.mode}
+          editModalId="agent-detail-modal"
+          detailModalId="agent-view-modal"
+          model={r.model}
           tools={r.tools}
-          serverConfig={r.serverConfig}
+          instructionsPreview={r.instructionsPreview}
           tags={r.tags}
         />
       ))}
@@ -189,7 +183,7 @@ const deleteFields = [{ key: "name", label: "asset_modal.name", pk: true, disabl
     import { deleteAsset } from "@/lib/assets";
     import { loadClientTranslations } from "@/utils/i18nClient";
 
-    initCardGallery({ galleryId: "mcps-gallery", pageSize: 12 });
+    initCardGallery({ galleryId: "agents-gallery", pageSize: 12 });
     loadClientTranslations();
 
     function showToast(message: string, variant = "info") {
@@ -214,8 +208,8 @@ const deleteFields = [{ key: "name", label: "asset_modal.name", pk: true, disabl
     (window as any).showToast = showToast;
 
     // Open + prefill the delete confirmation modal when a card's delete button
-    // fires (the gallery dispatches `gallery-delete` with id + name).
-    const delDialog = document.getElementById("mcp-delete-modal") as HTMLDialogElement | null;
+    // fires (the gallery / detail view dispatches `gallery-delete` with id + name).
+    const delDialog = document.getElementById("agent-delete-modal") as HTMLDialogElement | null;
     document.addEventListener("gallery-delete", (e) => {
       if (!delDialog) return;
       const { id, name } = (e as CustomEvent).detail;
@@ -226,13 +220,13 @@ const deleteFields = [{ key: "name", label: "asset_modal.name", pk: true, disabl
       if (!delDialog.open) delDialog.showModal();
     });
 
-    // Delete handler (create/edit handled by McpFormModal).
+    // Delete handler (create/edit handled by AgentFormModal).
     document.addEventListener("crud-submit", async (e) => {
       const { mode, data } = (e as CustomEvent).detail;
       if (mode !== "delete") return;
       try {
         await deleteAsset(Number(data.id));
-        showToast("MCP deleted successfully!");
+        showToast("Agent deleted successfully!");
         setTimeout(() => window.location.reload(), 800);
       } catch (error) {
         showToast(error instanceof Error ? error.message : "An error occurred", "error");

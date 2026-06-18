@@ -6,6 +6,7 @@ import Toast from "../../components/Toast.astro";
 import CardGallery from "../../components/lib/gallery/CardGallery.astro";
 import PromptCard from "../../components/lib/PromptCard.astro";
 import PromptFormModal from "../../components/lib/PromptFormModal.astro";
+import PromptDetailModal from "../../components/lib/PromptDetailModal.astro";
 import { getAssetsbyCategory } from "@/lib/assets";
 import { getCharacterizations } from "@/lib/characterizations";
 import { getListItemsbyList } from "@/lib/list_items";
@@ -31,13 +32,16 @@ try {
 // ── Characterizations → map<assetId, {feature: value}> for the card chips ──
 // One bounded fetch + client-side group (a dedicated /by-asset endpoint is a
 // future optimization if catalogs grow large).
-let charsByAsset = new Map<number, Record<string, string>>();
+// Stores both columns per feature: `value` (short summary) + `detail` (rich
+// payload). Cards/chips pick whichever the feature uses (see the seed).
+type CharCols = { value: string; detail: string };
+let charsByAsset = new Map<number, Record<string, CharCols>>();
 try {
   const chars = await getCharacterizations(0, 1000);
   for (const c of chars) {
     const aid = Number(c.asset);
     const bag = charsByAsset.get(aid) ?? {};
-    bag[c.feature] = c.value ?? "";
+    bag[c.feature] = { value: c.value ?? "", detail: c.detail ?? "" };
     charsByAsset.set(aid, bag);
   }
 } catch {
@@ -85,9 +89,9 @@ const rows = prompts.map((item) => {
     statusValue: item.status,
     statusLabel: resolveStatusLabel(item.status),
     favorite: favIds.has(item.id) ? "yes" : "no",
-    model: chars.SUGGESTED_MODEL,
-    platform: chars.PLATFORM,
-    temperature: chars.SUGGESTED_TEMPERATURE,
+    model: chars.SUGGESTED_MODEL?.value,
+    platform: chars.PLATFORM?.value,
+    temperature: chars.SUGGESTED_TEMPERATURE?.value,
     tags,
     searchText: [item.name, item.description, tags.join(" ")].filter(Boolean).join(" "),
   };
@@ -113,6 +117,9 @@ const deleteFields = [{ key: "name", label: "asset_modal.name", pk: true, disabl
 
     {/* Custom prompt create/edit modal */}
     <PromptFormModal modalId="prompt-detail-modal" statuses={statuses} />
+
+    {/* Read-only "big card" view (opened by a whole-card click) */}
+    <PromptDetailModal modalId="prompt-view-modal" statuses={statuses} />
 
     {/* Slim delete confirmation (reuses CrudModal) */}
     <CrudModal

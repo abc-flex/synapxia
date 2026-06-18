@@ -19,6 +19,7 @@ export interface Props {
   favorite?: string;
   searchText?: string;
   editModalId?: string;
+  detailModalId?: string;
   model?: string;
   platform?: string;
   temperature?: string;
@@ -35,6 +36,7 @@ const {
   favorite,
   searchText,
   editModalId = "prompt-detail-modal",
+  detailModalId = "prompt-view-modal",
   model,
   platform,
   temperature,
@@ -57,6 +59,7 @@ const chips = [
   favorite={favorite}
   searchText={searchText}
   editModalId={editModalId}
+  detailModalId={detailModalId}
 >
   <span slot="icon" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">

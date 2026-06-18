@@ -27,6 +27,16 @@ export interface Props {
   searchText?: string;
   /** Dialog id opened when the card (or its edit button) is activated. */
   editModalId?: string;
+  /**
+   * Dialog id opened on a whole-card click. When set it takes precedence over
+   * `editModalId` (the controller opens this read-only "big card" view instead
+   * of the edit form).
+   */
+  detailModalId?: string;
+  /** Opt-in gradient "hero" header (icon + name + favorite on a colored band). */
+  hero?: boolean;
+  /** Tailwind gradient classes for the hero band (e.g. "from-violet-500 to-indigo-500"). */
+  heroClass?: string;
 }
 
 const {
@@ -38,9 +48,17 @@ const {
   favorite = "no",
   searchText = "",
   editModalId,
+  detailModalId,
+  hero = false,
+  heroClass = "from-indigo-500 to-indigo-600",
 } = Astro.props as Props;
 
 const favOn = favorite === "yes";
+
+const base = "shrink-0 rounded-md p-1.5 transition-colors ";
+const favBtnLight =
+  base + "hover:bg-gray-100 dark:hover:bg-gray-800 " + (favOn ? "text-yellow-400" : "text-gray-400");
+const favBtnHero = base + "hover:bg-white/20 " + (favOn ? "text-yellow-300" : "text-white/80");
 ---
 
 <article
@@ -50,32 +68,59 @@ const favOn = favorite === "yes";
   data-status={statusValue}
   data-favorite={favOn ? "yes" : "no"}
   data-edit-modal={editModalId}
-  class="group relative flex cursor-pointer flex-col rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-gray-800 dark:bg-gray-900"
+  data-detail-modal={detailModalId}
+  class={`group relative flex cursor-pointer flex-col rounded-2xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-gray-800 dark:bg-gray-900 ${hero ? "overflow-hidden" : "p-4"}`}
 >
-  <div class="flex items-start justify-between gap-3">
-    <div class="flex min-w-0 items-center gap-3">
-      <slot name="icon" />
-      <div class="min-w-0">
-        <h3 class="truncate font-semibold text-gray-900 dark:text-white">{name}</h3>
-        {subtitle && <p class="mt-0.5 truncate text-xs text-gray-400">{subtitle}</p>}
+  {hero ? (
+    <div class={`flex items-start justify-between gap-3 bg-gradient-to-br ${heroClass} px-4 py-4 text-white`}>
+      <div class="flex min-w-0 items-center gap-3">
+        <slot name="icon" />
+        <div class="min-w-0">
+          <h3 class="truncate font-semibold text-white">{name}</h3>
+          {subtitle && <p class="mt-0.5 truncate text-xs text-white/70">{subtitle}</p>}
+        </div>
       </div>
+      <button
+        type="button"
+        data-action="favorite"
+        data-id={String(id)}
+        aria-pressed={favOn ? "true" : "false"}
+        title="Add to favorites"
+        data-i18n-title="gallery.favorite_add"
+        class={favBtnHero}
+      >
+        <svg class="h-5 w-5" viewBox="0 0 20 20" fill={favOn ? "currentColor" : "none"} stroke="currentColor" stroke-width="1.5">
+          <path d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.3 4.02a1 1 0 00.95.69h4.22c.97 0 1.37 1.24.59 1.81l-3.42 2.48a1 1 0 00-.36 1.12l1.3 4.02c.3.92-.75 1.69-1.54 1.12l-3.41-2.48a1 1 0 00-1.18 0l-3.41 2.48c-.78.57-1.84-.2-1.54-1.12l1.3-4.02a1 1 0 00-.36-1.12L2 9.45c-.78-.57-.38-1.81.6-1.81h4.21a1 1 0 00.95-.69l1.3-4.02z" />
+        </svg>
+      </button>
     </div>
+  ) : (
+    <div class="flex items-start justify-between gap-3">
+      <div class="flex min-w-0 items-center gap-3">
+        <slot name="icon" />
+        <div class="min-w-0">
+          <h3 class="truncate font-semibold text-gray-900 dark:text-white">{name}</h3>
+          {subtitle && <p class="mt-0.5 truncate text-xs text-gray-400">{subtitle}</p>}
+        </div>
+      </div>
 
-    <button
-      type="button"
-      data-action="favorite"
-      data-id={String(id)}
-      aria-pressed={favOn ? "true" : "false"}
-      title="Add to favorites"
-      data-i18n-title="gallery.favorite_add"
-      class={`shrink-0 rounded-md p-1.5 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ${favOn ? "text-yellow-400" : "text-gray-400"}`}
-    >
-      <svg class="h-5 w-5" viewBox="0 0 20 20" fill={favOn ? "currentColor" : "none"} stroke="currentColor" stroke-width="1.5">
-        <path d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.3 4.02a1 1 0 00.95.69h4.22c.97 0 1.37 1.24.59 1.81l-3.42 2.48a1 1 0 00-.36 1.12l1.3 4.02c.3.92-.75 1.69-1.54 1.12l-3.41-2.48a1 1 0 00-1.18 0l-3.41 2.48c-.78.57-1.84-.2-1.54-1.12l1.3-4.02a1 1 0 00-.36-1.12L2 9.45c-.78-.57-.38-1.81.6-1.81h4.21a1 1 0 00.95-.69l1.3-4.02z" />
-      </svg>
-    </button>
-  </div>
+      <button
+        type="button"
+        data-action="favorite"
+        data-id={String(id)}
+        aria-pressed={favOn ? "true" : "false"}
+        title="Add to favorites"
+        data-i18n-title="gallery.favorite_add"
+        class={favBtnLight}
+      >
+        <svg class="h-5 w-5" viewBox="0 0 20 20" fill={favOn ? "currentColor" : "none"} stroke="currentColor" stroke-width="1.5">
+          <path d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.3 4.02a1 1 0 00.95.69h4.22c.97 0 1.37 1.24.59 1.81l-3.42 2.48a1 1 0 00-.36 1.12l1.3 4.02c.3.92-.75 1.69-1.54 1.12l-3.41-2.48a1 1 0 00-1.18 0l-3.41 2.48c-.78.57-1.84-.2-1.54-1.12l1.3-4.02a1 1 0 00-.36-1.12L2 9.45c-.78-.57-.38-1.81.6-1.81h4.21a1 1 0 00.95-.69l1.3-4.02z" />
+        </svg>
+      </button>
+    </div>
+  )}
 
+  <div class={hero ? "flex flex-1 flex-col px-4 pb-4 pt-3" : "contents"}>
   {statusLabel && (
     <span class={`mt-3 inline-flex w-fit items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusTone(statusValue || statusLabel)}`}>
       {statusLabel}
@@ -90,7 +135,10 @@ const favOn = favorite === "yes";
     <slot name="chips" />
   </div>
 
-  <div class="mt-4 flex items-center justify-end gap-2 border-t border-gray-100 pt-3 dark:border-gray-800">
-    <slot name="actions" />
+  {Astro.slots.has("actions") && (
+    <div class="mt-4 flex items-center justify-end gap-2 border-t border-gray-100 pt-3 dark:border-gray-800">
+      <slot name="actions" />
+    </div>
+  )}
   </div>
 </article>

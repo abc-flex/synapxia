@@ -25,13 +25,26 @@ import { getSpecificationsbyCategory } from "@/lib/specifications";
 import { isFavorite, setFavorite } from "@/lib/favorites";
 import { getUser } from "@/lib/auth";
 
+/**
+ * A feature input declaration. A bare string targets the characterization
+ * `value` column; an object lets a "rich" feature (e.g. PROMPT_TEMPLATE, TOOLS,
+ * INSTRUCTIONS) read/write the `detail` column instead — matching the seed,
+ * where `value` holds a short summary and `detail` holds the full payload.
+ */
+export type CatalogFeature = string | { name: string; column?: "value" | "detail" };
+
+interface NormalizedFeature {
+  name: string;
+  column: "value" | "detail";
+}
+
 export interface CatalogModalConfig {
   /** Dialog id, e.g. "prompt-detail-modal". */
   modalId: string;
   /** Fixed asset category for everything created/edited here, e.g. "PROMPTS". */
   category: string;
   /** Feature codes rendered as first-class inputs (input name === feature code). */
-  features: string[];
+  features: CatalogFeature[];
   /** i18n keys for the header title. */
   titleCreateKey?: string;
   titleEditKey?: string;
@@ -43,7 +56,10 @@ export interface CatalogModalConfig {
 
 export function mountCatalogModal(cfg: CatalogModalConfig): void {
   if (typeof window === "undefined") return;
-  const { modalId, category, features } = cfg;
+  const { modalId, category } = cfg;
+  const features: NormalizedFeature[] = cfg.features.map((f) =>
+    typeof f === "string" ? { name: f, column: "value" } : { name: f.name, column: f.column ?? "value" },
+  );
 
   const dialogEl = document.getElementById(modalId) as HTMLDialogElement | null;
   if (!dialogEl) return;
@@ -150,9 +166,9 @@ export function mountCatalogModal(cfg: CatalogModalConfig): void {
       titleEl.textContent = tr(cfg.titleCreateKey, titleEl.textContent || "");
     }
     // Seed feature fields with the category defaults.
-    for (const code of features) {
-      const input = featureInput(code);
-      if (input && !input.value) input.value = defaults[code] ?? "";
+    for (const feat of features) {
+      const input = featureInput(feat.name);
+      if (input && !input.value) input.value = defaults[feat.name] ?? "";
     }
     dialog.showModal();
   }
@@ -196,10 +212,10 @@ export function mountCatalogModal(cfg: CatalogModalConfig): void {
         : ((asset.tags as unknown as string) ?? "");
 
       const chars = await getCharacterizationsByAsset(editingId);
-      const byFeature = Object.fromEntries(chars.map((c) => [c.feature, c.value ?? ""]));
-      for (const code of features) {
-        const input = featureInput(code);
-        if (input) input.value = byFeature[code] ?? "";
+      const byFeature = Object.fromEntries(chars.map((c) => [c.feature, c]));
+      for (const feat of features) {
+        const input = featureInput(feat.name);
+        if (input) input.value = (byFeature[feat.name]?.[feat.column] as string) ?? "";
       }
     } catch (e) {
       showStatus(
@@ -239,13 +255,18 @@ export function mountCatalogModal(cfg: CatalogModalConfig): void {
   });
 
   // ── Upsert one characterization (create-or-update), or delete if blank ───
-  async function flushFeature(assetId: number, feature: string, value: string) {
+  async function flushFeature(
+    assetId: number,
+    feature: string,
+    value: string,
+    column: "value" | "detail",
+  ) {
     const v = value.trim();
     if (v) {
       try {
-        await updateCharacterization(assetId, feature, { value: v });
+        await updateCharacterization(assetId, feature, { [column]: v });
       } catch {
-        await createCharacterization({ asset: assetId, feature, value: v });
+        await createCharacterization({ asset: assetId, feature, [column]: v });
       }
     } else {
       // Blank → remove any existing row (best-effort).
@@ -281,9 +302,9 @@ export function mountCatalogModal(cfg: CatalogModalConfig): void {
         : await createAsset(corePayload);
       const assetId = Number(saved.id ?? editingId);
 
-      for (const code of features) {
-        const input = featureInput(code);
-        await flushFeature(assetId, code, input?.value ?? "");
+      for (const feat of features) {
+        const input = featureInput(feat.name);
+        await flushFeature(assetId, feat.name, input?.value ?? "", feat.column);
       }
 
       // Favorite (create mode only — edit mode toggled immediately).

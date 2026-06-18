@@ -774,5 +774,40 @@
     "copy_config": "Copy config",
     "copied": "Server config copied",
     "tools_more": "more"
+  },
+  "catalog_detail": {
+    "copy": "Copy",
+    "copied": "Copied to clipboard",
+    "error_load": "Could not load."
+  },
+  "agent_modal": {
+    "title_create": "New Agent",
+    "title_edit": "Edit Agent",
+    "subtitle": "Core fields + the agent's model settings and behavior.",
+    "new": "New Agent",
+    "model_settings": "Model settings",
+    "behavior": "Behavior",
+    "platform": "Platform",
+    "suggested_model": "Suggested model",
+    "suggested_temperature": "Suggested temperature",
+    "tools": "Tools",
+    "tools_help": "Comma- or newline-separated list of tools.",
+    "instructions": "Instructions",
+    "saved": "Agent saved.",
+    "error_save": "Could not save agent.",
+    "error_load": "Could not load agent.",
+    "empty": "No agents found",
+    "one_title": "Agent",
+    "many_title": "Agents",
+    "add_new": "New Agent",
+    "edit": "Edit Agent",
+    "delete": "Delete Agent",
+    "delete_confirmation": "Are you sure you want to delete this Agent"
+  },
+  "agent_card": {
+    "model": "Model",
+    "tools_more": "more",
+    "instructions": "Instructions",
+    "instructions_copied": "Instructions copied"
   }
 }

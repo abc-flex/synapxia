@@ -774,5 +774,40 @@
     "copy_config": "Copiar config",
     "copied": "Configuración del servidor copiada",
     "tools_more": "más"
+  },
+  "catalog_detail": {
+    "copy": "Copiar",
+    "copied": "Copiado al portapapeles",
+    "error_load": "No se pudo cargar."
+  },
+  "agent_modal": {
+    "title_create": "Nuevo agente",
+    "title_edit": "Editar agente",
+    "subtitle": "Campos principales + la configuración del modelo y el comportamiento del agente.",
+    "new": "Nuevo agente",
+    "model_settings": "Configuración del modelo",
+    "behavior": "Comportamiento",
+    "platform": "Plataforma",
+    "suggested_model": "Modelo sugerido",
+    "suggested_temperature": "Temperatura sugerida",
+    "tools": "Herramientas",
+    "tools_help": "Lista de herramientas separada por comas o saltos de línea.",
+    "instructions": "Instrucciones",
+    "saved": "Agente guardado.",
+    "error_save": "No se pudo guardar el agente.",
+    "error_load": "No se pudo cargar el agente.",
+    "empty": "No se encontraron agentes",
+    "one_title": "Agente",
+    "many_title": "Agentes",
+    "add_new": "Nuevo agente",
+    "edit": "Editar agente",
+    "delete": "Eliminar agente",
+    "delete_confirmation": "¿Estás seguro de que deseas eliminar este agente"
+  },
+  "agent_card": {
+    "model": "Modelo",
+    "tools_more": "más",
+    "instructions": "Instrucciones",
+    "instructions_copied": "Instrucciones copiadas"
   }
 }

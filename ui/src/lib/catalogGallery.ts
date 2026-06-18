@@ -155,12 +155,14 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
     // ignore them here so we don't double-open.
     if (target.closest('[data-modal-open]')) return;
 
-    // Whole-card click → open the edit modal named by the card.
+    // Whole-card click → open the read-only detail view if the card declares
+    // one (`data-detail-modal`), else fall back to the edit modal.
     const card = target.closest<HTMLElement>("[data-card]");
-    if (card && card.dataset.editModal && card.dataset.id) {
+    const openModal = card?.dataset.detailModal || card?.dataset.editModal;
+    if (card && openModal && card.dataset.id) {
       const synthetic = document.createElement("button");
       synthetic.style.display = "none";
-      synthetic.setAttribute("data-modal-open", card.dataset.editModal);
+      synthetic.setAttribute("data-modal-open", openModal);
       synthetic.setAttribute("data-asset-mode", "edit");
       synthetic.setAttribute("data-asset-id", card.dataset.id);
       document.body.appendChild(synthetic);

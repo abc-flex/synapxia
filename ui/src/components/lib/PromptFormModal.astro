@@ -61,8 +61,9 @@ const labelClass = "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
       "PLATFORM",
       "SUGGESTED_MODEL",
       "SUGGESTED_TEMPERATURE",
-      "PROMPT_TEMPLATE",
-      "EXAMPLE_OUTPUT",
+      // Rich payloads live in the characterization `detail` column (seed convention).
+      { name: "PROMPT_TEMPLATE", column: "detail" },
+      { name: "EXAMPLE_OUTPUT", column: "detail" },
     ],
     titleCreateKey: "prompt_modal.title_create",
     titleEditKey: "prompt_modal.title_edit",

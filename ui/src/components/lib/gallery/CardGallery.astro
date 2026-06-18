@@ -94,8 +94,9 @@ const {
     )}
   </div>
 
-  {/* Card grid */}
-  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+  {/* Card grid — auto-fill keeps a comfortable min card width and grows to
+      fill the row, so cards are wider than the old fixed 4-column grid. */}
+  <div class="grid grid-cols-1 gap-5 sm:grid-cols-[repeat(auto-fill,minmax(360px,1fr))]">
     <slot />
   </div>
 

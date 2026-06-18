@@ -18,6 +18,9 @@ export interface Props {
   titleCreateKey?: string;
   subtitleKey?: string;
   detailsSectionKey?: string;
+  /** Hide the default "Details" heading so the catalog can render its own
+      grouped sub-sections inside the feature-fields slot. */
+  hideDetailsHeading?: boolean;
 }
 
 const {
@@ -26,6 +29,7 @@ const {
   titleCreateKey = "prompt_modal.title_create",
   subtitleKey = "prompt_modal.subtitle",
   detailsSectionKey = "prompt_modal.details_section",
+  hideDetailsHeading = false,
 } = Astro.props as Props;
 ---
 
@@ -110,7 +114,9 @@ const {
 
       {/* Catalog-specific feature fields */}
       <section>
-        <h4 class="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500" data-i18n={detailsSectionKey}>Details</h4>
+        {!hideDetailsHeading && (
+          <h4 class="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500" data-i18n={detailsSectionKey}>Details</h4>
+        )}
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <slot />
         </div>

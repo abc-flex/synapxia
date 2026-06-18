@@ -61,7 +61,14 @@ const labelClass = "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
   mountCatalogModal({
     modalId: "mcp-detail-modal",
     category: "MCPS",
-    features: ["MODE", "OVERVIEW", "CONTENT", "TOOLS", "SERVER_CONFIG"],
+    features: [
+      "MODE",
+      "OVERVIEW",
+      // Rich payloads live in the characterization `detail` column (seed convention).
+      { name: "CONTENT", column: "detail" },
+      { name: "TOOLS", column: "detail" },
+      { name: "SERVER_CONFIG", column: "detail" },
+    ],
     titleCreateKey: "mcp_modal.title_create",
     titleEditKey: "mcp_modal.title_edit",
     savedKey: "mcp_modal.saved",

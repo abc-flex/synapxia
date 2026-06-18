@@ -20,6 +20,11 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-06-18 04:25 — Add static HTML design mockups for asset modals (Figma import)
+- Added `designs/` with self-contained HTML mockups of the asset create/edit modal (desktop + mobile 375) and the asset detail modal with its three tabs (Caracterización / Activos relacionados / Permisos), rendered from the app's Tailwind markup so a Figma import matches production.
+- `designs/README.md` documents how to import into Figma (html.to.design plugin, SVG paste, or screenshot) and lists the indigo/gray design tokens. Docs/asset-only; no app code touched.
+- Files affected: `designs/create-edit-modal.html`, `designs/asset-detail-tabs.html`, `designs/README.md`
+
 ## 2026-06-13 23:22 — Tabbed asset modal + asset-table enhancements (filters, favorites, master-detail)
 
 PR #45. One rollup for the whole branch (modal + table work).

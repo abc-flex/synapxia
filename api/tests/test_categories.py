@@ -5,7 +5,14 @@ Category models end-to-end (read + create + update) so the field stops being
 silently dropped between the UI and the DB.
 """
 
-from app.taxo.internal.models import Category, CategoryCreate, CategoryUpdate
+from app.taxo.internal.models import (
+    Category,
+    CategoryCreate,
+    CategoryUpdate,
+    Feature,
+    FeatureCreate,
+    FeatureUpdate,
+)
 
 
 def test_category_models_expose_icon_field():
@@ -40,3 +47,33 @@ def test_openapi_category_schema_includes_icon():
     assert "icon" in schemas["Category"]["properties"]
     assert "icon" in schemas["CategoryCreate"]["properties"]
     assert "icon" in schemas["CategoryUpdate"]["properties"]
+
+
+def test_feature_models_expose_list_field():
+    """`list` must be a declared field on the table model and both write schemas."""
+    assert "list" in Feature.model_fields
+    assert "list" in FeatureCreate.model_fields
+    assert "list" in FeatureUpdate.model_fields
+
+
+def test_feature_create_round_trips_list():
+    """A FeatureCreate carrying `list` must persist it into the Feature row."""
+    payload = FeatureCreate(code="LANGUAGE", name="Language", type="SINGLE", list="LANGUAGES")
+    row = Feature.model_validate(payload)
+    assert row.list == "LANGUAGES"
+
+
+def test_feature_list_optional():
+    """`list` stays optional (defaults to None) so existing callers don't break."""
+    assert FeatureCreate(code="LANGUAGE", name="Language", type="SINGLE").list is None
+    assert FeatureUpdate().list is None
+
+
+def test_openapi_feature_schema_includes_list():
+    """The published OpenAPI contract must advertise `list` on Feature schemas."""
+    from app.main import app
+
+    schemas = app.openapi()["components"]["schemas"]
+    assert "list" in schemas["Feature"]["properties"]
+    assert "list" in schemas["FeatureCreate"]["properties"]
+    assert "list" in schemas["FeatureUpdate"]["properties"]

@@ -366,6 +366,7 @@ export interface Feature {
   name: string;
   description?: string;
   type: string;
+  list?: string;
   is_active: boolean;
   created_at: string;
   updated_at?: string;
@@ -376,6 +377,7 @@ export interface FeatureCreate {
   name: string;
   description?: string;
   type: string;
+  list?: string;
   is_active?: boolean;
 }
 
@@ -383,6 +385,7 @@ export interface FeatureUpdate {
   name?: string;
   description?: string;
   type?: string;
+  list?: string;
   is_active?: boolean;
 }
 

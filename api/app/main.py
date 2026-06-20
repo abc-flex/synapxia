@@ -36,6 +36,8 @@ from .collab.routes import dimensions as dimensions_router
 from .collab.routes import metrics as metrics_router
 from .collab.routes import roles as roles_router
 
+from .inits.routes import criterias as criterias_router
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -154,6 +156,10 @@ app = FastAPI(
             "name": "metrics",
             "description": "Metric management operations",
         },
+        {
+            "name": "criterias",
+            "description": "Initiative evaluation criteria management operations",
+        },
     ],
 )
 
@@ -262,9 +268,11 @@ app.include_router(projects_router.router)
 app.include_router(dimensions_router.router)
 app.include_router(metrics_router.router)
 
+# GenAI Initiatives module
+app.include_router(criterias_router.router)
+
 # TODO: Add routers for other modules when implemented
 # - genai (Generative AI)
-# - inits (GenAI Initiatives)
 # - insights (GenAI Insights)
 # - workflows (Processes)
 
@@ -309,6 +317,7 @@ TAG_TO_MODULE: dict[str, str] = {
     "projects": "collab",
     "dimensions": "collab",
     "metrics": "collab",
+    "criterias": "inits",
 }
 
 

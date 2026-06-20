@@ -11,6 +11,7 @@ class CategoryBase(SQLModel):
     name: str = Field(max_length=100)
     description: Optional[str] = Field(default=None, max_length=500)
     parent: Optional[str] = Field(default=None, foreign_key="categories.code")
+    icon: Optional[str] = Field(default=None)
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
@@ -27,6 +28,8 @@ class CategoryCreate(SQLModel):
         default=None, max_length=500, description="Category description")
     parent: Optional[str] = Field(
         default=None, max_length=50, description="Parent category code")
+    icon: Optional[str] = Field(
+        default=None, description="Icon (Heroicon path or identifier)")
     is_active: Optional[bool] = Field(
         default=True, description="Indicates if the category is active")
 
@@ -38,6 +41,8 @@ class CategoryUpdate(SQLModel):
         default=None, max_length=500, description="Category description")
     parent: Optional[str] = Field(
         default=None, max_length=50, description="Parent category code")
+    icon: Optional[str] = Field(
+        default=None, description="Icon (Heroicon path or identifier)")
     is_active: Optional[bool] = Field(
         default=None, description="Indicates if the category is active")
 

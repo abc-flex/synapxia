@@ -20,6 +20,12 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-06-19 22:57 — taxo/categories: expose missing `icon` field end-to-end
+- The `icon` column in `21-taxo-ddl.sql` was missing from the API models, so the value the UI sent on create/edit was silently dropped (Pydantic discarded it) and never returned. Added `icon: Optional[str]` to `CategoryBase`/`Category` (table), `CategoryCreate`, and `CategoryUpdate`. No DDL change — column already exists.
+- UI: added `icon?: string` to `Category`/`CategoryCreate`/`CategoryUpdate` in `types/api.ts` (and the orphan `types/category.ts`); fixed the form field to use the new `category_modal.icon` i18n key (was wrongly pointing at `module_modal.icon`) and added that key to `en.json` + `es.json`.
+- Added `tests/test_categories.py` (4 contract tests: field presence, icon round-trip, optionality, OpenAPI schema) — all pass. Note: the 14 pre-existing suite errors come from a broken SQLite `create_all` fixture (FK resolution), unrelated to this change.
+- Files affected: `api/app/taxo/internal/models.py`, `api/tests/test_categories.py`, `ui/src/types/api.ts`, `ui/src/types/category.ts`, `ui/src/pages/taxo/categories.astro`, `ui/src/i18n/en.json`, `ui/src/i18n/es.json`
+
 ## 2026-06-18 12:48 — Tree-view popups on hierarchical CRUD pages (Business Units)
 - Added a secondary toolbar button (hierarchy/share icon) next to "+Business Unit" that opens an XL `<dialog>` rendering the existing `TreeChart` (ECharts) over the page's rows — no duplicate page, reuses the `taxonomy.astro` visualization. Categories uses `data-i18n-title`/`data-i18n="menu_options.taxonomy"` ("View Taxonomy"); Business Units uses `menu_options.hierarchy` ("View Hierarchy"). Both dispatch a `resize` on open so ECharts (initialized 0×0 inside the hidden dialog) lays out correctly. `TreeChart` default field keys (`code`/`parent`/`name`/`description`) match both models unchanged.
 - `DataTable` gained a forwarded named slot `toolbar-actions` → toolbar `actions` (renders nothing when unused, so all other pages are unaffected) for per-page toolbar buttons. No existing props/keys changed; UI-only, manual verification per Constitution III. Reused existing `menu_options.taxonomy` + `menu_options.hierarchy` i18n keys (no new keys).

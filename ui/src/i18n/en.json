@@ -283,6 +283,7 @@
     "name": "Name",
     "description": "Description",
     "parent": "Parent",
+    "icon": "Icon",
     "one_title": "Category",
     "many_title": "Categories",
     "filter_title": "All Categories",

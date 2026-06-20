@@ -337,6 +337,7 @@ export interface Category {
   name: string;
   description?: string;
   parent?: string;
+  icon?: string;
   is_active?: boolean;
   created_at?: string;
   updated_at?: string;
@@ -347,6 +348,7 @@ export interface CategoryCreate {
   name: string;
   description?: string;
   parent?: string;
+  icon?: string;
   is_active?: boolean;
 }
 
@@ -354,6 +356,7 @@ export interface CategoryUpdate {
   name?: string;
   description?: string;
   parent?: string;
+  icon?: string;
   is_active?: boolean;
 }
 

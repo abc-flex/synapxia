@@ -29,6 +29,7 @@ const data = profiles.map((item) => ({
   code: item.code,
   name: item.name,
   description: item.description,
+  icon: item.icon,
   is_active: item.is_active,
   created_at: item.created_at,
   updated_at: item.updated_at,
@@ -36,10 +37,11 @@ const data = profiles.map((item) => ({
 const tableFields = [
   { key: "code", label: "profile_modal.code", pk: true, required: true, placeholder: "e.g. ADMIN" },
   { key: "name", label: "profile_modal.name", required: true, placeholder: "e.g. Administration" },
+  { key: "icon", label: "profile_modal.icon", placeholder: "Heroicon path" },
   {
     key: "description",
     label: "profile_modal.description",
-    type: "textarea" as const,  
+    type: "textarea" as const,
     placeholder: "Optional details of profile",
   },
 ];
@@ -142,6 +144,7 @@ const fieldKeys = tableFields.map((f) => f.key);
               code: data.code,
               name: data.name,
               description: data.description,
+              icon: data.icon,
               is_active: data.is_active !== false,
             });
 
@@ -152,6 +155,7 @@ const fieldKeys = tableFields.map((f) => f.key);
             await updateProfile(data.id, {
               name: data.name,
               description: data.description,
+              icon: data.icon,
               is_active: data.is_active !== false,
             });
 

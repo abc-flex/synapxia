@@ -7,7 +7,8 @@ from datetime import datetime
 class ProfileBase(SQLModel):
     code: str = Field(max_length=50, primary_key=True)
     name: str = Field(max_length=100)
-    description: Optional[str] = Field(default=None, max_length=255)
+    description: Optional[str] = Field(default=None, max_length=500)
+    icon: Optional[str] = Field(default=None)
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
@@ -21,7 +22,9 @@ class ProfileCreate(SQLModel):
     code: str = Field(max_length=50, description="Unique profile code")
     name: str = Field(max_length=100, description="Profile name")
     description: Optional[str] = Field(
-        default=None, max_length=255, description="Profile description")
+        default=None, max_length=500, description="Profile description")
+    icon: Optional[str] = Field(
+        default=None, description="Icon (Heroicon path or identifier)")
     is_active: Optional[bool] = Field(
         default=True, description="Indicates if the profile is active")
 
@@ -30,7 +33,9 @@ class ProfileUpdate(SQLModel):
     name: Optional[str] = Field(
         default=None, max_length=100, description="Profile name")
     description: Optional[str] = Field(
-        default=None, max_length=255, description="Profile description")
+        default=None, max_length=500, description="Profile description")
+    icon: Optional[str] = Field(
+        default=None, description="Icon (Heroicon path or identifier)")
     is_active: Optional[bool] = Field(
         default=None, description="Indicates if the profile is active")
 
@@ -38,7 +43,7 @@ class ProfileUpdate(SQLModel):
 class ModuleBase(SQLModel):
     code: str = Field(max_length=50, primary_key=True)
     name: str = Field(max_length=100)
-    description: Optional[str] = Field(default=None, max_length=255)
+    description: Optional[str] = Field(default=None, max_length=500)
     sort_order: int = Field(default=0)
     icon: Optional[str] = Field(
         default=None, max_length=500, description="Module icon")
@@ -55,7 +60,7 @@ class ModuleCreate(SQLModel):
     code: str = Field(max_length=50, description="Unique module code")
     name: str = Field(max_length=100, description="Module name")
     description: Optional[str] = Field(
-        default=None, max_length=255, description="Module description")
+        default=None, max_length=500, description="Module description")
     icon: Optional[str] = Field(
         default=None, max_length=500, description="Module icon")
     sort_order: Optional[int] = Field(default=0, description="Display order")
@@ -67,7 +72,7 @@ class ModuleUpdate(SQLModel):
     name: Optional[str] = Field(
         default=None, max_length=100, description="Module name")
     description: Optional[str] = Field(
-        default=None, max_length=255, description="Module description")
+        default=None, max_length=500, description="Module description")
     icon: Optional[str] = Field(
         default=None, max_length=500, description="Module icon")
     sort_order: Optional[int] = Field(
@@ -79,7 +84,7 @@ class ModuleUpdate(SQLModel):
 class ListBase(SQLModel):
     code: str = Field(max_length=50, primary_key=True)
     name: str = Field(max_length=100)
-    description: Optional[str] = Field(default=None, max_length=255)
+    description: Optional[str] = Field(default=None, max_length=500)
     type: str = Field(max_length=100)
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -95,7 +100,7 @@ class ListCreate(SQLModel):
     code: str = Field(max_length=50, description="Unique list code")
     name: str = Field(max_length=100, description="List name")
     description: Optional[str] = Field(
-        default=None, max_length=255, description="List description")
+        default=None, max_length=500, description="List description")
     type: str = Field(max_length=100, description="List type")
     module: Optional[str] = Field(
         default=None, max_length=50, description="Associated module code")
@@ -107,7 +112,7 @@ class ListUpdate(SQLModel):
     name: Optional[str] = Field(
         default=None, max_length=100, description="List name")
     description: Optional[str] = Field(
-        default=None, max_length=255, description="List description")
+        default=None, max_length=500, description="List description")
     type: Optional[str] = Field(
         default=None, max_length=100, description="List type")
     module: Optional[str] = Field(
@@ -123,7 +128,7 @@ class ListItemBase(SQLModel):
         'lang', String(10), primary_key=True))
     value: str = Field(sa_column=Column(
         'value', String(100), primary_key=True))
-    label: str = Field(max_length=150)
+    label: str = Field(max_length=200)
     sort_order: int = Field(default=0)
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -138,7 +143,7 @@ class ListItemCreate(SQLModel):
     list: str = Field(max_length=50, description="List code")
     lang: str = Field(max_length=10, description="Language code")
     value: str = Field(max_length=100, description="Item value")
-    label: str = Field(max_length=150, description="Item label")
+    label: str = Field(max_length=200, description="Item label")
     sort_order: Optional[int] = Field(default=0, description="Display order")
     is_active: Optional[bool] = Field(
         default=True, description="Indicates if the item is active")
@@ -146,45 +151,11 @@ class ListItemCreate(SQLModel):
 
 class ListItemUpdate(SQLModel):
     label: Optional[str] = Field(
-        default=None, max_length=150, description="Item label")
+        default=None, max_length=200, description="Item label")
     sort_order: Optional[int] = Field(
         default=None, description="Display order")
     is_active: Optional[bool] = Field(
         default=None, description="Indicates if the item is active")
-
-
-# ItemTranslations Models
-class ItemTranslationBase(SQLModel):
-    list: str = Field(sa_column=Column(
-        'list', String, ForeignKey('lists.code'), primary_key=True))
-    value: str = Field(sa_column=Column(
-        'value', String(100), primary_key=True))
-    lang: str = Field(sa_column=Column(
-        'lang', String(10), primary_key=True))
-    label: str = Field(max_length=200)
-    is_active: bool = Field(default=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: Optional[datetime] = None
-
-
-class ItemTranslation(ItemTranslationBase, table=True):
-    __tablename__ = "item_translations"
-
-
-class ItemTranslationCreate(SQLModel):
-    list: str = Field(max_length=50, description="List code")
-    value: str = Field(max_length=100, description="Item value")
-    lang: str = Field(max_length=10, description="Language code")
-    label: str = Field(max_length=200, description="Translated label")
-    is_active: Optional[bool] = Field(
-        default=True, description="Indicates if the translation is active")
-
-
-class ItemTranslationUpdate(SQLModel):
-    label: Optional[str] = Field(
-        default=None, max_length=200, description="Translated label")
-    is_active: Optional[bool] = Field(
-        default=None, description="Indicates if the translation is active")
 
 
 # BusinessUnits Models
@@ -195,7 +166,7 @@ class BusinessUnitBase(SQLModel):
     name: str = Field(max_length=100)
     description: Optional[str] = Field(default=None, max_length=500)
     type: Optional[str] = Field(
-        default=None, max_length=50, sa_column_kwargs={"name": "type"})
+        default=None, max_length=100, sa_column_kwargs={"name": "type"})
     parent: Optional[str] = Field(
         default=None, max_length=50, foreign_key="business_units.code", sa_column_kwargs={"name": "parent"})
     is_active: bool = Field(default=True)
@@ -213,7 +184,7 @@ class BusinessUnitCreate(SQLModel):
     description: Optional[str] = Field(
         default=None, max_length=500, description="Business_Unit description")
     type: Optional[str] = Field(
-        default=None, max_length=50, description="Business_Unit type")
+        default=None, max_length=100, description="Business_Unit type")
     parent: Optional[str] = Field(
         default=None, max_length=50, description="Parent business_unit code")
     is_active: Optional[bool] = Field(
@@ -226,7 +197,7 @@ class BusinessUnitUpdate(SQLModel):
     description: Optional[str] = Field(
         default=None, max_length=500, description="Business_Unit description")
     type: Optional[str] = Field(
-        default=None, max_length=50, description="Business_Unit type")
+        default=None, max_length=100, description="Business_Unit type")
     parent: Optional[str] = Field(
         default=None, max_length=50, description="Parent business_unit code")
     is_active: Optional[bool] = Field(
@@ -237,7 +208,7 @@ class BusinessUnitUpdate(SQLModel):
 
 class UserBase(SQLModel):
     username: str = Field(max_length=50, unique=True)
-    email: str = Field(max_length=100, unique=True)
+    email: str = Field(max_length=244, unique=True)
     password_hash: str = Field(max_length=500)
     first_name: str = Field(max_length=100)
     last_name: str = Field(max_length=100)
@@ -259,7 +230,7 @@ class User(UserBase, table=True):
 
 class UserCreate(SQLModel):
     username: str = Field(max_length=50, description="Unique username")
-    email: str = Field(max_length=100, description="Unique email address")
+    email: str = Field(max_length=244, description="Unique email address")
     password_hash: str = Field(max_length=500, description="Password hash")
     first_name: str = Field(max_length=100, description="First name")
     last_name: str = Field(max_length=100, description="Last name")
@@ -271,7 +242,7 @@ class UserCreate(SQLModel):
 
 class UserUpdate(SQLModel):
     email: Optional[str] = Field(
-        default=None, max_length=100, description="Email address")
+        default=None, max_length=244, description="Email address")
     password_hash: Optional[str] = Field(
         default=None, max_length=500, description="Password hash")
     first_name: Optional[str] = Field(
@@ -298,8 +269,8 @@ class OptionBase(SQLModel):
     code: str = Field(sa_column=Column('code', String(50), primary_key=True))
     name: str = Field(max_length=100)
     description: Optional[str] = Field(default=None, max_length=500)
-    path: Optional[str] = Field(default=None, max_length=500)
-    icon: Optional[str] = Field(default=None, max_length=500)
+    path: Optional[str] = Field(default=None)
+    icon: Optional[str] = Field(default=None)
     type: str = Field(max_length=100)
     sort_order: int = Field(default=0)
     is_active: bool = Field(default=True)
@@ -318,9 +289,9 @@ class OptionCreate(SQLModel):
     description: Optional[str] = Field(
         default=None, max_length=500, description="Option description")
     path: Optional[str] = Field(
-        default=None, max_length=500, description="Option path")
+        default=None, description="Option path")
     icon: Optional[str] = Field(
-        default=None, max_length=500, description="Option icon")
+        default=None, description="Option icon")
     type: str = Field(max_length=100, description="Option type")
     sort_order: Optional[int] = Field(default=0, description="Display order")
     is_active: Optional[bool] = Field(
@@ -333,9 +304,9 @@ class OptionUpdate(SQLModel):
     description: Optional[str] = Field(
         default=None, max_length=500, description="Option description")
     path: Optional[str] = Field(
-        default=None, max_length=500, description="Option path")
+        default=None, description="Option path")
     icon: Optional[str] = Field(
-        default=None, max_length=500, description="Option icon")
+        default=None, description="Option icon")
     type: Optional[str] = Field(
         default=None, max_length=100, description="Option type")
     sort_order: Optional[int] = Field(

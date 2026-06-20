@@ -10,7 +10,7 @@ from app.core.config import settings
 # Import all models so that Alembic can detect them for autogenerate
 from app.admin.internal.models import (
     User, Profile, Module, BusinessUnit, Option, Privilege,
-    Feature, Category, List, ListItem, ItemTranslation,
+    Feature, Category, List, ListItem,
     Team, Role, Assignment, Project, Dimension, Metric,
     Asset, Characterization, Favorite, Action, AssetRelation
 )

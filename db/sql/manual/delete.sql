@@ -45,7 +45,6 @@ DELETE FROM privileges;
 DELETE FROM options;
 DELETE FROM users;
 DELETE FROM roles;
-DELETE FROM item_translations;
 DELETE FROM list_items;
 DELETE FROM lists;
 DELETE FROM business_units;

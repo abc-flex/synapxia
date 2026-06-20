@@ -179,6 +179,7 @@
     "code": "Code",
     "name": "Name",
     "description": "Description",
+    "icon": "Icon",
     "one_title": "Profile",
     "many_title": "Profiles",
     "filter_title": "All Profiles",

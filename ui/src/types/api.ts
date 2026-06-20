@@ -117,37 +117,12 @@ export interface ListItemUpdate {
   is_active?: boolean;
 }
 
-// ItemTranslation types
-export interface ItemTranslation  {
-  list: string;
-  value: string;
-  lang: string;
-  label: string;
-  sort_order: number;
-  is_active?: boolean;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface ItemTranslationCreate {
-  list: string;
-  value: string;
-  label: string;
-  sort_order: number;
-  is_active?: boolean;
-}
-
-export interface ItemTranslationUpdate {
-  label?: string;
-  sort_order?: number;
-  is_active?: boolean;
-}
-
 // Profile types
 export interface Profile {
   code: string;
   name: string;
   description?: string;
+  icon?: string;
   is_active: boolean;
   created_at: string;
   updated_at?: string;
@@ -157,12 +132,14 @@ export interface ProfileCreate {
   code: string;
   name: string;
   description?: string;
+  icon?: string;
   is_active?: boolean;
 }
 
 export interface ProfileUpdate {
   name?: string;
   description?: string;
+  icon?: string;
   is_active?: boolean;
 }
 

@@ -12,6 +12,9 @@ from app.taxo.internal.models import (
     Feature,
     FeatureCreate,
     FeatureUpdate,
+    Specification,
+    SpecificationCreate,
+    SpecificationUpdate,
 )
 
 
@@ -77,3 +80,19 @@ def test_openapi_feature_schema_includes_list():
     assert "list" in schemas["Feature"]["properties"]
     assert "list" in schemas["FeatureCreate"]["properties"]
     assert "list" in schemas["FeatureUpdate"]["properties"]
+
+
+def test_specification_models_match_ddl_fields():
+    """Specification must expose every column from 21-taxo-ddl.sql (regression guard)."""
+    for field in ("category", "feature", "default_value", "is_active", "created_at", "updated_at"):
+        assert field in Specification.model_fields
+    for field in ("category", "feature", "default_value", "is_active"):
+        assert field in SpecificationCreate.model_fields
+    for field in ("default_value", "is_active"):
+        assert field in SpecificationUpdate.model_fields
+
+
+def test_specification_default_value_accepts_none():
+    """`default_value` is optional (TEXT) — None must be valid, not coerced to bool."""
+    spec = SpecificationCreate(category="GEN_AI", feature="LANGUAGE", default_value=None)
+    assert spec.default_value is None

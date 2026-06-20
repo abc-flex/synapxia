@@ -393,7 +393,7 @@ export interface FeatureUpdate {
 export interface Specification {
   category: string;
   feature: string;
-  default_value: string;
+  default_value?: string | null;
   is_active?: boolean;
   created_at?: string;
   updated_at?: string;
@@ -402,12 +402,12 @@ export interface Specification {
 export interface SpecificationCreate {
   category: string;
   feature: string;
-  default_value: string;
+  default_value?: string | null;
   is_active?: boolean;
 }
 
 export interface SpecificationUpdate {
-  default_value?: string;
+  default_value?: string | null;
   is_active?: boolean;
 }
 

@@ -169,14 +169,14 @@ const fieldKeys = ["id", ...formFields.map((f) => f.key)];
             await createSpecification({
               category: data.category,
               feature: data.feature,
-              default_value: data.default_value || false,
+              default_value: data.default_value || null,
             });
             showToast("Specification created successfully!");
             setTimeout(() => window.location.reload(), 1000);
           } else if (mode === "edit") {
             // Update existing specification
             await updateSpecification(category, feature, {
-              default_value: data.default_value || false,
+              default_value: data.default_value || null,
               is_active: data.is_active !== false,
             });
             showToast("Specification updated successfully!");

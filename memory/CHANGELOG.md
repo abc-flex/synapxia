@@ -20,6 +20,16 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-06-19 23:55 — lib: fix actions model desync with DDL (broken endpoint)
+- Validated all 6 lib entities against `41-lib-ddl.sql` (+ `43-lib-perms-active-ddl.sql`). assets, characterizations, favorite_assets, related_assets, asset_permissions were field-complete across API/UI/types. **`actions` was badly desynced** and `GET /api/actions/` was 500ing because the model selected columns that don't exist:
+  - `asset` was typed `str(50) → assets.code`, but the DDL/seed use `BIGINT → assets.id` (assets has no `code` column; seed inserts `asset=1,2`). Now `int` via `BigInteger`/`ForeignKey('assets.id')` (same pattern as characterizations/favorites/relations).
+  - Mapped a phantom `details` JSON column and a `measured_at` column — neither exists in the DDL. Removed both; added the real `detail` (TEXT) column the DDL defines.
+  - `content`/`reference` are `TEXT` in the DDL but were capped at 500 — now unbounded.
+  - `routes/actions.py`: dropped the `json.dumps(details)` handling (create + update), fixed the asset-existence error message (`code`→`id`), removed the now-unused `import json`, updated docstrings. Verified live: `GET /api/actions/` now returns 200 with `detail`/int `asset` against the dev Postgres.
+- No UI changes (actions has no page/service/type). No DDL change — the DDL was already correct; the model was wrong.
+- Added `tests/test_lib.py` (5 contract tests: detail-not-details/measured_at, asset-is-int, TEXT-unbounded, all-DDL-fields regression guard across the 6 models, OpenAPI schema) — all pass.
+- Files affected: `api/app/lib/internal/models.py`, `api/app/lib/routes/actions.py`, `api/tests/test_lib.py`
+
 ## 2026-06-19 23:30 — collab: align models with DDL (projects.detail)
 - Validated all 6 collab entities against `31-collab-ddl.sql`. teams, roles, assignments, dimensions, metrics were already field-complete across API/UI/types/i18n. The only gap was **`projects.detail`** (TEXT) — present in the DB but missing from `ProjectBase`/`Project`, `ProjectCreate`, `ProjectUpdate`, the UI `Project*` interfaces, the page form, and i18n. Added `detail: Optional[str]` to the 3 API schemas, `detail?: string` to the 3 UI interfaces, a `detail` textarea field + data mapping + create/update payloads in `projects.astro`, and `project_modal.detail` to `en.json`/`es.json`. No DDL change (column already exists).
 - Also added `as const` to the 3 pre-existing `type: "text"` project form fields to clear real TS errors flagged by the Astro language server (unrelated to the field gap).

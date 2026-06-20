@@ -1,7 +1,6 @@
 import logging
 from typing import List
 from datetime import datetime
-import json
 
 from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
@@ -66,7 +65,7 @@ def create(
     - **content**: Action content (optional)
     - **reference**: Action reference (optional)
     - **parent**: Parent action ID (optional)
-    - **details**: Action details in JSON format (optional)
+    - **detail**: Additional detail (optional)
     - **is_active**: Active/inactive status (default: True)
     """
     # Validate that the asset exists
@@ -74,7 +73,7 @@ def create(
     if not asset:
         raise HTTPException(
             status_code=400,
-            detail=f"Asset with code '{action.asset}' does not exist"
+            detail=f"Asset with id '{action.asset}' does not exist"
         )
 
     # Validate that the parent action exists if provided
@@ -87,12 +86,7 @@ def create(
             )
 
     try:
-        # Convertir details a JSON string si es dict
-        action_data = action.model_dump()
-        if action_data.get('details') and isinstance(action_data['details'], dict):
-            action_data['details'] = json.dumps(action_data['details'])
-
-        db = Action.model_validate(action_data)
+        db = Action.model_validate(action)
         session.add(db)
         session.commit()
         session.refresh(db)
@@ -132,10 +126,6 @@ def update(
             )
 
     update_data = action_update.model_dump(exclude_unset=True)
-    # Convertir details a JSON string si es dict
-    if 'details' in update_data and isinstance(update_data['details'], dict):
-        update_data['details'] = json.dumps(update_data['details'])
-
     for key, value in update_data.items():
         setattr(action, key, value)
 

@@ -137,18 +137,20 @@ class FavoriteUpdate(SQLModel):
 
 
 class ActionBase(SQLModel):
-    asset: str = Field(max_length=50, foreign_key="assets.code")
+    # `asset` is BIGINT (FK to assets.id) per the DDL — assets has no `code`
+    # column (seed inserts integer asset ids). The DB column is `detail` (TEXT,
+    # singular); there is no `details` JSON column nor a `measured_at` column.
+    asset: int = Field(sa_column=Column(
+        'asset', BigInteger, ForeignKey('assets.id'), nullable=False))
     user_id: int = Field(foreign_key="users.id")
     type: str = Field(max_length=100)
-    content: Optional[str] = Field(default=None, max_length=500)
-    reference: Optional[str] = Field(default=None, max_length=500)
+    content: Optional[str] = Field(default=None)
+    reference: Optional[str] = Field(default=None)
     parent: Optional[int] = Field(default=None, foreign_key="actions.id")
-    details: Optional[Dict[str, Any]] = Field(
-        default=None, sa_column=Column("details", JSON))
+    detail: Optional[str] = Field(default=None)
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
-    measured_at: Optional[datetime] = None
 
 
 class Action(ActionBase, table=True):
@@ -157,28 +159,28 @@ class Action(ActionBase, table=True):
 
 
 class ActionCreate(SQLModel):
-    asset: str = Field(max_length=50, description="Asset code")
+    asset: int = Field(description="Asset id (FK to assets.id)")
     user_id: int = Field(description="User ID")
     type: str = Field(max_length=100, description="Action type")
     content: Optional[str] = Field(
-        default=None, max_length=500, description="Action content")
+        default=None, description="Action content")
     reference: Optional[str] = Field(
-        default=None, max_length=500, description="Action reference")
+        default=None, description="Action reference")
     parent: Optional[int] = Field(default=None, description="Parent action ID")
-    details: Optional[Dict[str, Any]] = Field(
-        default=None, description="Action details (JSON)")
+    detail: Optional[str] = Field(
+        default=None, description="Additional detail")
     is_active: Optional[bool] = Field(
         default=True, description="Indicates if the action is active")
 
 
 class ActionUpdate(SQLModel):
     content: Optional[str] = Field(
-        default=None, max_length=500, description="Action content")
+        default=None, description="Action content")
     reference: Optional[str] = Field(
-        default=None, max_length=500, description="Action reference")
+        default=None, description="Action reference")
     parent: Optional[int] = Field(default=None, description="Parent action ID")
-    details: Optional[Dict[str, Any]] = Field(
-        default=None, description="Action details (JSON)")
+    detail: Optional[str] = Field(
+        default=None, description="Additional detail")
     is_active: Optional[bool] = Field(
         default=None, description="Indicates if the action is active")
 

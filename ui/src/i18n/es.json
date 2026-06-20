@@ -495,6 +495,20 @@
     "empty_message": "No se encontraron Caracterizaciones de este Activo",
     "delete_confirmation": "¿Está seguro de que desea eliminar esta Caracterización?"
   },
+  "criteria_modal": {
+    "code": "Código",
+    "name": "Nombre",
+    "description": "Descripción",
+    "list": "Lista",
+    "one_title": "Criterio",
+    "many_title": "Criterios",
+    "filter_title": "Todos los Criterios",
+    "add_new": "Nuevo Criterio",
+    "edit": "Editar Criterio",
+    "delete": "Eliminar Criterio",
+    "empty_message": "No se encontraron Criterios",
+    "delete_confirmation": "¿Estás seguro de que quieres eliminar este Criterio?"
+  },
   "profile_page": {
     "title": "Perfil",
     "personal_information": "Información Personal",

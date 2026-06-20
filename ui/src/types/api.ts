@@ -737,3 +737,29 @@ export interface FavoriteCreate {
 export interface FavoriteUpdate {
   is_active?: boolean;
 }
+
+// Criteria types
+export interface Criteria {
+  code: string;
+  name: string;
+  description?: string;
+  list?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface CriteriaCreate {
+  code: string;
+  name: string;
+  description?: string;
+  list?: string;
+  is_active?: boolean;
+}
+
+export interface CriteriaUpdate {
+  name?: string;
+  description?: string;
+  list?: string;
+  is_active?: boolean;
+}

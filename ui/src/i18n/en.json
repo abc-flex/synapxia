@@ -92,7 +92,7 @@
     "assistants": "Assistants",
     "rag_apps": "RAG Apps",
     "models": "Models",
-    "criterias": "Criteria",
+    "criterias": "Criterias",
     "propose": "Propose",
     "explore": "Explore",
     "dashboards": "Dashboard Catalog",
@@ -494,6 +494,20 @@
     "delete": "Delete Characterization",
     "empty_message": "No Characterizations found for this Asset",
     "delete_confirmation": "Are you sure you want to delete this Asset Characterization"
+  },
+  "criteria_modal": {
+    "code": "Code",
+    "name": "Name",
+    "description": "Description",
+    "list": "List",
+    "one_title": "Criteria",
+    "many_title": "Criterias",
+    "filter_title": "All Criterias",
+    "add_new": "New Criteria",
+    "edit": "Edit Criteria",
+    "delete": "Delete Criteria",
+    "empty_message": "No Criterias found",
+    "delete_confirmation": "Are you sure you want to delete this Criteria"
   },
   "profile_page": {
     "title": "Profile",

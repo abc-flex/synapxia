@@ -360,6 +360,7 @@
     "repo_url": "URL del Repositorio",
     "start_date": "Fecha Inicio",
     "end_date": "Fecha Fin",
+    "detail": "Detalle",
     "one_title": "Proyecto",
     "many_title": "Proyectos",
     "filter_title": "Todos los Equipos",

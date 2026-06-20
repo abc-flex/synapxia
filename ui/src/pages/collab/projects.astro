@@ -64,6 +64,7 @@ const data = projects.map((item) => ({
   end_date: item.end_date ? new Date(item.end_date).toISOString().split('T')[0] : null,
   description: item.description,
   repo_url: item.repo_url,
+  detail: item.detail,
 }));
 
 const formFields = [
@@ -78,9 +79,16 @@ const formFields = [
     required: false,
     placeholder: "",
   },
-  { key: "repo_url", label: "project_modal.repo_url", type: "text", required: false, placeholder: "https://github.com/org/repo" },
-  { key: "start_date", label: "project_modal.start_date", type: "text", required: false, placeholder: "YYYY-MM-DD" },
-  { key: "end_date", label: "project_modal.end_date", type: "text", required: false, placeholder: "YYYY-MM-DD" },
+  { key: "repo_url", label: "project_modal.repo_url", type: "text" as const, required: false, placeholder: "https://github.com/org/repo" },
+  { key: "start_date", label: "project_modal.start_date", type: "text" as const, required: false, placeholder: "YYYY-MM-DD" },
+  { key: "end_date", label: "project_modal.end_date", type: "text" as const, required: false, placeholder: "YYYY-MM-DD" },
+  {
+    key: "detail",
+    label: "project_modal.detail",
+    type: "textarea" as const,
+    required: false,
+    placeholder: "",
+  },
 ];
 const fieldKeys = formFields.map((f) => f.key);
 ---
@@ -178,6 +186,7 @@ const fieldKeys = formFields.map((f) => f.key);
               repo_url: data.repo_url || undefined,
               start_date: data.start_date || undefined,
               end_date: data.end_date || undefined,
+              detail: data.detail || undefined,
             });
             showToast("Project created successfully!");
             setTimeout(() => window.location.reload(), 1000);
@@ -190,6 +199,7 @@ const fieldKeys = formFields.map((f) => f.key);
               repo_url: data.repo_url || undefined,
               start_date: data.start_date || undefined,
               end_date: data.end_date || undefined,
+              detail: data.detail || undefined,
             });
             showToast("Project updated successfully!");
             setTimeout(() => window.location.reload(), 1000);

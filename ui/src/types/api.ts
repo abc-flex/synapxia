@@ -279,6 +279,7 @@ export interface Project {
   status: string;
   start_date?: string;
   end_date?: string;
+  detail?: string;
   is_active: boolean;
   created_at: string;
   updated_at?: string;
@@ -293,6 +294,7 @@ export interface ProjectCreate {
   status: string;
   start_date?: string;
   end_date?: string;
+  detail?: string;
   is_active?: boolean;
 }
 
@@ -304,6 +306,7 @@ export interface ProjectUpdate {
   status?: string;
   start_date?: string;
   end_date?: string;
+  detail?: string;
   is_active?: boolean;
 }
 

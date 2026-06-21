@@ -46,6 +46,7 @@ CREATE TABLE actions (
     asset          BIGINT        NOT NULL,
     user_id        BIGINT        NOT NULL,
 	type	       VARCHAR(100)  NOT NULL, -- references List_items.value where list='ACTION_TYPE'
+    status         VARCHAR(100)  NOT NULL, -- references List_items.value where list='ACTION_STATUS'
     content        TEXT,
     reference      TEXT,
     parent         BIGINT,
@@ -160,12 +161,21 @@ INSERT INTO lists (code, name, description, type, module) VALUES (
     'List that classifies the statuses of resources in SynapxIA.',
     'LIST_OF_VALUES', 'LIB');
 INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
-    ('ASSET_STATUS', 'en', '1-PROPOSED', '1-Proposed', 10),
-    ('ASSET_STATUS', 'en', '2-FEEDBACK', '2-Feedback Provided', 20),
-    ('ASSET_STATUS', 'en', '3-PUBLISHED', '3-Published', 30),
-    ('ASSET_STATUS', 'en', '4-REJECTED', '4-Rejected', 40),
-    ('ASSET_STATUS', 'en', '5-DEPRECATED', '5-Deprecated', 50),
-    ('ASSET_STATUS', 'en', '6-IN_USE', '6-In Use', 60);
+    ('ASSET_STATUS', 'en', 'PROPOSED', 'Proposed', 10),
+    ('ASSET_STATUS', 'en', 'FEEDBACK', 'Feedback Provided', 20),
+    ('ASSET_STATUS', 'en', 'PUBLISHED', 'Published', 30),
+    ('ASSET_STATUS', 'en', 'REJECTED', 'Rejected', 40),
+    ('ASSET_STATUS', 'en', 'DEPRECATED', 'Deprecated', 50);
+
+-- ===== List: Action Status =====
+INSERT INTO lists (code, name, description, type, module) VALUES (
+    'ACTION_STATUS', 'List of action statuses for system configuration',
+    'List that classifies the statuses of actions in SynapxIA.',
+    'LIST_OF_VALUES', 'LIB');
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('ACTION_STATUS', 'en', 'ASSIGNED', 'Assigned', 10),
+    ('ACTION_STATUS', 'en', 'NOTIFIED', 'Notified', 20),
+    ('ACTION_STATUS', 'en', 'FINISHED', 'Finished', 30);
 
 -- ===== List: Action Type =====
 INSERT INTO lists (code, name, description, type, module) VALUES (
@@ -173,19 +183,18 @@ INSERT INTO lists (code, name, description, type, module) VALUES (
     'List that classifies the types of actions that users can perform on assets in SynapxIA.',
     'LIST_OF_VALUES', 'LIB');
 INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
-    ('ACTION_TYPE', 'en', '1-PROPOSAL', '1-Proposal', 10),          -- user with MANAGE in access_level can propose and publish at same time
-    ('ACTION_TYPE', 'en', '2-REVIEW', '2-Review', 20),              -- only users with MANAGE in access_level can review
-    ('ACTION_TYPE', 'en', '3-MODIFICATION', '3-Modification', 30),  -- only owner can modify
-    ('ACTION_TYPE', 'en', '3-PUBLICATION', '3-Publication', 40),    -- only users with MANAGE in access_level can publish
-    ('ACTION_TYPE', 'en', '4-REJECTION', '4-Rejection', 50),        -- only users with MANAGE in access_level can reject
-    ('ACTION_TYPE', 'en', '5-DEPRECATION', '5-Deprecation', 60),    -- only users with MANAGE in access_level can deprecate
-    ('ACTION_TYPE', 'en', '6-VERSIONING', '6-Versioning', 70),      -- only users with MANAGE in access_level can create new version, modification with versioning creates a new asset with reference to the previous one and a relation of type 'Extends'
-    ('ACTION_TYPE', 'en', '6-USAGE', '6-Usage', 70),
-    ('ACTION_TYPE', 'en', '6-VOTE', '6-Vote', 80),
-    ('ACTION_TYPE', 'en', '6-COMMENT', '6-Comment', 90),
-    ('ACTION_TYPE', 'en', '6-QUESTION', '6-Question', 100),
-    ('ACTION_TYPE', 'en', '6-ANSWER', '6-Answer', 110),
-    ('ACTION_TYPE', 'en', '6-REQUEST', '6-Request', 120);
+    ('ACTION_TYPE', 'en', 'PROPOSAL', 'Proposal', 10),
+    ('ACTION_TYPE', 'en', 'REVIEW', 'Review', 20),
+    ('ACTION_TYPE', 'en', 'MODIFICATION', 'Modification', 30),
+    ('ACTION_TYPE', 'en', 'PUBLICATION', 'Publication', 40),
+    ('ACTION_TYPE', 'en', 'REJECTION', 'Rejection', 50),
+    ('ACTION_TYPE', 'en', 'DEPRECATION', 'Deprecation', 60),
+    ('ACTION_TYPE', 'en', 'VERSIONING', 'Versioning', 70),
+    ('ACTION_TYPE', 'en', 'USAGE', 'Usage', 70),
+    ('ACTION_TYPE', 'en', 'VOTE', 'Vote', 80),
+    ('ACTION_TYPE', 'en', 'COMMENT', 'Comment', 90),
+    ('ACTION_TYPE', 'en', 'QUESTION', 'Question', 100),
+    ('ACTION_TYPE', 'en', 'ANSWER', 'Answer', 110);
 
 -- ===== List: Asset Relation Type =====
 INSERT INTO lists (code, name, description, type, module) VALUES (

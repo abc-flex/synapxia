@@ -139,15 +139,20 @@ INSERT INTO related_assets (source, target, type) VALUES
 -- ******* Table actions ************
 -- **********************************
 
-INSERT INTO actions (id, asset, user_id, type, content, parent) VALUES
-    (1, 1, 0, '3-PUBLICATION', NULL, NULL),
-    (2, 1, 0, '6-USAGE', NULL, NULL),
-    (3, 1, 0, '6-QUESTION', 'Is it possible to create the prompt and agent for a Django framework?', NULL),
-    (4, 1, 0, '6-ANSWER', 'Coming soon.', 3),
-    (5, 1, 0, '6-VOTE', 'POSITIVE', NULL),
-    (6, 1, 0, '6-COMMENT', 'This prompt and its related agent are great.', NULL),
-    (7, 2, 0, '3-PUBLICATION', NULL, NULL),
-    (8, 2, 0, '6-USAGE', NULL, NULL);
+INSERT INTO actions (id, asset, user_id, type, status, content, parent) VALUES
+    (1, 1, 1, 'PROPOSAL', 'FINISHED', NULL, NULL),
+    (2, 1, 0, 'REVIEW', 'ASSIGNED', NULL, NULL),
+    (3, 1, 0, 'REVIEW', 'NOTIFIED', NULL, NULL),
+    (4, 1, 0, 'REVIEW', 'FINISHED', NULL, NULL),
+    (5, 1, 1, 'PUBLICATION', 'ASSIGNED', NULL, NULL),
+    (6, 1, 1, 'PUBLICATION', 'NOTIFIED', NULL, NULL),
+    (7, 1, 1, 'PUBLICATION', 'FINISHED', NULL, NULL),
+    (8, 1, 2, 'QUESTION', 'NOTIFIED', 'Is it possible to create the prompt and agent for a Django framework?', NULL),
+    (9, 1, 0, 'ANSWER', 'FINISHED', 'Coming soon.', 3),
+    (10, 1, 0, 'VOTE', 'FINISHED', 'POSITIVE', NULL),
+    (11, 1, 0, 'COMMENT', 'FINISHED', 'This prompt and its related agent are great.', NULL),
+    (12, 2, 0, 'PUBLICATION', 'FINISHED', NULL, NULL),
+    (13, 2, 0, 'USAGE', 'FINISHED', NULL, NULL);
 
 -- Keep the identity sequence aligned with the explicit ids above
 SELECT setval(pg_get_serial_sequence('actions', 'id'), (SELECT MAX(id) FROM actions));
@@ -165,7 +170,8 @@ INSERT INTO favorite_assets (user_id, asset) VALUES
 -- **********************************
 
 INSERT INTO asset_permissions (asset, target_type, target_code, access_level) VALUES
-    (1, 'USER', '10', 'VIEW'),
+    (1, 'USER', '1', 'MANAGE'),
+    (1, 'USER', '0', 'MANAGE'),
     (2, 'ROLE', 'TL', 'MANAGE'),
     (2, 'TEAM', 'CORE', 'VIEW');
 

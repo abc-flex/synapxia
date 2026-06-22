@@ -5,13 +5,13 @@
 INSERT INTO assets (id, name, reference, description, category, status, tags) VALUES
     (1, 'Python Web Development Incremental Prompt', 'python-web-increment.prompt.md',
     'A prompt designed to guide AI in incrementally developing web applications using Python.',
-    'PROMPTS', 'IN_USE', '["python", "web", "development"]'),
+    'PROMPTS', 'PUBLISHED', '["python", "web", "development"]'),
     (2, 'GitHub MCP Server', 'https://github.com/github/github-mcp-server/',
     'An MCP providing services of the GitHub platform, such as code search, repository management and issue tracking.',
-    'MCPS', 'IN_USE', '["github","mcp.server","ai-tools", "llm-tools", "developer tools"]'),
+    'MCPS', 'PUBLISHED', '["github","mcp.server","ai-tools", "llm-tools", "developer tools"]'),
     (3, 'Python Web Developer Agent', 'python-web-dev.agent.md',
     'An AI agent specialized in developing web applications using Python frameworks.',
-    'AGENTS', 'IN_USE', '["python", "web", "agent"]');
+    'AGENTS', 'PUBLISHED', '["python", "web", "agent"]');
 
 -- Keep the identity sequence aligned with the explicit ids above
 SELECT setval(pg_get_serial_sequence('assets', 'id'), (SELECT MAX(id) FROM assets));
@@ -139,7 +139,7 @@ INSERT INTO related_assets (source, target, type) VALUES
 -- ******* Table actions ************
 -- **********************************
 
-INSERT INTO actions (id, asset, user_id, type, status, content, parent) VALUES
+INSERT INTO actions (id, asset, user_id, type, workflow_status, content, parent) VALUES
     (1, 1, 1, 'PROPOSAL', 'FINISHED', NULL, NULL),
     (2, 1, 0, 'REVIEW', 'ASSIGNED', NULL, NULL),
     (3, 1, 0, 'REVIEW', 'NOTIFIED', NULL, NULL),
@@ -147,12 +147,10 @@ INSERT INTO actions (id, asset, user_id, type, status, content, parent) VALUES
     (5, 1, 1, 'PUBLICATION', 'ASSIGNED', NULL, NULL),
     (6, 1, 1, 'PUBLICATION', 'NOTIFIED', NULL, NULL),
     (7, 1, 1, 'PUBLICATION', 'FINISHED', NULL, NULL),
-    (8, 1, 2, 'QUESTION', 'NOTIFIED', 'Is it possible to create the prompt and agent for a Django framework?', NULL),
-    (9, 1, 0, 'ANSWER', 'FINISHED', 'Coming soon.', 3),
-    (10, 1, 0, 'VOTE', 'FINISHED', 'POSITIVE', NULL),
-    (11, 1, 0, 'COMMENT', 'FINISHED', 'This prompt and its related agent are great.', NULL),
-    (12, 2, 0, 'PUBLICATION', 'FINISHED', NULL, NULL),
-    (13, 2, 0, 'USAGE', 'FINISHED', NULL, NULL);
+    (8, 1, 2, 'QUESTION', NULL, 'Is it possible to create the prompt and agent for a Django framework?', NULL),
+    (9, 1, 0, 'ANSWER', NULL, 'Coming soon.', 8),
+    (10, 1, 0, 'VOTE', NULL, 'POSITIVE', NULL),
+    (11, 1, 0, 'COMMENT', NULL, 'This prompt and its related agent are great.', NULL);
 
 -- Keep the identity sequence aligned with the explicit ids above
 SELECT setval(pg_get_serial_sequence('actions', 'id'), (SELECT MAX(id) FROM actions));

@@ -10,14 +10,16 @@ When saving, request a reviewer (user with ADMINISTRATIVE role) and insert the f
 - 1 record in asset_permissions table for reviewer user with access_level 'MANAGE' and valid_from = now() AND valid_to = NULL
 
 ## HU-Notifications ()
-- List actions for current user grouping by asset with last status equal to 'ASSIGNED' (bold) or 'NOTIFIED' (not bold and remove option)
-  with type 'REVIEW'/'MODIFICATION'/'PUBLICATION'/'REJECTION'/'QUESTIONS'/'ANSWER'
-- When click on an action, show the corresponding user story ('HU-Show Action' for 'PUBLICATION'/'REJECTION'/'ANSWER' type,
-  and 'HU-Review'/'HU-Modify'/'HU-Reply' for 'REVIEW'/'MODIFICATION'/'QUESTIONS' type respectively),
-  if action status is 'ASSIGNED', insert a record for the corresponding action with status 'NOTIFIED'
-- When click on remove option (actions with status 'NOTIFIED'), insert a record for the corresponding action with status 'FINISHED'
+- List actions for current user grouping by asset with last status equal to 'ASSIGNED' (bold)
+  or 'NOTIFIED' (not bold and remove option) with type 'REVIEW'/'MODIFICATION'/'PUBLICATION'/'REJECTION'
+- When click on an action, show the corresponding user story ('HU-Show Action' for 'PUBLICATION'/'REJECTION' type,
+  or 'HU-Review'/'HU-Modify' for 'REVIEW'/'MODIFICATION' type respectively),
+- When click on remove option (actions with status 'NOTIFIED'), remove action from the list of notifications
+  and insert a record for the corresponding action with status 'FINISHED'
 
 ## HU-Review ()
+- Upon entering, if the action status is 'ASSIGNED', remove bold style in the list of notifications
+  and insert the corresponding action with type 'REVIEW' and status 'NOTIFIED'
 - When saving (feedback/approve/reject), insert the corresponding action with type 'REVIEW' and status 'FINISHED'
 - When feedback/approve/reject, update the asset status to 'FEEDBACK'/'PUBLISHED'/'REJECTED' respectively
 - When feedback/approve/reject, insert a new action for the proposer user
@@ -25,12 +27,11 @@ When saving, request a reviewer (user with ADMINISTRATIVE role) and insert the f
 
 ## HU-Show Action ()
 - Upon entering, if the action status is 'ASSIGNED', remove bold style in the list of notifications
-  and insert the corresponding action with type 'PUBLICATION'/'REJECTION'/'ANSWER' and status 'NOTIFIED'
+  and insert the corresponding action with type 'PUBLICATION'/'REJECTION' and status 'NOTIFIED'
 
 ## HU-Modify ()
-- When saving, insert the corresponding action with type 'MODIFICATION' and status 'FINISHED'
+- Upon entering, if the action status is 'ASSIGNED', remove bold style in the list of notifications
+  and insert the corresponding action with type 'MODIFICATION' and status 'NOTIFIED'
+- When saving, remove action from the list of notifications
+  and insert the corresponding action with type 'MODIFICATION' and status 'FINISHED'
 - When saving, insert a new action for the reviewer user with type 'REVIEW' and status 'ASSIGNED'
-
-## HU-Reply ()
-- When saving, insert the corresponding action with type 'QUESTIONS' and status 'FINISHED'
-- When saving, insert a new action for the respondent user with type 'ANSWER' and status 'ASSIGNED'

@@ -11,7 +11,7 @@ interface Field {
   key: string;
   label: string;
   name?: string;
-  type?: "text" | "textarea" | "select" | "email" | "number" | "checkbox";
+  type?: "text" | "textarea" | "select" | "email" | "number" | "checkbox" | "calendar";
   pk?: boolean;
   required?: boolean;
   disabled?: boolean;
@@ -22,6 +22,24 @@ interface Field {
   // getListItemsbyList(). Falls back to one other language if the current
   // one has no options.
   filterLang?: boolean;
+  // For type: "calendar" — include a time picker (renders datetime-local)
+  // instead of a date-only picker. Default false (date only).
+  withTime?: boolean;
+}
+
+// Normalize an arbitrary date/datetime string into the value format that
+// native <input type="date" | "datetime-local"> expects: "YYYY-MM-DD" or
+// "YYYY-MM-DDTHH:mm". ISO-ish strings are sliced (no timezone shift); other
+// parseable strings fall back to Date. Used by the calendar field type.
+function normalizeCalendarValue(raw: unknown, withTime?: boolean): string {
+  const s = (raw ?? "").toString().trim();
+  if (!s) return "";
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, withTime ? 16 : 10);
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return withTime ? `${date}T${pad(d.getHours())}:${pad(d.getMinutes())}` : date;
 }
 
 interface Props {
@@ -233,6 +251,38 @@ const triggerTextKey =
                     {field.required && <span class="text-red-500">*</span>}
                     <span data-i18n={field.label}>{field.label}</span>
                   </label>
+                </div>
+              </div>
+            );
+          }
+
+          if (field.type === "calendar") {
+            const calType = field.withTime ? "datetime-local" : "date";
+            const calValue = normalizeCalendarValue(value, field.withTime);
+            return (
+              <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-4" key={field.key}>
+                <div class="sm:w-32 sm:pt-2">
+                  <label
+                    for={inputId}
+                    class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {field.required && <span class="text-red-500">*</span>}
+                    <span data-i18n={field.label}>{field.label}</span>
+                    {fieldIsReadonly && <span class="ml-2 text-xs text-gray-500">(readonly)</span>}
+                  </label>
+                </div>
+                <div class="flex-1">
+                  <input
+                    id={inputId}
+                    name={field.key}
+                    type={calType}
+                    required={field.required}
+                    disabled={fieldDisabled}
+                    readonly={fieldIsReadonly}
+                    value={calValue}
+                    data-calendar={field.withTime ? "datetime" : "date"}
+                    class={`h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white/90 dark:[color-scheme:dark] ${fieldDisabled || fieldIsReadonly ? "opacity-60" : ""}`}
+                  />
                 </div>
               </div>
             );

@@ -89,8 +89,8 @@ const formFields = [
   { key: "user_id", label: "assignment_modal.user_id", type: "select" as const, options: users, required: true },
   { key: "role", label: "assignment_modal.role", type: "select" as const, options: roles, required: true },
   { key: "observation", label: "assignment_modal.observation", required: false },
-  { key: "valid_from", label: "assignment_modal.valid_from", required: false },
-  { key: "valid_to", label: "assignment_modal.valid_to", required: false },
+  { key: "valid_from", label: "assignment_modal.valid_from", type: "calendar" as const, withTime: false, required: false },
+  { key: "valid_to", label: "assignment_modal.valid_to", type: "calendar" as const, withTime: false, required: false }
 ];
 const fieldKeys = formFields.map((f) => f.key);
 ---

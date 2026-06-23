@@ -7,6 +7,8 @@ import Toast from "../../components/Toast.astro";
 import { getMetrics } from "@/lib/metrics";
 import { getDimensions } from "@/lib/dimensions";
 import { getAssignments } from "@/lib/assignments";
+import { getTeamsSelect } from "@/lib/teams";
+import { getUsersSelect } from "@/lib/users";
 
 // Read dimension query param for master-detail pre-filter
 const dimensionFilter = Astro.url.searchParams.get("dimension") || "";
@@ -44,15 +46,52 @@ try {
   assignments = [];
 }
 
+// Fetch teams + users to resolve readable names for each assignment
+let teams: any[] = [];
+try {
+  teams = await getTeamsSelect();
+} catch (error) {
+  console.error('Failed to fetch teams:', error);
+  teams = [];
+}
+
+let users: any[] = [];
+try {
+  users = await getUsersSelect();
+} catch (error) {
+  console.error('Failed to fetch users:', error);
+  users = [];
+}
+
+// Resolve an assignment id -> { team name, user name } once for reuse
+const teamName = (id: any) =>
+  teams.find((t: any) => String(t.value) === String(id))?.label || id;
+const userName = (id: any) =>
+  users.find((u: any) => String(u.value) === String(id))?.label || id;
+
+const assignmentById = new Map(
+  assignments.map((a: any) => [
+    String(a.id),
+    { team: teamName(a.team), user: userName(a.user_id) },
+  ])
+);
+
+const assignmentLabel = (id: any) => {
+  const a = assignmentById.get(String(id));
+  if (!a) return id;
+  return [a.team, a.user].filter(Boolean).join(" — ");
+};
+
 // Map assignments to select options with readable label
 const assignmentOptions = assignments.map((a: any) => ({
   code: a.id,
-  name: `${a.team} / ${a.user_id}`,
+  name: `${teamName(a.team)} / ${userName(a.user_id)}`,
 }));
 
 const columns = [
-  { key: "dimension", label: "metric_modal.dimension", as: "title", subtitleKey: "assignment", subtitleFormat: "text" },
+  { key: "dimension", label: "metric_modal.dimension", as: "title", subtitleKey: "assignment_label", subtitleFormat: "text" },
   { key: "assignment", label: "metric_modal.assignment", visible: false },
+  { key: "assignment_label", label: "metric_modal.assignment", visible: false },
   { key: "value", label: "metric_modal.value", visible: true },
   { key: "measured_at", label: "metric_modal.measured_at", as: "date" },
 ];
@@ -60,6 +99,7 @@ const data = metrics.map((item) => ({
   id: item.id,
   dimension: item.dimension,
   assignment: item.assignment,
+  assignment_label: assignmentLabel(item.assignment),
   value: item.value,
   observation: item.observation,
   measured_at: item.measured_at,
@@ -91,7 +131,11 @@ const tableFields = [
     type: "textarea" as const,
     placeholder: "Optional observation",
   },
-  { key: "measured_at", label: "metric_modal.measured_at", type: "text" as const, placeholder: "e.g. 2026-04-03T10:00" },
+  { key: "measured_at", 
+    label: "metric_modal.measured_at", 
+    type: "calendar" as const, 
+    withTime: true 
+  },
 ];
 const fieldKeys = ["id", ...tableFields.map((f) => f.key)];
 ---

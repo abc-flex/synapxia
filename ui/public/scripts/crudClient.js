@@ -1,3 +1,17 @@
+// Normalize an arbitrary date/datetime string into the value format native
+// <input type="date" | "datetime-local"> expects: "YYYY-MM-DD" or
+// "YYYY-MM-DDTHH:mm". ISO-ish strings are sliced (no timezone shift).
+function normalizeCalendarValue(raw, withTime) {
+  const s = (raw ?? "").toString().trim();
+  if (!s) return "";
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, withTime ? 16 : 10);
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return "";
+  const pad = (n) => String(n).padStart(2, "0");
+  const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return withTime ? `${date}T${pad(d.getHours())}:${pad(d.getMinutes())}` : date;
+}
+
 export function initCrudPage({
   dataId,
   editModalId,
@@ -93,6 +107,9 @@ export function initCrudPage({
             input.dispatchEvent(new Event("change", { bubbles: true }));
           } else if (input.tagName === "TEXTAREA") {
             input.value = String(value ?? "");
+          } else if (input.type === "date" || input.type === "datetime-local") {
+            // Native date pickers need "YYYY-MM-DD" / "YYYY-MM-DDTHH:mm".
+            input.value = normalizeCalendarValue(value, input.type === "datetime-local");
           } else {
             input.value = String(value ?? "");
           }

@@ -20,6 +20,17 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-06-24 18:47 — DataTable: persist column filter selection in the URL
+- `advancedTable.ts` now writes each column filter's value back to the URL (`history.replaceState`, no reload) on change, under the same query param it already reads on init (`columnFilter`…`columnFilter4`). A reload — e.g. the one after a create/edit/delete save — now restores the filter the user was viewing instead of snapping back to the original URL value. The Reset button also clears those params.
+- Centralized here (a bundled script that runs in dev and prod) instead of per-page inline `type="module"` scripts, which 404 in the Vercel build; works automatically for every page with a `columnFilter` (users, metrics, list_items, …). Removed the now-redundant per-page sync snippets from `collab/metrics.astro` and `admin/users.astro`.
+- Files affected: `ui/src/components/table/advancedTable.ts`, `ui/src/pages/collab/metrics.astro`, `ui/src/pages/admin/users.astro`
+
+## 2026-06-24 17:13 — collab/metrics: dimension-driven Value scale
+- Metric **Value** select is now driven by the selected **Dimension** instead of a hardcoded list. Server loads the items of every `SCALE`-type list (`getListsbyType("SCALE")` → per-list `getListItemsbyList`) into a `scalesByList` map, plus a `dimensionScale` map (dimension code → its `scale` FK, falling back to the code). Both are passed to the client via `data-*` on `#metrics-data`.
+- Client rebuilds the Value `<option>`s on the dimension select's `change` (wired for both create and edit modals), filtered to the user's language; preserves the translated placeholder and the previously selected value. Works on edit prefill because `crudClient` sets `dimension` before `value` in `fieldKeys` order. The Value field no longer renders server-side options or uses `filterLang` (client handles scale + language).
+- UI-only change; verified via IDE diagnostics (no TS errors). Manual check: toggle dimension in the New Metric modal → Value list swaps to the dimension's scale.
+- Files affected: `ui/src/pages/collab/metrics.astro`
+
 ## 2026-06-20 00:15 — admin: remove dead item_translations feature (no DDL backing)
 - `item_translations` had a SQLModel model, route, UI page/service/types, and `manual/` SQL references, but **no `CREATE TABLE` in any `db/sql/` migration** — the table never existed, so its endpoints 500'd. Bilingual labels are already handled by `list_items.lang` (one row per language), so the concept was dead. Removed it wholesale.
 - API: deleted `admin/routes/item_translations.py`; removed `ItemTranslation*` models from `admin/internal/models.py`; dropped the router import/registration/openapi-tag/path-map from `main.py`; removed the `ItemTranslation` import from `migrations/env.py`. Also removed the two now-broken `list_items` endpoints that queried it (`GET /api/list_items/list/{code}/with-translations` and `/{code}/{value}/with-translations`) plus the now-unused `Dict, Any` import — these already 500'd against the missing table (verified the path now 404s; `GET /api/list_items/` still 200s).

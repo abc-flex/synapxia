@@ -115,6 +115,18 @@ export function initAdvancedTable(
         resetBtn.classList.toggle("hidden", !isFilterActive());
     };
 
+    // Write a filter's current value back to the URL (replaceState, no reload) so
+    // that a later reload — e.g. the one after a create/edit/delete save — restores
+    // the same filter selection instead of snapping back to the original URL. The
+    // init blocks below read these same params via urlParams.get(columnFilterN).
+    const syncFilterParam = (param: string | null, value: string) => {
+        if (!param) return;
+        const url = new URL(window.location.href);
+        if (value) url.searchParams.set(param, value);
+        else url.searchParams.delete(param);
+        window.history.replaceState({}, "", url.toString());
+    };
+
     if (resetBtn) {
         resetBtn.addEventListener("click", () => {
             if (searchInput) searchInput.value = "";
@@ -122,6 +134,10 @@ export function initAdvancedTable(
             if (filterSelect2) filterSelect2.value = "";
             if (filterSelect3) filterSelect3.value = "";
             if (filterSelect4) filterSelect4.value = "";
+            syncFilterParam(columnFilter, "");
+            syncFilterParam(columnFilter2, "");
+            syncFilterParam(columnFilter3, "");
+            syncFilterParam(columnFilter4, "");
             applyFilters();
         });
     }
@@ -138,6 +154,7 @@ export function initAdvancedTable(
         }
 
         filterSelect.addEventListener("change", () => {
+            syncFilterParam(columnFilter, filterSelect.value);
             applyFilters();
         });
 
@@ -157,6 +174,7 @@ export function initAdvancedTable(
         }
 
         filterSelect2.addEventListener("change", () => {
+            syncFilterParam(columnFilter2, filterSelect2.value);
             applyFilters();
         });
 
@@ -176,6 +194,7 @@ export function initAdvancedTable(
         }
 
         filterSelect3.addEventListener("change", () => {
+            syncFilterParam(columnFilter3, filterSelect3.value);
             applyFilters();
         });
 
@@ -195,6 +214,7 @@ export function initAdvancedTable(
         }
 
         filterSelect4.addEventListener("change", () => {
+            syncFilterParam(columnFilter4, filterSelect4.value);
             applyFilters();
         });
 

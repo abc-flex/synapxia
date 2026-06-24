@@ -9,6 +9,8 @@ import { getDimensions } from "@/lib/dimensions";
 import { getAssignments } from "@/lib/assignments";
 import { getTeamsSelect } from "@/lib/teams";
 import { getUsersSelect } from "@/lib/users";
+import { getListItemsbyList } from "@/lib/list_items";
+import { getListsbyType } from "@/lib/lists";
 
 // Read dimension query param for master-detail pre-filter
 const dimensionFilter = Astro.url.searchParams.get("dimension") || "";
@@ -63,6 +65,28 @@ try {
   users = [];
 }
 
+// Load the items of every SCALE-type list so the value select can be refreshed
+// client-side depending on the selected dimension. `scalesByList` maps each
+// SCALE list code -> its items; `dimensionScale` maps each dimension code -> the
+// SCALE list it measures against (its `scale` FK, falling back to the code).
+let scalesByList: Record<string, any[]> = {};
+try {
+  const scaleLists = await getListsbyType("SCALE");
+  const entries = await Promise.all(
+    scaleLists.map(
+      async (l: any) => [l.code, await getListItemsbyList(l.code)] as const
+    )
+  );
+  scalesByList = Object.fromEntries(entries);
+} catch (error) {
+  console.error('Failed to fetch SCALE list items:', error);
+  scalesByList = {};
+}
+
+const dimensionScale: Record<string, string> = Object.fromEntries(
+  dimensions.map((d: any) => [d.code, d.scale || d.code])
+);
+
 // Resolve an assignment id -> { team name, user name } once for reuse
 const teamName = (id: any) =>
   teams.find((t: any) => String(t.value) === String(id))?.label || id;
@@ -108,34 +132,11 @@ const data = metrics.map((item) => ({
   updated_at: item.updated_at,
 }));
 const tableFields = [
-  {
-    key: "dimension",
-    label: "metric_modal.dimension",
-    type: "select" as const,
-    options: dimensions,
-    pk: true,
-    required: true,
-  },
-  {
-    key: "assignment",
-    label: "metric_modal.assignment",
-    type: "select" as const,
-    options: assignmentOptions,
-    pk: true,
-    required: true,
-  },
-  { key: "value", label: "metric_modal.value", required: true, placeholder: "e.g. 85" },
-  {
-    key: "observation",
-    label: "metric_modal.observation",
-    type: "textarea" as const,
-    placeholder: "Optional observation",
-  },
-  { key: "measured_at", 
-    label: "metric_modal.measured_at", 
-    type: "calendar" as const, 
-    withTime: true 
-  },
+  { key: "dimension", label: "metric_modal.dimension", type: "select" as const, options: dimensions, pk: true, required: true },
+  { key: "assignment", label: "metric_modal.assignment", type: "select" as const, options: assignmentOptions, pk: true, required: true },
+  { key: "value", label: "metric_modal.value", type: "select" as const, options: [], required: true },
+  { key: "observation", label: "metric_modal.observation", type: "textarea" as const, placeholder: "Optional observation" },
+  { key: "measured_at", label: "metric_modal.measured_at", type: "calendar" as const, withTime: true },
 ];
 const fieldKeys = ["id", ...tableFields.map((f) => f.key)];
 ---
@@ -184,6 +185,8 @@ const fieldKeys = ["id", ...tableFields.map((f) => f.key)];
       data-rows={encodeURIComponent(JSON.stringify(data))}
       data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
       data-dimension-filter={dimensionFilter}
+      data-scales-by-list={encodeURIComponent(JSON.stringify(scalesByList))}
+      data-dimension-scale={encodeURIComponent(JSON.stringify(dimensionScale))}
       class="hidden"
       aria-hidden="true"
     >
@@ -213,6 +216,65 @@ const fieldKeys = ["id", ...tableFields.map((f) => f.key)];
           filterSelect.dispatchEvent(new Event("change"));
         }
       }
+
+      // --- Dynamic Value options driven by the selected Dimension ---
+      // Each dimension measures against a SCALE list; when the dimension changes
+      // we rebuild the value <select> with that scale's items (filtered to the
+      // user's language). Maps are seeded server-side from every SCALE list.
+      let scalesByList = {};
+      let dimensionScale = {};
+      try {
+        scalesByList = JSON.parse(
+          decodeURIComponent(metricsData?.dataset.scalesByList || "%7B%7D")
+        );
+        dimensionScale = JSON.parse(
+          decodeURIComponent(metricsData?.dataset.dimensionScale || "%7B%7D")
+        );
+      } catch (err) {
+        console.error("Failed to decode scale maps", err);
+      }
+
+      function valueOptionsFor(dimensionCode) {
+        const scaleCode = dimensionScale[dimensionCode];
+        const items = (scaleCode && scalesByList[scaleCode]) || [];
+        if (items.length === 0) return [];
+        const lang = localStorage.getItem("lang") || "en";
+        const langs = new Set(items.map((i) => i.lang));
+        const target = langs.has(lang)
+          ? lang
+          : items.find((i) => i.lang)?.lang || lang;
+        return items.filter((i) => !i.lang || i.lang === target);
+      }
+
+      function refreshValueOptions(modal) {
+        if (!modal) return;
+        const dimSelect = modal.querySelector('select[name="dimension"]');
+        const valSelect = modal.querySelector('select[name="value"]');
+        if (!dimSelect || !valSelect) return;
+
+        const previous = valSelect.value;
+        // Preserve the translated empty placeholder, drop the rest.
+        const placeholder =
+          valSelect.querySelector('option[value=""]')?.cloneNode(true);
+        valSelect.innerHTML = "";
+        if (placeholder) valSelect.appendChild(placeholder);
+
+        for (const item of valueOptionsFor(dimSelect.value)) {
+          const opt = document.createElement("option");
+          opt.value = item.value;
+          opt.textContent = item.label || item.value;
+          if (item.value === previous) opt.selected = true;
+          valSelect.appendChild(opt);
+        }
+      }
+
+      ["metric-create-modal", "metric-edit-modal"].forEach((id) => {
+        const modal = document.getElementById(id);
+        const dimSelect = modal?.querySelector('select[name="dimension"]');
+        // Fires on user change (create) and on programmatic change dispatched
+        // by crudClient's edit prefill, where dimension is set before value.
+        dimSelect?.addEventListener("change", () => refreshValueOptions(modal));
+      });
 
       // Helper function to show toast notifications
       function showToast(message, variant = "info") {

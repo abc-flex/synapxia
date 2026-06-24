@@ -32,9 +32,11 @@ export function styleVoteButton(
 ): void {
   if (!btn) return;
   btn.setAttribute("aria-pressed", String(on));
+  // Solid thumb icon stays filled; state shows via color only (vivid when it's
+  // the user's vote, muted gray otherwise) — no fill toggling, which turned the
+  // glyph into a messy blob.
   btn.classList.toggle(activeColor, on);
   btn.classList.toggle("text-gray-400", !on);
-  btn.querySelector("svg")?.setAttribute("fill", on ? "currentColor" : "none");
   const key = on ? "gallery.vote_remove" : baseKey;
   const label = translate(key);
   btn.setAttribute("data-i18n-title", key);

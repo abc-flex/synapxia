@@ -13,8 +13,11 @@
 import { getAsset } from "@/lib/assets";
 import { getCharacterizationsByAsset } from "@/lib/characterizations";
 import { isFavorite, setFavorite } from "@/lib/favorites";
+import { getVoteTally, setVote, type VoteValue } from "@/lib/actions";
+import { styleVoteButton } from "@/lib/catalogGallery";
 import { getUser } from "@/lib/auth";
 import { statusTone } from "@/lib/datatable";
+import type { VoteTally } from "@/types/api";
 
 export interface DetailSection {
   /** inline = "label: value"; block = prose; code = monospace + copy; tools = chips. */
@@ -66,6 +69,10 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
   const favSvg = favBtn?.querySelector("svg") as SVGElement | null;
   const editBtn = document.getElementById(`${modalId}-edit`) as HTMLButtonElement | null;
   const deleteBtn = document.getElementById(`${modalId}-delete`) as HTMLButtonElement | null;
+  const voteWrap = document.getElementById(`${modalId}-vote`) as HTMLElement | null;
+  const voteUp = document.getElementById(`${modalId}-vote-up`) as HTMLButtonElement | null;
+  const voteDown = document.getElementById(`${modalId}-vote-down`) as HTMLButtonElement | null;
+  const voteScore = document.getElementById(`${modalId}-vote-score`) as HTMLElement | null;
 
   let statuses: { value: string; label: string }[] = [];
   try {
@@ -126,6 +133,59 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
       paintFavorite();
     }
   });
+
+  // ── Vote bar ───────────────────────────────────────────────────────────────
+  function paintVote(tally: VoteTally) {
+    const upOn = tally.my_vote === "POSITIVE";
+    const downOn = tally.my_vote === "NEGATIVE";
+    styleVoteButton(voteUp, upOn, "gallery.vote_up", "text-emerald-500");
+    styleVoteButton(voteDown, downOn, "gallery.vote_down", "text-rose-500");
+    if (voteScore) voteScore.textContent = String(tally.score);
+    // Keep the matching gallery card's vote bar in sync.
+    const card = document.querySelector<HTMLElement>(`[data-card][data-id="${currentId}"] [data-vote-bar]`);
+    if (card) {
+      styleVoteButton(
+        card.querySelector<HTMLElement>('[data-action="vote-up"]'),
+        upOn, "gallery.vote_up", "text-emerald-500");
+      styleVoteButton(
+        card.querySelector<HTMLElement>('[data-action="vote-down"]'),
+        downOn, "gallery.vote_down", "text-rose-500");
+      const cScore = card.querySelector<HTMLElement>("[data-vote-score]");
+      if (cScore) cScore.textContent = String(tally.score);
+    }
+  }
+
+  async function castVote(value: VoteValue) {
+    // Bouncer: ignore clicks while a vote request is already in flight (guards
+    // against rapid double-clicks — and survives a listener bound more than
+    // once — because the flag lives on the DOM node, not a closure).
+    if (voteWrap?.dataset.voting === "1") return;
+    const user = getUser() as any;
+    if ((!user?.id && user?.id !== 0) || !currentId) {
+      (window as any).showToast?.("Sign in to vote", "error");
+      return;
+    }
+    if (voteWrap) voteWrap.dataset.voting = "1";
+    try {
+      const tally = await setVote(Number(user.id), currentId, value);
+      paintVote(tally);
+    } catch (err) {
+      (window as any).showToast?.(
+        err instanceof Error ? err.message : "Could not register your vote",
+        "error",
+      );
+      // Re-sync from the authoritative tally so a failed vote never leaves the
+      // bar (and the mirrored card) in a stale state.
+      getVoteTally(currentId)
+        .then((tally) => paintVote(tally))
+        .catch(() => {});
+    } finally {
+      if (voteWrap) delete voteWrap.dataset.voting;
+    }
+  }
+
+  voteUp?.addEventListener("click", () => castVote("POSITIVE"));
+  voteDown?.addEventListener("click", () => castVote("NEGATIVE"));
 
   // ── Section renderers ──────────────────────────────────────────────────────
   function labelEl(text: string): HTMLElement {
@@ -221,6 +281,16 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
           favoriteOn = on;
           paintFavorite();
         })
+        .catch(() => {});
+    }
+
+    // Vote tally (counts + the current user's vote, resolved server-side).
+    if (voteWrap) {
+      voteWrap.classList.remove("hidden");
+      voteWrap.classList.add("flex");
+      if (voteScore) voteScore.textContent = "0";
+      getVoteTally(currentId)
+        .then((tally) => paintVote(tally))
         .catch(() => {});
     }
 

@@ -735,7 +735,11 @@
     "show_more": "Ver más",
     "empty": "Aún no hay nada aquí",
     "favorite_add": "Agregar a favoritos",
-    "favorite_remove": "Quitar de favoritos"
+    "favorite_remove": "Quitar de favoritos",
+    "vote_up": "Útil",
+    "vote_down": "No útil",
+    "vote_remove": "Quitar voto",
+    "vote_signin": "Inicia sesión para votar"
   },
   "prompt_modal": {
     "title_create": "Nuevo Prompt",

@@ -24,6 +24,9 @@ export interface Props {
   platform?: string;
   temperature?: string;
   tags?: string[];
+  votable?: boolean;
+  voteScore?: number;
+  myVote?: string;
 }
 
 const {
@@ -41,6 +44,9 @@ const {
   platform,
   temperature,
   tags = [],
+  votable = false,
+  voteScore = 0,
+  myVote = "",
 } = Astro.props as Props;
 
 const chips = [
@@ -60,6 +66,9 @@ const chips = [
   searchText={searchText}
   editModalId={editModalId}
   detailModalId={detailModalId}
+  votable={votable}
+  voteScore={voteScore}
+  myVote={myVote}
 >
   <span slot="icon" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">

@@ -11,6 +11,7 @@ CREATE TABLE initiatives (
     priority_level   VARCHAR(100)  NOT NULL, -- references List_items.value where list='PRIORITY_LEVEL'
     reference        TEXT,
     status	         VARCHAR(100)  NOT NULL, -- references List_items.value where list='INITIATIVE_STATUS'
+    type             VARCHAR(100),           -- references List_items.value where list='INITIATIVE_TYPE'
 	tags             JSONB,
 	detail           TEXT,
     score            SMALLINT,
@@ -164,18 +165,6 @@ ALTER TABLE related_inits
 -- ***** Table lists/list_items *****
 -- **********************************
 
--- ===== List: Asset Status for Initiatives =====
-INSERT INTO lists (code, name, description, type, module) VALUES (
-    'INITIATIVE_STATUS', 'List of initiative statuses for system configuration',
-    'List that classifies the statuses of initiatives in SynapxIA.',
-    'LIST_OF_VALUES', 'INITS');
-INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
-    ('INITIATIVE_STATUS', 'en', '1-ACTIVATED', '1-Activated', 10),
-    ('INITIATIVE_STATUS', 'en', '2-ASSESSMENT', '2-Assessment', 20),
-    ('INITIATIVE_STATUS', 'en', '3-ENGAGING', '3-Engaging', 30),
-    ('INITIATIVE_STATUS', 'en', '4-DELIVERED', '4-Delivered', 40),
-    ('INITIATIVE_STATUS', 'en', '5-EVOLVING', '5-Evolving', 50);
-
 -- ===== List: Expected Impact for Initiatives =====
 INSERT INTO lists (code, name, description, type, module) VALUES (
     'EXPECTED_IMPACT', 'List of expected impacts for system configuration',
@@ -204,24 +193,47 @@ INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
     ('PRIORITY_LEVEL', 'en', 'HIGH', 'High', 10),
     ('PRIORITY_LEVEL', 'en', 'MEDIUM', 'Medium', 20),
     ('PRIORITY_LEVEL', 'en', 'LOW', 'Low', 30);
- 
--- ===== List: Action Type for Collaborations =====
+
+-- ===== List: Types for Initiatives =====
+INSERT INTO lists (code, name, description, type, module) VALUES (
+    'INITIATIVE_TYPE', 'List of initiative types for system configuration',
+    'List that classifies the types of initiatives in SynapxIA.',
+    'LIST_OF_VALUES', 'INITS');
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('INITIATIVE_TYPE', 'en', 'EXPLORATION', 'Exploration', 10),
+    ('INITIATIVE_TYPE', 'en', 'PROTOTYPING', 'Prototyping', 20),
+    ('INITIATIVE_TYPE', 'en', 'IMPLEMENTATION', 'Implementation', 30);
+
+-- ===== List: Initiatives Status =====
+INSERT INTO lists (code, name, description, type, module) VALUES (
+    'INITIATIVE_STATUS', 'List of initiative statuses for system configuration',
+    'List that classifies the statuses of initiatives in SynapxIA.',
+    'LIST_OF_VALUES', 'INITS'); 
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('INITIATIVE_STATUS', 'en', 'ACTIVATED', 'Activated', 10),
+    ('INITIATIVE_STATUS', 'en', 'ACCEPTED', 'Accepted', 20),
+    ('INITIATIVE_STATUS', 'en', 'REJECTED', 'Rejected', 30),
+    ('INITIATIVE_STATUS', 'en', 'IN_PROGRESS', 'In Progress', 40),
+    ('INITIATIVE_STATUS', 'en', 'DELIVERED', 'Delivered', 50),
+    ('INITIATIVE_STATUS', 'en', 'ARCHIVED', 'Archived', 60);
+
+-- ===== List: Collaboration Type =====
 INSERT INTO lists (code, name, description, type, module) VALUES (
     'COLLAB_TYPE', 'List of collaboration types for system configuration',
     'List that classifies the types of collaboration that users can perform on initiatives in SynapxIA.',
     'LIST_OF_VALUES', 'INITS');
 INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
-    ('COLLAB_TYPE', 'en', '1-ACTIVATION', '1-Activation', 10),
-    ('COLLAB_TYPE', 'en', '2-ASSESSMENT', '2-Assessment', 20),
-    ('COLLAB_TYPE', 'en', '3-EXPLORATION', '3-Exploration', 30),
-    ('COLLAB_TYPE', 'en', '3-PROTOTYPING', '3-Prototyping', 33),
-    ('COLLAB_TYPE', 'en', '3-IMPLEMENTATION', '3-Implementation', 36),
-    ('COLLAB_TYPE', 'en', '4-ENABLEMENT', '4-Enablement', 40),
-    ('COLLAB_TYPE', 'en', '5-IMPROVEMENT', '5-Improvement', 50),
-    ('COLLAB_TYPE', 'en', '5-REFACTORING', '5-Refactoring', 52),
-    ('COLLAB_TYPE', 'en', '5-EXPANSION', '5-Expansion', 54),
-    ('COLLAB_TYPE', 'en', '5-VERSIONING', '5-Versioning', 56),
-    ('COLLAB_TYPE', 'en', '5-DEPRECATION', '5-Deprecation', 58);
+    ('COLLAB_TYPE', 'en', 'ACTIVATION', 'Activation', 10),
+    ('COLLAB_TYPE', 'en', 'DIAGNOSIS', 'Diagnosis', 20),
+    ('COLLAB_TYPE', 'en', 'ACCEPTANCE', 'Acceptance', 30),
+    ('COLLAB_TYPE', 'en', 'REJECTION', 'Rejection', 40),
+    ('COLLAB_TYPE', 'en', 'DELIVERY', 'Delivery', 50),
+    ('COLLAB_TYPE', 'en', 'VERSIONING', 'Versioning', 60),
+    ('COLLAB_TYPE', 'en', 'ARCHIVING', 'Archiving', 70),
+    ('COLLAB_TYPE', 'en', 'VOTE', 'Vote', 80),
+    ('COLLAB_TYPE', 'en', 'COMMENT', 'Comment', 90),
+    ('COLLAB_TYPE', 'en', 'QUESTION', 'Question', 100),
+    ('COLLAB_TYPE', 'en', 'ANSWER', 'Answer', 110);
 
 -- **********************************
 -- ****** Lists for Criterias *******

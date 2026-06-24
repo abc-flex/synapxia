@@ -54,9 +54,9 @@ INSERT INTO options (module, code, name, description, sort_order, type, path, ic
     ('COLLAB','DIMENSIONS','Dimensions',
      'Define dimensions for segmentation and analysis.',
      40,'FORM','/collab/dimensions','cube'),
-    ('COLLAB','ASSIGNMENT','Assignment Dashboard',
+    ('COLLAB','DASHBOARD','Assignment Dashboard',
      'Dashboard to monitor tasks and collaboration workload.',
-     50,'FORM','/collab/assignment','clipboard-document-check');
+     50,'FORM','/collab/dashboard','clipboard-document-check');
 
 -- ===== Module: ASSET LIBRARY =====
 INSERT INTO options (module, code, name, description, sort_order, type, path, icon) VALUES
@@ -163,7 +163,7 @@ VALUES
     ('ADMINISTRATOR','COLLAB','TEAMS',      TRUE),
     ('ADMINISTRATOR','COLLAB','PROJECTS',   TRUE),
     ('ADMINISTRATOR','COLLAB','DIMENSIONS', TRUE),
-    ('ADMINISTRATOR','COLLAB','ASSIGNMENT', TRUE),
+    ('ADMINISTRATOR','COLLAB','DASHBOARD', TRUE),
 
     -- LIB
     ('ADMINISTRATOR','LIB','ASSETS',     TRUE),
@@ -200,7 +200,7 @@ VALUES
     ('ADMINISTRATIVE','COLLAB','TEAMS',      TRUE),
     ('ADMINISTRATIVE','COLLAB','PROJECTS',   TRUE),
     ('ADMINISTRATIVE','COLLAB','DIMENSIONS', TRUE),
-    ('ADMINISTRATIVE','COLLAB','ASSIGNMENT', TRUE),
+    ('ADMINISTRATIVE','COLLAB','DASHBOARD', TRUE),
 
     -- LIB
     ('ADMINISTRATIVE','LIB','ASSETS',     TRUE),
@@ -237,7 +237,7 @@ VALUES
     ('COLLABORATOR','COLLAB','TEAMS',      FALSE),
     ('COLLABORATOR','COLLAB','PROJECTS',   FALSE),
     ('COLLABORATOR','COLLAB','DIMENSIONS', FALSE),
-    ('COLLABORATOR','COLLAB','ASSIGNMENT', FALSE),
+    ('COLLABORATOR','COLLAB','DASHBOARD', FALSE),
 
     -- LIB (read-only)
     ('COLLABORATOR','LIB','ASSETS',     FALSE),

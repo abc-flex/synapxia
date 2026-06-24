@@ -76,7 +76,6 @@ SELECT setval(pg_get_serial_sequence('initiatives', 'id'), (SELECT MAX(id) FROM 
 -- **********************************
 -- ******* Table diagnostics ********
 -- **********************************
--- Per-criteria assessment of each initiative (creator_score / reviewer_score, 1-3).
 
 INSERT INTO diagnostics (init, criteria, creator_score, reviewer_score, rationale) VALUES
     -- Initiative 1: Knowledge Management Platform
@@ -114,18 +113,21 @@ INSERT INTO diagnostics (init, criteria, creator_score, reviewer_score, rational
 -- **********************************
 -- ****** Table collaborations ******
 -- **********************************
--- Activity thread on the main initiative (lifecycle actions + Q&A).
 
-INSERT INTO collaborations (id, init, user_id, type, content, reference, parent, detail) VALUES
-    (1, 1, 0,  '1-ACTIVATION',     'Initiative created to consolidate organizational knowledge into a single platform.', NULL, NULL, NULL),
-    (2, 1, 2,  '2-ASSESSMENT',     'Assessed scope, criteria and expected impact with stakeholders; prioritized as HIGH.', NULL, NULL, NULL),
-    (3, 1, 4,  '3-EXPLORATION',    'Explored architecture options for the knowledge base and search layer.', 'https://wiki.synapxia.local/initiatives/km/architecture', NULL, NULL),
-    (4, 1, 5,  '3-PROTOTYPING',    'Built a proof of concept for the RAG assistant over a sample of documented assets.', NULL, NULL, NULL),
-    (5, 1, 7,  '6-QUESTION',       'Will the assistant cite the original source for every answer?', NULL, NULL, NULL),
-    (6, 1, 1,  '6-ANSWER',         'Yes; every answer must ground its response and link back to the source asset.', NULL, 5, NULL),
-    (7, 1, 10, '6-COMMENT',        'Capturing tacit knowledge from senior staff should be part of the rollout plan.', NULL, NULL, NULL),
-    (8, 2, 4,  '4-IMPLEMENTATION', 'Delivered the first version of the centralized knowledge base.', NULL, NULL, NULL),
-    (9, 3, 5,  '3-EXPLORATION',    'Evaluating embedding models and retrieval strategies for the assistant.', NULL, NULL, NULL);
+INSERT INTO collaborations (id, init, user_id, type, workflow_status, content, parent) VALUES
+    (1, 1, 1,  'ACTIVATION', 'FINISHED', 'Initiative created to consolidate organizational knowledge into a single platform.', NULL),
+    (2, 1, 0,  'DIAGNOSIS',  'ASSIGNED', NULL, NULL),
+    (3, 1, 0,  'DIAGNOSIS',  'NOTIFIED', NULL, NULL),
+    (4, 1, 0,  'DIAGNOSIS',  'FINISHED', 'Assessed scope, criteria and expected impact with stakeholders; prioritized as HIGH.', NULL),
+    (5, 1, 1,  'ACCEPTANCE', 'ASSIGNED', NULL, NULL),
+    (6, 1, 1,  'ACCEPTANCE', 'NOTIFIED', NULL, NULL),
+    (7, 1, 1,  'ACCEPTANCE', 'FINISHED', 'Built a proof of concept for the RAG assistant over a sample of documented assets.', NULL),
+    (8, 1, 1,  'DELIVERY',   'ASSIGNED', NULL, NULL),
+    (9, 1, 1,  'DELIVERY',   'NOTIFIED', NULL, NULL),
+    (10, 1, 1, 'DELIVERY',   'FINISHED', NULL, NULL),
+    (11, 1, 7,  'QUESTION',  NULL, 'Will the assistant cite the original source for every answer?', NULL),
+    (12, 1, 1,  'ANSWER',    NULL, 'Yes; every answer must ground its response and link back to the source asset.', 5),
+    (13, 1, 10, 'COMMENT',   NULL, 'Capturing tacit knowledge from senior staff should be part of the rollout plan.', NULL);
 
 -- Keep the identity sequence aligned with the explicit ids above
 SELECT setval(pg_get_serial_sequence('collaborations', 'id'), (SELECT MAX(id) FROM collaborations));
@@ -133,7 +135,6 @@ SELECT setval(pg_get_serial_sequence('collaborations', 'id'), (SELECT MAX(id) FR
 -- **********************************
 -- ******* Table related_inits ******
 -- **********************************
--- The platform (1) contains/depends on the supporting initiatives.
 
 INSERT INTO related_inits (source, target, type, rationale) VALUES
     (1, 2, 'CONTAINS',   'The knowledge base is the foundational component of the platform.'),
@@ -156,7 +157,6 @@ INSERT INTO favorite_inits (user_id, init) VALUES
 -- **********************************
 -- ****** Table init_permissions ****
 -- **********************************
--- target_type / access_level reference the shared TARGET_TYPE / ACCESS_LEVEL lists.
 
 INSERT INTO init_permissions (init, target_type, target_code, access_level) VALUES
     (1, 'TEAM',   'CORE', 'MANAGE'),

@@ -167,16 +167,6 @@ INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
     ('ASSET_STATUS', 'en', 'REJECTED', 'Rejected', 40),
     ('ASSET_STATUS', 'en', 'DEPRECATED', 'Deprecated', 50);
 
--- ===== List: Action Status =====
-INSERT INTO lists (code, name, description, type, module) VALUES (
-    'WORKFLOW_STATUS', 'List of action or initiative statuses for system configuration',
-    'List that classifies the statuses of actions or initiatives in SynapxIA.',
-    'LIST_OF_VALUES', NULL);
-INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
-    ('WORKFLOW_STATUS', 'en', 'ASSIGNED', 'Assigned', 10),
-    ('WORKFLOW_STATUS', 'en', 'NOTIFIED', 'Notified', 20),
-    ('WORKFLOW_STATUS', 'en', 'FINISHED', 'Finished', 30);
-
 -- ===== List: Action Type =====
 INSERT INTO lists (code, name, description, type, module) VALUES (
     'ACTION_TYPE', 'List of action types for system configuration',
@@ -188,13 +178,23 @@ INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
     ('ACTION_TYPE', 'en', 'MODIFICATION', 'Modification', 30),
     ('ACTION_TYPE', 'en', 'PUBLICATION', 'Publication', 40),
     ('ACTION_TYPE', 'en', 'REJECTION', 'Rejection', 50),
-    ('ACTION_TYPE', 'en', 'DEPRECATION', 'Deprecation', 60),
-    ('ACTION_TYPE', 'en', 'VERSIONING', 'Versioning', 70),
-    ('ACTION_TYPE', 'en', 'USAGE', 'Usage', 70),
-    ('ACTION_TYPE', 'en', 'VOTE', 'Vote', 80),
-    ('ACTION_TYPE', 'en', 'COMMENT', 'Comment', 90),
-    ('ACTION_TYPE', 'en', 'QUESTION', 'Question', 100),
-    ('ACTION_TYPE', 'en', 'ANSWER', 'Answer', 110);
+    ('ACTION_TYPE', 'en', 'VERSIONING', 'Versioning', 60),
+    ('ACTION_TYPE', 'en', 'DEPRECATION', 'Deprecation', 70),
+    ('ACTION_TYPE', 'en', 'USAGE', 'Usage', 80),
+    ('ACTION_TYPE', 'en', 'VOTE', 'Vote', 90),
+    ('ACTION_TYPE', 'en', 'COMMENT', 'Comment', 100),
+    ('ACTION_TYPE', 'en', 'QUESTION', 'Question', 110),
+    ('ACTION_TYPE', 'en', 'ANSWER', 'Answer', 120);
+
+-- ===== List: Workflow Status =====
+INSERT INTO lists (code, name, description, type, module) VALUES (
+    'WORKFLOW_STATUS', 'List of action or initiative statuses for system configuration',
+    'List that classifies the statuses of actions or initiatives in SynapxIA.',
+    'LIST_OF_VALUES', NULL);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('WORKFLOW_STATUS', 'en', 'ASSIGNED', 'Assigned', 10),
+    ('WORKFLOW_STATUS', 'en', 'NOTIFIED', 'Notified', 20),
+    ('WORKFLOW_STATUS', 'en', 'FINISHED', 'Finished', 30);
 
 -- ===== List: Asset Relation Type =====
 INSERT INTO lists (code, name, description, type, module) VALUES (

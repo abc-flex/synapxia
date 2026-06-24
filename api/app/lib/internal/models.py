@@ -144,6 +144,11 @@ class ActionBase(SQLModel):
         'asset', BigInteger, ForeignKey('assets.id'), nullable=False))
     user_id: int = Field(foreign_key="users.id")
     type: str = Field(max_length=100)
+    # `workflow_status` is a VARCHAR(100) nullable column already present in the
+    # DDL (db/sql/41-lib-ddl.sql) referencing the WORKFLOW_STATUS list
+    # (ASSIGNED/NOTIFIED/FINISHED). It drives the review workflow + notifications;
+    # exposing it here is additive (no migration).
+    workflow_status: Optional[str] = Field(default=None, max_length=100)
     content: Optional[str] = Field(default=None)
     reference: Optional[str] = Field(default=None)
     parent: Optional[int] = Field(default=None, foreign_key="actions.id")
@@ -162,6 +167,9 @@ class ActionCreate(SQLModel):
     asset: int = Field(description="Asset id (FK to assets.id)")
     user_id: int = Field(description="User ID")
     type: str = Field(max_length=100, description="Action type")
+    workflow_status: Optional[str] = Field(
+        default=None, max_length=100,
+        description="Workflow status (WORKFLOW_STATUS list value)")
     content: Optional[str] = Field(
         default=None, description="Action content")
     reference: Optional[str] = Field(
@@ -174,6 +182,9 @@ class ActionCreate(SQLModel):
 
 
 class ActionUpdate(SQLModel):
+    workflow_status: Optional[str] = Field(
+        default=None, max_length=100,
+        description="Workflow status (WORKFLOW_STATUS list value)")
     content: Optional[str] = Field(
         default=None, description="Action content")
     reference: Optional[str] = Field(
@@ -183,6 +194,27 @@ class ActionUpdate(SQLModel):
         default=None, description="Additional detail")
     is_active: Optional[bool] = Field(
         default=None, description="Indicates if the action is active")
+
+
+# Vote DTOs (HU-LI05) — votes are `actions` rows of type VOTE with
+# content POSITIVE/NEGATIVE. No new table: these are request/response shapes
+# layered over the existing `actions` substrate.
+
+
+class VoteRequest(SQLModel):
+    """Body for setting/flipping a user's vote on an asset."""
+    user_id: int = Field(description="User ID")
+    asset: int = Field(description="Asset id (FK to assets.id)")
+    content: str = Field(description="Vote value: POSITIVE or NEGATIVE")
+
+
+class VoteTally(SQLModel):
+    """Aggregated vote summary for an asset (+ the requester's own vote)."""
+    asset: int
+    positive: int = 0
+    negative: int = 0
+    score: int = 0
+    my_vote: Optional[str] = None
 
 # Asset Relations Models
 

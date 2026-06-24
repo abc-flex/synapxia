@@ -156,11 +156,16 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
   }
 
   async function castVote(value: VoteValue) {
+    // Bouncer: ignore clicks while a vote request is already in flight (guards
+    // against rapid double-clicks — and survives a listener bound more than
+    // once — because the flag lives on the DOM node, not a closure).
+    if (voteWrap?.dataset.voting === "1") return;
     const user = getUser() as any;
     if ((!user?.id && user?.id !== 0) || !currentId) {
       (window as any).showToast?.("Sign in to vote", "error");
       return;
     }
+    if (voteWrap) voteWrap.dataset.voting = "1";
     try {
       const tally = await setVote(Number(user.id), currentId, value);
       paintVote(tally);
@@ -174,6 +179,8 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
       getVoteTally(currentId)
         .then((tally) => paintVote(tally))
         .catch(() => {});
+    } finally {
+      if (voteWrap) delete voteWrap.dataset.voting;
     }
   }
 

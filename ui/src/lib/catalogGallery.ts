@@ -179,6 +179,10 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
       const value: VoteValue =
         voteBtn.dataset.action === "vote-up" ? "POSITIVE" : "NEGATIVE";
       const scope = voteBtn.closest<HTMLElement>("[data-vote-bar]");
+      // Bouncer: ignore clicks while this bar's vote request is in flight, so
+      // rapid double-clicks don't fire a burst of requests.
+      if (scope?.dataset.voting === "1") return;
+      if (scope) scope.dataset.voting = "1";
       try {
         const tally = await setVote(Number(user.id), id, value);
         paintVote(scope, tally);
@@ -192,6 +196,8 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
         getVoteTally(id)
           .then((tally) => paintVote(scope, tally))
           .catch(() => {});
+      } finally {
+        if (scope) delete scope.dataset.voting;
       }
       return;
     }

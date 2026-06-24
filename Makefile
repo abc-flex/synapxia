@@ -319,7 +319,7 @@ fmt-check:
 # Run API unit tests via pytest. Targets api/tests/ with SQLite in-memory fixtures.
 pytest:
 	@echo "$(BLUE)Running API unit tests...$(NC)"
-	@docker-compose -f $(COMPOSE_FILE) exec api pytest tests/ -v
+	@docker-compose -f $(COMPOSE_FILE) exec api uv run pytest tests/ -v
 	@echo "$(GREEN)✓ Tests passed$(NC)"
 
 # Create a new Alembic migration (Phase 2).

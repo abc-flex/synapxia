@@ -13,7 +13,9 @@
  *     crudClient.js (reuses the existing delete modal prefill flow)
  */
 import { setFavorite } from "@/lib/favorites";
+import { setVote, type VoteValue } from "@/lib/actions";
 import { getUser } from "@/lib/auth";
+import type { VoteTally } from "@/types/api";
 
 export interface CardGalleryConfig {
   /** Root element id wrapping the toolbar + grid, e.g. "prompts-gallery". */
@@ -92,6 +94,27 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
     if (card) card.dataset.favorite = on ? "yes" : "no";
   };
 
+  // ── Vote bar (up/down) ──────────────────────────────────────────────────────
+  const paintVote = (scope: HTMLElement | null, tally: VoteTally) => {
+    if (!scope) return;
+    const up = scope.querySelector<HTMLElement>('[data-action="vote-up"]');
+    const down = scope.querySelector<HTMLElement>('[data-action="vote-down"]');
+    const score = scope.querySelector<HTMLElement>("[data-vote-score]");
+    const upOn = tally.my_vote === "POSITIVE";
+    const downOn = tally.my_vote === "NEGATIVE";
+    if (up) {
+      up.setAttribute("aria-pressed", String(upOn));
+      up.classList.toggle("text-emerald-500", upOn);
+      up.classList.toggle("text-gray-400", !upOn);
+    }
+    if (down) {
+      down.setAttribute("aria-pressed", String(downOn));
+      down.classList.toggle("text-rose-500", downOn);
+      down.classList.toggle("text-gray-400", !downOn);
+    }
+    if (score) score.textContent = String(tally.score);
+  };
+
   // ── Delegated card interactions ───────────────────────────────────────────
   root.addEventListener("click", async (e) => {
     const target = e.target as HTMLElement;
@@ -115,6 +138,35 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
         paintStar(favBtn, wasOn); // revert
         (window as any).showToast?.(
           err instanceof Error ? err.message : "Could not update favorite",
+          "error",
+        );
+      }
+      return;
+    }
+
+    // Vote up/down → setVote (backend toggles same value off); repaint from the
+    // authoritative tally it returns.
+    const voteBtn = target.closest<HTMLElement>(
+      '[data-action="vote-up"], [data-action="vote-down"]',
+    );
+    if (voteBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const user = getUser() as any;
+      if (!user || user.id === undefined || user.id === null) {
+        (window as any).showToast?.("Sign in to vote", "error");
+        return;
+      }
+      const id = Number(voteBtn.dataset.id);
+      const value: VoteValue =
+        voteBtn.dataset.action === "vote-up" ? "POSITIVE" : "NEGATIVE";
+      const scope = voteBtn.closest<HTMLElement>("[data-vote-bar]");
+      try {
+        const tally = await setVote(Number(user.id), id, value);
+        paintVote(scope, tally);
+      } catch (err) {
+        (window as any).showToast?.(
+          err instanceof Error ? err.message : "Could not register your vote",
           "error",
         );
       }

@@ -37,6 +37,12 @@ export interface Props {
   hero?: boolean;
   /** Tailwind gradient classes for the hero band (e.g. "from-violet-500 to-indigo-500"). */
   heroClass?: string;
+  /** Opt-in up/down vote bar (HU-LI05). */
+  votable?: boolean;
+  /** Initial net vote score (positive − negative). */
+  voteScore?: number;
+  /** The current user's vote: "POSITIVE" | "NEGATIVE" | "" (none). */
+  myVote?: string;
 }
 
 const {
@@ -51,9 +57,18 @@ const {
   detailModalId,
   hero = false,
   heroClass = "from-indigo-500 to-indigo-600",
+  votable = false,
+  voteScore = 0,
+  myVote = "",
 } = Astro.props as Props;
 
 const favOn = favorite === "yes";
+
+const upOn = myVote === "POSITIVE";
+const downOn = myVote === "NEGATIVE";
+const voteBtnBase = "rounded-md p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ";
+const upBtnClass = voteBtnBase + (upOn ? "text-emerald-500" : "text-gray-400");
+const downBtnClass = voteBtnBase + (downOn ? "text-rose-500" : "text-gray-400");
 
 const base = "shrink-0 rounded-md p-1.5 transition-colors ";
 const favBtnLight =
@@ -134,6 +149,38 @@ const favBtnHero = base + "hover:bg-white/20 " + (favOn ? "text-yellow-300" : "t
   <div class="mt-3 flex flex-wrap gap-1.5">
     <slot name="chips" />
   </div>
+
+  {votable && (
+    <div class="mt-3 flex items-center gap-1" data-vote-bar>
+      <button
+        type="button"
+        data-action="vote-up"
+        data-id={String(id)}
+        aria-pressed={upOn ? "true" : "false"}
+        title="Helpful"
+        data-i18n-title="gallery.vote_up"
+        class={upBtnClass}
+      >
+        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M5 12l5-5 5 5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+      <span data-vote-score class="min-w-[1.5rem] text-center text-sm font-semibold text-gray-700 dark:text-gray-200">{voteScore}</span>
+      <button
+        type="button"
+        data-action="vote-down"
+        data-id={String(id)}
+        aria-pressed={downOn ? "true" : "false"}
+        title="Not helpful"
+        data-i18n-title="gallery.vote_down"
+        class={downBtnClass}
+      >
+        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M5 8l5 5 5-5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+    </div>
+  )}
 
   {Astro.slots.has("actions") && (
     <div class="mt-4 flex items-center justify-end gap-2 border-t border-gray-100 pt-3 dark:border-gray-800">

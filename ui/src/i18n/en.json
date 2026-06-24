@@ -735,7 +735,10 @@
     "show_more": "Show more",
     "empty": "Nothing here yet",
     "favorite_add": "Add to favorites",
-    "favorite_remove": "Remove from favorites"
+    "favorite_remove": "Remove from favorites",
+    "vote_up": "Helpful",
+    "vote_down": "Not helpful",
+    "vote_signin": "Sign in to vote"
   },
   "prompt_modal": {
     "title_create": "New Prompt",

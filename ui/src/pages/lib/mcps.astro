@@ -12,6 +12,7 @@ import { getCharacterizations } from "@/lib/characterizations";
 import { getListItemsbyList } from "@/lib/list_items";
 import { getCurrentUser } from "@/lib/auth";
 import { getFavoritesByUser } from "@/lib/favorites";
+import { getActions, summarizeVotes } from "@/lib/actions";
 import { getLocale } from "@/utils/getLocale";
 import { formatRelative } from "@/lib/datatable";
 
@@ -60,12 +61,23 @@ try {
 
 // ── Current user's favorites (SSR) → pre-fill the card stars ───────────────
 let favIds = new Set<number>();
+let myUserId: number | null = null;
 try {
   const me = await getCurrentUser();
-  const favs = await getFavoritesByUser(Number(me.id));
+  myUserId = Number(me.id);
+  const favs = await getFavoritesByUser(myUserId);
   favIds = new Set(favs.map((f) => Number(f.asset)));
 } catch {
   favIds = new Set();
+}
+
+// ── Vote tallies (SSR) → pre-fill each card's score + the user's own vote ──
+let votesByAsset: Map<number, { score: number; positive: number; negative: number; myVote: string | null }> = new Map();
+try {
+  const allActions = await getActions(0, 1000);
+  votesByAsset = summarizeVotes(allActions, myUserId ?? undefined);
+} catch {
+  votesByAsset = new Map();
 }
 
 // ── Status list (ASSET_STATUS) for labels + the status filter ──────────────
@@ -111,6 +123,8 @@ const rows = mcps.map((item) => {
     statusValue: item.status,
     statusLabel: resolveStatusLabel(item.status),
     favorite: favIds.has(item.id) ? "yes" : "no",
+    voteScore: votesByAsset.get(Number(item.id))?.score ?? 0,
+    myVote: votesByAsset.get(Number(item.id))?.myVote ?? "",
     mode: chars.MODE?.value,
     tools,
     serverConfig: chars.SERVER_CONFIG?.detail || chars.SERVER_CONFIG?.value,
@@ -172,10 +186,14 @@ const deleteFields = [{ key: "name", label: "asset_modal.name", pk: true, disabl
           favorite={r.favorite}
           searchText={r.searchText}
           editModalId="mcp-detail-modal"
+          detailModalId="mcp-view-modal"
           mode={r.mode}
           tools={r.tools}
           serverConfig={r.serverConfig}
           tags={r.tags}
+          votable={true}
+          voteScore={r.voteScore}
+          myVote={r.myVote}
         />
       ))}
     </CardGallery>

@@ -61,6 +61,12 @@ services:
         condition: service_healthy
     volumes:
       - ./api:/app
+      # Keep the image's virtualenv (built in-container for the right arch) from
+      # being shadowed by the ./api:/app bind mount. Without this, a stale host
+      # ./api/.venv — e.g. one built for a different architecture — hides the
+      # image's venv and the API crashes on import
+      # (ModuleNotFoundError: No module named 'pydantic_core._pydantic_core').
+      - /app/.venv
     working_dir: /app
     ports:
       - 8000:80

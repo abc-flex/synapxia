@@ -24,6 +24,9 @@ export interface Props {
   tools?: string[];
   instructionsPreview?: string;
   tags?: string[];
+  votable?: boolean;
+  voteScore?: number;
+  myVote?: string;
 }
 
 const {
@@ -41,6 +44,9 @@ const {
   tools = [],
   instructionsPreview,
   tags = [],
+  votable = false,
+  voteScore = 0,
+  myVote = "",
 } = Astro.props as Props;
 
 const MAX_TOOLS = 4;
@@ -60,6 +66,9 @@ const extraTools = tools.length - shownTools.length;
   detailModalId={detailModalId}
   hero={true}
   heroClass="from-violet-500 to-indigo-500"
+  votable={votable}
+  voteScore={voteScore}
+  myVote={myVote}
 >
   <span slot="icon" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/20 text-white">
     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">

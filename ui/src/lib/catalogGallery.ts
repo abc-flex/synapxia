@@ -13,7 +13,37 @@
  *     crudClient.js (reuses the existing delete modal prefill flow)
  */
 import { setFavorite } from "@/lib/favorites";
+import { setVote, getVoteTally, type VoteValue } from "@/lib/actions";
 import { getUser } from "@/lib/auth";
+import { translate } from "@/utils/i18nClient";
+import type { VoteTally } from "@/types/api";
+
+/**
+ * Reflect a vote button's state: filled icon when active (outline when not),
+ * and flip the title/aria-label to "Remove vote" so the un-vote toggle is
+ * discoverable. Keeps the `data-i18n-*` keys in sync so a later language
+ * switch re-translates correctly.
+ */
+export function styleVoteButton(
+  btn: HTMLElement | null,
+  on: boolean,
+  baseKey: string,
+  activeColor: string,
+): void {
+  if (!btn) return;
+  btn.setAttribute("aria-pressed", String(on));
+  // Solid thumb icon stays filled; state shows via color only (vivid when it's
+  // the user's vote, muted gray otherwise) — no fill toggling, which turned the
+  // glyph into a messy blob.
+  btn.classList.toggle(activeColor, on);
+  btn.classList.toggle("text-gray-400", !on);
+  const key = on ? "gallery.vote_remove" : baseKey;
+  const label = translate(key);
+  btn.setAttribute("data-i18n-title", key);
+  btn.setAttribute("data-i18n-aria-label", key);
+  btn.setAttribute("title", label);
+  btn.setAttribute("aria-label", label);
+}
 
 export interface CardGalleryConfig {
   /** Root element id wrapping the toolbar + grid, e.g. "prompts-gallery". */
@@ -92,6 +122,17 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
     if (card) card.dataset.favorite = on ? "yes" : "no";
   };
 
+  // ── Vote bar (up/down) ──────────────────────────────────────────────────────
+  const paintVote = (scope: HTMLElement | null, tally: VoteTally) => {
+    if (!scope) return;
+    const up = scope.querySelector<HTMLElement>('[data-action="vote-up"]');
+    const down = scope.querySelector<HTMLElement>('[data-action="vote-down"]');
+    const score = scope.querySelector<HTMLElement>("[data-vote-score]");
+    styleVoteButton(up, tally.my_vote === "POSITIVE", "gallery.vote_up", "text-emerald-500");
+    styleVoteButton(down, tally.my_vote === "NEGATIVE", "gallery.vote_down", "text-rose-500");
+    if (score) score.textContent = String(tally.score);
+  };
+
   // ── Delegated card interactions ───────────────────────────────────────────
   root.addEventListener("click", async (e) => {
     const target = e.target as HTMLElement;
@@ -117,6 +158,46 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
           err instanceof Error ? err.message : "Could not update favorite",
           "error",
         );
+      }
+      return;
+    }
+
+    // Vote up/down → setVote (backend toggles same value off); repaint from the
+    // authoritative tally it returns.
+    const voteBtn = target.closest<HTMLElement>(
+      '[data-action="vote-up"], [data-action="vote-down"]',
+    );
+    if (voteBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const user = getUser() as any;
+      if (!user || user.id === undefined || user.id === null) {
+        (window as any).showToast?.("Sign in to vote", "error");
+        return;
+      }
+      const id = Number(voteBtn.dataset.id);
+      const value: VoteValue =
+        voteBtn.dataset.action === "vote-up" ? "POSITIVE" : "NEGATIVE";
+      const scope = voteBtn.closest<HTMLElement>("[data-vote-bar]");
+      // Bouncer: ignore clicks while this bar's vote request is in flight, so
+      // rapid double-clicks don't fire a burst of requests.
+      if (scope?.dataset.voting === "1") return;
+      if (scope) scope.dataset.voting = "1";
+      try {
+        const tally = await setVote(Number(user.id), id, value);
+        paintVote(scope, tally);
+      } catch (err) {
+        (window as any).showToast?.(
+          err instanceof Error ? err.message : "Could not register your vote",
+          "error",
+        );
+        // Re-sync from the authoritative tally so a failed vote never leaves
+        // the bar in a stale state.
+        getVoteTally(id)
+          .then((tally) => paintVote(scope, tally))
+          .catch(() => {});
+      } finally {
+        if (scope) delete scope.dataset.voting;
       }
       return;
     }

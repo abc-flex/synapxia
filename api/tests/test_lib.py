@@ -32,6 +32,12 @@ def test_action_asset_is_int_id():
     assert ActionCreate.model_fields["asset"].annotation is int
 
 
+def test_action_exposes_workflow_status():
+    """`workflow_status` (VARCHAR(100) DDL column) must be mapped on the model."""
+    for model in (Action, ActionCreate, ActionUpdate):
+        assert "workflow_status" in model.model_fields
+
+
 def test_action_text_columns_unbounded():
     """DDL TEXT columns (content, reference, detail) must not be length-capped."""
     from annotated_types import MaxLen
@@ -54,8 +60,9 @@ def test_lib_models_match_ddl_fields():
         Characterization: ("asset", "feature", "value", "detail", "is_active",
                            "created_at", "updated_at"),
         Favorite: ("user_id", "asset", "is_active", "created_at", "updated_at"),
-        Action: ("id", "asset", "user_id", "type", "content", "reference",
-                 "parent", "detail", "is_active", "created_at", "updated_at"),
+        Action: ("id", "asset", "user_id", "type", "workflow_status", "content",
+                 "reference", "parent", "detail", "is_active", "created_at",
+                 "updated_at"),
         AssetRelation: ("source", "target", "type", "rationale", "is_active",
                         "created_at", "updated_at"),
         AssetPermission: ("id", "asset", "target_type", "target_code",

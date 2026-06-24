@@ -724,6 +724,58 @@ export interface FavoriteUpdate {
   is_active?: boolean;
 }
 
+// ============================================================================
+// Actions — the generic `actions` event log. Every asset interaction (votes,
+// comments, questions, answers) and review-workflow step is a row here; the
+// `type` field discriminates. No per-feature table.
+// ============================================================================
+
+export interface Action {
+  id?: number;
+  asset: number;
+  user_id: number;
+  type: string;
+  workflow_status?: string;
+  content?: string;
+  reference?: string;
+  parent?: number;
+  detail?: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ActionCreate {
+  asset: number;
+  user_id: number;
+  type: string;
+  workflow_status?: string;
+  content?: string;
+  reference?: string;
+  parent?: number;
+  detail?: string;
+  is_active?: boolean;
+}
+
+export interface ActionUpdate {
+  workflow_status?: string;
+  content?: string;
+  reference?: string;
+  parent?: number;
+  detail?: string;
+  is_active?: boolean;
+}
+
+// Aggregated vote summary for an asset (HU-LI05). Votes are `actions` of type
+// VOTE with content POSITIVE/NEGATIVE; `my_vote` is the requester's own vote.
+export interface VoteTally {
+  asset: number;
+  positive: number;
+  negative: number;
+  score: number;
+  my_vote?: string | null;
+}
+
 // Criteria types
 export interface Criteria {
   code: string;

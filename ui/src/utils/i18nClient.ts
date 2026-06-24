@@ -8,6 +8,19 @@ const getNestedValue = (obj: any, path: string): string => {
   return path.split('.').reduce((current, key) => current?.[key], obj) ?? path;
 };
 
+/**
+ * Look up a single translation for the current locale (read from
+ * localStorage['lang']). Falls back to the key itself when missing. Use this
+ * from client islands that need to set a label imperatively (e.g. the vote
+ * buttons swapping between "Helpful" and "Remove vote" when toggled).
+ */
+export const translate = (key: string): string => {
+  const lang =
+    (typeof localStorage !== 'undefined' && localStorage.getItem('lang')) || 'en';
+  const locale = (lang === 'es' ? 'es' : 'en') as keyof typeof translations;
+  return getNestedValue(translations[locale], key);
+};
+
 export const loadClientTranslations = () => {
   const lang = localStorage.getItem('lang') || 'en';
   const locale = (lang === 'es' ? 'es' : 'en') as keyof typeof translations;

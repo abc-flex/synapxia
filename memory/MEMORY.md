@@ -116,6 +116,7 @@ Run everything: `make dev`. Verify: `make test`.
 | P1 | API linting not CI-gated | `make lint`/`make fmt-check` now exist but not wired into GitHub Actions. Violations won't block PRs until CI workflow is added. |
 | P1 | No UI tests | Manual verification per quickstart guides only. ESLint now wired; UI test framework (Playwright) is post-launch scope. |
 | P1 | caniuse-lite stale | Run `npx update-browserslist-db@latest` in `ui/` before next UI release. |
+| P1 | `make rebuild`/`make reset` breaks the API container on Apple Silicon (arm64) | `api/Dockerfile` is `python:3.14-slim` + `requires-python>=3.14` (kept at 3.14 by team direction). cp314 has **no working `pydantic_core` wheel for linux/arm64**, so after a rebuild `uv sync` leaves a venv that crashes on import (`ModuleNotFoundError: pydantic_core._pydantic_core`) and the API won't boot → in-container `make pytest` can't run. Workaround on arm64: run the backend on a host **Python 3.13** venv (`uv venv --python 3.13`, `uv pip install -r api/requirements.txt pytest httpx pytest-asyncio`) pointed at the Docker DB (`DB_HOST=localhost`) — that's how the voting fix was tested + verified live. Likely fine on x86 CI where cp314 wheels exist. |
 | P2 | Stub domains not implemented | `genai`, `inits`, `insights`, `workflows` are empty placeholders — each needs a SpecKit spec before implementation. |
 | P2 | No Alembic migrations | Append-only SQL files work for greenfield; first breaking schema change in production will require `api/alembic/` setup. |
 

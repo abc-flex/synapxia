@@ -12,6 +12,7 @@ import logging
 from datetime import datetime
 from typing import List, Optional
 
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
 from .models import Action, Asset
@@ -117,46 +118,56 @@ def set_vote(
 
     existing = get_user_vote(session, user_id, asset_id)
 
-    # Explicit clear.
-    if value is None:
-        if existing and existing.is_active:
-            existing.is_active = False
-            existing.updated_at = datetime.utcnow()
-            session.add(existing)
-            session.commit()
-            session.refresh(existing)
-            logger.info("Vote cleared: user=%s asset=%s", user_id, asset_id)
-        return None
+    # All writes share one IntegrityError guard: on a DB-constraint violation we
+    # roll back and re-raise so the caller (vote routes) can map it to a 409
+    # instead of letting it bubble up as a raw 500. Mirrors the favorites route.
+    try:
+        # Explicit clear.
+        if value is None:
+            if existing and existing.is_active:
+                existing.is_active = False
+                existing.updated_at = datetime.utcnow()
+                session.add(existing)
+                session.commit()
+                session.refresh(existing)
+                logger.info("Vote cleared: user=%s asset=%s", user_id, asset_id)
+            return None
 
-    if existing is not None:
-        # Same active value → toggle off.
-        if existing.is_active and existing.content == value:
-            existing.is_active = False
+        if existing is not None:
+            # Same active value → toggle off.
+            if existing.is_active and existing.content == value:
+                existing.is_active = False
+                existing.updated_at = datetime.utcnow()
+                session.add(existing)
+                session.commit()
+                session.refresh(existing)
+                logger.info(
+                    "Vote toggled off: user=%s asset=%s value=%s",
+                    user_id, asset_id, value)
+                return None
+            # Otherwise set / flip / reactivate the existing row.
+            existing.content = value
+            existing.is_active = True
             existing.updated_at = datetime.utcnow()
             session.add(existing)
             session.commit()
             session.refresh(existing)
             logger.info(
-                "Vote toggled off: user=%s asset=%s value=%s",
-                user_id, asset_id, value)
-            return None
-        # Otherwise set / flip / reactivate the existing row.
-        existing.content = value
-        existing.is_active = True
-        existing.updated_at = datetime.utcnow()
-        session.add(existing)
-        session.commit()
-        session.refresh(existing)
-        logger.info(
-            "Vote set: user=%s asset=%s value=%s", user_id, asset_id, value)
-        return existing
+                "Vote set: user=%s asset=%s value=%s", user_id, asset_id, value)
+            return existing
 
-    # First vote for this (user, asset).
-    action = Action(asset=asset_id, user_id=user_id,
-                    type=TYPE_VOTE, content=value)
-    session.add(action)
-    session.commit()
-    session.refresh(action)
-    logger.info("Vote created: user=%s asset=%s value=%s",
-                user_id, asset_id, value)
-    return action
+        # First vote for this (user, asset).
+        action = Action(asset=asset_id, user_id=user_id,
+                        type=TYPE_VOTE, content=value)
+        session.add(action)
+        session.commit()
+        session.refresh(action)
+        logger.info("Vote created: user=%s asset=%s value=%s",
+                    user_id, asset_id, value)
+        return action
+    except IntegrityError:
+        session.rollback()
+        logger.error(
+            "Integrity error setting vote: user=%s asset=%s value=%s",
+            user_id, asset_id, value)
+        raise

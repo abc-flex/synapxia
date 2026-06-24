@@ -13,9 +13,35 @@
  *     crudClient.js (reuses the existing delete modal prefill flow)
  */
 import { setFavorite } from "@/lib/favorites";
-import { setVote, type VoteValue } from "@/lib/actions";
+import { setVote, getVoteTally, type VoteValue } from "@/lib/actions";
 import { getUser } from "@/lib/auth";
+import { translate } from "@/utils/i18nClient";
 import type { VoteTally } from "@/types/api";
+
+/**
+ * Reflect a vote button's state: filled icon when active (outline when not),
+ * and flip the title/aria-label to "Remove vote" so the un-vote toggle is
+ * discoverable. Keeps the `data-i18n-*` keys in sync so a later language
+ * switch re-translates correctly.
+ */
+export function styleVoteButton(
+  btn: HTMLElement | null,
+  on: boolean,
+  baseKey: string,
+  activeColor: string,
+): void {
+  if (!btn) return;
+  btn.setAttribute("aria-pressed", String(on));
+  btn.classList.toggle(activeColor, on);
+  btn.classList.toggle("text-gray-400", !on);
+  btn.querySelector("svg")?.setAttribute("fill", on ? "currentColor" : "none");
+  const key = on ? "gallery.vote_remove" : baseKey;
+  const label = translate(key);
+  btn.setAttribute("data-i18n-title", key);
+  btn.setAttribute("data-i18n-aria-label", key);
+  btn.setAttribute("title", label);
+  btn.setAttribute("aria-label", label);
+}
 
 export interface CardGalleryConfig {
   /** Root element id wrapping the toolbar + grid, e.g. "prompts-gallery". */
@@ -100,18 +126,8 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
     const up = scope.querySelector<HTMLElement>('[data-action="vote-up"]');
     const down = scope.querySelector<HTMLElement>('[data-action="vote-down"]');
     const score = scope.querySelector<HTMLElement>("[data-vote-score]");
-    const upOn = tally.my_vote === "POSITIVE";
-    const downOn = tally.my_vote === "NEGATIVE";
-    if (up) {
-      up.setAttribute("aria-pressed", String(upOn));
-      up.classList.toggle("text-emerald-500", upOn);
-      up.classList.toggle("text-gray-400", !upOn);
-    }
-    if (down) {
-      down.setAttribute("aria-pressed", String(downOn));
-      down.classList.toggle("text-rose-500", downOn);
-      down.classList.toggle("text-gray-400", !downOn);
-    }
+    styleVoteButton(up, tally.my_vote === "POSITIVE", "gallery.vote_up", "text-emerald-500");
+    styleVoteButton(down, tally.my_vote === "NEGATIVE", "gallery.vote_down", "text-rose-500");
     if (score) score.textContent = String(tally.score);
   };
 
@@ -169,6 +185,11 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
           err instanceof Error ? err.message : "Could not register your vote",
           "error",
         );
+        // Re-sync from the authoritative tally so a failed vote never leaves
+        // the bar in a stale state.
+        getVoteTally(id)
+          .then((tally) => paintVote(scope, tally))
+          .catch(() => {});
       }
       return;
     }

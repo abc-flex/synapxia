@@ -183,30 +183,14 @@ const deleteFields = [{ key: "name", label: "asset_modal.name", pk: true, disabl
     import { initCardGallery } from "@/lib/catalogGallery";
     import { deleteAsset } from "@/lib/assets";
     import { loadClientTranslations } from "@/utils/i18nClient";
+    import { installGlobalToast, showToast } from "@/lib/toast";
 
     initCardGallery({ galleryId: "prompts-gallery", pageSize: 12 });
     loadClientTranslations();
 
-    function showToast(message: string, variant = "info") {
-      const toast = document.createElement("div");
-      toast.className = `fixed top-4 right-4 z-50 max-w-md p-4 rounded-lg border shadow-lg transition-all duration-300 ${
-        variant === "error"
-          ? "bg-red-50 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
-          : "bg-green-50 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
-      }`;
-      toast.innerHTML = `
-        <div class="flex items-start gap-3">
-          <div class="flex-1 text-sm font-medium">${message}</div>
-          <button type="button" class="text-gray-400 hover:text-gray-600" onclick="this.parentElement.parentElement.remove()">✕</button>
-        </div>`;
-      document.body.appendChild(toast);
-      setTimeout(() => {
-        toast.style.opacity = "0";
-        toast.style.transform = "translateX(100%)";
-        setTimeout(() => toast.remove(), 300);
-      }, 5000);
-    }
-    (window as any).showToast = showToast;
+    // Top-layer toast: renders above the native <dialog> detail modal (a plain
+    // body-appended toast loses to the modal's browser top layer).
+    installGlobalToast();
 
     // Open + prefill the delete confirmation modal when a card's delete button
     // fires (the gallery dispatches `gallery-delete` with id + name).

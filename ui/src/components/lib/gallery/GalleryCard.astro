@@ -69,6 +69,14 @@ const downOn = myVote === "NEGATIVE";
 const voteBtnBase = "rounded-md p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ";
 const upBtnClass = voteBtnBase + (upOn ? "text-emerald-500" : "text-gray-400");
 const downBtnClass = voteBtnBase + (downOn ? "text-rose-500" : "text-gray-400");
+// Active vote = filled icon; inactive = outline. Title/aria-label flip to
+// "Remove vote" when active so the un-vote toggle is discoverable.
+const upKey = upOn ? "gallery.vote_remove" : "gallery.vote_up";
+const downKey = downOn ? "gallery.vote_remove" : "gallery.vote_down";
+const upTitle = upOn ? "Remove vote" : "Helpful";
+const downTitle = downOn ? "Remove vote" : "Not helpful";
+const upFill = upOn ? "currentColor" : "none";
+const downFill = downOn ? "currentColor" : "none";
 
 const base = "shrink-0 rounded-md p-1.5 transition-colors ";
 const favBtnLight =
@@ -157,12 +165,14 @@ const favBtnHero = base + "hover:bg-white/20 " + (favOn ? "text-yellow-300" : "t
         data-action="vote-up"
         data-id={String(id)}
         aria-pressed={upOn ? "true" : "false"}
-        title="Helpful"
-        data-i18n-title="gallery.vote_up"
+        title={upTitle}
+        aria-label={upTitle}
+        data-i18n-title={upKey}
+        data-i18n-aria-label={upKey}
         class={upBtnClass}
       >
-        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
-          <path d="M5 12l5-5 5 5" stroke-linecap="round" stroke-linejoin="round" />
+        <svg class="h-5 w-5" viewBox="0 0 20 20" fill={upFill} stroke="currentColor" stroke-width="1.5">
+          <path d="M10 6L16 14L4 14Z" stroke-linejoin="round" />
         </svg>
       </button>
       <span data-vote-score class="min-w-[1.5rem] text-center text-sm font-semibold text-gray-700 dark:text-gray-200">{voteScore}</span>
@@ -171,12 +181,14 @@ const favBtnHero = base + "hover:bg-white/20 " + (favOn ? "text-yellow-300" : "t
         data-action="vote-down"
         data-id={String(id)}
         aria-pressed={downOn ? "true" : "false"}
-        title="Not helpful"
-        data-i18n-title="gallery.vote_down"
+        title={downTitle}
+        aria-label={downTitle}
+        data-i18n-title={downKey}
+        data-i18n-aria-label={downKey}
         class={downBtnClass}
       >
-        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
-          <path d="M5 8l5 5 5-5" stroke-linecap="round" stroke-linejoin="round" />
+        <svg class="h-5 w-5" viewBox="0 0 20 20" fill={downFill} stroke="currentColor" stroke-width="1.5">
+          <path d="M10 14L4 6L16 6Z" stroke-linejoin="round" />
         </svg>
       </button>
     </div>

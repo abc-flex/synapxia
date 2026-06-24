@@ -738,6 +738,7 @@
     "favorite_remove": "Quitar de favoritos",
     "vote_up": "Útil",
     "vote_down": "No útil",
+    "vote_remove": "Quitar voto",
     "vote_signin": "Inicia sesión para votar"
   },
   "prompt_modal": {

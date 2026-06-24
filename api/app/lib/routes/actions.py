@@ -103,6 +103,15 @@ def set_vote(
             session, payload.user_id, payload.asset, payload.content)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    except IntegrityError:
+        session.rollback()
+        logger.error(
+            "Integrity error setting vote: user=%s asset=%s",
+            payload.user_id, payload.asset)
+        raise HTTPException(
+            status_code=409,
+            detail="Could not register vote due to a data conflict"
+        )
     tally = actions_service.get_vote_tally(
         session, payload.asset, payload.user_id)
     return VoteTally(asset=payload.asset, **tally)
@@ -122,7 +131,17 @@ def clear_vote(
     vote = actions_service.get_user_vote(session, user_id, asset_id)
     if not vote or not vote.is_active:
         raise HTTPException(status_code=404, detail="Vote not found")
-    actions_service.set_vote(session, user_id, asset_id, None)
+    try:
+        actions_service.set_vote(session, user_id, asset_id, None)
+    except IntegrityError:
+        session.rollback()
+        logger.error(
+            "Integrity error clearing vote: user=%s asset=%s",
+            user_id, asset_id)
+        raise HTTPException(
+            status_code=409,
+            detail="Could not clear vote due to a data conflict"
+        )
     tally = actions_service.get_vote_tally(session, asset_id, user_id)
     return VoteTally(asset=asset_id, **tally)
 

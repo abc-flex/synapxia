@@ -14,6 +14,7 @@ import { getAsset } from "@/lib/assets";
 import { getCharacterizationsByAsset } from "@/lib/characterizations";
 import { isFavorite, setFavorite } from "@/lib/favorites";
 import { getVoteTally, setVote, type VoteValue } from "@/lib/actions";
+import { styleVoteButton } from "@/lib/catalogGallery";
 import { getUser } from "@/lib/auth";
 import { statusTone } from "@/lib/datatable";
 import type { VoteTally } from "@/types/api";
@@ -137,33 +138,19 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
   function paintVote(tally: VoteTally) {
     const upOn = tally.my_vote === "POSITIVE";
     const downOn = tally.my_vote === "NEGATIVE";
-    if (voteUp) {
-      voteUp.setAttribute("aria-pressed", String(upOn));
-      voteUp.classList.toggle("text-emerald-500", upOn);
-      voteUp.classList.toggle("text-gray-400", !upOn);
-    }
-    if (voteDown) {
-      voteDown.setAttribute("aria-pressed", String(downOn));
-      voteDown.classList.toggle("text-rose-500", downOn);
-      voteDown.classList.toggle("text-gray-400", !downOn);
-    }
+    styleVoteButton(voteUp, upOn, "gallery.vote_up", "text-emerald-500");
+    styleVoteButton(voteDown, downOn, "gallery.vote_down", "text-rose-500");
     if (voteScore) voteScore.textContent = String(tally.score);
     // Keep the matching gallery card's vote bar in sync.
     const card = document.querySelector<HTMLElement>(`[data-card][data-id="${currentId}"] [data-vote-bar]`);
     if (card) {
-      const cUp = card.querySelector<HTMLElement>('[data-action="vote-up"]');
-      const cDown = card.querySelector<HTMLElement>('[data-action="vote-down"]');
+      styleVoteButton(
+        card.querySelector<HTMLElement>('[data-action="vote-up"]'),
+        upOn, "gallery.vote_up", "text-emerald-500");
+      styleVoteButton(
+        card.querySelector<HTMLElement>('[data-action="vote-down"]'),
+        downOn, "gallery.vote_down", "text-rose-500");
       const cScore = card.querySelector<HTMLElement>("[data-vote-score]");
-      if (cUp) {
-        cUp.setAttribute("aria-pressed", String(upOn));
-        cUp.classList.toggle("text-emerald-500", upOn);
-        cUp.classList.toggle("text-gray-400", !upOn);
-      }
-      if (cDown) {
-        cDown.setAttribute("aria-pressed", String(downOn));
-        cDown.classList.toggle("text-rose-500", downOn);
-        cDown.classList.toggle("text-gray-400", !downOn);
-      }
       if (cScore) cScore.textContent = String(tally.score);
     }
   }
@@ -182,6 +169,11 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
         err instanceof Error ? err.message : "Could not register your vote",
         "error",
       );
+      // Re-sync from the authoritative tally so a failed vote never leaves the
+      // bar (and the mirrored card) in a stale state.
+      getVoteTally(currentId)
+        .then((tally) => paintVote(tally))
+        .catch(() => {});
     }
   }
 

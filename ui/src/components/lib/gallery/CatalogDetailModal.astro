@@ -78,11 +78,13 @@ const {
           id={`${modalId}-vote-up`}
           aria-pressed="false"
           title="Helpful"
+          aria-label="Helpful"
           data-i18n-title="gallery.vote_up"
+          data-i18n-aria-label="gallery.vote_up"
           class="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
         >
-          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
-            <path d="M5 12l5-5 5 5" stroke-linecap="round" stroke-linejoin="round" />
+          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M10 6L16 14L4 14Z" stroke-linejoin="round" />
           </svg>
         </button>
         <span id={`${modalId}-vote-score`} class="min-w-[1.75rem] text-center text-sm font-semibold text-gray-700 dark:text-gray-200">0</span>
@@ -91,11 +93,13 @@ const {
           id={`${modalId}-vote-down`}
           aria-pressed="false"
           title="Not helpful"
+          aria-label="Not helpful"
           data-i18n-title="gallery.vote_down"
+          data-i18n-aria-label="gallery.vote_down"
           class="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
         >
-          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
-            <path d="M5 8l5 5 5-5" stroke-linecap="round" stroke-linejoin="round" />
+          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M10 14L4 6L16 6Z" stroke-linejoin="round" />
           </svg>
         </button>
       </div>

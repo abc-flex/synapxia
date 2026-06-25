@@ -176,6 +176,7 @@ export function mountCatalogModal(cfg: CatalogModalConfig): void {
     favoriteOn = false;
     paintFavorite();
     clearStatus();
+    if (submitBtn) submitBtn.disabled = false;
   }
 
   function openCreate() {
@@ -197,6 +198,10 @@ export function mountCatalogModal(cfg: CatalogModalConfig): void {
     resetForm();
     applySection(section);
     editingId = Number(assetId);
+    // Block Save until the asset + its characterizations finish loading.
+    // Otherwise a Save against the still-empty feature inputs would flush blanks
+    // and delete the asset's existing characterizations (esp. in "detail" mode).
+    if (submitBtn) submitBtn.disabled = true;
     if (titleEl && cfg.titleEditKey) {
       titleEl.setAttribute("data-i18n", cfg.titleEditKey);
       titleEl.textContent = tr(cfg.titleEditKey, titleEl.textContent || "");
@@ -238,7 +243,10 @@ export function mountCatalogModal(cfg: CatalogModalConfig): void {
         const input = featureInput(feat.name);
         if (input) input.value = (byFeature[feat.name]?.[feat.column] as string) ?? "";
       }
+      // Load complete — Save is now safe to use.
+      if (submitBtn) submitBtn.disabled = false;
     } catch (e) {
+      // Leave Save disabled: saving after a failed load could wipe data.
       showStatus(
         e instanceof Error
           ? e.message

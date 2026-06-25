@@ -277,7 +277,11 @@ export function mountForo(cfg: ForoConfig): void {
       ...comments.map((c) => ({ item: c, node: commentNode(c) })),
       ...questions.map((t) => ({ item: t.question, node: questionNode(t) })),
     ];
-    entries.sort((a, b) => (a.item.created_at < b.item.created_at ? 1 : -1));
+    entries.sort((a, b) => {
+      if (a.item.created_at !== b.item.created_at)
+        return a.item.created_at < b.item.created_at ? 1 : -1; // newest first
+      return b.item.id - a.item.id; // deterministic tiebreak for equal timestamps
+    });
 
     if (entries.length === 0) renderEmpty(feedEl, "foro.empty", "No discussion yet.");
     else for (const e of entries) feedEl.appendChild(e.node);

@@ -117,6 +117,10 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
   let currentId: number | null = null;
   let currentName = "";
   let favoriteOn = false;
+  // Bumped on every open(); async loads capture it and bail if it changed,
+  // so a slow response for a previously-viewed asset can't paint over the one
+  // now shown (related-asset clicks re-open this same modal in place).
+  let openSeq = 0;
 
   function paintFavorite() {
     if (!favBtn || !favSvg) return;
@@ -297,6 +301,7 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
   }
 
   async function open(assetId: number) {
+    const seq = ++openSeq;
     currentId = assetId;
     favoriteOn = false;
     paintFavorite();
@@ -307,14 +312,15 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
     if (stagePill) stagePill.classList.add("hidden");
     // Guard: a related-asset click re-opens this same modal in place, so the
     // dialog may already be open — calling showModal() twice would throw.
+    // The scrollable element is the inner body, not the <dialog> itself.
     if (!dialog!.open) dialog!.showModal();
-    else dialog!.scrollTo?.({ top: 0 });
+    else (dialog!.querySelector(".overflow-y-auto") as HTMLElement | null)?.scrollTo({ top: 0 });
 
     // Review-stage badge (latest workflow action) — distinct from asset.status.
     if (stagePill && currentId) {
       getWorkflowStage(currentId)
         .then((stage) => {
-          if (!stage) return;
+          if (seq !== openSeq || !stage) return; // a newer open() superseded this
           const typeLabel = tr(`workflow_stage.${stage.type}`, stage.type);
           const statusLabel = stage.workflow_status
             ? tr(`workflow_stage.${stage.workflow_status}`, stage.workflow_status)
@@ -330,6 +336,7 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
     if ((user?.id || user?.id === 0) && currentId) {
       isFavorite(Number(user.id), currentId)
         .then((on) => {
+          if (seq !== openSeq) return;
           favoriteOn = on;
           paintFavorite();
         })
@@ -343,12 +350,16 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
       if (voteUpCount) voteUpCount.textContent = "0";
       if (voteDownCount) voteDownCount.textContent = "0";
       getVoteTally(currentId)
-        .then((tally) => paintVote(tally))
+        .then((tally) => {
+          if (seq !== openSeq) return;
+          paintVote(tally);
+        })
         .catch(() => {});
     }
 
     try {
       const asset = await getAsset(assetId);
+      if (seq !== openSeq) return; // superseded by a newer open()
       currentName = asset.name ?? "";
       if (nameEl) nameEl.textContent = currentName || "—";
 
@@ -365,6 +376,7 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
       }
 
       const chars = await getCharacterizationsByAsset(assetId);
+      if (seq !== openSeq) return; // superseded by a newer open()
       const byFeature = Object.fromEntries(chars.map((c) => [c.feature, c]));
 
       if (descEl) {

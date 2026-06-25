@@ -408,8 +408,14 @@ def get_asset_history(session: Session, asset_id: int) -> List[dict]:
             "created_at": asset.created_at,
         })
 
-    # Newest first across actions + the synthetic marker.
-    entries.sort(key=lambda e: e["created_at"], reverse=True)
+    # Newest first across actions + the synthetic marker. Tie-break by id (the
+    # seed inserts a whole workflow thread at one NOW(), so timestamps collide —
+    # without this the steps could render out of order, e.g. "reviewed" before
+    # "assigned to review"). Synthetic CREATED (id None) sorts oldest on a tie.
+    entries.sort(
+        key=lambda e: (e["created_at"], e["id"] if e["id"] is not None else -1),
+        reverse=True,
+    )
     return entries
 
 

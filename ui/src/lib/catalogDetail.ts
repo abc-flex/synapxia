@@ -15,6 +15,7 @@ import { getCharacterizationsByAsset } from "@/lib/characterizations";
 import { isFavorite, setFavorite } from "@/lib/favorites";
 import { getVoteTally, setVote, type VoteValue } from "@/lib/actions";
 import { mountForo } from "@/lib/foro";
+import { mountRelated } from "@/lib/related";
 import { styleVoteButton } from "@/lib/catalogGallery";
 import { getUser } from "@/lib/auth";
 import { statusTone } from "@/lib/datatable";
@@ -62,9 +63,11 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
   const dialog = document.getElementById(modalId) as HTMLDialogElement | null;
   if (!dialog) return;
 
-  // Hydrate the asset discussion section (comments/questions/answers, HU-LI06).
-  // Self-contained: it hooks the same open trigger and queries within
-  // `#${modalId}-foro`, so all catalogs using this detail view get a foro.
+  // Hydrate the read-only related-assets section (HU-LI07) and the discussion
+  // section (comments/questions/answers, HU-LI06). Both are self-contained: they
+  // hook the same open trigger and query within `#${modalId}-related` /
+  // `#${modalId}-foro`, so every catalog using this detail view gets them.
+  mountRelated({ modalId });
   mountForo({ modalId });
 
   const nameEl = document.getElementById(`${modalId}-name`) as HTMLElement | null;

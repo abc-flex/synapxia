@@ -15,6 +15,7 @@ import type {
   AssetRelation,
   AssetRelationCreate,
   AssetRelationUpdate,
+  RelatedAsset,
 } from "../types/api";
 
 /** Active relations where the given asset is the source. */
@@ -25,6 +26,32 @@ export async function getAssetRelationsBySource(
 ): Promise<AssetRelation[]> {
   return apiGet<AssetRelation[]>(
     `/api/asset_relations/source/${encodeURIComponent(String(assetId))}${buildQueryString({ skip, limit })}`,
+  );
+}
+
+/** Active relations where the given asset is the target (reverse lookup). */
+export async function getAssetRelationsByTarget(
+  assetId: number,
+  skip = 0,
+  limit = 100,
+): Promise<AssetRelation[]> {
+  return apiGet<AssetRelation[]>(
+    `/api/asset_relations/target/${encodeURIComponent(String(assetId))}${buildQueryString({ skip, limit })}`,
+  );
+}
+
+/**
+ * Resolved related assets in both directions, de-duplicated by the other asset
+ * id (outgoing wins), inactive/missing assets excluded. One call backs the
+ * read-only "Related" section on the gallery detail modal (HU-LI07).
+ */
+export async function getRelatedAssets(
+  assetId: number,
+  skip = 0,
+  limit = 100,
+): Promise<RelatedAsset[]> {
+  return apiGet<RelatedAsset[]>(
+    `/api/asset_relations/related/${encodeURIComponent(String(assetId))}${buildQueryString({ skip, limit })}`,
   );
 }
 

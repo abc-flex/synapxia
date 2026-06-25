@@ -15,7 +15,7 @@ import { apiGet, apiPost, apiDelete } from "./api";
 import { getUser } from "./auth";
 import { formatRelative } from "./datatable";
 import { translate } from "@/utils/i18nClient";
-import type { DiscussionItem } from "../types/api";
+import type { Action, DiscussionItem } from "../types/api";
 
 // ── Service ──────────────────────────────────────────────────────────────────
 
@@ -82,6 +82,22 @@ export function groupDiscussion(items: DiscussionItem[]): {
     if (thread) thread.answers.push(ans);
   }
   return { comments, questions: [...threads.values()] };
+}
+
+/**
+ * Per-asset count of active discussion messages (comments + questions + answers)
+ * from one bulk `getActions` list — used to pre-fill the card's discuss badge
+ * without an N+1 of per-asset calls (mirrors `summarizeVotes`).
+ */
+export function summarizeDiscussionCounts(actions: Action[]): Map<number, number> {
+  const map = new Map<number, number>();
+  for (const a of actions) {
+    if (a.is_active === false) continue;
+    if (a.type !== "COMMENT" && a.type !== "QUESTION" && a.type !== "ANSWER") continue;
+    const id = Number(a.asset);
+    map.set(id, (map.get(id) ?? 0) + 1);
+  }
+  return map;
 }
 
 // ── Controller (hydrates the discussion section in CatalogDetailModal) ────────
@@ -245,6 +261,17 @@ export function mountForo(cfg: ForoConfig): void {
 
     if (questions.length === 0) renderEmpty(questionsEl, "foro.empty_questions", "No questions yet.");
     else for (const q of questions) questionsEl.appendChild(questionNode(q));
+
+    // Keep the originating card's discuss badge in sync with the live count.
+    if (assetId != null) {
+      const badge = document.querySelector<HTMLElement>(
+        `[data-card][data-id="${assetId}"] [data-discuss-count]`);
+      if (badge) {
+        const n = items.length;
+        badge.textContent = n > 0 ? String(n) : "";
+        badge.classList.toggle("hidden", n === 0);
+      }
+    }
   }
 
   async function load(id: number) {

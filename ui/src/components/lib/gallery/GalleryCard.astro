@@ -213,9 +213,7 @@ const favBtnHero = base + "hover:bg-white/20 " + (favOn ? "text-yellow-300" : "t
           <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3.75h6m-9.75 5.25 3.6-2.7a1.5 1.5 0 0 1 .9-.3H18a2.25 2.25 0 0 0 2.25-2.25v-6A2.25 2.25 0 0 0 18 3.75H6A2.25 2.25 0 0 0 3.75 6v11.25Z" />
           </svg>
-          {discussCount > 0 && (
-            <span data-discuss-count class="text-sm font-semibold">{discussCount}</span>
-          )}
+          <span data-discuss-count class={`text-sm font-semibold ${discussCount > 0 ? "" : "hidden"}`}>{discussCount > 0 ? discussCount : ""}</span>
         </button>
       )}
     </div>

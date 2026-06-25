@@ -14,6 +14,7 @@
  */
 import Related from "@/components/lib/gallery/Related.astro";
 import Foro from "@/components/lib/gallery/Foro.astro";
+import HistoryTimeline from "@/components/lib/gallery/HistoryTimeline.astro";
 
 export interface Props {
   /** Dialog id, e.g. "prompt-view-modal". */
@@ -112,6 +113,7 @@ const {
       <div id={`${modalId}-sections`} class="space-y-6"></div>
       <Related modalId={modalId} />
       <Foro modalId={modalId} />
+      <HistoryTimeline modalId={modalId} />
     </div>
 
     {/* Footer */}

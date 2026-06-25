@@ -249,6 +249,21 @@ class DiscussionItem(SQLModel):
     parent: Optional[int] = None
     created_at: datetime
 
+
+class HistoryEntry(SQLModel):
+    """A single asset-history timeline entry (HU-LI10) — read projection over the
+    ``actions`` log plus a synthetic CREATED marker. ``id`` is null for the
+    synthetic marker. ``summary`` is the server-derived English description; the
+    UI localizes by ``type`` and falls back to it. ``content`` is present only
+    for COMMENT/QUESTION/ANSWER entries."""
+    id: Optional[int] = None
+    type: str
+    actor: Optional[str] = None
+    summary: str
+    content: Optional[str] = None
+    workflow_status: Optional[str] = None
+    created_at: datetime
+
 # Asset Relations Models
 
 

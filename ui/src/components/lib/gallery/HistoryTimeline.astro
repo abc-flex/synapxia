@@ -1,0 +1,33 @@
+---
+/**
+ * HistoryTimeline — the asset "activity" section (HU-LI10) embedded inside the
+ * reusable CatalogDetailModal. Presentational shell only: a heading + a list
+ * container that the `mountHistory` controller (lib/history.ts) hydrates on
+ * open with a newest-first timeline (creation, votes, comments, questions,
+ * answers, workflow actions).
+ *
+ * Read-only and backed by the existing `actions` log via the resolved
+ * `/api/actions/history/asset/{id}` route — no new table.
+ *
+ * Ids are scoped by `modalId` so every catalog (prompts/agents/mcps) gets its
+ * own section; the controller queries within `#${modalId}-history`.
+ */
+export interface Props {
+  /** The detail dialog id, e.g. "mcp-view-modal". */
+  modalId: string;
+}
+const { modalId } = Astro.props as Props;
+---
+
+<section
+  id={`${modalId}-history`}
+  class="border-t border-gray-200 pt-5 dark:border-gray-800"
+>
+  <h4 class="mb-4 text-sm font-bold text-gray-900 dark:text-white" data-i18n="history.title">
+    Activity
+  </h4>
+
+  <p data-history-status class="hidden text-sm text-gray-400 dark:text-gray-500"></p>
+
+  <div data-history-list class="max-h-72 overflow-y-auto"></div>
+</section>

@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from ..internal.models import (
     Action, ActionCreate, ActionUpdate, Asset, VoteRequest, VoteTally,
     ParticipationCreate, AnswerCreate, DiscussionItem, HistoryEntry,
+    NotificationItem,
 )
 from ..internal import actions_service
 from ..internal.dependencies import get_db_session
@@ -266,6 +267,78 @@ def get_history(
         )
     entries = actions_service.get_asset_history(session, asset_id)
     return entries[skip:skip + limit]
+
+
+# ---------------------------------------------------------------------------
+# Notifications (HU-LI11) — workflow assignments for the current user (from JWT).
+# Registered BEFORE the composite `/{id}` route so "notifications" isn't parsed
+# as an action id. Transitions insert successive workflow_status rows.
+# ---------------------------------------------------------------------------
+
+
+def _own_notification(session: Session, action_id: int, current: User) -> Action:
+    """Load a workflow action that belongs to the current user, or 404. Keeps
+    one user from advancing another user's assignment (per-user isolation)."""
+    action = session.get(Action, action_id)
+    if (
+        not action
+        or action.user_id != current.id
+        or action.type not in actions_service.NOTIFICATION_TYPES
+    ):
+        raise HTTPException(status_code=404, detail="Notification not found")
+    return action
+
+
+@router.get("/notifications", response_model=List[NotificationItem])
+def get_notifications(
+    session: Session = Depends(get_db_session),
+    current: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=False))
+) -> List[NotificationItem]:
+    """
+    The current user's open workflow notifications (newest first): the latest row
+    of each (asset, type) assignment thread whose status is ASSIGNED or NOTIFIED.
+    The user is taken from the JWT — a user only ever sees their own.
+    """
+    return actions_service.list_notifications(session, current.id)
+
+
+@router.post("/notifications/{id}/notified", response_model=Action)
+def mark_notification_notified(
+    id: int, session: Session = Depends(get_db_session),
+    current: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=True))
+) -> Action:
+    """
+    Mark an ASSIGNED notification as seen (NOTIFIED) — removes the bold style.
+    Idempotent: a no-op if the thread is already past ASSIGNED.
+
+    - **id**: The notification's latest action id (from GET /notifications)
+    """
+    action = _own_notification(session, id, current)
+    try:
+        return actions_service.mark_notified(session, action)
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(
+            status_code=409, detail="Could not update the notification due to a data conflict")
+
+
+@router.post("/notifications/{id}/dismiss", response_model=Action)
+def dismiss_notification(
+    id: int, session: Session = Depends(get_db_session),
+    current: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=True))
+) -> Action:
+    """
+    Dismiss a notification (insert a FINISHED row) — removes it from the list.
+
+    - **id**: The notification's latest action id (from GET /notifications)
+    """
+    action = _own_notification(session, id, current)
+    try:
+        return actions_service.dismiss_notification(session, action)
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(
+            status_code=409, detail="Could not dismiss the notification due to a data conflict")
 
 
 @router.get("/{id}", response_model=Action)

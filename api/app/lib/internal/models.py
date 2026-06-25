@@ -264,6 +264,20 @@ class HistoryEntry(SQLModel):
     workflow_status: Optional[str] = None
     created_at: datetime
 
+
+class NotificationItem(SQLModel):
+    """An open workflow notification (HU-LI11) — the latest row of a per-(asset,
+    type) assignment thread directed at the current user, with status ASSIGNED
+    (``unread`` True, shown bold) or NOTIFIED (seen, dismissible). ``id`` is that
+    latest action's id, used to advance the thread (notified/dismiss)."""
+    id: int
+    asset: int
+    asset_name: Optional[str] = None
+    type: str
+    workflow_status: str
+    unread: bool
+    created_at: datetime
+
 # Asset Relations Models
 
 

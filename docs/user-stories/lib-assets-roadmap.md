@@ -3,8 +3,10 @@
 > **Status:** Phase 1 (Voting, HU-LI05) is **shipped** (PR #53, merged to `develop`).
 > Phase 2 (Foro, HU-LI06) is **shipped** (PR #55, merged to `develop`).
 > Phase 3 (Related Assets, HU-LI07) is **shipped** (PR #56, merged to `develop`).
-> Phase 4 (History, HU-LI10) is **shipped** (PR #57).
-> Phase 5 is scoped below and not yet started. Numbering follows the project
+> Phase 4 (History, HU-LI10) is **shipped** (PR #57, merged to `develop`).
+> Phase 5 (Notifications, HU-LI11) is **shipped** (branch `feat/lib-assets-notifications`) — the
+> read/transition side only; the review workflow that *generates* assignments remains out of scope.
+> **The lib roadmap is complete.** Numbering follows the project
 > user-story spreadsheet; see §4 for the mapping to `docs/user-stories/04-lib.md`.
 
 ## Context
@@ -69,7 +71,7 @@ The favorite feature is the **template** to mirror end-to-end:
 | 2 | PR2 | Foro: comments, questions, answers | HU-LI06 (+HU-Comment/Question/Answer) | M | PR1 (service) | ✅ shipped (`feat/lib-assets-foro`) |
 | 3 | PR3 | Related Assets (surface existing backend on galleries) | HU-LI07 | S | — (parallelizable) | ✅ shipped (PR #56) |
 | 4 | PR4 | History / activity timeline | HU-LI10 | M | PR1, PR2 | ✅ shipped (PR #57) |
-| 5 | PR5 | Notifications (workflow only) | HU-LI11 (HU-Notifications) | M/L | PR1 (workflow_status); review workflow (ext.) | ⬜ pending |
+| 5 | PR5 | Notifications (workflow only) | HU-LI11 (HU-Notifications) | M/L | PR1 (workflow_status); review workflow (ext.) | ✅ shipped (`feat/lib-assets-notifications`) — display/transition only |
 
 Critical path: **PR1 → PR2 → PR4 → PR5**. **PR3** can run in parallel any time.
 

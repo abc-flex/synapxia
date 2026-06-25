@@ -385,3 +385,125 @@ def get_asset_history(session: Session, asset_id: int) -> List[dict]:
     # Newest first across actions + the synthetic marker.
     entries.sort(key=lambda e: e["created_at"], reverse=True)
     return entries
+
+
+# ---------------------------------------------------------------------------
+# Notifications (HU-LI11) — workflow assignments surfaced to the assignee.
+#
+# Per docs/user-stories/lib-status.md (HU-Notifications): an assignment is a
+# review-workflow action (REVIEW/MODIFICATION/PUBLICATION/REJECTION) directed at
+# a user, whose lifecycle is tracked by INSERTING successive ``actions`` rows
+# with workflow_status ASSIGNED → NOTIFIED → FINISHED (matching the seed — each
+# transition is a new row, never an update). A notification is the latest row of
+# a per-(asset, type) assignment thread whose status is still ASSIGNED (bold) or
+# NOTIFIED (seen, dismissible); FINISHED threads drop off the list.
+#
+# This service is the read + transition side only. The actions that *generate*
+# assignments come from the propose/review workflow (HU-Propose/Review/Modify),
+# which is out of scope here — notifications display whatever assignments exist.
+# ---------------------------------------------------------------------------
+
+TYPE_REVIEW = "REVIEW"
+TYPE_MODIFICATION = "MODIFICATION"
+TYPE_PUBLICATION = "PUBLICATION"
+TYPE_REJECTION = "REJECTION"
+NOTIFICATION_TYPES = (TYPE_REVIEW, TYPE_MODIFICATION, TYPE_PUBLICATION, TYPE_REJECTION)
+
+WORKFLOW_ASSIGNED = "ASSIGNED"
+WORKFLOW_NOTIFIED = "NOTIFIED"
+WORKFLOW_FINISHED = "FINISHED"
+# Statuses that keep a thread in the notification list (FINISHED removes it).
+NOTIFICATION_OPEN_STATUSES = (WORKFLOW_ASSIGNED, WORKFLOW_NOTIFIED)
+
+
+def list_notifications(session: Session, user_id: int) -> List[dict]:
+    """The open workflow notifications for a user, newest first.
+
+    Groups the user's workflow actions by (asset, type), takes the latest row of
+    each thread, and keeps those whose status is ASSIGNED or NOTIFIED. Asset
+    names are resolved with a single batched ``IN`` query (no N+1). ``unread`` is
+    True while the thread is still ASSIGNED (the "bold" state in the UI).
+    """
+    rows = session.exec(
+        select(Action)
+        .where(
+            Action.user_id == user_id,
+            Action.is_active == True,  # noqa: E712
+            Action.type.in_(NOTIFICATION_TYPES),
+            Action.workflow_status.is_not(None),
+        )
+        .order_by(Action.created_at.asc(), Action.id.asc())
+    ).all()
+
+    # Collapse each (asset, type) thread to its latest row (rows are ascending,
+    # so the last seen per key wins).
+    latest: dict = {}
+    for r in rows:
+        latest[(r.asset, r.type)] = r
+
+    threads = [
+        r for r in latest.values()
+        if r.workflow_status in NOTIFICATION_OPEN_STATUSES
+    ]
+
+    asset_ids = {r.asset for r in threads}
+    names: dict = {}
+    if asset_ids:
+        assets = session.exec(select(Asset).where(Asset.id.in_(asset_ids))).all()
+        names = {a.id: a.name for a in assets}
+
+    items = [
+        {
+            "id": r.id,
+            "asset": r.asset,
+            "asset_name": names.get(r.asset),
+            "type": r.type,
+            "workflow_status": r.workflow_status,
+            "unread": r.workflow_status == WORKFLOW_ASSIGNED,
+            "created_at": r.created_at,
+        }
+        for r in threads
+    ]
+    items.sort(key=lambda i: i["created_at"], reverse=True)
+    return items
+
+
+def _insert_status(session: Session, action: Action, new_status: str) -> Action:
+    """Insert a new row continuing ``action``'s assignment thread with
+    ``new_status`` (carries asset/user/type/parent). Rolls back + re-raises
+    IntegrityError so the route can map it to 409."""
+    row = Action(
+        asset=action.asset,
+        user_id=action.user_id,
+        type=action.type,
+        workflow_status=new_status,
+        parent=action.parent,
+        reference=action.reference,
+    )
+    try:
+        session.add(row)
+        session.commit()
+        session.refresh(row)
+    except IntegrityError:
+        session.rollback()
+        logger.error(
+            "Integrity error advancing notification to %s: asset=%s user=%s type=%s",
+            new_status, action.asset, action.user_id, action.type)
+        raise
+    logger.info(
+        "Notification %s: asset=%s user=%s type=%s",
+        new_status, action.asset, action.user_id, action.type)
+    return row
+
+
+def mark_notified(session: Session, action: Action) -> Action:
+    """Transition an ASSIGNED assignment to NOTIFIED (insert a NOTIFIED row).
+    Idempotent: if the thread isn't ASSIGNED, returns the action unchanged."""
+    if action.workflow_status != WORKFLOW_ASSIGNED:
+        return action
+    return _insert_status(session, action, WORKFLOW_NOTIFIED)
+
+
+def dismiss_notification(session: Session, action: Action) -> Action:
+    """Dismiss an assignment (insert a FINISHED row), removing it from the list."""
+    return _insert_status(session, action, WORKFLOW_FINISHED)

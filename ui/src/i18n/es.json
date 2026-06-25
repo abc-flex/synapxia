@@ -739,7 +739,8 @@
     "vote_up": "Útil",
     "vote_down": "No útil",
     "vote_remove": "Quitar voto",
-    "vote_signin": "Inicia sesión para votar"
+    "vote_signin": "Inicia sesión para votar",
+    "discuss": "Comentar o preguntar"
   },
   "foro": {
     "title": "Discusión",

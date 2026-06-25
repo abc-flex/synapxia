@@ -202,6 +202,28 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
       return;
     }
 
+    // Discuss → open the read-only detail view focused on the discussion (foro)
+    // section. Reuses the whole-card open path but flags `data-foro-focus` so the
+    // foro controller scrolls to + focuses the comment composer.
+    const discussBtn = target.closest<HTMLElement>('[data-action="discuss"]');
+    if (discussBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const card = discussBtn.closest<HTMLElement>("[data-card]");
+      const openModal = card?.dataset.detailModal;
+      if (card && openModal && card.dataset.id) {
+        const synthetic = document.createElement("button");
+        synthetic.style.display = "none";
+        synthetic.setAttribute("data-modal-open", openModal);
+        synthetic.setAttribute("data-asset-id", card.dataset.id);
+        synthetic.setAttribute("data-foro-focus", "1");
+        document.body.appendChild(synthetic);
+        synthetic.click();
+        synthetic.remove();
+      }
+      return;
+    }
+
     // Generic copy-to-clipboard action (e.g. an MCP card's "Copy config").
     const copyBtn = target.closest<HTMLElement>('[data-action="copy"]');
     if (copyBtn) {

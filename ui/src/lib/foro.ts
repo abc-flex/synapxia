@@ -347,11 +347,19 @@ export function mountForo(cfg: ForoConfig): void {
     }
   });
 
-  // Load on the same open trigger the detail controller listens for.
+  // Load on the same open trigger the detail controller listens for. When the
+  // opener carries `data-foro-focus` (the card's discuss button), scroll the
+  // discussion into view and focus the comment composer once the modal is open.
   document.addEventListener("click", (e) => {
     const opener = (e.target as HTMLElement).closest?.(`[data-modal-open="${modalId}"]`);
     if (!opener) return;
     const id = (opener as HTMLElement).dataset.assetId;
     if (id) load(Number(id));
+    if ((opener as HTMLElement).dataset.foroFocus) {
+      setTimeout(() => {
+        root.scrollIntoView({ behavior: "smooth", block: "start" });
+        commentInput?.focus();
+      }, 200);
+    }
   });
 }

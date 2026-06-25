@@ -807,6 +807,26 @@
       "EXTENDS": "Extends"
     }
   },
+  "propose": {
+    "title": "Propose an asset",
+    "subtitle": "Submit a new asset for review. A reviewer will be notified to approve, request changes, or reject it.",
+    "name": "Name",
+    "name_placeholder": "Asset name",
+    "description": "Description",
+    "description_placeholder": "Short description",
+    "category": "Category",
+    "category_placeholder": "Select a category…",
+    "reviewer": "Reviewer",
+    "reviewer_auto": "Auto-assign",
+    "tags": "Tags",
+    "tags_placeholder": "comma, separated, tags",
+    "detail": "Detail",
+    "detail_placeholder": "Additional detail (optional)",
+    "submit": "Propose for review",
+    "required": "Name and category are required",
+    "success": "Asset proposed for review",
+    "error": "Could not propose the asset"
+  },
   "prompt_modal": {
     "title_create": "New Prompt",
     "title_edit": "Edit Prompt",

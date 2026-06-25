@@ -402,3 +402,32 @@ class AssetWithAccessLevels(SQLModel):
     updated_at: Optional[datetime] = None
     access_levels: List[str] = Field(default_factory=list)
     is_public: bool = False
+
+
+# Propose Models (HU-Propose) — the review-workflow entry point
+
+
+class ProposeRequest(SQLModel):
+    """Request body for proposing an asset for review (HU-Propose). Creates the
+    asset (PROPOSED) plus its workflow records in one transaction. ``values``
+    optionally overrides the category specs' default characterization values
+    (feature code → value); omitted features fall back to the spec default.
+    ``reviewer_id`` is optional — when omitted the service auto-assigns the first
+    eligible (ADMINISTRATIVE) reviewer."""
+    name: str = Field(max_length=100, description="Asset name")
+    description: Optional[str] = Field(
+        default=None, max_length=500, description="Asset description")
+    category: str = Field(max_length=50, description="Category code (drives the spec features)")
+    reference: Optional[str] = Field(default=None, description="Asset reference")
+    tags: Optional[Any] = Field(default=None, description="Asset tags (JSON)")
+    detail: Optional[str] = Field(default=None, description="Asset detail")
+    reviewer_id: Optional[int] = Field(
+        default=None, description="Reviewer user id (ADMINISTRATIVE); auto-assigned if omitted")
+    values: Optional[Dict[str, str]] = Field(
+        default=None, description="Optional per-feature characterization values (feature → value)")
+
+
+class ReviewerOption(SQLModel):
+    """A selectable reviewer for the propose form ({value, label})."""
+    value: int = Field(description="Reviewer user id")
+    label: str = Field(description="Reviewer display name")

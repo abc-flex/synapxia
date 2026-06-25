@@ -807,6 +807,26 @@
       "EXTENDS": "Extiende"
     }
   },
+  "propose": {
+    "title": "Proponer un activo",
+    "subtitle": "Envía un nuevo activo para revisión. Se notificará a un revisor para aprobar, solicitar cambios o rechazar.",
+    "name": "Nombre",
+    "name_placeholder": "Nombre del activo",
+    "description": "Descripción",
+    "description_placeholder": "Descripción breve",
+    "category": "Categoría",
+    "category_placeholder": "Selecciona una categoría…",
+    "reviewer": "Revisor",
+    "reviewer_auto": "Asignar automáticamente",
+    "tags": "Etiquetas",
+    "tags_placeholder": "etiquetas, separadas, por comas",
+    "detail": "Detalle",
+    "detail_placeholder": "Detalle adicional (opcional)",
+    "submit": "Proponer para revisión",
+    "required": "El nombre y la categoría son obligatorios",
+    "success": "Activo propuesto para revisión",
+    "error": "No se pudo proponer el activo"
+  },
   "prompt_modal": {
     "title_create": "Nuevo Prompt",
     "title_edit": "Editar Prompt",

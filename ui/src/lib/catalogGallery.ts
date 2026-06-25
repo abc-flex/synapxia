@@ -133,6 +133,50 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
     if (score) score.textContent = String(tally.score);
   };
 
+  // Debounce votes: a burst of rapid clicks on one card coalesces into a single
+  // request that fires ~300ms after clicking pauses (per-card timer). The
+  // in-flight guard then serializes any still-overlapping request.
+  const voteTimers = new WeakMap<HTMLElement, ReturnType<typeof setTimeout>>();
+  const VOTE_DEBOUNCE_MS = 300;
+
+  async function sendVote(
+    scope: HTMLElement,
+    userId: number,
+    id: number,
+    value: VoteValue,
+  ) {
+    if (scope.dataset.voting === "1") return; // a request is already in flight
+    scope.dataset.voting = "1";
+    try {
+      const tally = await setVote(userId, id, value);
+      paintVote(scope, tally);
+    } catch (err) {
+      (window as any).showToast?.(
+        err instanceof Error ? err.message : "Could not register your vote",
+        "error",
+      );
+      // Re-sync from the authoritative tally so a failed vote never leaves the
+      // bar in a stale state.
+      getVoteTally(id)
+        .then((tally) => paintVote(scope, tally))
+        .catch(() => {});
+    } finally {
+      delete scope.dataset.voting;
+    }
+  }
+
+  function queueVote(scope: HTMLElement, userId: number, id: number, value: VoteValue) {
+    const pending = voteTimers.get(scope);
+    if (pending) clearTimeout(pending);
+    voteTimers.set(
+      scope,
+      setTimeout(() => {
+        voteTimers.delete(scope);
+        void sendVote(scope, userId, id, value);
+      }, VOTE_DEBOUNCE_MS),
+    );
+  }
+
   // ── Delegated card interactions ───────────────────────────────────────────
   root.addEventListener("click", async (e) => {
     const target = e.target as HTMLElement;
@@ -179,26 +223,8 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
       const value: VoteValue =
         voteBtn.dataset.action === "vote-up" ? "POSITIVE" : "NEGATIVE";
       const scope = voteBtn.closest<HTMLElement>("[data-vote-bar]");
-      // Bouncer: ignore clicks while this bar's vote request is in flight, so
-      // rapid double-clicks don't fire a burst of requests.
-      if (scope?.dataset.voting === "1") return;
-      if (scope) scope.dataset.voting = "1";
-      try {
-        const tally = await setVote(Number(user.id), id, value);
-        paintVote(scope, tally);
-      } catch (err) {
-        (window as any).showToast?.(
-          err instanceof Error ? err.message : "Could not register your vote",
-          "error",
-        );
-        // Re-sync from the authoritative tally so a failed vote never leaves
-        // the bar in a stale state.
-        getVoteTally(id)
-          .then((tally) => paintVote(scope, tally))
-          .catch(() => {});
-      } finally {
-        if (scope) delete scope.dataset.voting;
-      }
+      // Debounce: coalesce a burst of rapid clicks into one request.
+      if (scope) queueVote(scope, Number(user.id), id, value);
       return;
     }
 

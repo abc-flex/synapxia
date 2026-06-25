@@ -161,16 +161,15 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
     }
   }
 
-  async function castVote(value: VoteValue) {
-    // Bouncer: ignore clicks while a vote request is already in flight (guards
-    // against rapid double-clicks — and survives a listener bound more than
-    // once — because the flag lives on the DOM node, not a closure).
+  let voteTimer: ReturnType<typeof setTimeout> | null = null;
+  const VOTE_DEBOUNCE_MS = 300;
+
+  async function sendVote(value: VoteValue) {
+    // In-flight guard (DOM-level, survives a double-bound listener) serializes
+    // any still-overlapping request.
     if (voteWrap?.dataset.voting === "1") return;
     const user = getUser() as any;
-    if ((!user?.id && user?.id !== 0) || !currentId) {
-      (window as any).showToast?.("Sign in to vote", "error");
-      return;
-    }
+    if ((!user?.id && user?.id !== 0) || !currentId) return;
     if (voteWrap) voteWrap.dataset.voting = "1";
     try {
       const tally = await setVote(Number(user.id), currentId, value);
@@ -188,6 +187,22 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
     } finally {
       if (voteWrap) delete voteWrap.dataset.voting;
     }
+  }
+
+  // Debounce: a burst of rapid clicks coalesces into a single request that fires
+  // ~300ms after clicking pauses, so continuous clicking no longer floods the
+  // API with POST /votes.
+  function castVote(value: VoteValue) {
+    const user = getUser() as any;
+    if ((!user?.id && user?.id !== 0) || !currentId) {
+      (window as any).showToast?.("Sign in to vote", "error");
+      return;
+    }
+    if (voteTimer) clearTimeout(voteTimer);
+    voteTimer = setTimeout(() => {
+      voteTimer = null;
+      void sendVote(value);
+    }, VOTE_DEBOUNCE_MS);
   }
 
   voteUp?.addEventListener("click", () => castVote("POSITIVE"));
@@ -342,6 +357,10 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
   }
 
   function close() {
+    if (voteTimer) {
+      clearTimeout(voteTimer);
+      voteTimer = null;
+    }
     dialog!.close();
   }
 

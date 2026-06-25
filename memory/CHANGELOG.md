@@ -20,6 +20,11 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-06-24 19:17 — admin/privileges: module-driven Option select
+- In the Privilege modal, selecting a **Module** now rebuilds the **Option** `<select>` with only that module's options (option codes are only unique within a module). Server fetches the full options (`getOptions(undefined, 0, 1000)`) and builds an `optionsByModule` map (`{ moduleCode: [{value: code, label: name}] }`) passed to the client via `data-options-by-module` on `#privileges-data`. Table `option_name` now resolves by composite `(module, code)`.
+- Client rebuilds options on the module select's `change` (create + edit modals), preserving the translated placeholder and previous value; the create modal is seeded for its default module on load. Works on edit prefill because `crudClient` sets `module` before `option` in `fieldKeys` order. Mirrors the dimension-driven Value pattern from `collab/metrics`.
+- UI-only change; verified via IDE diagnostics (no TS errors). Files affected: `ui/src/pages/admin/privileges.astro`
+
 ## 2026-06-24 18:47 — DataTable: persist column filter selection in the URL
 - `advancedTable.ts` now writes each column filter's value back to the URL (`history.replaceState`, no reload) on change, under the same query param it already reads on init (`columnFilter`…`columnFilter4`). A reload — e.g. the one after a create/edit/delete save — now restores the filter the user was viewing instead of snapping back to the original URL value. The Reset button also clears those params.
 - Centralized here (a bundled script that runs in dev and prod) instead of per-page inline `type="module"` scripts, which 404 in the Vercel build; works automatically for every page with a `columnFilter` (users, metrics, list_items, …). Removed the now-redundant per-page sync snippets from `collab/metrics.astro` and `admin/users.astro`.

@@ -14,6 +14,7 @@ import { getAsset } from "@/lib/assets";
 import { getCharacterizationsByAsset } from "@/lib/characterizations";
 import { isFavorite, setFavorite } from "@/lib/favorites";
 import { getVoteTally, setVote, type VoteValue } from "@/lib/actions";
+import { mountForo } from "@/lib/foro";
 import { styleVoteButton } from "@/lib/catalogGallery";
 import { getUser } from "@/lib/auth";
 import { statusTone } from "@/lib/datatable";
@@ -60,6 +61,11 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
 
   const dialog = document.getElementById(modalId) as HTMLDialogElement | null;
   if (!dialog) return;
+
+  // Hydrate the asset discussion section (comments/questions/answers, HU-LI06).
+  // Self-contained: it hooks the same open trigger and queries within
+  // `#${modalId}-foro`, so all catalogs using this detail view get a foro.
+  mountForo({ modalId });
 
   const nameEl = document.getElementById(`${modalId}-name`) as HTMLElement | null;
   const statusPill = document.getElementById(`${modalId}-status-pill`) as HTMLElement | null;

@@ -741,6 +741,24 @@
     "vote_remove": "Quitar voto",
     "vote_signin": "Inicia sesión para votar"
   },
+  "foro": {
+    "title": "Discusión",
+    "comments": "Comentarios",
+    "questions": "Preguntas",
+    "add_comment": "Comentar",
+    "comment_placeholder": "Escribe un comentario…",
+    "ask_question": "Preguntar",
+    "question_placeholder": "Haz una pregunta…",
+    "answer": "Responder",
+    "answer_placeholder": "Escribe una respuesta…",
+    "empty_comments": "Aún no hay comentarios.",
+    "empty_questions": "Aún no hay preguntas.",
+    "loading": "Cargando la discusión…",
+    "error": "No se pudo cargar la discusión.",
+    "sign_in": "Inicia sesión para participar",
+    "delete": "Eliminar",
+    "anonymous": "Alguien"
+  },
   "prompt_modal": {
     "title_create": "Nuevo Prompt",
     "title_edit": "Editar Prompt",

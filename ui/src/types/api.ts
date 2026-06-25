@@ -776,6 +776,30 @@ export interface VoteTally {
   my_vote?: string | null;
 }
 
+// Foro (HU-LI06) — comments/questions/answers are `actions` of type
+// COMMENT/QUESTION/ANSWER; an answer threads to its question via `parent`.
+// `DiscussionItem` is the read shape (author username resolved server-side).
+export interface DiscussionItem {
+  id: number;
+  asset: number;
+  user_id: number;
+  author?: string | null;
+  type: "COMMENT" | "QUESTION" | "ANSWER";
+  content?: string | null;
+  parent?: number | null;
+  created_at: string;
+}
+
+export interface ParticipationCreate {
+  user_id: number;
+  asset: number;
+  content: string;
+}
+
+export interface AnswerCreate extends ParticipationCreate {
+  parent: number;
+}
+
 // Criteria types
 export interface Criteria {
   code: string;

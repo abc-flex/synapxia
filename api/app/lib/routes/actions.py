@@ -8,6 +8,7 @@ from sqlalchemy.exc import IntegrityError
 
 from ..internal.models import (
     Action, ActionCreate, ActionUpdate, Asset, VoteRequest, VoteTally,
+    ParticipationCreate, AnswerCreate, DiscussionItem,
 )
 from ..internal import actions_service
 from ..internal.dependencies import get_db_session
@@ -144,6 +145,97 @@ def clear_vote(
         )
     tally = actions_service.get_vote_tally(session, asset_id, user_id)
     return VoteTally(asset=asset_id, **tally)
+
+
+# ---------------------------------------------------------------------------
+# Foro (HU-LI06) — comments / questions / answers as actions. Registered BEFORE
+# the composite `/{id}` route so the literal segments aren't parsed as an id.
+# Logical delete reuses the existing DELETE /api/actions/{id}.
+# ---------------------------------------------------------------------------
+
+
+@router.get("/discussion/asset/{asset_id}", response_model=List[DiscussionItem])
+def get_discussion(
+    asset_id: int, session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=False))
+) -> List[DiscussionItem]:
+    """
+    The discussion (comments + questions + answers) for an asset, oldest first,
+    each enriched with the author's username. Answers carry the question id in
+    ``parent`` so the client can thread them.
+
+    - **asset_id**: Asset id
+    """
+    if not actions_service.asset_exists(session, asset_id):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Asset with id '{asset_id}' does not exist"
+        )
+    return actions_service.list_discussion(session, asset_id)
+
+
+@router.post("/comments", response_model=DiscussionItem, status_code=201)
+def add_comment(
+    payload: ParticipationCreate, session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=True))
+) -> DiscussionItem:
+    """Post a comment on an asset (an ``actions`` row of type COMMENT)."""
+    return _create_participation(
+        session, "comment",
+        lambda: actions_service.add_comment(
+            session, payload.user_id, payload.asset, payload.content),
+        payload.asset)
+
+
+@router.post("/questions", response_model=DiscussionItem, status_code=201)
+def add_question(
+    payload: ParticipationCreate, session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=True))
+) -> DiscussionItem:
+    """Ask a question on an asset (an ``actions`` row of type QUESTION)."""
+    return _create_participation(
+        session, "question",
+        lambda: actions_service.add_question(
+            session, payload.user_id, payload.asset, payload.content),
+        payload.asset)
+
+
+@router.post("/answers", response_model=DiscussionItem, status_code=201)
+def add_answer(
+    payload: AnswerCreate, session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=True))
+) -> DiscussionItem:
+    """Answer a question (``actions`` row of type ANSWER, ``parent`` = question
+    id). The parent must be an active question on the same asset (else 400)."""
+    return _create_participation(
+        session, "answer",
+        lambda: actions_service.add_answer(
+            session, payload.user_id, payload.asset, payload.content,
+            payload.parent),
+        payload.asset)
+
+
+def _create_participation(session, label, create_fn, asset_id):
+    """Shared body for the comment/question/answer POST handlers: validate the
+    asset, run the service create, and map ValueError→400 / IntegrityError→409
+    (never a raw 500). Returns the enriched discussion item."""
+    if not actions_service.asset_exists(session, asset_id):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Asset with id '{asset_id}' does not exist"
+        )
+    try:
+        action = create_fn()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except IntegrityError:
+        session.rollback()
+        logger.error("Integrity error adding %s on asset=%s", label, asset_id)
+        raise HTTPException(
+            status_code=409,
+            detail=f"Could not add {label} due to a data conflict"
+        )
+    return actions_service.discussion_item(session, action)
 
 
 @router.get("/{id}", response_model=Action)

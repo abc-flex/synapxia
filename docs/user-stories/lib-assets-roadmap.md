@@ -1,7 +1,8 @@
 # Lib / Asset-Management Module — Phased Implementation Roadmap
 
-> **Status:** Phase 1 (Voting, HU-LI05) is **shipped** (PR #53, branch `feat/lib-assets-voting`).
-> Phases 2–5 are scoped below and not yet started. Numbering follows the project
+> **Status:** Phase 1 (Voting, HU-LI05) is **shipped** (PR #53, merged to `develop`).
+> Phase 2 (Foro, HU-LI06) is **shipped** (branch `feat/lib-assets-foro`).
+> Phases 3–5 are scoped below and not yet started. Numbering follows the project
 > user-story spreadsheet; see §4 for the mapping to `docs/user-stories/04-lib.md`.
 
 ## Context
@@ -63,7 +64,7 @@ The favorite feature is the **template** to mirror end-to-end:
 | Phase | PR | Feature | HU (spreadsheet) | Size | Depends on | Status |
 |-------|----|---------|------------------|------|-----------|--------|
 | 1 | PR1 | Voting + **Asset Action Service** foundation + `workflow_status` model field | HU-LI05 | M | — | ✅ shipped (PR #53) |
-| 2 | PR2 | Foro: comments, questions, answers | HU-LI06 (+HU-Comment/Question/Answer) | M | PR1 (service) | ⬜ pending |
+| 2 | PR2 | Foro: comments, questions, answers | HU-LI06 (+HU-Comment/Question/Answer) | M | PR1 (service) | ✅ shipped (`feat/lib-assets-foro`) |
 | 3 | PR3 | Related Assets (surface existing backend on galleries) | HU-LI07 | S | — (parallelizable) | ⬜ pending |
 | 4 | PR4 | History / activity timeline | HU-LI10 | M | PR1, PR2 | ⬜ pending |
 | 5 | PR5 | Notifications (workflow only) | HU-LI11 (HU-Notifications) | M/L | PR1 (workflow_status); review workflow (ext.) | ⬜ pending |

@@ -1,0 +1,83 @@
+---
+/**
+ * Foro — the asset discussion section (HU-LI06) embedded inside the reusable
+ * CatalogDetailModal. Presentational shell only: a comments block and a
+ * questions block, each with a composer and a list container that the
+ * `mountForo` controller (lib/foro.ts) hydrates on open. Comments/questions/
+ * answers are stored as `actions` rows (type COMMENT/QUESTION/ANSWER) — no new
+ * table.
+ *
+ * Ids are scoped by `modalId` so every catalog (prompts/agents/mcps) gets its
+ * own discussion section; the controller queries within `#${modalId}-foro` via
+ * `data-foro-*` hooks.
+ */
+export interface Props {
+  /** The detail dialog id, e.g. "mcp-view-modal". */
+  modalId: string;
+}
+const { modalId } = Astro.props as Props;
+---
+
+<section id={`${modalId}-foro`} class="border-t border-gray-200 pt-5 dark:border-gray-800">
+  <h4 class="mb-4 text-sm font-bold text-gray-900 dark:text-white" data-i18n="foro.title">
+    Discussion
+  </h4>
+
+  <p data-foro-status class="hidden text-sm text-gray-400 dark:text-gray-500"></p>
+
+  {/* Comments */}
+  <div class="mb-6">
+    <h5
+      class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+      data-i18n="foro.comments"
+    >
+      Comments
+    </h5>
+    <div class="mb-3 flex items-start gap-2">
+      <textarea
+        data-foro-comment-input
+        rows="2"
+        placeholder="Write a comment…"
+        data-i18n-placeholder="foro.comment_placeholder"
+        class="min-h-[2.5rem] flex-1 resize-y rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+      ></textarea>
+      <button
+        type="button"
+        data-foro-comment-submit
+        class="shrink-0 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+        data-i18n="foro.add_comment"
+      >
+        Comment
+      </button>
+    </div>
+    <div data-foro-comments class="space-y-2"></div>
+  </div>
+
+  {/* Questions & answers */}
+  <div>
+    <h5
+      class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+      data-i18n="foro.questions"
+    >
+      Questions
+    </h5>
+    <div class="mb-3 flex items-start gap-2">
+      <textarea
+        data-foro-question-input
+        rows="2"
+        placeholder="Ask a question…"
+        data-i18n-placeholder="foro.question_placeholder"
+        class="min-h-[2.5rem] flex-1 resize-y rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+      ></textarea>
+      <button
+        type="button"
+        data-foro-question-submit
+        class="shrink-0 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+        data-i18n="foro.ask_question"
+      >
+        Ask
+      </button>
+    </div>
+    <div data-foro-questions class="space-y-2"></div>
+  </div>
+</section>

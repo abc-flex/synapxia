@@ -43,7 +43,7 @@ export interface FilterOption {
   i18n?: string;
 }
 
-/** A configured column filter (one <select>). */
+/** A configured column filter (one <select> or toggle). */
 export interface FilterConfig {
   id: string;
   key: string | null;
@@ -51,4 +51,13 @@ export interface FilterConfig {
   defaultValue: string;
   /** i18n key for the empty "all" option; falls back to `${key}_modal.filter_title`. */
   allLabel?: string | null;
+  /**
+   * When set, this filter renders as a funnel dropdown inside the header cell of
+   * the named (display) column instead of in the toolbar. The bound <select>
+   * keeps the same `id`/`data-column-key`, so advancedTable.ts wiring is identical.
+   */
+  headerColumn?: string | null;
+  /** When true, render the toolbar control as a toggle switch (checkbox) whose
+   * "on" value is the first option's value. */
+  asToggle?: boolean;
 }

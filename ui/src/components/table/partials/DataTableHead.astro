@@ -1,19 +1,57 @@
 ---
-import type { ColumnConfig } from "@/types/datatable";
+import type { ColumnConfig, FilterConfig } from "@/types/datatable";
+import filterIcon from "@/images/icons/adjustments-horizontal.svg?raw";
 
 interface Props {
   visibleColumns: ColumnConfig[];
+  filters?: FilterConfig[];
 }
-const { visibleColumns } = Astro.props as Props;
+const { visibleColumns, filters = [] } = Astro.props as Props;
+
+// Map: display-column key → the filter slot funnelled into that column's header.
+const headerFilterFor = (key: string): FilterConfig | undefined =>
+  filters.find((f) => f.key && f.headerColumn === key);
 ---
 <thead
   class="bg-gray-100 text-xs uppercase text-gray-700 border-b border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
 >
   <tr>
     {
-      visibleColumns.map((col) => (
-        <th class="px-2 py-1 font-semibold tracking-wide" data-i18n={col.label} data-column-key={col.key}>{col.label}</th>
-      ))
+      visibleColumns.map((col) => {
+        const hf = headerFilterFor(col.key);
+        return hf ? (
+          /* data-i18n is on the inner label (not the <th>) so the runtime i18n
+             patch can't overwrite the funnel; the <th> keeps data-column-key. */
+          <th class="px-2 py-1 font-semibold tracking-wide" data-column-key={col.key}>
+            <span class="inline-flex items-center gap-1">
+              <span data-i18n={col.label}>{col.label}</span>
+              <details class="dt-head-filter" data-dt-head-filter>
+                <summary class="dt-head-filter-trigger" aria-label="Filter" data-i18n-aria-label="data_table.filters">
+                  <span class="dt-head-filter-icon">
+                    <Fragment set:html={filterIcon} />
+                  </span>
+                </summary>
+                <div class="dt-head-filter-panel">
+                  <select
+                    id={hf.id}
+                    data-column-key={hf.key}
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-normal normal-case text-gray-800 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:focus:border-indigo-400"
+                  >
+                    <option value="" data-i18n={hf.allLabel || `${hf.key}_modal.filter_title`}></option>
+                    {hf.options.map((opt) => (
+                      <option value={opt.value || opt.code} data-i18n={opt.i18n} selected={(opt.value || opt.code) === hf.defaultValue}>
+                        {opt.label || opt.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </details>
+            </span>
+          </th>
+        ) : (
+          <th class="px-2 py-1 font-semibold tracking-wide" data-i18n={col.label} data-column-key={col.key}>{col.label}</th>
+        );
+      })
     }
     <th class="px-4 py-4 text-right" data-i18n="data_table.actions">
       data_table.actions

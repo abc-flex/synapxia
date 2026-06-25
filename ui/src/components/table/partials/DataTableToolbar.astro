@@ -3,7 +3,7 @@ import leftSvg from "@/images/icons/chevron-left.svg?raw";
 import listSvg from "@/images/icons/list-bullet.svg?raw";
 import DataTableFilters from "./DataTableFilters.astro";
 import DataTableSearchExport from "./DataTableSearchExport.astro";
-import type { FilterOption } from "@/types/datatable";
+import type { FilterConfig } from "@/types/datatable";
 
 interface Props {
   tableId: string;
@@ -12,20 +12,7 @@ interface Props {
   showAddButton?: boolean;
   hasData: boolean;
   masterPage?: string | null;
-  columnFilter?: string | null;
-  filterOptions?: FilterOption[];
-  filterDefaultValue?: string;
-  columnFilter2?: string | null;
-  filterOptions2?: FilterOption[];
-  filterDefaultValue2?: string;
-  columnFilter3?: string | null;
-  filterOptions3?: FilterOption[];
-  filterDefaultValue3?: string;
-  filter3AllLabel?: string | null;
-  columnFilter4?: string | null;
-  filterOptions4?: FilterOption[];
-  filterDefaultValue4?: string;
-  filter4AllLabel?: string | null;
+  filters?: FilterConfig[];
 }
 const {
   tableId,
@@ -34,24 +21,15 @@ const {
   showAddButton = true,
   hasData,
   masterPage = null,
-  columnFilter = null,
-  filterOptions = [],
-  filterDefaultValue = "",
-  columnFilter2 = null,
-  filterOptions2 = [],
-  filterDefaultValue2 = "",
-  columnFilter3 = null,
-  filterOptions3 = [],
-  filterDefaultValue3 = "",
-  filter3AllLabel = null,
-  columnFilter4 = null,
-  filterOptions4 = [],
-  filterDefaultValue4 = "",
-  filter4AllLabel = null,
+  filters = [],
 } = Astro.props as Props;
 
-// How many column filters are configured — drives the mobile "Filtros" button.
-const filterCount = [columnFilter, columnFilter2, columnFilter3, columnFilter4].filter(Boolean).length;
+// The first toolbar filter's key seeds the create modal's `data-filter-key`.
+const firstToolbarKey = filters.find((f) => f.key && !f.headerColumn)?.key ?? null;
+
+// How many column filters live in the toolbar — drives the mobile "Filtros"
+// button. Header-placed filters (funnels) are excluded.
+const filterCount = filters.filter((f) => f.key && !f.headerColumn).length;
 ---
 <div
   class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
@@ -77,7 +55,7 @@ const filterCount = [columnFilter, columnFilter2, columnFilter3, columnFilter4].
           type="button"
           class="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 sm:flex-none sm:py-1.5"
           data-modal-open={`${i18Item}-create-modal`}
-          data-filter-key={columnFilter}
+          data-filter-key={firstToolbarKey}
           data-i18n-title={`${i18Item}_modal.one_title`}
           title=""
         >
@@ -105,24 +83,7 @@ const filterCount = [columnFilter, columnFilter2, columnFilter3, columnFilter4].
         </span>
       </button>
     )}
-    <DataTableFilters
-      tableId={tableId}
-      hasData={hasData}
-      columnFilter={columnFilter}
-      filterOptions={filterOptions}
-      filterDefaultValue={filterDefaultValue}
-      columnFilter2={columnFilter2}
-      filterOptions2={filterOptions2}
-      filterDefaultValue2={filterDefaultValue2}
-      columnFilter3={columnFilter3}
-      filterOptions3={filterOptions3}
-      filterDefaultValue3={filterDefaultValue3}
-      filter3AllLabel={filter3AllLabel}
-      columnFilter4={columnFilter4}
-      filterOptions4={filterOptions4}
-      filterDefaultValue4={filterDefaultValue4}
-      filter4AllLabel={filter4AllLabel}
-    />
+    <DataTableFilters tableId={tableId} hasData={hasData} filters={filters} />
   </div>
 
   <!-- Right: Search & Export -->

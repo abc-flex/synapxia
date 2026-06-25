@@ -606,6 +606,8 @@ export interface AssetUpdate {
 export interface AssetWithAccessLevels extends Asset {
   access_levels: string[]; // distinct active access levels, e.g. ["VIEW","MANAGE"]
   is_public: boolean;       // true if any active permission targets PUBLIC
+  // Scope-types granting the CURRENT user access (USER/ROLE/TEAM/UNIT/PROJECT/PUBLIC).
+  permission_scopes: string[];
 }
 
 // ============================================================================

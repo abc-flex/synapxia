@@ -13,6 +13,7 @@
  * calls `mountCatalogDetail` to hydrate it and wire Edit/Delete/Copy/favorite.
  */
 import Foro from "@/components/lib/gallery/Foro.astro";
+import HistoryTimeline from "@/components/lib/gallery/HistoryTimeline.astro";
 
 export interface Props {
   /** Dialog id, e.g. "prompt-view-modal". */
@@ -110,6 +111,7 @@ const {
       <p id={`${modalId}-desc`} class="hidden whitespace-pre-wrap text-sm text-gray-600 dark:text-gray-300"></p>
       <div id={`${modalId}-sections`} class="space-y-6"></div>
       <Foro modalId={modalId} />
+      <HistoryTimeline modalId={modalId} />
     </div>
 
     {/* Footer */}

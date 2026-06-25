@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 
 from ..internal.models import (
     Action, ActionCreate, ActionUpdate, Asset, VoteRequest, VoteTally,
-    ParticipationCreate, AnswerCreate, DiscussionItem,
+    ParticipationCreate, AnswerCreate, DiscussionItem, HistoryEntry,
 )
 from ..internal import actions_service
 from ..internal.dependencies import get_db_session
@@ -236,6 +236,36 @@ def _create_participation(session, label, create_fn, asset_id):
             detail=f"Could not add {label} due to a data conflict"
         )
     return actions_service.discussion_item(session, action)
+
+
+# ---------------------------------------------------------------------------
+# History (HU-LI10) — read-only activity timeline over the asset's actions.
+# Registered BEFORE the composite `/{id}` route so "history" isn't parsed as an
+# action id.
+# ---------------------------------------------------------------------------
+
+
+@router.get("/history/asset/{asset_id}", response_model=List[HistoryEntry])
+def get_history(
+    asset_id: int, skip: int = 0, limit: int = 100,
+    session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=False))
+) -> List[HistoryEntry]:
+    """
+    The activity timeline for an asset (newest first): every active action
+    (votes, comments, questions, answers, and any review-workflow actions) plus
+    a synthetic CREATED marker, each enriched with the actor's username.
+
+    - **asset_id**: Asset id
+    - **skip** / **limit**: pagination over the timeline
+    """
+    if not actions_service.asset_exists(session, asset_id):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Asset with id '{asset_id}' does not exist"
+        )
+    entries = actions_service.get_asset_history(session, asset_id)
+    return entries[skip:skip + limit]
 
 
 @router.get("/{id}", response_model=Action)

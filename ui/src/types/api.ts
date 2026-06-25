@@ -800,6 +800,20 @@ export interface AnswerCreate extends ParticipationCreate {
   parent: number;
 }
 
+// History timeline entry (HU-LI10): one event in an asset's activity log —
+// an `actions` row (vote/comment/question/answer/workflow) or the synthetic
+// CREATED marker (`id` null). `summary` is the server fallback label; the UI
+// localizes by `type`. `content` is present only for COMMENT/QUESTION/ANSWER.
+export interface HistoryEntry {
+  id: number | null;
+  type: string;
+  actor?: string | null;
+  summary: string;
+  content?: string | null;
+  workflow_status?: string | null;
+  created_at: string;
+}
+
 // Criteria types
 export interface Criteria {
   code: string;

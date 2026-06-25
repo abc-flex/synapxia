@@ -296,3 +296,92 @@ def add_answer(
             "Answer parent must be an active question on the same asset.")
     return _add_participation(
         session, user_id, asset_id, TYPE_ANSWER, content, parent=parent)
+
+
+# ---------------------------------------------------------------------------
+# History (HU-LI10) — read-side timeline over the same ``actions`` substrate.
+#
+# Aggregates every active action on an asset (votes, comments, questions,
+# answers, and any review-workflow actions) plus a synthetic CREATED marker from
+# the asset row, newest first. Pure read aggregation — no new table, no writes.
+# ---------------------------------------------------------------------------
+
+# A synthetic timeline entry (not an ``actions`` row) marking asset creation.
+HISTORY_CREATED = "CREATED"
+
+# Canonical English summaries per action type (the UI localizes via
+# `history.action.{type}` and falls back to these for any unmapped type).
+_HISTORY_SUMMARIES = {
+    "PROPOSAL": "proposed the asset",
+    "REVIEW": "reviewed the asset",
+    "MODIFICATION": "requested a modification",
+    "PUBLICATION": "published the asset",
+    "REJECTION": "rejected the asset",
+    "DEPRECATION": "deprecated the asset",
+    "VERSIONING": "created a new version",
+    "USAGE": "used the asset",
+    TYPE_COMMENT: "commented",
+    TYPE_QUESTION: "asked a question",
+    TYPE_ANSWER: "answered a question",
+    HISTORY_CREATED: "created the asset",
+}
+
+
+def _history_summary(action: Action) -> str:
+    """Derive a human summary for a timeline entry (server-side per the roadmap;
+    the UI still localizes by ``type``)."""
+    if action.type == TYPE_VOTE:
+        if action.content == VOTE_POSITIVE:
+            return "upvoted"
+        if action.content == VOTE_NEGATIVE:
+            return "downvoted"
+        return "voted"
+    return _HISTORY_SUMMARIES.get(action.type, action.type.lower())
+
+
+def get_asset_history(session: Session, asset_id: int) -> List[dict]:
+    """Activity timeline for an asset, newest first.
+
+    Every active ``actions`` row (any type) becomes an entry; a synthetic
+    CREATED entry is appended from the asset's ``created_at``. Actor usernames
+    are resolved with a single batched ``IN`` query (no N+1). Comment/question/
+    answer entries carry their ``content``; other types omit it.
+    """
+    actions = list_actions_for_asset(session, asset_id, active_only=True)
+
+    user_ids = {a.user_id for a in actions if a.user_id is not None}
+    authors: dict = {}
+    if user_ids:
+        users = session.exec(select(User).where(User.id.in_(user_ids))).all()
+        authors = {u.id: u.username for u in users}
+
+    entries: List[dict] = [
+        {
+            "id": a.id,
+            "type": a.type,
+            "actor": authors.get(a.user_id),
+            "summary": _history_summary(a),
+            "content": a.content if a.type in DISCUSSION_TYPES else None,
+            "workflow_status": a.workflow_status,
+            "created_at": a.created_at,
+        }
+        for a in actions
+    ]
+
+    # Synthetic CREATED marker from the asset row (oldest event in the timeline).
+    asset = session.get(Asset, asset_id)
+    if asset is not None and asset.created_at is not None:
+        entries.append({
+            "id": None,
+            "type": HISTORY_CREATED,
+            "actor": None,
+            "summary": _history_summary(
+                Action(asset=asset_id, user_id=0, type=HISTORY_CREATED)),
+            "content": None,
+            "workflow_status": None,
+            "created_at": asset.created_at,
+        })
+
+    # Newest first across actions + the synthetic marker.
+    entries.sort(key=lambda e: e["created_at"], reverse=True)
+    return entries

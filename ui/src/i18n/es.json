@@ -760,6 +760,28 @@
     "delete": "Eliminar",
     "anonymous": "Alguien"
   },
+  "history": {
+    "title": "Actividad",
+    "loading": "Cargando actividad…",
+    "empty": "Aún no hay actividad.",
+    "error": "No se pudo cargar la actividad.",
+    "system": "Sistema",
+    "action": {
+      "CREATED": "Activo creado",
+      "VOTE": "votó",
+      "COMMENT": "comentó",
+      "QUESTION": "hizo una pregunta",
+      "ANSWER": "respondió una pregunta",
+      "PROPOSAL": "propuso el activo",
+      "REVIEW": "revisó el activo",
+      "MODIFICATION": "solicitó una modificación",
+      "PUBLICATION": "publicó el activo",
+      "REJECTION": "rechazó el activo",
+      "DEPRECATION": "marcó como obsoleto el activo",
+      "VERSIONING": "creó una nueva versión",
+      "USAGE": "usó el activo"
+    }
+  },
   "prompt_modal": {
     "title_create": "Nuevo Prompt",
     "title_edit": "Editar Prompt",

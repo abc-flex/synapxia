@@ -760,6 +760,28 @@
     "delete": "Delete",
     "anonymous": "Someone"
   },
+  "history": {
+    "title": "Activity",
+    "loading": "Loading activity…",
+    "empty": "No activity yet.",
+    "error": "Could not load the activity.",
+    "system": "System",
+    "action": {
+      "CREATED": "Asset created",
+      "VOTE": "voted",
+      "COMMENT": "commented",
+      "QUESTION": "asked a question",
+      "ANSWER": "answered a question",
+      "PROPOSAL": "proposed the asset",
+      "REVIEW": "reviewed the asset",
+      "MODIFICATION": "requested a modification",
+      "PUBLICATION": "published the asset",
+      "REJECTION": "rejected the asset",
+      "DEPRECATION": "deprecated the asset",
+      "VERSIONING": "created a new version",
+      "USAGE": "used the asset"
+    }
+  },
   "prompt_modal": {
     "title_create": "New Prompt",
     "title_edit": "Edit Prompt",

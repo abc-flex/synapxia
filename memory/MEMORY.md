@@ -82,6 +82,7 @@ Run everything: `make dev`. Verify: `make test`.
 | Asset library (assets, characterizations, favorites, actions, asset_relations) | lib | ✅ done |
 | Asset voting (HU-LI05) — `actions` `type=VOTE` (POSITIVE/NEGATIVE toggle) + **Asset Action Service** | lib | ✅ done |
 | Asset foro (HU-LI06) — comments/questions/answers as `actions` (COMMENT/QUESTION/ANSWER, answers threaded via `parent`); discussion section on the gallery detail modal | lib | ✅ done |
+| Asset history (HU-LI10) — read-only activity timeline on the gallery detail modal (creation marker + votes/comments/Q&A/workflow actions, newest first) over `actions`; `get_asset_history` + `GET /api/actions/history/asset/{id}` | lib | ✅ done |
 | Prompt Gallery (HU-LI12) — final-user card gallery on the reusable gallery framework | lib | ✅ done |
 | MCP Directory (HU-LI13) — second card catalog (Mode chip, tool chips, Copy-config) | lib | ✅ done |
 | Agent Index (HU-LI14) — third catalog; first **hero card** + uses the reusable big detail view | lib | ✅ done |

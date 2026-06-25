@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Depends
@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from ..internal.models import (
     Action, ActionCreate, ActionUpdate, Asset, VoteRequest, VoteTally,
     ParticipationCreate, AnswerCreate, DiscussionItem, HistoryEntry,
-    NotificationItem,
+    NotificationItem, WorkflowStage,
 )
 from ..internal import actions_service
 from ..internal.dependencies import get_db_session
@@ -267,6 +267,28 @@ def get_history(
         )
     entries = actions_service.get_asset_history(session, asset_id)
     return entries[skip:skip + limit]
+
+
+@router.get("/workflow/asset/{asset_id}", response_model=Optional[WorkflowStage])
+def get_workflow_stage(
+    asset_id: int, session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=False))
+) -> Optional[WorkflowStage]:
+    """
+    The asset's current review stage: the latest review-workflow action
+    (PROPOSAL/REVIEW/PUBLICATION/…) with its ``workflow_status`` (assigned /
+    notified / finished). Read-only and distinct from ``asset.status``.
+    Returns ``null`` when the asset has no workflow actions.
+
+    - **asset_id**: Asset id
+    """
+    if not actions_service.asset_exists(session, asset_id):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Asset with id '{asset_id}' does not exist"
+        )
+    stage = actions_service.get_workflow_stage(session, asset_id)
+    return stage
 
 
 # ---------------------------------------------------------------------------

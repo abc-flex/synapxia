@@ -55,15 +55,23 @@ export function mountRelated(cfg: RelatedConfig): void {
     tr(`related.type.${type}`, type.replace(/_/g, " ").toLowerCase());
 
   // ── Renderer (asset text via textContent — XSS-safe) ───────────────────────
+  // Each card is a button that re-opens the SAME detail modal for the related
+  // asset (it carries the open trigger the detail controllers listen for, so
+  // the whole modal re-hydrates in place via open(item.id)).
   function cardNode(item: RelatedAsset): HTMLElement {
-    const card = document.createElement("div");
-    card.className = "rounded-lg border border-gray-200 p-3 dark:border-gray-800";
+    const card = document.createElement("button");
+    card.type = "button";
+    card.dataset.modalOpen = modalId;
+    card.dataset.assetId = String(item.id);
+    card.className =
+      "group block w-full rounded-lg border border-gray-200 p-3 text-left transition-colors hover:border-indigo-300 hover:bg-indigo-50/40 dark:border-gray-800 dark:hover:border-indigo-500/40 dark:hover:bg-indigo-500/10";
 
     const head = document.createElement("div");
     head.className = "mb-1 flex items-center justify-between gap-2";
 
     const name = document.createElement("span");
-    name.className = "truncate text-sm font-semibold text-gray-900 dark:text-gray-100";
+    name.className =
+      "truncate text-sm font-semibold text-gray-900 group-hover:text-indigo-700 dark:text-gray-100 dark:group-hover:text-indigo-300";
     name.textContent = item.name || "—";
 
     // The arrow conveys direction: → this asset references the related one,

@@ -76,8 +76,17 @@ export function mountHistory(cfg: HistoryConfig): void {
     statusEl.classList.toggle("hidden", !text);
   };
 
-  const actionLabel = (e: HistoryEntry): string =>
-    tr(`history.action.${e.type}`, e.summary || e.type.toLowerCase());
+  // Prefer a workflow-aware key (`history.action.REVIEW_FINISHED`) so each
+  // workflow step reads distinctly; fall back to the type key, then the
+  // server-derived summary.
+  const actionLabel = (e: HistoryEntry): string => {
+    if (e.workflow_status) {
+      const k = `history.action.${e.type}_${e.workflow_status}`;
+      const v = translate(k);
+      if (v && v !== k) return v;
+    }
+    return tr(`history.action.${e.type}`, e.summary || e.type.toLowerCase());
+  };
 
   // ── Renderer (actor + content via textContent — XSS-safe) ──────────────────
   function entryNode(e: HistoryEntry): HTMLElement {

@@ -327,15 +327,41 @@ _HISTORY_SUMMARIES = {
 }
 
 
+# Workflow actions carry a ``workflow_status`` (ASSIGNED/NOTIFIED/FINISHED); the
+# verb must reflect the *step*, otherwise the three PUBLICATION rows all read
+# "published the asset". The UI localizes by ``{type}_{workflow_status}`` and
+# falls back to these. FINISHED reuses the terminal verb in _HISTORY_SUMMARIES.
+_WORKFLOW_SUMMARIES = {
+    ("PROPOSAL", "ASSIGNED"): "was assigned to propose the asset",
+    ("PROPOSAL", "NOTIFIED"): "was notified to propose the asset",
+    ("PROPOSAL", "FINISHED"): "proposed the asset",
+    ("REVIEW", "ASSIGNED"): "was assigned to review the asset",
+    ("REVIEW", "NOTIFIED"): "was notified to review the asset",
+    ("REVIEW", "FINISHED"): "reviewed the asset",
+    ("PUBLICATION", "ASSIGNED"): "was assigned to publish the asset",
+    ("PUBLICATION", "NOTIFIED"): "was notified to publish the asset",
+    ("PUBLICATION", "FINISHED"): "published the asset",
+    ("MODIFICATION", "ASSIGNED"): "was assigned a modification",
+    ("MODIFICATION", "NOTIFIED"): "was notified of a modification",
+    ("MODIFICATION", "FINISHED"): "modified the asset",
+    ("REJECTION", "FINISHED"): "rejected the asset",
+    ("DEPRECATION", "FINISHED"): "deprecated the asset",
+}
+
+
 def _history_summary(action: Action) -> str:
     """Derive a human summary for a timeline entry (server-side per the roadmap;
-    the UI still localizes by ``type``)."""
+    the UI still localizes by ``type`` / ``type_workflow_status``)."""
     if action.type == TYPE_VOTE:
         if action.content == VOTE_POSITIVE:
             return "upvoted"
         if action.content == VOTE_NEGATIVE:
             return "downvoted"
         return "voted"
+    if action.workflow_status:
+        combined = _WORKFLOW_SUMMARIES.get((action.type, action.workflow_status))
+        if combined:
+            return combined
     return _HISTORY_SUMMARIES.get(action.type, action.type.lower())
 
 
@@ -385,6 +411,44 @@ def get_asset_history(session: Session, asset_id: int) -> List[dict]:
     # Newest first across actions + the synthetic marker.
     entries.sort(key=lambda e: e["created_at"], reverse=True)
     return entries
+
+
+# Review-workflow action types whose latest occurrence defines the asset's
+# current review stage (distinct from ``asset.status``). PROPOSAL/REVIEW/
+# PUBLICATION are the happy path; the rest are off-ramps.
+WORKFLOW_STAGE_TYPES = (
+    "PROPOSAL", "REVIEW", "PUBLICATION",
+    "MODIFICATION", "REJECTION", "DEPRECATION", "VERSIONING",
+)
+
+
+def get_workflow_stage(session: Session, asset_id: int) -> Optional[dict]:
+    """The asset's current review stage: the most recent workflow action
+    (PROPOSAL/REVIEW/PUBLICATION/…) with its ``workflow_status``. ``None`` when
+    the asset has no workflow actions. Read-only and distinct from
+    ``asset.status`` — surfaced as a badge so the review step is visible.
+    """
+    latest = session.exec(
+        select(Action)
+        .where(
+            Action.asset == asset_id,
+            Action.is_active == True,  # noqa: E712
+            Action.type.in_(WORKFLOW_STAGE_TYPES),
+        )
+        .order_by(Action.created_at.desc(), Action.id.desc())
+    ).first()
+    if latest is None:
+        return None
+    actor = None
+    if latest.user_id is not None:
+        u = session.get(User, latest.user_id)
+        actor = u.username if u else None
+    return {
+        "type": latest.type,
+        "workflow_status": latest.workflow_status,
+        "actor": actor,
+        "created_at": latest.created_at,
+    }
 
 
 # ---------------------------------------------------------------------------

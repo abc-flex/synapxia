@@ -121,6 +121,25 @@ export function mountCatalogModal(cfg: CatalogModalConfig): void {
   let editingId: number | null = null;
   let favoriteOn = false;
 
+  // Section mode: "" = full (create); "core" = only the core fields (the card's
+  // Edit pencil); "detail" = only the catalog's characterization inputs (the
+  // card's master-detail button). Save persists only the active slice.
+  const coreSection = document.getElementById(`${modalId}-core-section`) as HTMLElement | null;
+  const detailSection = document.getElementById(`${modalId}-detail-section`) as HTMLElement | null;
+  let editSection: "" | "core" | "detail" = "";
+
+  function applySection(section: "" | "core" | "detail") {
+    editSection = section;
+    const showCore = section !== "detail";
+    const showDetail = section !== "core";
+    coreSection?.classList.toggle("hidden", !showCore);
+    detailSection?.classList.toggle("hidden", !showDetail);
+    // Relax required core inputs when the core section is hidden (otherwise the
+    // hidden required name/status would block submit).
+    if (nameField) nameField.required = showCore;
+    if (statusSel) statusSel.required = showCore;
+  }
+
   function paintFavorite() {
     if (!favBtn || !favSvg) return;
     favBtn.setAttribute("aria-pressed", String(favoriteOn));
@@ -161,6 +180,7 @@ export function mountCatalogModal(cfg: CatalogModalConfig): void {
 
   function openCreate() {
     resetForm();
+    applySection(""); // create edits the full asset (core + features)
     if (titleEl && cfg.titleCreateKey) {
       titleEl.setAttribute("data-i18n", cfg.titleCreateKey);
       titleEl.textContent = tr(cfg.titleCreateKey, titleEl.textContent || "");
@@ -173,8 +193,9 @@ export function mountCatalogModal(cfg: CatalogModalConfig): void {
     dialog.showModal();
   }
 
-  async function openEdit(assetId: number | string) {
+  async function openEdit(assetId: number | string, section: "" | "core" | "detail" = "") {
     resetForm();
+    applySection(section);
     editingId = Number(assetId);
     if (titleEl && cfg.titleEditKey) {
       titleEl.setAttribute("data-i18n", cfg.titleEditKey);
@@ -239,7 +260,8 @@ export function mountCatalogModal(cfg: CatalogModalConfig): void {
       e.preventDefault();
       const mode = (opener as HTMLElement).dataset.assetMode || "create";
       const assetId = (opener as HTMLElement).dataset.assetId;
-      if (mode === "edit" && assetId) openEdit(assetId);
+      const section = ((opener as HTMLElement).dataset.assetSection as "" | "core" | "detail") || "";
+      if (mode === "edit" && assetId) openEdit(assetId, section);
       else openCreate();
     }
     const closer = (e.target as HTMLElement).closest?.(`[data-modal-close="${modalId}"]`);
@@ -297,14 +319,24 @@ export function mountCatalogModal(cfg: CatalogModalConfig): void {
     };
 
     try {
-      const saved = editingId
-        ? await updateAsset(editingId, corePayload)
-        : await createAsset(corePayload);
-      const assetId = Number(saved.id ?? editingId);
+      // Persist only the active section: "detail" flushes just the feature
+      // characterizations; "core" saves just the asset; "" does both.
+      let assetId: number;
+      if (editSection === "detail") {
+        if (!editingId) throw new Error("Missing asset id");
+        assetId = editingId;
+      } else {
+        const saved = editingId
+          ? await updateAsset(editingId, corePayload)
+          : await createAsset(corePayload);
+        assetId = Number(saved.id ?? editingId);
+      }
 
-      for (const feat of features) {
-        const input = featureInput(feat.name);
-        await flushFeature(assetId, feat.name, input?.value ?? "", feat.column);
+      if (editSection !== "core") {
+        for (const feat of features) {
+          const input = featureInput(feat.name);
+          await flushFeature(assetId, feat.name, input?.value ?? "", feat.column);
+        }
       }
 
       // Favorite (create mode only — edit mode toggled immediately).

@@ -782,6 +782,20 @@
       "USAGE": "usó el activo"
     }
   },
+  "related": {
+    "title": "Activos relacionados",
+    "loading": "Cargando activos relacionados…",
+    "outgoing": "Referencia a",
+    "incoming": "Referenciado por",
+    "type": {
+      "DEPENDS_ON": "Depende de",
+      "RELATED_TO": "Relacionado con",
+      "SIMILAR_TO": "Similar a",
+      "PART_OF": "Parte de",
+      "USED_BY": "Usado por",
+      "EXTENDS": "Extiende"
+    }
+  },
   "prompt_modal": {
     "title_create": "Nuevo Prompt",
     "title_edit": "Editar Prompt",

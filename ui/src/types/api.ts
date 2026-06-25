@@ -667,6 +667,22 @@ export interface AssetRelationUpdate {
   is_active?: boolean;
 }
 
+// Read projection (HU-LI07) for the gallery "Related" section: a related asset
+// resolved from `related_assets` in either direction, carrying the relation
+// metadata. `direction` is "outgoing" when the viewed asset is the relation's
+// source (it references this one) and "incoming" when it is the target.
+export interface RelatedAsset {
+  id: number;
+  name: string;
+  description?: string | null;
+  category?: string | null;
+  status: string;
+  tags?: unknown;
+  relation_type: string;
+  direction: "outgoing" | "incoming";
+  rationale?: string | null;
+}
+
 // ============================================================================
 // Asset permissions — surrogate-id rows granting a target (USER/ROLE/TEAM/
 // UNIT/PROJECT/PUBLIC × access level) access to an asset. `asset` is the

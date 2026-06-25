@@ -782,6 +782,20 @@
       "USAGE": "used the asset"
     }
   },
+  "related": {
+    "title": "Related assets",
+    "loading": "Loading related assets…",
+    "outgoing": "References",
+    "incoming": "Referenced by",
+    "type": {
+      "DEPENDS_ON": "Depends on",
+      "RELATED_TO": "Related to",
+      "SIMILAR_TO": "Similar to",
+      "PART_OF": "Part of",
+      "USED_BY": "Used by",
+      "EXTENDS": "Extends"
+    }
+  },
   "prompt_modal": {
     "title_create": "New Prompt",
     "title_edit": "Edit Prompt",

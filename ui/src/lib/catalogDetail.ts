@@ -15,6 +15,7 @@ import { getCharacterizationsByAsset } from "@/lib/characterizations";
 import { isFavorite, setFavorite } from "@/lib/favorites";
 import { getVoteTally, setVote, type VoteValue } from "@/lib/actions";
 import { mountForo } from "@/lib/foro";
+import { mountRelated } from "@/lib/related";
 import { mountHistory } from "@/lib/history";
 import { styleVoteButton } from "@/lib/catalogGallery";
 import { getUser } from "@/lib/auth";
@@ -63,10 +64,12 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
   const dialog = document.getElementById(modalId) as HTMLDialogElement | null;
   if (!dialog) return;
 
-  // Hydrate the asset discussion section (comments/questions/answers, HU-LI06)
-  // and the read-only activity timeline (HU-LI10). Both are self-contained: they
-  // hook the same open trigger and query within `#${modalId}-foro` /
-  // `#${modalId}-history`, so all catalogs using this detail view get them.
+  // Hydrate the read-only related-assets section (HU-LI07), the discussion
+  // section (comments/questions/answers, HU-LI06), and the read-only activity
+  // timeline (HU-LI10). Each is self-contained: it hooks the same open trigger
+  // and queries within `#${modalId}-related` / `-foro` / `-history`, so every
+  // catalog using this detail view gets all three.
+  mountRelated({ modalId });
   mountForo({ modalId });
   mountHistory({ modalId });
 

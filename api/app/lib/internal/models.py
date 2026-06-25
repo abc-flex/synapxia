@@ -305,6 +305,22 @@ class AssetRelationUpdate(SQLModel):
         default=None, description="Indicates if the relation is active")
 
 
+class RelatedAsset(SQLModel):
+    """Read projection (HU-LI07): a related asset resolved from `related_assets`,
+    carrying the relation metadata. `direction` is "outgoing" when the viewed
+    asset is the relation's source (it references this asset) and "incoming"
+    when it is the target (this asset is referenced by it)."""
+    id: int = Field(description="Related asset id")
+    name: str = Field(description="Related asset name")
+    description: Optional[str] = Field(default=None, description="Related asset description")
+    category: Optional[str] = Field(default=None, description="Related asset category code")
+    status: str = Field(description="Related asset status")
+    tags: Optional[Any] = Field(default=None, description="Related asset tags (JSON)")
+    relation_type: str = Field(description="Relation type (RELATION_TYPE)")
+    direction: str = Field(description='"outgoing" (this asset is the source) or "incoming" (this asset is the target)')
+    rationale: Optional[str] = Field(default=None, description="Why the assets are related")
+
+
 # Asset Permissions Models
 
 

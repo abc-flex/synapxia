@@ -6,7 +6,9 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 from sqlalchemy.exc import IntegrityError
 
-from ..internal.models import AssetRelation, AssetRelationCreate, AssetRelationUpdate, Asset
+from ..internal.models import (
+    AssetRelation, AssetRelationCreate, AssetRelationUpdate, Asset, RelatedAsset,
+)
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
 from ...internal.permissions import require_privilege
@@ -59,6 +61,97 @@ def get_by_source(
         .order_by(AssetRelation.target)
     ).all()
     return relations
+
+
+@router.get("/target/{asset_id}", response_model=List[AssetRelation])
+def get_by_target(
+    asset_id: int, skip: int = 0, limit: int = 100,
+    session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
+) -> List[AssetRelation]:
+    """
+    List active relations where the given asset is the **target** (reverse
+    lookup — the counterpart to /source/{asset_id}).
+
+    - **asset_id**: Target asset id
+    - **skip** / **limit**: pagination
+    """
+    relations = session.exec(
+        select(AssetRelation)
+        .where(AssetRelation.target == asset_id, AssetRelation.is_active == True)
+        .offset(skip).limit(limit)
+        .order_by(AssetRelation.source)
+    ).all()
+    return relations
+
+
+@router.get("/related/{asset_id}", response_model=List[RelatedAsset])
+def get_related(
+    asset_id: int, skip: int = 0, limit: int = 100,
+    session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
+) -> List[RelatedAsset]:
+    """
+    Resolved related assets in **both directions**, de-duplicated by the other
+    asset id (outgoing relations win on a tie), with inactive/missing assets
+    excluded. Convenience for the gallery "Related" section: the caller gets the
+    target asset's display fields + the relation metadata without an extra
+    round-trip per relation.
+
+    - **asset_id**: The asset whose relations are resolved
+    - **skip** / **limit**: pagination over the de-duplicated result
+    """
+    # Bound each direction fetch by the requested page's upper edge — after
+    # de-dup the page can draw entirely from one direction, so skip+limit per
+    # side is a safe (and bounded) superset.
+    cap = skip + limit
+    outgoing = session.exec(
+        select(AssetRelation)
+        .where(AssetRelation.source == asset_id, AssetRelation.is_active == True)
+        .order_by(AssetRelation.target).limit(cap)
+    ).all()
+    incoming = session.exec(
+        select(AssetRelation)
+        .where(AssetRelation.target == asset_id, AssetRelation.is_active == True)
+        .order_by(AssetRelation.source).limit(cap)
+    ).all()
+
+    # De-dup by the *other* asset id; outgoing first so a bidirectional pair
+    # shows as "outgoing".
+    seen: set = set()
+    ordered = []  # (other_id, relation_type, direction, rationale)
+    for r in outgoing:
+        if r.target not in seen:
+            seen.add(r.target)
+            ordered.append((r.target, r.type, "outgoing", r.rationale))
+    for r in incoming:
+        if r.source not in seen:
+            seen.add(r.source)
+            ordered.append((r.source, r.type, "incoming", r.rationale))
+
+    page = ordered[skip:skip + limit]
+    if not page:
+        return []
+
+    # One batched IN query resolves every related asset — no N+1.
+    ids = [oid for (oid, _t, _d, _r) in page]
+    assets = {
+        a.id: a for a in session.exec(
+            select(Asset).where(Asset.id.in_(ids), Asset.is_active == True)
+        ).all()
+    }
+
+    result: List[RelatedAsset] = []
+    for (oid, rtype, direction, rationale) in page:
+        a = assets.get(oid)
+        if not a:  # inactive or missing target asset — excluded
+            continue
+        result.append(RelatedAsset(
+            id=a.id, name=a.name, description=a.description,
+            category=a.category, status=a.status, tags=a.tags,
+            relation_type=rtype, direction=direction, rationale=rationale,
+        ))
+    return result
 
 
 @router.get("/{source_id}/{target_id}", response_model=AssetRelation)

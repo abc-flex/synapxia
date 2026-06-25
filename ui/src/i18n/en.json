@@ -24,6 +24,17 @@
   "notification_menu": {
     "title": "Notification"
   },
+  "notifications": {
+    "empty": "You're all caught up.",
+    "dismiss": "Dismiss",
+    "error": "Could not update the notification",
+    "type": {
+      "REVIEW": "Review",
+      "MODIFICATION": "Modification",
+      "PUBLICATION": "Publication",
+      "REJECTION": "Rejection"
+    }
+  },
   "coming_soon": {
     "badge": "Coming soon",
     "title": "We're working on this",

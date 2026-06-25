@@ -1,90 +1,36 @@
 ---
+/**
+ * NotificationMenu — header bell + dropdown listing the current user's open
+ * workflow notifications (HU-LI11). The list is hydrated client-side from
+ * `/api/actions/notifications` (per-user, needs the JWT), so the shell here is
+ * presentational only — `data-notif-*` hooks are filled by `mountNotifications`
+ * (lib/notifications.ts). Clicking an ASSIGNED item marks it seen; NOTIFIED
+ * items show a Dismiss control.
+ */
 import { t } from "@/i18n";
 import { getLocale } from "@/utils/getLocale";
 import BellIcon from "@/images/icons/bell.svg?raw";
 
 const locale = getLocale(Astro);
-
-interface NotificationItem {
-  id: string | number;
-  title: string;
-  subtitle?: string;
-  timeAgo?: string;
-  avatarUrl?: string;
-  status?: "active" | "inactive" | "away";
-  statusColor?: string;
-}
-
-interface Props {
-  items?: NotificationItem[];
-  badge?: boolean;
-  title?: string;
-}
-
-const {
-  items = [
-    {
-      id: 1,
-      title: "Terry Franci requests permission to change Project - Nganter App",
-      subtitle: "Project",
-      timeAgo: "5 min ago",
-      avatarUrl: "https://i.pravatar.cc/64?img=12",
-      status: "active",
-    },
-    {
-      id: 2,
-      title: "Alena Franci requests permission to change Project - Nganter App",
-      subtitle: "Project",
-      timeAgo: "8 min ago",
-      avatarUrl: "https://i.pravatar.cc/64?img=32",
-      status: "away",
-    },
-    {
-      id: 3,
-      title:
-        "Jocelyn Kenter requests permission to change Project - Nganter App",
-      subtitle: "Project",
-      timeAgo: "15 min ago",
-      avatarUrl: "https://i.pravatar.cc/64?img=47",
-      status: "inactive",
-    },
-    {
-      id: 4,
-      title:
-        "Brandon Philips requests permission to change Project - Nganter App",
-      subtitle: "Project",
-      timeAgo: "1 hr ago",
-      avatarUrl: "https://i.pravatar.cc/64?img=18",
-      status: "active",
-    },
-  ],
-  badge = true,
-  title = t(locale, "notification_menu.title"),
-} = Astro.props as Props;
-
-const statusColors: Record<string, string> = {
-  active: "bg-emerald-500",
-  away: "bg-amber-400",
-  inactive: "bg-gray-400",
-};
+const title = t(locale, "notification_menu.title");
 ---
 
-<details class="notification-menu relative" aria-label="Notifications">
+<details class="notification-menu relative" aria-label="Notifications" data-notif-root>
   <summary class="notification-trigger group" role="button">
-    {
-      badge ? (
-        <span class="notify-dot" aria-hidden="true">
-          <span class="notify-ping" />
-        </span>
-      ) : null
-    }
+    <span class="notify-dot hidden" aria-hidden="true" data-notif-dot>
+      <span class="notify-ping"></span>
+    </span>
     <Fragment set:html={BellIcon} />
   </summary>
 
   <div class="notification-dropdown">
     <div class="flex items-center justify-between pb-3">
       <h3 class="text-lg font-semibold text-gray-900 dark:text-white/90">
-        {title}
+        <span data-i18n="notification_menu.title">{title}</span>
+        <span
+          data-notif-count
+          class="hidden ml-1 rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300"
+        ></span>
       </h3>
       <button
         class="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
@@ -95,31 +41,19 @@ const statusColors: Record<string, string> = {
       </button>
     </div>
 
-    <div class="notification-list custom-scrollbar">
-      {
-        items.map((item) => (
-          <article class="notification-item" key={item.id}>
-            <div class="notification-avatar">
-              {item.avatarUrl ? (
-                <img src={item.avatarUrl} alt={item.title} />
-              ) : (
-                <div class="placeholder-avatar">•</div>
-              )}
-              <span
-                class={`status-dot ${item.statusColor || statusColors[item.status || "inactive"]}`}
-              />
-            </div>
-            <div class="notification-body">
-              <p class="notification-title">{item.title}</p>
-              <p class="notification-meta">
-                {item.subtitle} · {item.timeAgo}
-              </p>
-            </div>
-          </article>
-        ))
-      }
-    </div>
+    <div class="notification-list custom-scrollbar" data-notif-list></div>
 
-    <a href="#" class="notification-footer">View All Notification</a>
+    <p
+      data-notif-empty
+      class="py-6 text-center text-sm text-gray-400 dark:text-gray-500"
+      data-i18n="notifications.empty"
+    >
+      You're all caught up.
+    </p>
   </div>
 </details>
+
+<script>
+  import { mountNotifications } from "@/lib/notifications";
+  mountNotifications();
+</script>

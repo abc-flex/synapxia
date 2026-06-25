@@ -24,6 +24,17 @@
   "notification_menu": {
     "title": "Notificaciones"
   },
+  "notifications": {
+    "empty": "Estás al día.",
+    "dismiss": "Descartar",
+    "error": "No se pudo actualizar la notificación",
+    "type": {
+      "REVIEW": "Revisión",
+      "MODIFICATION": "Modificación",
+      "PUBLICATION": "Publicación",
+      "REJECTION": "Rechazo"
+    }
+  },
   "coming_soon": {
     "badge": "Próximamente",
     "title": "Estamos trabajando en esto",

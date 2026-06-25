@@ -830,6 +830,20 @@ export interface HistoryEntry {
   created_at: string;
 }
 
+// Workflow notification (HU-LI11): the latest row of a per-(asset,type)
+// assignment thread directed at the current user. `unread` is true while it is
+// still ASSIGNED (shown bold); NOTIFIED items are seen and dismissible. `id` is
+// that latest action's id, used to advance the thread (notified/dismiss).
+export interface NotificationItem {
+  id: number;
+  asset: number;
+  asset_name?: string | null;
+  type: string;
+  workflow_status: string;
+  unread: boolean;
+  created_at: string;
+}
+
 // Criteria types
 export interface Criteria {
   code: string;

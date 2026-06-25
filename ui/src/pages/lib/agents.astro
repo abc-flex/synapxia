@@ -13,6 +13,7 @@ import { getListItemsbyList } from "@/lib/list_items";
 import { getCurrentUser } from "@/lib/auth";
 import { getFavoritesByUser } from "@/lib/favorites";
 import { getActions, summarizeVotes } from "@/lib/actions";
+import { summarizeDiscussionCounts } from "@/lib/foro";
 import { getLocale } from "@/utils/getLocale";
 import { formatRelative } from "@/lib/datatable";
 
@@ -76,11 +77,14 @@ try {
 
 // ── Vote tallies (SSR) → pre-fill each card's score + the user's own vote ──
 let votesByAsset: Map<number, { score: number; positive: number; negative: number; myVote: string | null }> = new Map();
+let discussByAsset = new Map<number, number>();
 try {
   const allActions = await getActions(0, 1000);
   votesByAsset = summarizeVotes(allActions, myUserId ?? undefined);
+  discussByAsset = summarizeDiscussionCounts(allActions);
 } catch {
   votesByAsset = new Map();
+  discussByAsset = new Map();
 }
 
 // ── Status list (ASSET_STATUS) for labels + the status filter ──────────────
@@ -118,6 +122,7 @@ const rows = agents.map((item) => {
     favorite: favIds.has(item.id) ? "yes" : "no",
     voteScore: votesByAsset.get(Number(item.id))?.score ?? 0,
     myVote: votesByAsset.get(Number(item.id))?.myVote ?? "",
+    discussCount: discussByAsset.get(Number(item.id)) ?? 0,
     model: chars.SUGGESTED_MODEL?.value,
     tools,
     instructionsPreview: truncate(instructions),
@@ -187,6 +192,7 @@ const deleteFields = [{ key: "name", label: "asset_modal.name", pk: true, disabl
           votable={true}
           voteScore={r.voteScore}
           myVote={r.myVote}
+          discussCount={r.discussCount}
         />
       ))}
     </CardGallery>

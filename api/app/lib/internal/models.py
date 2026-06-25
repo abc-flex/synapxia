@@ -216,6 +216,39 @@ class VoteTally(SQLModel):
     score: int = 0
     my_vote: Optional[str] = None
 
+
+# Foro DTOs (HU-LI06) — comments/questions/answers are `actions` rows of type
+# COMMENT/QUESTION/ANSWER; answers thread to their question via `parent`. No new
+# table: these are request/response shapes over the existing `actions` substrate.
+
+
+class ParticipationCreate(SQLModel):
+    """Body for posting a comment or question on an asset."""
+    user_id: int = Field(description="User ID")
+    asset: int = Field(description="Asset id (FK to assets.id)")
+    content: str = Field(description="Comment/question text")
+
+
+class AnswerCreate(SQLModel):
+    """Body for answering a question (``parent`` = the QUESTION action id)."""
+    user_id: int = Field(description="User ID")
+    asset: int = Field(description="Asset id (FK to assets.id)")
+    content: str = Field(description="Answer text")
+    parent: int = Field(description="Parent QUESTION action id")
+
+
+class DiscussionItem(SQLModel):
+    """A participation row (comment/question/answer) enriched with the author's
+    username — the read shape returned by the discussion endpoints."""
+    id: int
+    asset: int
+    user_id: int
+    author: Optional[str] = None
+    type: str
+    content: Optional[str] = None
+    parent: Optional[int] = None
+    created_at: datetime
+
 # Asset Relations Models
 
 

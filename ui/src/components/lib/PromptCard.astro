@@ -27,6 +27,7 @@ export interface Props {
   votable?: boolean;
   voteScore?: number;
   myVote?: string;
+  discussCount?: number;
 }
 
 const {
@@ -47,6 +48,7 @@ const {
   votable = false,
   voteScore = 0,
   myVote = "",
+  discussCount = 0,
 } = Astro.props as Props;
 
 const chips = [
@@ -69,6 +71,7 @@ const chips = [
   votable={votable}
   voteScore={voteScore}
   myVote={myVote}
+  discussCount={discussCount}
 >
   <span slot="icon" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">

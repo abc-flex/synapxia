@@ -16,6 +16,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
 from .models import Action, Asset
+from ...admin.internal.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -171,3 +172,127 @@ def set_vote(
             "Integrity error setting vote: user=%s asset=%s value=%s",
             user_id, asset_id, value)
         raise
+
+
+# ---------------------------------------------------------------------------
+# Foro — comments / questions / answers (HU-LI06)
+#
+# All three are ``actions`` rows: COMMENT and QUESTION are top-level (parent
+# NULL); an ANSWER threads to its QUESTION via ``parent``. No new table.
+# ---------------------------------------------------------------------------
+
+DISCUSSION_TYPES = (TYPE_COMMENT, TYPE_QUESTION, TYPE_ANSWER)
+
+
+def discussion_item(session: Session, action: Action) -> dict:
+    """Project a single participation ``Action`` to a discussion item (with the
+    author's username resolved). Used for POST responses."""
+    author = session.get(User, action.user_id)
+    return {
+        "id": action.id,
+        "asset": action.asset,
+        "user_id": action.user_id,
+        "author": author.username if author else None,
+        "type": action.type,
+        "content": action.content,
+        "parent": action.parent,
+        "created_at": action.created_at,
+    }
+
+
+def list_discussion(session: Session, asset_id: int) -> List[dict]:
+    """Active COMMENT/QUESTION/ANSWER rows for an asset, oldest first, each
+    enriched with the author's username.
+
+    Authors are resolved with a single batched ``IN`` query (no N+1). The
+    frontend threads answers under their question via ``parent``.
+    """
+    rows = session.exec(
+        select(Action)
+        .where(
+            Action.asset == asset_id,
+            Action.is_active == True,  # noqa: E712
+            Action.type.in_(DISCUSSION_TYPES),
+        )
+        .order_by(Action.created_at.asc())
+    ).all()
+
+    user_ids = {r.user_id for r in rows}
+    authors: dict = {}
+    if user_ids:
+        users = session.exec(select(User).where(User.id.in_(user_ids))).all()
+        authors = {u.id: u.username for u in users}
+
+    return [
+        {
+            "id": r.id,
+            "asset": r.asset,
+            "user_id": r.user_id,
+            "author": authors.get(r.user_id),
+            "type": r.type,
+            "content": r.content,
+            "parent": r.parent,
+            "created_at": r.created_at,
+        }
+        for r in rows
+    ]
+
+
+def _add_participation(
+    session: Session,
+    user_id: int,
+    asset_id: int,
+    type_: str,
+    content: Optional[str],
+    parent: Optional[int] = None,
+) -> Action:
+    """Create a COMMENT/QUESTION/ANSWER row. Validates non-empty content and
+    rolls back + re-raises IntegrityError (so routes can map it to 409).
+
+    Raises ValueError on empty content.
+    """
+    text = (content or "").strip()
+    if not text:
+        raise ValueError("Content must not be empty.")
+
+    action = Action(
+        asset=asset_id, user_id=user_id, type=type_, content=text, parent=parent)
+    try:
+        session.add(action)
+        session.commit()
+        session.refresh(action)
+    except IntegrityError:
+        session.rollback()
+        logger.error(
+            "Integrity error adding %s: user=%s asset=%s", type_, user_id, asset_id)
+        raise
+    logger.info("%s added: user=%s asset=%s", type_, user_id, asset_id)
+    return action
+
+
+def add_comment(session: Session, user_id: int, asset_id: int, content: str) -> Action:
+    """Add a top-level comment on an asset."""
+    return _add_participation(session, user_id, asset_id, TYPE_COMMENT, content)
+
+
+def add_question(session: Session, user_id: int, asset_id: int, content: str) -> Action:
+    """Add a top-level question on an asset."""
+    return _add_participation(session, user_id, asset_id, TYPE_QUESTION, content)
+
+
+def add_answer(
+    session: Session, user_id: int, asset_id: int, content: str, parent: int
+) -> Action:
+    """Answer a question. ``parent`` must be an active QUESTION on the *same*
+    asset, otherwise ValueError (→ 400)."""
+    question = session.get(Action, parent)
+    if (
+        not question
+        or not question.is_active
+        or question.type != TYPE_QUESTION
+        or question.asset != asset_id
+    ):
+        raise ValueError(
+            "Answer parent must be an active question on the same asset.")
+    return _add_participation(
+        session, user_id, asset_id, TYPE_ANSWER, content, parent=parent)

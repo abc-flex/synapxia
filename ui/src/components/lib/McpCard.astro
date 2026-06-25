@@ -25,6 +25,7 @@ export interface Props {
   votable?: boolean;
   voteScore?: number;
   myVote?: string;
+  discussCount?: number;
 }
 
 const {
@@ -45,6 +46,7 @@ const {
   votable = false,
   voteScore = 0,
   myVote = "",
+  discussCount = 0,
 } = Astro.props as Props;
 
 const MAX_TOOLS = 4;
@@ -66,6 +68,7 @@ const isRemote = (mode ?? "").toLowerCase().includes("remote");
   votable={votable}
   voteScore={voteScore}
   myVote={myVote}
+  discussCount={discussCount}
 >
   <span slot="icon" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300">
     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">

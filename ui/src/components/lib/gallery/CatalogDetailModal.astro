@@ -12,6 +12,8 @@
  * per-catalog wrapper (e.g. PromptDetailModal) supplies the icon + accent and
  * calls `mountCatalogDetail` to hydrate it and wire Edit/Delete/Copy/favorite.
  */
+import Foro from "@/components/lib/gallery/Foro.astro";
+
 export interface Props {
   /** Dialog id, e.g. "prompt-view-modal". */
   modalId: string;
@@ -107,6 +109,7 @@ const {
     <div class="flex-1 space-y-6 overflow-y-auto px-6 py-5">
       <p id={`${modalId}-desc`} class="hidden whitespace-pre-wrap text-sm text-gray-600 dark:text-gray-300"></p>
       <div id={`${modalId}-sections`} class="space-y-6"></div>
+      <Foro modalId={modalId} />
     </div>
 
     {/* Footer */}

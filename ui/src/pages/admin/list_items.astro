@@ -15,7 +15,12 @@ let errorMessage: string | null = null;
 const languages = languagesData.map((l) => ({ value: l.code, label: l.label }));
 
 try {
-  const apiLists = await getListItems();
+  // The list + lang dropdowns filter client-side over the full set, so we must
+  // load every list_item — not just the default first 100. list_items is bounded
+  // enum/reference data (a couple hundred rows), so a single generous page is safe
+  // and avoids the truncation that hid most of a list's values (e.g. only 2 of 5
+  // GENAI_DEV_ADOPTION rows showed because the rest sat past row 100).
+  const apiLists = await getListItems(0, 1000);
   list_items = apiLists;
 } catch (error) {
   console.error('Failed to fetch list_items:', error);

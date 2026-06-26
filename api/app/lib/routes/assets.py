@@ -12,6 +12,7 @@ from ..internal.models import (
     ProposeRequest, ReviewerOption,
 )
 from ..internal import propose_service
+from ..internal import permissions_service
 from ...taxo.internal.models import Category
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
@@ -44,14 +45,17 @@ def get_all(
 @router.get("/with-access", response_model=List[AssetWithAccessLevels])
 def get_all_with_access(
     skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
+    current: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
 ) -> List[AssetWithAccessLevels]:
     """
     List assets with an aggregated per-asset access summary.
 
     Each row adds `access_levels` (distinct active access levels granted on the
-    asset, e.g. VIEW/MANAGE) and `is_public` (any active permission targeting
-    PUBLIC). The existing `GET /api/assets/` contract is unchanged.
+    asset, e.g. VIEW/MANAGE), `is_public` (any active permission targeting
+    PUBLIC), and `permission_scopes` (the scope-types — USER/ROLE/TEAM/UNIT/
+    PROJECT/PUBLIC — by which the **current user** is granted access; drives the
+    privileges/permisos filter). The existing `GET /api/assets/` contract is
+    unchanged.
 
     - **skip**: Number of records to skip (default: 0)
     - **limit**: Maximum number of records to return (default: 100)
@@ -78,6 +82,10 @@ def get_all_with_access(
         .order_by(Asset.name)
     ).all()
 
+    # Per-current-user scope-types granting access, for the assets on this page.
+    asset_ids = [asset.id for asset, _al, _ip in rows]
+    scopes_by_asset = permissions_service.assets_user_scopes(session, current, asset_ids)
+
     result: List[AssetWithAccessLevels] = []
     for asset, access_levels, is_public in rows:
         result.append(AssetWithAccessLevels(
@@ -94,6 +102,7 @@ def get_all_with_access(
             updated_at=asset.updated_at,
             access_levels=list(access_levels) if access_levels else [],
             is_public=bool(is_public),
+            permission_scopes=scopes_by_asset.get(asset.id, []),
         ))
     return result
 

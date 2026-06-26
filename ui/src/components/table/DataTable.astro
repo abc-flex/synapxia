@@ -11,6 +11,7 @@ import DataTableBody from "./partials/DataTableBody.astro";
 import DataTablePagination from "./partials/DataTablePagination.astro";
 import DataTableEmpty from "./partials/DataTableEmpty.astro";
 import type { ColumnConfig, FilterOption } from "@/types/datatable";
+import { buildFilterConfigs } from "@/lib/datatable";
 
 const locale = getLocale(Astro);
 
@@ -42,6 +43,18 @@ const {
   filterOptions4 = [],
   filterDefaultValue4 = "",
   filter4AllLabel = null,
+  // Optional: render a filter slot as a funnel dropdown inside the named display
+  // column's header cell (instead of the toolbar). Value = the display column key.
+  filterHeaderColumn = null,
+  filter2HeaderColumn = null,
+  filter3HeaderColumn = null,
+  filter4HeaderColumn = null,
+  // Optional: render a toolbar filter slot as a toggle switch (its "on" value is
+  // the first option's value).
+  filterAsToggle = false,
+  filter2AsToggle = false,
+  filter3AsToggle = false,
+  filter4AsToggle = false,
   masterPage = null,
   detailPage = null,
   mdItem = null,
@@ -71,6 +84,14 @@ const {
   filterOptions4?: FilterOption[];
   filterDefaultValue4?: string;
   filter4AllLabel?: string | null;
+  filterHeaderColumn?: string | null;
+  filter2HeaderColumn?: string | null;
+  filter3HeaderColumn?: string | null;
+  filter4HeaderColumn?: string | null;
+  filterAsToggle?: boolean;
+  filter2AsToggle?: boolean;
+  filter3AsToggle?: boolean;
+  filter4AsToggle?: boolean;
   masterPage?: string | null;
   detailPage?: string | null;
   mdItem?: string | null;
@@ -82,6 +103,16 @@ const {
 // Filtrar columnas visibles (ocultar si visible: false)
 const visibleColumns = columns.filter((col) => col.visible !== false);
 const hasData = data.length > 0;
+
+// Single source of truth for the (up to 4) filter slots — shared by the toolbar
+// (DataTableFilters) and the column headers (DataTableHead). Slots with a
+// `headerColumn` render as a funnel in that column's <th>; others in the toolbar.
+const filterConfigs = buildFilterConfigs(tableId, [
+  { key: columnFilter, options: filterOptions, defaultValue: filterDefaultValue, headerColumn: filterHeaderColumn, asToggle: filterAsToggle },
+  { key: columnFilter2, options: filterOptions2, defaultValue: filterDefaultValue2, headerColumn: filter2HeaderColumn, asToggle: filter2AsToggle },
+  { key: columnFilter3, options: filterOptions3, defaultValue: filterDefaultValue3, allLabel: filter3AllLabel, headerColumn: filter3HeaderColumn, asToggle: filter3AsToggle },
+  { key: columnFilter4, options: filterOptions4, defaultValue: filterDefaultValue4, allLabel: filter4AllLabel, headerColumn: filter4HeaderColumn, asToggle: filter4AsToggle },
+]);
 ---
 
 <div class="space-y-2">
@@ -93,16 +124,7 @@ const hasData = data.length > 0;
     showAddButton={showAddButton}
     hasData={hasData}
     masterPage={masterPage}
-    columnFilter={columnFilter}
-    filterOptions={filterOptions}
-    filterDefaultValue={filterDefaultValue}
-    columnFilter2={columnFilter2}
-    filterOptions2={filterOptions2}
-    filterDefaultValue2={filterDefaultValue2}
-    columnFilter3={columnFilter3}
-    filterOptions3={filterOptions3}
-    filterDefaultValue3={filterDefaultValue3}
-    filter3AllLabel={filter3AllLabel}
+    filters={filterConfigs}
   >
     <slot name="toolbar-actions" slot="actions" />
   </DataTableToolbar>
@@ -114,7 +136,7 @@ const hasData = data.length > 0;
       id={tableId}
       class="w-full text-sm text-left text-gray-700 dark:text-gray-300 datatable-dense"
     >
-      <DataTableHead visibleColumns={visibleColumns} />
+      <DataTableHead visibleColumns={visibleColumns} filters={filterConfigs} />
       <DataTableBody
         data={data}
         visibleColumns={visibleColumns}

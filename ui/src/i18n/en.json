@@ -435,7 +435,14 @@
     "access_filter_all": "All access levels",
     "access_filter_view": "View only",
     "access_filter_manage": "Can manage",
-    "access_filter_public": "Public"
+    "access_filter_public": "Public",
+    "perm_filter_all": "All privileges",
+    "perm_filter_user": "Shared with me",
+    "perm_filter_role": "My role",
+    "perm_filter_team": "My team",
+    "perm_filter_unit": "My unit",
+    "perm_filter_project": "My projects",
+    "perm_filter_public": "Public"
   },
   "asset_detail_modal": {
     "title_create": "New Asset",

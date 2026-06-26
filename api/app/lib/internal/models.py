@@ -398,7 +398,10 @@ class AssetWithAccessLevels(SQLModel):
 
     `access_levels` holds the distinct active access levels granted on the asset
     (e.g. VIEW, MANAGE); `is_public` is true when any active permission targets
-    PUBLIC. Read-only projection — does not change the `Asset` table contract.
+    PUBLIC. `permission_scopes` lists the scope-types by which the *current user*
+    is granted access (subset of USER/ROLE/TEAM/UNIT/PROJECT/PUBLIC) — drives the
+    asset list's privileges/permisos filter. Read-only projection — does not
+    change the `Asset` table contract.
     """
     id: int
     name: str
@@ -413,6 +416,7 @@ class AssetWithAccessLevels(SQLModel):
     updated_at: Optional[datetime] = None
     access_levels: List[str] = Field(default_factory=list)
     is_public: bool = False
+    permission_scopes: List[str] = Field(default_factory=list)
 
 
 # Propose Models (HU-Propose) — the review-workflow entry point

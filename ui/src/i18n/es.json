@@ -435,7 +435,14 @@
     "access_filter_all": "Todos los niveles de acceso",
     "access_filter_view": "Solo lectura",
     "access_filter_manage": "Puede gestionar",
-    "access_filter_public": "Público"
+    "access_filter_public": "Público",
+    "perm_filter_all": "Todos los permisos",
+    "perm_filter_user": "Compartidos conmigo",
+    "perm_filter_role": "Mi rol",
+    "perm_filter_team": "Mi equipo",
+    "perm_filter_unit": "Mi unidad",
+    "perm_filter_project": "Mis proyectos",
+    "perm_filter_public": "Público"
   },
   "asset_detail_modal": {
     "title_create": "Nuevo Activo",

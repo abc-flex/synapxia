@@ -75,23 +75,41 @@ export function initAdvancedTable(
     /* ======================
        COLUMN FILTER (up to two filters, AND-combined)
     ====================== */
-    const filterSelect = document.getElementById(
-        `${tableId}-filter`
-    ) as HTMLSelectElement | null;
-    const filterSelect2 = document.getElementById(
-        `${tableId}-filter2`
-    ) as HTMLSelectElement | null;
-    const filterSelect3 = document.getElementById(
-        `${tableId}-filter3`
-    ) as HTMLSelectElement | null;
-    const filterSelect4 = document.getElementById(
-        `${tableId}-filter4`
-    ) as HTMLSelectElement | null;
+    // A filter slot may be a <select> (toolbar or in a column header) OR an
+    // <input type="checkbox"> rendered as a toggle. Bound by id, so it works
+    // wherever the control lives in the DOM.
+    type FilterEl = HTMLSelectElement | HTMLInputElement | null;
+    const filterSelect = document.getElementById(`${tableId}-filter`) as FilterEl;
+    const filterSelect2 = document.getElementById(`${tableId}-filter2`) as FilterEl;
+    const filterSelect3 = document.getElementById(`${tableId}-filter3`) as FilterEl;
+    const filterSelect4 = document.getElementById(`${tableId}-filter4`) as FilterEl;
 
     let filterKey: string | null = null;
     let filterKey2: string | null = null;
     let filterKey3: string | null = null;
     let filterKey4: string | null = null;
+
+    const isCheckbox = (el: FilterEl): el is HTMLInputElement =>
+        el instanceof HTMLInputElement && el.type === "checkbox";
+
+    // Read/write a slot's value uniformly across <select> and toggle <input>.
+    // A toggle's "on" value comes from data-on-value (defaults to "yes").
+    const slotValue = (el: FilterEl): string => {
+        if (!el) return "";
+        if (isCheckbox(el)) return el.checked ? (el.dataset.onValue || "yes") : "";
+        return el.value ?? "";
+    };
+    const setSlotValue = (el: FilterEl, value: string): void => {
+        if (!el) return;
+        if (isCheckbox(el)) el.checked = value !== "" && value === (el.dataset.onValue || "yes");
+        else el.value = value;
+    };
+
+    // Toggle the "active" highlight on a header funnel when its filter has a value.
+    const markHeaderFilterActive = (el: FilterEl, active: boolean): void => {
+        const host = el?.closest<HTMLElement>("[data-dt-head-filter]");
+        if (host) host.classList.toggle("dt-head-filter--active", active);
+    };
 
     /* ======================
        RESET FILTERS
@@ -104,10 +122,10 @@ export function initAdvancedTable(
     const isFilterActive = (): boolean =>
         Boolean(
             (searchInput?.value ?? "") ||
-            (filterSelect?.value ?? "") ||
-            (filterSelect2?.value ?? "") ||
-            (filterSelect3?.value ?? "") ||
-            (filterSelect4?.value ?? "")
+            slotValue(filterSelect) ||
+            slotValue(filterSelect2) ||
+            slotValue(filterSelect3) ||
+            slotValue(filterSelect4)
         );
 
     const updateResetVisibility = () => {
@@ -130,10 +148,10 @@ export function initAdvancedTable(
     if (resetBtn) {
         resetBtn.addEventListener("click", () => {
             if (searchInput) searchInput.value = "";
-            if (filterSelect) filterSelect.value = "";
-            if (filterSelect2) filterSelect2.value = "";
-            if (filterSelect3) filterSelect3.value = "";
-            if (filterSelect4) filterSelect4.value = "";
+            setSlotValue(filterSelect, "");
+            setSlotValue(filterSelect2, "");
+            setSlotValue(filterSelect3, "");
+            setSlotValue(filterSelect4, "");
             syncFilterParam(columnFilter, "");
             syncFilterParam(columnFilter2, "");
             syncFilterParam(columnFilter3, "");
@@ -149,12 +167,10 @@ export function initAdvancedTable(
         const urlParams = new URLSearchParams(window.location.search);
         const filterParam = columnFilter ? urlParams.get(columnFilter) : null;
         const initialValue = filterParam ?? filterDefaultValue;
-        if (initialValue) {
-            filterSelect.value = initialValue;
-        }
+        setSlotValue(filterSelect, initialValue);
 
         filterSelect.addEventListener("change", () => {
-            syncFilterParam(columnFilter, filterSelect.value);
+            syncFilterParam(columnFilter, slotValue(filterSelect));
             applyFilters();
         });
 
@@ -169,12 +185,10 @@ export function initAdvancedTable(
         const urlParams = new URLSearchParams(window.location.search);
         const filterParam2 = columnFilter2 ? urlParams.get(columnFilter2) : null;
         const initialValue2 = filterParam2 ?? filterDefaultValue2;
-        if (initialValue2) {
-            filterSelect2.value = initialValue2;
-        }
+        setSlotValue(filterSelect2, initialValue2);
 
         filterSelect2.addEventListener("change", () => {
-            syncFilterParam(columnFilter2, filterSelect2.value);
+            syncFilterParam(columnFilter2, slotValue(filterSelect2));
             applyFilters();
         });
 
@@ -189,12 +203,10 @@ export function initAdvancedTable(
         const urlParams = new URLSearchParams(window.location.search);
         const filterParam3 = columnFilter3 ? urlParams.get(columnFilter3) : null;
         const initialValue3 = filterParam3 ?? filterDefaultValue3;
-        if (initialValue3) {
-            filterSelect3.value = initialValue3;
-        }
+        setSlotValue(filterSelect3, initialValue3);
 
         filterSelect3.addEventListener("change", () => {
-            syncFilterParam(columnFilter3, filterSelect3.value);
+            syncFilterParam(columnFilter3, slotValue(filterSelect3));
             applyFilters();
         });
 
@@ -209,12 +221,10 @@ export function initAdvancedTable(
         const urlParams = new URLSearchParams(window.location.search);
         const filterParam4 = columnFilter4 ? urlParams.get(columnFilter4) : null;
         const initialValue4 = filterParam4 ?? filterDefaultValue4;
-        if (initialValue4) {
-            filterSelect4.value = initialValue4;
-        }
+        setSlotValue(filterSelect4, initialValue4);
 
         filterSelect4.addEventListener("change", () => {
-            syncFilterParam(columnFilter4, filterSelect4.value);
+            syncFilterParam(columnFilter4, slotValue(filterSelect4));
             applyFilters();
         });
 
@@ -235,10 +245,16 @@ export function initAdvancedTable(
         purgeDetailRows();
 
         const searchTerm = searchInput?.value.toLowerCase() ?? "";
-        const filterValue = filterSelect?.value ?? "";
-        const filterValue2 = filterSelect2?.value ?? "";
-        const filterValue3 = filterSelect3?.value ?? "";
-        const filterValue4 = filterSelect4?.value ?? "";
+        const filterValue = slotValue(filterSelect);
+        const filterValue2 = slotValue(filterSelect2);
+        const filterValue3 = slotValue(filterSelect3);
+        const filterValue4 = slotValue(filterSelect4);
+
+        // Keep any column-header funnel highlighted while its filter is set.
+        markHeaderFilterActive(filterSelect, !!filterValue);
+        markHeaderFilterActive(filterSelect2, !!filterValue2);
+        markHeaderFilterActive(filterSelect3, !!filterValue3);
+        markHeaderFilterActive(filterSelect4, !!filterValue4);
 
         const rows = Array.from(tbody.querySelectorAll("tr")) as HTMLTableRowElement[];
 

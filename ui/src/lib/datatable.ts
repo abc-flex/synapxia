@@ -1,7 +1,40 @@
 // Pure, server-side presentation helpers for the DataTable cell renderer.
 // No DOM access — safe to import from any .astro component frontmatter.
 import { t } from "@/i18n";
-import type { ColumnConfig } from "@/types/datatable";
+import type { ColumnConfig, FilterConfig, FilterOption } from "@/types/datatable";
+
+/** Raw per-slot inputs (from DataTable props) for building the 4 filter slots. */
+export interface FilterSlotInput {
+  key?: string | null;
+  options?: FilterOption[];
+  defaultValue?: string;
+  allLabel?: string | null;
+  /** Display-column key whose <th> hosts this filter (omits it from the toolbar). */
+  headerColumn?: string | null;
+  /** Render the toolbar control as a toggle switch instead of a <select>. */
+  asToggle?: boolean;
+}
+
+/**
+ * Build the (up to 4) FilterConfig slots from raw inputs, assigning the canonical
+ * ids advancedTable.ts binds to (`${tableId}-filter`, `-filter2`, `-filter3`,
+ * `-filter4`). Shared by DataTableFilters (toolbar) and DataTableHead (column
+ * funnels) so both render from one source of truth.
+ */
+export function buildFilterConfigs(
+  tableId: string,
+  slots: FilterSlotInput[],
+): FilterConfig[] {
+  return slots.map((s, i) => ({
+    id: i === 0 ? `${tableId}-filter` : `${tableId}-filter${i + 1}`,
+    key: s.key ?? null,
+    options: s.options ?? [],
+    defaultValue: s.defaultValue ?? "",
+    allLabel: s.allLabel ?? null,
+    headerColumn: s.headerColumn ?? null,
+    asToggle: s.asToggle ?? false,
+  }));
+}
 
 // Semantic colors for status pills (columns flagged `as: "status"`). Tone is
 // inferred from the status text so it works across entities/locales. Literal

@@ -9,7 +9,9 @@ from sqlalchemy.exc import IntegrityError
 
 from ..internal.models import (
     Asset, AssetCreate, AssetUpdate, AssetPermission, AssetWithAccessLevels,
+    ProposeRequest, ReviewerOption,
 )
+from ..internal import propose_service
 from ..internal import permissions_service
 from ...taxo.internal.models import Category
 from ..internal.dependencies import get_db_session
@@ -159,6 +161,57 @@ def get_by_category(
         .order_by(Asset.name)
     ).all()
     return items
+
+
+# ---------------------------------------------------------------------------
+# Proposal (HU-Propose) — the review-workflow entry point. Registered BEFORE the
+# composite `/{asset_id}` route so "reviewers"/"propose" aren't parsed as ids.
+# ---------------------------------------------------------------------------
+
+
+@router.get("/reviewers", response_model=List[ReviewerOption])
+def list_reviewers(
+    session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
+) -> List[ReviewerOption]:
+    """
+    Eligible reviewers for a proposal — active users with the ADMINISTRATIVE
+    profile, as ``{value: id, label: name}`` for the propose form's dropdown.
+    Lives under LIB so a proposer doesn't need ADMIN/USERS access.
+    """
+    return [
+        ReviewerOption(
+            value=u.id,
+            label=(f"{u.first_name} {u.last_name}".strip() or u.username),
+        )
+        for u in propose_service.list_reviewers(session)
+    ]
+
+
+@router.post("/propose", response_model=Asset, status_code=201)
+def propose(
+    payload: ProposeRequest, session: Session = Depends(get_db_session),
+    current: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
+) -> Asset:
+    """
+    Propose an asset for review (HU-Propose). Atomically creates the asset
+    (PROPOSED), its characterizations (from the category's specs), a PROPOSAL
+    action for the current user, a REVIEW assignment for the reviewer, and MANAGE
+    permissions for both — generating the reviewer's notification.
+
+    - **name** / **category**: required
+    - **reviewer_id**: optional (auto-assigned to the first ADMINISTRATIVE user)
+    - **values**: optional per-feature characterization overrides
+    """
+    try:
+        return propose_service.propose_asset(session, current.id, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except IntegrityError:
+        session.rollback()
+        logger.error("Integrity error on propose (proposer=%s)", current.id)
+        raise HTTPException(
+            status_code=409, detail="Could not propose the asset due to a data conflict")
 
 
 @router.get("/{asset_id}", response_model=Asset)

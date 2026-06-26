@@ -106,8 +106,10 @@ const {
     <div class="flex-1 overflow-y-auto px-6 py-5 space-y-6">
       <input type="hidden" name="id" id={`${modalId}-id`} />
 
-      {/* ============== Core fields — always visible ============== */}
-      <section>
+      {/* ============== Core fields ============== */}
+      {/* Visible in "full" + "core" section modes; hidden in "detail" mode
+          (the master-detail button edits only the tabs below). */}
+      <section id={`${modalId}-core-section`}>
         <h4
           class="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500"
           data-i18n="asset_detail_modal.core_section"
@@ -314,6 +316,26 @@ const {
       onError: (m: string) => showStatus(m, "error"),
     });
 
+    // ── Section mode ──────────────────────────────────────────────────────
+    // "" = full (core + tabs, used for create); "core" = only the core fields
+    // (the pencil); "detail" = only the Characterizations/Related/Permissions
+    // tabs (the master-detail button). The split lets each button edit just its
+    // slice, persisting only that slice on save.
+    const coreSection = document.getElementById(`${modalId}-core-section`) as HTMLElement;
+    const coreInputs = [nameField, categorySel, statusSel];
+    let editSection: "" | "core" | "detail" = "";
+
+    function applySection(section: "" | "core" | "detail") {
+      editSection = section;
+      const showCore = section !== "detail";
+      const showTabs = section !== "core";
+      if (coreSection) coreSection.classList.toggle("hidden", !showCore);
+      if (tabsRoot) tabsRoot.classList.toggle("hidden", !showTabs);
+      // Hidden required core inputs would block form submit, so relax them in
+      // detail mode (core is already saved; detail mode only flushes tabs).
+      for (const f of coreInputs) if (f) f.required = showCore;
+    }
+
     // ── Favorite star ───────────────────────────────────────────────────────
     function paintFavorite() {
       if (!favBtn || !favSvg) return;
@@ -360,17 +382,29 @@ const {
 
     async function openCreate() {
       resetForm();
+      applySection(""); // create always edits the full asset (core + tabs)
       titleEl.setAttribute("data-i18n", "asset_detail_modal.title_create");
       titleEl.textContent = tr("asset_detail_modal.title_create", "New Asset");
       dialog.showModal();
       tabs.loadOptions(); // non-blocking; composer dropdowns fill as data arrives
     }
 
-    async function openEdit(assetId: number | string) {
+    async function openEdit(assetId: number | string, section: "" | "core" | "detail" = "") {
       resetForm();
+      applySection(section);
       editingAssetId = Number(assetId);
-      titleEl.setAttribute("data-i18n", "asset_detail_modal.title_edit");
-      titleEl.textContent = tr("asset_detail_modal.title_edit", "Edit Asset");
+      const titleKey =
+        section === "core"
+          ? "asset_detail_modal.title_edit_core"
+          : section === "detail"
+            ? "asset_detail_modal.title_edit_detail"
+            : "asset_detail_modal.title_edit";
+      const titleFallback =
+        section === "core" ? "Edit core fields"
+          : section === "detail" ? "Edit details"
+            : "Edit Asset";
+      titleEl.setAttribute("data-i18n", titleKey);
+      titleEl.textContent = tr(titleKey, titleFallback);
       dialog.showModal();
 
       const user = getUser() as any;
@@ -425,7 +459,9 @@ const {
         e.preventDefault();
         const mode = target.dataset.assetMode || "create";
         const assetId = target.dataset.assetId;
-        if (mode === "edit" && assetId) openEdit(assetId);
+        // "core" (pencil) | "detail" (master-detail) | "" (full). Edit only.
+        const section = (target.dataset.assetSection as "" | "core" | "detail") || "";
+        if (mode === "edit" && assetId) openEdit(assetId, section);
         else openCreate();
       }
       const closer = e.target.closest?.(`[data-modal-close="${modalId}"]`);
@@ -465,14 +501,22 @@ const {
       };
 
       try {
-        // 1. Save the asset core, then 2. flush the three detail collections
-        //    (characterizations + relations + permissions) against its id.
-        const saved = editingAssetId
-          ? await updateAsset(editingAssetId, corePayload)
-          : await createAsset(corePayload);
-        const assetId = Number(saved.id ?? editingAssetId);
-
-        await tabs.flush(assetId);
+        // Persist only the section being edited:
+        //   "detail" → just the tabs (asset core untouched);
+        //   "core"   → just the asset core (skip the tabs);
+        //   ""       → full save (core, then tabs).
+        let assetId: number;
+        if (editSection === "detail") {
+          if (!editingAssetId) throw new Error("Missing asset id");
+          assetId = editingAssetId;
+          await tabs.flush(assetId);
+        } else {
+          const saved = editingAssetId
+            ? await updateAsset(editingAssetId, corePayload)
+            : await createAsset(corePayload);
+          assetId = Number(saved.id ?? editingAssetId);
+          if (editSection !== "core") await tabs.flush(assetId);
+        }
 
         // 3. Favorite (create mode only — edit mode toggles immediately).
         if (!editingAssetId && favoriteOn) {

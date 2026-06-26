@@ -580,6 +580,26 @@ export interface Asset {
   updated_at?: string;
 }
 
+// Propose (HU-Propose): request body for proposing an asset for review.
+// `reviewer_id` optional (auto-assigned when omitted); `values` optionally
+// overrides the category specs' default characterization values (feature→value).
+export interface ProposeRequest {
+  name: string;
+  description?: string;
+  category: string;
+  reference?: string;
+  tags?: string[];
+  detail?: string;
+  reviewer_id?: number;
+  values?: Record<string, string>;
+}
+
+// A selectable reviewer for the propose form ({value: id, label: name}).
+export interface ReviewerOption {
+  value: number;
+  label: string;
+}
+
 export interface AssetCreate {
   name: string;
   description?: string;
@@ -829,6 +849,17 @@ export interface HistoryEntry {
   summary: string;
   content?: string | null;
   workflow_status?: string | null;
+  created_at: string;
+}
+
+// The asset's current review stage (HU review workflow): the latest
+// PROPOSAL/REVIEW/PUBLICATION/… action + its workflow_status. Distinct from
+// `asset.status`; surfaced as a badge so the review step is visible. `null` when
+// the asset has no workflow actions.
+export interface WorkflowStage {
+  type: string;
+  workflow_status?: string | null;
+  actor?: string | null;
   created_at: string;
 }
 

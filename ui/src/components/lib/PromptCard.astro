@@ -25,7 +25,8 @@ export interface Props {
   temperature?: string;
   tags?: string[];
   votable?: boolean;
-  voteScore?: number;
+  votePositive?: number;
+  voteNegative?: number;
   myVote?: string;
   discussCount?: number;
 }
@@ -46,7 +47,8 @@ const {
   temperature,
   tags = [],
   votable = false,
-  voteScore = 0,
+  votePositive = 0,
+  voteNegative = 0,
   myVote = "",
   discussCount = 0,
 } = Astro.props as Props;
@@ -69,7 +71,8 @@ const chips = [
   editModalId={editModalId}
   detailModalId={detailModalId}
   votable={votable}
-  voteScore={voteScore}
+  votePositive={votePositive}
+  voteNegative={voteNegative}
   myVote={myVote}
   discussCount={discussCount}
 >
@@ -100,6 +103,23 @@ const chips = [
       type="button"
       data-modal-open={editModalId}
       data-asset-mode="edit"
+      data-asset-section="detail"
+      data-asset-id={String(id)}
+      class="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+      title="Edit details"
+      aria-label="Edit details"
+      data-i18n-title="common.edit_details"
+      data-i18n-aria-label="common.edit_details"
+    >
+      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 4.5v15m0 0 3-3m-3 3-3-3M18 19.5v-15m0 0 3 3m-3-3-3 3" />
+      </svg>
+    </button>
+    <button
+      type="button"
+      data-modal-open={editModalId}
+      data-asset-mode="edit"
+      data-asset-section="core"
       data-asset-id={String(id)}
       class="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
       data-i18n="common.edit"

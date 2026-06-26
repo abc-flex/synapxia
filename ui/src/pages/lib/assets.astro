@@ -352,6 +352,10 @@ const fieldKeys = deleteFields.map((f) => f.key);
           if (edit) {
             const id = edit.getAttribute("data-id");
             if (id) synthetic.setAttribute("data-asset-id", id);
+            // The pencil edits only the core fields; the row's master-detail
+            // (list) button edits only the Characterizations/Related/Permissions
+            // tabs (the inline expand below).
+            synthetic.setAttribute("data-asset-section", "core");
           }
           document.body.appendChild(synthetic);
           synthetic.click();

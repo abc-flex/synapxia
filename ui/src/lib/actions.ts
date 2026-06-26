@@ -12,7 +12,7 @@
  * vote-tally endpoint is a future optimization if catalogs grow large.
  */
 import { apiGet, apiPost, apiDelete, buildQueryString } from "./api";
-import type { Action, VoteTally } from "../types/api";
+import type { Action, VoteTally, WorkflowStage } from "../types/api";
 
 export const VOTE_POSITIVE = "POSITIVE";
 export const VOTE_NEGATIVE = "NEGATIVE";
@@ -27,6 +27,15 @@ export async function getActions(skip = 0, limit = 1000): Promise<Action[]> {
 export async function getVoteTally(assetId: number): Promise<VoteTally> {
   return apiGet<VoteTally>(
     `/api/actions/votes/asset/${encodeURIComponent(String(assetId))}`,
+  );
+}
+
+/** The asset's current review stage (latest workflow action), or null. */
+export async function getWorkflowStage(
+  assetId: number,
+): Promise<WorkflowStage | null> {
+  return apiGet<WorkflowStage | null>(
+    `/api/actions/workflow/asset/${encodeURIComponent(String(assetId))}`,
   );
 }
 

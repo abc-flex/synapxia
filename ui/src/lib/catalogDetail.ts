@@ -13,7 +13,7 @@
 import { getAsset } from "@/lib/assets";
 import { getCharacterizationsByAsset } from "@/lib/characterizations";
 import { isFavorite, setFavorite } from "@/lib/favorites";
-import { getVoteTally, setVote, type VoteValue } from "@/lib/actions";
+import { getVoteTally, setVote, getWorkflowStage, type VoteValue } from "@/lib/actions";
 import { mountForo } from "@/lib/foro";
 import { mountRelated } from "@/lib/related";
 import { mountHistory } from "@/lib/history";
@@ -75,6 +75,7 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
 
   const nameEl = document.getElementById(`${modalId}-name`) as HTMLElement | null;
   const statusPill = document.getElementById(`${modalId}-status-pill`) as HTMLElement | null;
+  const stagePill = document.getElementById(`${modalId}-stage-pill`) as HTMLElement | null;
   const descEl = document.getElementById(`${modalId}-desc`) as HTMLElement | null;
   const sectionsEl = document.getElementById(`${modalId}-sections`) as HTMLElement | null;
   const favBtn = document.getElementById(`${modalId}-fav`) as HTMLButtonElement | null;
@@ -84,7 +85,8 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
   const voteWrap = document.getElementById(`${modalId}-vote`) as HTMLElement | null;
   const voteUp = document.getElementById(`${modalId}-vote-up`) as HTMLButtonElement | null;
   const voteDown = document.getElementById(`${modalId}-vote-down`) as HTMLButtonElement | null;
-  const voteScore = document.getElementById(`${modalId}-vote-score`) as HTMLElement | null;
+  const voteUpCount = document.getElementById(`${modalId}-vote-up-count`) as HTMLElement | null;
+  const voteDownCount = document.getElementById(`${modalId}-vote-down-count`) as HTMLElement | null;
 
   let statuses: { value: string; label: string }[] = [];
   try {
@@ -115,6 +117,10 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
   let currentId: number | null = null;
   let currentName = "";
   let favoriteOn = false;
+  // Bumped on every open(); async loads capture it and bail if it changed,
+  // so a slow response for a previously-viewed asset can't paint over the one
+  // now shown (related-asset clicks re-open this same modal in place).
+  let openSeq = 0;
 
   function paintFavorite() {
     if (!favBtn || !favSvg) return;
@@ -152,7 +158,8 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
     const downOn = tally.my_vote === "NEGATIVE";
     styleVoteButton(voteUp, upOn, "gallery.vote_up", "text-emerald-500");
     styleVoteButton(voteDown, downOn, "gallery.vote_down", "text-rose-500");
-    if (voteScore) voteScore.textContent = String(tally.score);
+    if (voteUpCount) voteUpCount.textContent = String(tally.positive);
+    if (voteDownCount) voteDownCount.textContent = String(tally.negative);
     // Keep the matching gallery card's vote bar in sync.
     const card = document.querySelector<HTMLElement>(`[data-card][data-id="${currentId}"] [data-vote-bar]`);
     if (card) {
@@ -162,8 +169,10 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
       styleVoteButton(
         card.querySelector<HTMLElement>('[data-action="vote-down"]'),
         downOn, "gallery.vote_down", "text-rose-500");
-      const cScore = card.querySelector<HTMLElement>("[data-vote-score]");
-      if (cScore) cScore.textContent = String(tally.score);
+      const cUp = card.querySelector<HTMLElement>("[data-vote-up-count]");
+      const cDown = card.querySelector<HTMLElement>("[data-vote-down-count]");
+      if (cUp) cUp.textContent = String(tally.positive);
+      if (cDown) cDown.textContent = String(tally.negative);
     }
   }
 
@@ -292,6 +301,7 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
   }
 
   async function open(assetId: number) {
+    const seq = ++openSeq;
     currentId = assetId;
     favoriteOn = false;
     paintFavorite();
@@ -299,12 +309,34 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
     if (descEl) descEl.classList.add("hidden");
     if (sectionsEl) sectionsEl.innerHTML = "";
     if (statusPill) statusPill.classList.add("hidden");
-    dialog!.showModal();
+    if (stagePill) stagePill.classList.add("hidden");
+    // Guard: a related-asset click re-opens this same modal in place, so the
+    // dialog may already be open — calling showModal() twice would throw.
+    // The scrollable element is the inner body, not the <dialog> itself.
+    if (!dialog!.open) dialog!.showModal();
+    else (dialog!.querySelector(".overflow-y-auto") as HTMLElement | null)?.scrollTo({ top: 0 });
+
+    // Review-stage badge (latest workflow action) — distinct from asset.status.
+    if (stagePill && currentId) {
+      getWorkflowStage(currentId)
+        .then((stage) => {
+          if (seq !== openSeq || !stage) return; // a newer open() superseded this
+          const typeLabel = tr(`workflow_stage.${stage.type}`, stage.type);
+          const statusLabel = stage.workflow_status
+            ? tr(`workflow_stage.${stage.workflow_status}`, stage.workflow_status)
+            : "";
+          stagePill.textContent = statusLabel ? `${typeLabel} · ${statusLabel}` : typeLabel;
+          stagePill.classList.remove("hidden");
+          stagePill.classList.add("inline-flex");
+        })
+        .catch(() => {});
+    }
 
     const user = getUser() as any;
     if ((user?.id || user?.id === 0) && currentId) {
       isFavorite(Number(user.id), currentId)
         .then((on) => {
+          if (seq !== openSeq) return;
           favoriteOn = on;
           paintFavorite();
         })
@@ -315,14 +347,19 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
     if (voteWrap) {
       voteWrap.classList.remove("hidden");
       voteWrap.classList.add("flex");
-      if (voteScore) voteScore.textContent = "0";
+      if (voteUpCount) voteUpCount.textContent = "0";
+      if (voteDownCount) voteDownCount.textContent = "0";
       getVoteTally(currentId)
-        .then((tally) => paintVote(tally))
+        .then((tally) => {
+          if (seq !== openSeq) return;
+          paintVote(tally);
+        })
         .catch(() => {});
     }
 
     try {
       const asset = await getAsset(assetId);
+      if (seq !== openSeq) return; // superseded by a newer open()
       currentName = asset.name ?? "";
       if (nameEl) nameEl.textContent = currentName || "—";
 
@@ -331,7 +368,7 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
         if (label) {
           statusPill.textContent = label;
           statusPill.className =
-            "mt-1 inline-flex w-fit items-center rounded-full px-2.5 py-0.5 text-xs font-medium " +
+            "inline-flex w-fit items-center rounded-full px-2.5 py-0.5 text-xs font-medium " +
             statusTone(asset.status || label);
         } else {
           statusPill.classList.add("hidden");
@@ -339,6 +376,7 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
       }
 
       const chars = await getCharacterizationsByAsset(assetId);
+      if (seq !== openSeq) return; // superseded by a newer open()
       const byFeature = Object.fromEntries(chars.map((c) => [c.feature, c]));
 
       if (descEl) {

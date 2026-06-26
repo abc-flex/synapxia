@@ -447,6 +447,8 @@
   "asset_detail_modal": {
     "title_create": "New Asset",
     "title_edit": "Edit Asset",
+    "title_edit_core": "Edit core fields",
+    "title_edit_detail": "Edit details",
     "subtitle": "Core fields plus the characterizations required by the chosen category.",
     "core_section": "Core",
     "characterizations_section": "Characterizations",
@@ -665,6 +667,7 @@
   },
   "common": {
     "active": "Active",
+    "edit_details": "Edit details",
     "inactive": "Inactive",
     "yes": "Yes",
     "no": "No",
@@ -762,6 +765,10 @@
   },
   "foro": {
     "title": "Discussion",
+    "tag_comment": "Comment",
+    "tag_question": "Question",
+    "post": "Post",
+    "empty": "No discussion yet.",
     "comments": "Comments",
     "questions": "Questions",
     "add_comment": "Comment",
@@ -797,8 +804,35 @@
       "REJECTION": "rejected the asset",
       "DEPRECATION": "deprecated the asset",
       "VERSIONING": "created a new version",
-      "USAGE": "used the asset"
+      "USAGE": "used the asset",
+      "PROPOSAL_ASSIGNED": "was assigned to propose the asset",
+      "PROPOSAL_NOTIFIED": "was notified to propose the asset",
+      "PROPOSAL_FINISHED": "proposed the asset",
+      "REVIEW_ASSIGNED": "was assigned to review the asset",
+      "REVIEW_NOTIFIED": "was notified to review the asset",
+      "REVIEW_FINISHED": "reviewed the asset",
+      "PUBLICATION_ASSIGNED": "was assigned to publish the asset",
+      "PUBLICATION_NOTIFIED": "was notified to publish the asset",
+      "PUBLICATION_FINISHED": "published the asset",
+      "MODIFICATION_ASSIGNED": "was assigned a modification",
+      "MODIFICATION_NOTIFIED": "was notified of a modification",
+      "MODIFICATION_FINISHED": "modified the asset",
+      "REJECTION_FINISHED": "rejected the asset",
+      "DEPRECATION_FINISHED": "deprecated the asset"
     }
+  },
+  "workflow_stage": {
+    "label": "Review stage",
+    "PROPOSAL": "Proposal",
+    "REVIEW": "Review",
+    "PUBLICATION": "Publication",
+    "MODIFICATION": "Modification",
+    "REJECTION": "Rejection",
+    "DEPRECATION": "Deprecation",
+    "VERSIONING": "Versioning",
+    "ASSIGNED": "Assigned",
+    "NOTIFIED": "Notified",
+    "FINISHED": "Finished"
   },
   "related": {
     "title": "Related assets",
@@ -813,6 +847,26 @@
       "USED_BY": "Used by",
       "EXTENDS": "Extends"
     }
+  },
+  "propose": {
+    "title": "Propose an asset",
+    "subtitle": "Submit a new asset for review. A reviewer will be notified to approve, request changes, or reject it.",
+    "name": "Name",
+    "name_placeholder": "Asset name",
+    "description": "Description",
+    "description_placeholder": "Short description",
+    "category": "Category",
+    "category_placeholder": "Select a category…",
+    "reviewer": "Reviewer",
+    "reviewer_auto": "Auto-assign",
+    "tags": "Tags",
+    "tags_placeholder": "comma, separated, tags",
+    "detail": "Detail",
+    "detail_placeholder": "Additional detail (optional)",
+    "submit": "Propose for review",
+    "required": "Name and category are required",
+    "success": "Asset proposed for review",
+    "error": "Could not propose the asset"
   },
   "prompt_modal": {
     "title_create": "New Prompt",

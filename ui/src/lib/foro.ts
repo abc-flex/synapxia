@@ -200,15 +200,17 @@ export function mountForo(cfg: ForoConfig): void {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.dataset.foroDelete = String(item.id);
+    // Revealed only when the entry is hovered (or keyboard-focused), like the
+    // Answer link. opacity (not hidden) keeps it focusable for a11y.
     btn.className =
-      "ml-auto text-xs font-medium text-gray-400 hover:text-red-600 dark:hover:text-red-400";
+      "ml-auto text-xs font-medium text-gray-400 opacity-0 transition-opacity hover:text-red-600 focus:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100 dark:hover:text-red-400";
     btn.textContent = tr("foro.delete", "Delete");
     return btn;
   }
 
   function commentNode(item: DiscussionItem): HTMLElement {
     const card = document.createElement("div");
-    card.className = "border-b border-gray-100 pb-4 last:border-0 dark:border-gray-800";
+    card.className = "group border-b border-gray-100 pb-4 last:border-0 dark:border-gray-800";
     const head = metaLine(item, true);
     const del = deleteControl(item);
     if (del) head.appendChild(del);
@@ -218,7 +220,7 @@ export function mountForo(cfg: ForoConfig): void {
 
   function answerNode(item: DiscussionItem): HTMLElement {
     const card = document.createElement("div");
-    card.className = "ml-5 mt-2 border-l-2 border-gray-200 pl-3 dark:border-gray-700";
+    card.className = "group ml-5 mt-2 border-l-2 border-gray-200 pl-3 dark:border-gray-700";
     const head = metaLine(item);
     const del = deleteControl(item);
     if (del) head.appendChild(del);

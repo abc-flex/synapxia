@@ -1,0 +1,190 @@
+---
+/**
+ * Propose an asset (HU-Propose) — the review-workflow entry point. A focused
+ * form (name / description / category / reviewer / tags / detail) that POSTs to
+ * `/api/assets/propose`, which atomically creates the asset (PROPOSED), its
+ * characterizations (from the category's specs), the PROPOSAL + REVIEW actions,
+ * and MANAGE permissions — generating the reviewer's notification.
+ *
+ * Category + reviewer selects are hydrated client-side (per-user data + the
+ * Vercel build-time empty-fetch gotcha), via a bundled `@/` script.
+ */
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import Toast from "../../components/Toast.astro";
+
+const inputClass =
+  "w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100";
+const labelClass = "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300";
+---
+
+<BaseLayout>
+  <div class="mx-auto w-full max-w-3xl">
+    <Breadcrumb
+      moduleName="AI Library"
+      pageName="Propose"
+      pageTitle="Propose an asset"
+      homeLink="/"
+      moduleNameKey="modules.LIB"
+      pageNameKey="menu_options.propose"
+      pageTitleKey="propose.title"
+    />
+
+    <form
+      id="propose-form"
+      class="space-y-5 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900"
+    >
+      <p class="text-sm text-gray-500 dark:text-gray-400" data-i18n="propose.subtitle">
+        Submit a new asset for review. A reviewer will be notified to approve, request changes, or reject it.
+      </p>
+
+      <div>
+        <label class={labelClass} for="propose-name" data-i18n="propose.name">Name</label>
+        <input id="propose-name" name="name" type="text" required class={inputClass}
+          data-i18n-placeholder="propose.name_placeholder" placeholder="Asset name" />
+      </div>
+
+      <div>
+        <label class={labelClass} for="propose-description" data-i18n="propose.description">Description</label>
+        <textarea id="propose-description" name="description" rows="2" class={inputClass}
+          data-i18n-placeholder="propose.description_placeholder" placeholder="Short description"></textarea>
+      </div>
+
+      <div class="grid gap-5 sm:grid-cols-2">
+        <div>
+          <label class={labelClass} for="propose-category" data-i18n="propose.category">Category</label>
+          <select id="propose-category" name="category" required class={inputClass}>
+            <option value="" data-i18n="propose.category_placeholder">Select a category…</option>
+          </select>
+        </div>
+        <div>
+          <label class={labelClass} for="propose-reviewer" data-i18n="propose.reviewer">Reviewer</label>
+          <select id="propose-reviewer" name="reviewer_id" class={inputClass}>
+            <option value="" data-i18n="propose.reviewer_auto">Auto-assign</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class={labelClass} for="propose-tags" data-i18n="propose.tags">Tags</label>
+        <input id="propose-tags" name="tags" type="text" class={inputClass}
+          data-i18n-placeholder="propose.tags_placeholder" placeholder="comma, separated, tags" />
+      </div>
+
+      <div>
+        <label class={labelClass} for="propose-detail" data-i18n="propose.detail">Detail</label>
+        <textarea id="propose-detail" name="detail" rows="4" class={inputClass}
+          data-i18n-placeholder="propose.detail_placeholder" placeholder="Additional detail (optional)"></textarea>
+      </div>
+
+      <div class="flex justify-end">
+        <button
+          id="propose-submit"
+          type="submit"
+          class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+          data-i18n="propose.submit"
+        >
+          Propose for review
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <Toast message="" variant="info" open={false} />
+
+  <script>
+    // Bundled module (Astro resolves @/ + TS). We avoid inline type="module" +
+    // /src imports (those 404 in the Vercel build — see memory/CHANGELOG.md).
+    import { getCategories } from "@/lib/categories";
+    import { getReviewers, proposeAsset } from "@/lib/propose";
+    import { loadClientTranslations, translate } from "@/utils/i18nClient";
+    import { installGlobalToast, showToast } from "@/lib/toast";
+
+    loadClientTranslations();
+    installGlobalToast();
+
+    const tr = (key: string, fallback: string): string => {
+      try {
+        const v = translate(key);
+        if (v && v !== key) return v;
+      } catch {
+        /* non-fatal */
+      }
+      return fallback;
+    };
+
+    const form = document.getElementById("propose-form") as HTMLFormElement | null;
+    const catSel = document.getElementById("propose-category") as HTMLSelectElement | null;
+    const revSel = document.getElementById("propose-reviewer") as HTMLSelectElement | null;
+    const submitBtn = document.getElementById("propose-submit") as HTMLButtonElement | null;
+
+    async function fillCategories() {
+      if (!catSel) return;
+      try {
+        const cats = await getCategories(0, 1000);
+        for (const c of cats) {
+          const o = document.createElement("option");
+          o.value = c.code;
+          o.textContent = c.name;
+          catSel.appendChild(o);
+        }
+      } catch {
+        /* leave the placeholder; submit will validate */
+      }
+    }
+
+    async function fillReviewers() {
+      if (!revSel) return;
+      try {
+        const revs = await getReviewers();
+        for (const r of revs) {
+          const o = document.createElement("option");
+          o.value = String(r.value);
+          o.textContent = r.label;
+          revSel.appendChild(o);
+        }
+      } catch {
+        /* auto-assign stays the only option */
+      }
+    }
+
+    void fillCategories();
+    void fillReviewers();
+
+    form?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const fd = new FormData(form);
+      const name = String(fd.get("name") || "").trim();
+      const category = String(fd.get("category") || "");
+      if (!name || !category) {
+        showToast(tr("propose.required", "Name and category are required"), "error");
+        return;
+      }
+
+      const tagsRaw = String(fd.get("tags") || "").trim();
+      const reviewerRaw = String(fd.get("reviewer_id") || "");
+      const payload = {
+        name,
+        category,
+        description: String(fd.get("description") || "").trim() || undefined,
+        detail: String(fd.get("detail") || "").trim() || undefined,
+        tags: tagsRaw ? tagsRaw.split(",").map((t) => t.trim()).filter(Boolean) : undefined,
+        reviewer_id: reviewerRaw ? Number(reviewerRaw) : undefined,
+      };
+
+      if (submitBtn) submitBtn.disabled = true;
+      try {
+        await proposeAsset(payload);
+        showToast(tr("propose.success", "Asset proposed for review"), "success");
+        form.reset();
+      } catch (err) {
+        showToast(
+          err instanceof Error ? err.message : tr("propose.error", "Could not propose the asset"),
+          "error",
+        );
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    });
+  </script>
+</BaseLayout>

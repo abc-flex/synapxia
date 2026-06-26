@@ -4,9 +4,12 @@
 > Phase 2 (Foro, HU-LI06) is **shipped** (PR #55, merged to `develop`).
 > Phase 3 (Related Assets, HU-LI07) is **shipped** (PR #56, merged to `develop`).
 > Phase 4 (History, HU-LI10) is **shipped** (PR #57, merged to `develop`).
-> Phase 5 (Notifications, HU-LI11) is **shipped** (branch `feat/lib-assets-notifications`) — the
-> read/transition side only; the review workflow that *generates* assignments remains out of scope.
-> **The lib roadmap is complete.** Numbering follows the project
+> Phase 5 (Notifications, HU-LI11) is **shipped** (PR #58, merged to `develop`) — the
+> read/transition side only.
+> Phase 6 (Propose, HU-Propose) is **shipped** (branch `feat/lib-propose`) — the review-workflow
+> entry point that *generates* the REVIEW assignment Phase 5 surfaces. Downstream HU-Review/HU-Modify
+> (reviewer approve/reject/feedback → status change + next assignment) remain the next work.
+> Numbering follows the project
 > user-story spreadsheet; see §4 for the mapping to `docs/user-stories/04-lib.md`.
 
 ## Context

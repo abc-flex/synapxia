@@ -36,7 +36,9 @@ const {
   id={modalId}
   class="w-[min(920px,95vw)] max-w-none rounded-2xl bg-white p-0 text-gray-900 backdrop:bg-black/60 backdrop:backdrop-blur-sm dark:bg-gray-900 dark:text-gray-100"
 >
-  <div class="flex max-h-[90vh] flex-col">
+  {/* Fixed height so switching tabs doesn't resize/re-center the dialog — only
+      the inner panel scrolls. */}
+  <div class="flex h-[min(680px,85vh)] flex-col">
     {/* Header */}
     <div class="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-4 dark:border-gray-800">
       <div class="flex min-w-0 items-center gap-3">

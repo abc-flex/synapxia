@@ -928,7 +928,10 @@
   "catalog_detail": {
     "copy": "Copy",
     "copied": "Copied to clipboard",
-    "error_load": "Could not load."
+    "error_load": "Could not load.",
+    "tab_detail": "Details",
+    "tab_discussion": "Discussion",
+    "tab_activity": "Activity"
   },
   "agent_modal": {
     "title_create": "New Agent",

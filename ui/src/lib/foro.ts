@@ -206,7 +206,7 @@ export function mountForo(cfg: ForoConfig): void {
 
   function commentNode(item: DiscussionItem): HTMLElement {
     const card = document.createElement("div");
-    card.className = "rounded-lg border border-gray-200 p-3 dark:border-gray-800";
+    card.className = "rounded-lg border border-gray-100 p-3 dark:border-gray-800";
     const head = metaLine(item, true);
     const del = deleteControl(item);
     if (del) head.appendChild(del);
@@ -228,7 +228,7 @@ export function mountForo(cfg: ForoConfig): void {
   function questionNode(thread: QuestionThread): HTMLElement {
     const { question, answers } = thread;
     const card = document.createElement("div");
-    card.className = "rounded-lg border border-gray-200 p-3 dark:border-gray-800";
+    card.className = "rounded-lg border border-gray-100 p-3 dark:border-gray-800";
     const head = metaLine(question, true);
     const del = deleteControl(question);
     if (del) head.appendChild(del);
@@ -236,10 +236,19 @@ export function mountForo(cfg: ForoConfig): void {
 
     for (const a of answers) card.appendChild(answerNode(a));
 
-    // Inline answer composer (only when signed in).
+    // Answer affordance (only when signed in): a subtle link that reveals an
+    // inline composer on click — keeps the thread minimal until you act.
     if (currentUser()) {
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.dataset.foroAnswerToggle = String(question.id);
+      toggle.className =
+        "ml-4 mt-2 text-xs font-medium text-indigo-600 hover:underline dark:text-indigo-400";
+      toggle.textContent = tr("foro.answer", "Answer");
+
       const wrap = document.createElement("div");
-      wrap.className = "ml-4 mt-2 flex items-start gap-2";
+      wrap.dataset.foroAnswerWrap = String(question.id);
+      wrap.className = "ml-4 mt-2 hidden items-start gap-2";
       const ta = document.createElement("textarea");
       ta.rows = 1;
       ta.dataset.foroAnswerInput = String(question.id);
@@ -253,7 +262,7 @@ export function mountForo(cfg: ForoConfig): void {
         "shrink-0 rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-indigo-700";
       btn.textContent = tr("foro.answer", "Answer");
       wrap.append(ta, btn);
-      card.appendChild(wrap);
+      card.append(toggle, wrap);
     }
     return card;
   }
@@ -392,6 +401,20 @@ export function mountForo(cfg: ForoConfig): void {
   // Delegated handlers for the dynamic answer composers + delete buttons.
   root.addEventListener("click", (e) => {
     const target = e.target as HTMLElement;
+    // Reveal the (hidden) inline answer composer for a question.
+    const ansToggle = target.closest<HTMLElement>("[data-foro-answer-toggle]");
+    if (ansToggle) {
+      const qid = ansToggle.dataset.foroAnswerToggle;
+      const wrap = root.querySelector<HTMLElement>(
+        `[data-foro-answer-wrap="${qid}"]`);
+      if (wrap) {
+        wrap.classList.remove("hidden");
+        wrap.classList.add("flex");
+        ansToggle.classList.add("hidden");
+        wrap.querySelector<HTMLTextAreaElement>("[data-foro-answer-input]")?.focus();
+      }
+      return;
+    }
     const ansBtn = target.closest<HTMLElement>("[data-foro-answer-submit]");
     if (ansBtn) {
       const qid = Number(ansBtn.dataset.foroAnswerSubmit);

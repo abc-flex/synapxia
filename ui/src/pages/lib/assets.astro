@@ -160,8 +160,6 @@ const fieldKeys = deleteFields.map((f) => f.key);
       import { deleteAsset } from "/src/lib/assets";
       import { setFavorite } from "/src/lib/favorites";
       import { getUser } from "/src/lib/auth";
-      import { initAssetDetailTabs } from "/src/lib/assetDetailTabs";
-      import { loadClientTranslations } from "/src/utils/i18nClient";
 
       // CrudClient drives the delete modal's prefill flow. The table rows
       // are now SSR-rendered (auth cookie → middleware → ALS → apiGet), so
@@ -176,9 +174,6 @@ const fieldKeys = deleteFields.map((f) => f.key);
         String(s ?? "")
           .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
           .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-
-      // The single live inline-detail editor (one open at a time).
-      let openController = null;
 
       // ── Per-row favorite star toggle ──────────────────────────────────────
       const paintStar = (btn, on) => {
@@ -220,89 +215,23 @@ const fieldKeys = deleteFields.map((f) => f.key);
           if (detailBtn) {
             e.preventDefault();
             e.stopImmediatePropagation();
-            await toggleDetailRow(detailBtn);
+            // Open the wide AssetDetailModal on its detail tabs
+            // (Characterizations / Related / Permissions) instead of expanding
+            // an inline row below the table row.
+            const id = detailBtn.getAttribute("data-id");
+            const synthetic = document.createElement("button");
+            synthetic.style.display = "none";
+            synthetic.setAttribute("data-modal-open", "asset-detail-modal");
+            synthetic.setAttribute("data-asset-mode", "edit");
+            if (id) synthetic.setAttribute("data-asset-id", id);
+            synthetic.setAttribute("data-asset-section", "detail");
+            document.body.appendChild(synthetic);
+            synthetic.click();
+            synthetic.remove();
           }
         },
         true /* capture so we beat advancedTable's bubble delegation */,
       );
-
-      // ── Master-detail inline expand row (EDITABLE, shared module) ─────────
-      function collapseOpen() {
-        try { openController?.destroy(); } catch { /* ignore */ }
-        openController = null;
-        document
-          .querySelectorAll('#assets tbody tr[data-detail-row]')
-          .forEach((r) => r.remove());
-      }
-
-      async function toggleDetailRow(btn) {
-        const tr = btn.closest("tr");
-        if (!tr) return;
-
-        // If advancedTable purged the open row on a re-render, drop the stale ref.
-        if (openController && !document.contains(openController.root)) {
-          openController = null;
-        }
-
-        // Collapse if THIS row's detail is already open.
-        const sib = tr.nextElementSibling;
-        if (sib && sib.hasAttribute("data-detail-row")) {
-          collapseOpen();
-          return;
-        }
-        // One open at a time.
-        collapseOpen();
-
-        const id = Number(btn.getAttribute("data-id"));
-        const colCount = tr.children.length;
-        const detail = document.createElement("tr");
-        detail.setAttribute("data-detail-row", "");
-        detail.innerHTML = `
-          <td colspan="${colCount}" class="bg-gray-50 dark:bg-gray-900/40 px-4 py-4">
-            <div id="asset-detail-row-${id}-tabs"></div>
-            <div class="mt-4 flex items-center justify-end gap-3 border-t border-gray-200 dark:border-gray-800 pt-3">
-              <button type="button" data-detail-cancel
-                class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
-                data-i18n="common.cancel">Cancel</button>
-              <button type="button" data-detail-save
-                class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
-                data-i18n="common.save">Save</button>
-            </div>
-          </td>`;
-        tr.after(detail);
-
-        const tabsRoot = detail.querySelector(`#asset-detail-row-${id}-tabs`);
-        const saveBtn = detail.querySelector("[data-detail-save]");
-        const cancelBtn = detail.querySelector("[data-detail-cancel]");
-
-        const tabs = initAssetDetailTabs(tabsRoot, {
-          idPrefix: `asset-detail-row-${id}`,
-          assetId: id,
-          mode: "inline",
-          onError: (m) => showToast(m, "error"),
-        });
-        openController = tabs;
-
-        try {
-          await tabs.hydrate(id);
-          loadClientTranslations();
-        } catch (err) {
-          showToast(err instanceof Error ? err.message : "Could not load details", "error");
-        }
-
-        cancelBtn?.addEventListener("click", () => collapseOpen());
-        saveBtn?.addEventListener("click", async () => {
-          saveBtn.disabled = true;
-          try {
-            await tabs.flush(id);
-            showToast("Details saved!");
-          } catch (err) {
-            showToast(err instanceof Error ? err.message : "Could not save details", "error");
-          } finally {
-            saveBtn.disabled = false;
-          }
-        });
-      }
 
       // Toast helper
       function showToast(message, variant = "info") {

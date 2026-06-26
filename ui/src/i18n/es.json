@@ -928,7 +928,10 @@
   "catalog_detail": {
     "copy": "Copiar",
     "copied": "Copiado al portapapeles",
-    "error_load": "No se pudo cargar."
+    "error_load": "No se pudo cargar.",
+    "tab_detail": "Detalles",
+    "tab_discussion": "Discusión",
+    "tab_activity": "Actividad"
   },
   "agent_modal": {
     "title_create": "Nuevo agente",

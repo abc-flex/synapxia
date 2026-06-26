@@ -111,7 +111,7 @@ const {
       </div>
     </div>
 
-    {/* Tabs — Detail / Discussion / Activity (wired by mountCatalogDetail). */}
+    {/* Tabs — Details / Related / Discussion / History (wired by mountCatalogDetail). */}
     <div class="border-b border-gray-200 px-6 dark:border-gray-800">
       <div role="tablist" aria-label="Asset detail sections" class="-mb-px flex gap-6 text-sm font-medium">
         <button
@@ -125,6 +125,15 @@ const {
         <button
           type="button"
           role="tab"
+          data-detail-tab="related"
+          aria-selected="false"
+          tabindex="-1"
+          class="dt-detail-tab whitespace-nowrap border-b-2 border-transparent px-1 pb-3 pt-3 text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          data-i18n="catalog_detail.tab_related"
+        >Related</button>
+        <button
+          type="button"
+          role="tab"
           data-detail-tab="discussion"
           aria-selected="false"
           tabindex="-1"
@@ -134,12 +143,12 @@ const {
         <button
           type="button"
           role="tab"
-          data-detail-tab="activity"
+          data-detail-tab="history"
           aria-selected="false"
           tabindex="-1"
           class="dt-detail-tab whitespace-nowrap border-b-2 border-transparent px-1 pb-3 pt-3 text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-          data-i18n="catalog_detail.tab_activity"
-        >Activity</button>
+          data-i18n="catalog_detail.tab_history"
+        >History</button>
       </div>
     </div>
 
@@ -148,12 +157,14 @@ const {
       <div data-detail-panel="detail" class="space-y-6">
         <p id={`${modalId}-desc`} class="hidden whitespace-pre-wrap text-sm text-gray-600 dark:text-gray-300"></p>
         <div id={`${modalId}-sections`} class="space-y-6"></div>
+      </div>
+      <div data-detail-panel="related" class="hidden">
         <Related modalId={modalId} />
       </div>
       <div data-detail-panel="discussion" class="hidden">
         <Foro modalId={modalId} />
       </div>
-      <div data-detail-panel="activity" class="hidden">
+      <div data-detail-panel="history" class="hidden">
         <HistoryTimeline modalId={modalId} />
       </div>
     </div>

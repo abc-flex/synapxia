@@ -837,6 +837,8 @@
   "related": {
     "title": "Activos relacionados",
     "loading": "Cargando activos relacionados…",
+    "empty": "No hay activos relacionados.",
+    "error": "No se pudieron cargar los activos relacionados.",
     "outgoing": "Referencia a",
     "incoming": "Referenciado por",
     "type": {
@@ -930,8 +932,9 @@
     "copied": "Copiado al portapapeles",
     "error_load": "No se pudo cargar.",
     "tab_detail": "Detalles",
+    "tab_related": "Relacionados",
     "tab_discussion": "Discusión",
-    "tab_activity": "Actividad"
+    "tab_history": "Historial"
   },
   "agent_modal": {
     "title_create": "Nuevo agente",

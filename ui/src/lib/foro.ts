@@ -185,9 +185,11 @@ export function mountForo(cfg: ForoConfig): void {
     return meta;
   }
 
-  function bodyText(item: DiscussionItem): HTMLElement {
+  function bodyText(item: DiscussionItem, muted = false): HTMLElement {
     const p = document.createElement("p");
-    p.className = "whitespace-pre-wrap break-words text-sm text-gray-800 dark:text-gray-200";
+    p.className =
+      "whitespace-pre-wrap break-words text-sm " +
+      (muted ? "text-gray-500 dark:text-gray-400" : "text-gray-800 dark:text-gray-200");
     p.textContent = item.content || "";
     return p;
   }
@@ -206,7 +208,7 @@ export function mountForo(cfg: ForoConfig): void {
 
   function commentNode(item: DiscussionItem): HTMLElement {
     const card = document.createElement("div");
-    card.className = "rounded-lg border border-gray-100 p-3 dark:border-gray-800";
+    card.className = "border-b border-gray-100 pb-4 last:border-0 dark:border-gray-800";
     const head = metaLine(item, true);
     const del = deleteControl(item);
     if (del) head.appendChild(del);
@@ -216,19 +218,18 @@ export function mountForo(cfg: ForoConfig): void {
 
   function answerNode(item: DiscussionItem): HTMLElement {
     const card = document.createElement("div");
-    card.className =
-      "ml-4 mt-2 rounded-lg border-l-2 border-indigo-200 bg-gray-50 p-2.5 dark:border-indigo-900/50 dark:bg-gray-800/40";
+    card.className = "ml-5 mt-2 border-l-2 border-gray-200 pl-3 dark:border-gray-700";
     const head = metaLine(item);
     const del = deleteControl(item);
     if (del) head.appendChild(del);
-    card.append(head, bodyText(item));
+    card.append(head, bodyText(item, true));
     return card;
   }
 
   function questionNode(thread: QuestionThread): HTMLElement {
     const { question, answers } = thread;
     const card = document.createElement("div");
-    card.className = "rounded-lg border border-gray-100 p-3 dark:border-gray-800";
+    card.className = "group border-b border-gray-100 pb-4 last:border-0 dark:border-gray-800";
     const head = metaLine(question, true);
     const del = deleteControl(question);
     if (del) head.appendChild(del);
@@ -242,13 +243,15 @@ export function mountForo(cfg: ForoConfig): void {
       const toggle = document.createElement("button");
       toggle.type = "button";
       toggle.dataset.foroAnswerToggle = String(question.id);
+      // Revealed only when the question is hovered (or keyboard-focused), to keep
+      // the thread minimal. opacity (not hidden) keeps it focusable for a11y.
       toggle.className =
-        "ml-4 mt-2 text-xs font-medium text-indigo-600 hover:underline dark:text-indigo-400";
+        "ml-5 mt-2 text-xs font-medium text-indigo-600 opacity-0 transition-opacity hover:underline focus:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100 dark:text-indigo-400";
       toggle.textContent = tr("foro.answer", "Answer");
 
       const wrap = document.createElement("div");
       wrap.dataset.foroAnswerWrap = String(question.id);
-      wrap.className = "ml-4 mt-2 hidden items-start gap-2";
+      wrap.className = "ml-5 mt-2 hidden items-start gap-2";
       const ta = document.createElement("textarea");
       ta.rows = 1;
       ta.dataset.foroAnswerInput = String(question.id);

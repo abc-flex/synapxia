@@ -49,7 +49,6 @@ export function mountRelated(cfg: RelatedConfig): void {
     statusEl.textContent = text;
     statusEl.classList.toggle("hidden", !text);
   };
-  const show = (on: boolean) => root.classList.toggle("hidden", !on);
 
   const relTypeLabel = (type: string): string =>
     tr(`related.type.${type}`, type.replace(/_/g, " ").toLowerCase());
@@ -103,19 +102,21 @@ export function mountRelated(cfg: RelatedConfig): void {
   async function load(id: number) {
     if (!listEl) return;
     listEl.innerHTML = "";
-    show(true);
     setStatus(tr("related.loading", "Loading related assets…"));
     try {
       const items = await getRelatedAssets(id);
       setStatus("");
       if (!items.length) {
-        show(false); // hide the whole block when the asset has no relations
+        // Dedicated tab now — show an empty state rather than hiding.
+        const p = document.createElement("p");
+        p.className = "text-sm text-gray-400 dark:text-gray-500";
+        p.textContent = tr("related.empty", "No related assets.");
+        listEl.appendChild(p);
         return;
       }
       for (const it of items) listEl.appendChild(cardNode(it));
     } catch {
-      // On error keep the section hidden rather than showing a broken block.
-      show(false);
+      setStatus(tr("related.error", "Could not load related assets."));
     }
   }
 

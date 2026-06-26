@@ -850,6 +850,17 @@ export interface HistoryEntry {
   created_at: string;
 }
 
+// The asset's current review stage (HU review workflow): the latest
+// PROPOSAL/REVIEW/PUBLICATION/… action + its workflow_status. Distinct from
+// `asset.status`; surfaced as a badge so the review step is visible. `null` when
+// the asset has no workflow actions.
+export interface WorkflowStage {
+  type: string;
+  workflow_status?: string | null;
+  actor?: string | null;
+  created_at: string;
+}
+
 // Workflow notification (HU-LI11): the latest row of a per-(asset,type)
 // assignment thread directed at the current user. `unread` is true while it is
 // still ASSIGNED (shown bold); NOTIFIED items are seen and dismissible. `id` is

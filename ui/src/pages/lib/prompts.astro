@@ -107,7 +107,8 @@ const rows = prompts.map((item) => {
     statusValue: item.status,
     statusLabel: resolveStatusLabel(item.status),
     favorite: favIds.has(item.id) ? "yes" : "no",
-    voteScore: votesByAsset.get(Number(item.id))?.score ?? 0,
+    votePositive: votesByAsset.get(Number(item.id))?.positive ?? 0,
+    voteNegative: votesByAsset.get(Number(item.id))?.negative ?? 0,
     myVote: votesByAsset.get(Number(item.id))?.myVote ?? "",
     discussCount: discussByAsset.get(Number(item.id)) ?? 0,
     model: chars.SUGGESTED_MODEL?.value,
@@ -174,7 +175,8 @@ const deleteFields = [{ key: "name", label: "asset_modal.name", pk: true, disabl
           temperature={r.temperature}
           tags={r.tags}
           votable={true}
-          voteScore={r.voteScore}
+          votePositive={r.votePositive}
+          voteNegative={r.voteNegative}
           myVote={r.myVote}
           discussCount={r.discussCount}
         />

@@ -134,15 +134,14 @@ export function mountForo(cfg: ForoConfig): void {
   const root = document.getElementById(`${modalId}-foro`);
   if (!root) return;
 
-  const commentsEl = root.querySelector<HTMLElement>("[data-foro-comments]");
-  const questionsEl = root.querySelector<HTMLElement>("[data-foro-questions]");
+  const feedEl = root.querySelector<HTMLElement>("[data-foro-feed]");
   const statusEl = root.querySelector<HTMLElement>("[data-foro-status]");
-  const commentInput = root.querySelector<HTMLTextAreaElement>("[data-foro-comment-input]");
-  const commentSubmit = root.querySelector<HTMLButtonElement>("[data-foro-comment-submit]");
-  const questionInput = root.querySelector<HTMLTextAreaElement>("[data-foro-question-input]");
-  const questionSubmit = root.querySelector<HTMLButtonElement>("[data-foro-question-submit]");
+  const input = root.querySelector<HTMLTextAreaElement>("[data-foro-input]");
+  const submit = root.querySelector<HTMLButtonElement>("[data-foro-submit]");
+  const typeButtons = Array.from(root.querySelectorAll<HTMLButtonElement>("[data-foro-type]"));
 
   let assetId: number | null = null;
+  let postType: "COMMENT" | "QUESTION" = "COMMENT";
 
   const currentUser = (): { id: number } | null => {
     const u = getUser() as any;
@@ -157,9 +156,26 @@ export function mountForo(cfg: ForoConfig): void {
   };
 
   // ── Renderers (all user content via textContent — XSS-safe) ────────────────
-  function metaLine(item: DiscussionItem): HTMLElement {
+
+  /** Small "Question" / "Comment" pill prepended to a top-level entry's meta. */
+  function tagBadge(type: string): HTMLElement {
+    const isQ = type === "QUESTION";
+    const span = document.createElement("span");
+    span.className =
+      "inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide " +
+      (isQ
+        ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
+        : "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300");
+    span.textContent = isQ
+      ? tr("foro.tag_question", "Question")
+      : tr("foro.tag_comment", "Comment");
+    return span;
+  }
+
+  function metaLine(item: DiscussionItem, withTag = false): HTMLElement {
     const meta = document.createElement("div");
     meta.className = "mb-1 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400";
+    if (withTag) meta.appendChild(tagBadge(item.type));
     const who = document.createElement("span");
     who.className = "font-semibold text-gray-700 dark:text-gray-300";
     who.textContent = item.author || tr("foro.anonymous", "Someone");
@@ -191,7 +207,7 @@ export function mountForo(cfg: ForoConfig): void {
   function commentNode(item: DiscussionItem): HTMLElement {
     const card = document.createElement("div");
     card.className = "rounded-lg border border-gray-200 p-3 dark:border-gray-800";
-    const head = metaLine(item);
+    const head = metaLine(item, true);
     const del = deleteControl(item);
     if (del) head.appendChild(del);
     card.append(head, bodyText(item));
@@ -213,7 +229,7 @@ export function mountForo(cfg: ForoConfig): void {
     const { question, answers } = thread;
     const card = document.createElement("div");
     card.className = "rounded-lg border border-gray-200 p-3 dark:border-gray-800";
-    const head = metaLine(question);
+    const head = metaLine(question, true);
     const del = deleteControl(question);
     if (del) head.appendChild(del);
     card.append(head, bodyText(question));
@@ -251,16 +267,24 @@ export function mountForo(cfg: ForoConfig): void {
   }
 
   function render(items: DiscussionItem[]) {
-    if (!commentsEl || !questionsEl) return;
-    commentsEl.innerHTML = "";
-    questionsEl.innerHTML = "";
+    if (!feedEl) return;
+    feedEl.innerHTML = "";
     const { comments, questions } = groupDiscussion(items);
 
-    if (comments.length === 0) renderEmpty(commentsEl, "foro.empty_comments", "No comments yet.");
-    else for (const c of comments) commentsEl.appendChild(commentNode(c));
+    // One merged feed: comments + questions as top-level entries, newest first.
+    // Answers stay threaded inside their question card (questionNode).
+    const entries: { item: DiscussionItem; node: HTMLElement }[] = [
+      ...comments.map((c) => ({ item: c, node: commentNode(c) })),
+      ...questions.map((t) => ({ item: t.question, node: questionNode(t) })),
+    ];
+    entries.sort((a, b) => {
+      if (a.item.created_at !== b.item.created_at)
+        return a.item.created_at < b.item.created_at ? 1 : -1; // newest first
+      return b.item.id - a.item.id; // deterministic tiebreak for equal timestamps
+    });
 
-    if (questions.length === 0) renderEmpty(questionsEl, "foro.empty_questions", "No questions yet.");
-    else for (const q of questions) questionsEl.appendChild(questionNode(q));
+    if (entries.length === 0) renderEmpty(feedEl, "foro.empty", "No discussion yet.");
+    else for (const e of entries) feedEl.appendChild(e.node);
 
     // Keep the originating card's discuss badge in sync with the live count.
     if (assetId != null) {
@@ -276,8 +300,7 @@ export function mountForo(cfg: ForoConfig): void {
 
   async function load(id: number) {
     assetId = id;
-    if (commentsEl) commentsEl.innerHTML = "";
-    if (questionsEl) questionsEl.innerHTML = "";
+    if (feedEl) feedEl.innerHTML = "";
     setStatus(tr("foro.loading", "Loading discussion…"));
     try {
       const items = await getDiscussion(id);
@@ -302,27 +325,14 @@ export function mountForo(cfg: ForoConfig): void {
     return me;
   }
 
-  async function submitComment() {
+  async function submitPost() {
     const me = guardedUser();
-    const text = (commentInput?.value || "").trim();
+    const text = (input?.value || "").trim();
     if (!me || assetId == null || !text) return;
     try {
-      await addComment(me.id, assetId, text);
-      if (commentInput) commentInput.value = "";
-      await reload();
-    } catch (err) {
-      (window as any).showToast?.(
-        err instanceof Error ? err.message : tr("foro.error", "Something went wrong"), "error");
-    }
-  }
-
-  async function submitQuestion() {
-    const me = guardedUser();
-    const text = (questionInput?.value || "").trim();
-    if (!me || assetId == null || !text) return;
-    try {
-      await addQuestion(me.id, assetId, text);
-      if (questionInput) questionInput.value = "";
+      if (postType === "QUESTION") await addQuestion(me.id, assetId, text);
+      else await addComment(me.id, assetId, text);
+      if (input) input.value = "";
       await reload();
     } catch (err) {
       (window as any).showToast?.(
@@ -353,9 +363,31 @@ export function mountForo(cfg: ForoConfig): void {
     }
   }
 
+  // ── Composer type toggle (Comment | Question) ────────────────────────────────
+  function setType(next: "COMMENT" | "QUESTION") {
+    postType = next;
+    for (const b of typeButtons) {
+      const on = b.dataset.foroType === next;
+      b.setAttribute("aria-pressed", String(on));
+      b.classList.toggle("bg-indigo-600", on);
+      b.classList.toggle("text-white", on);
+      b.classList.toggle("text-gray-600", !on);
+      b.classList.toggle("dark:text-gray-300", !on);
+    }
+    if (input) {
+      input.placeholder =
+        next === "QUESTION"
+          ? tr("foro.question_placeholder", "Ask a question…")
+          : tr("foro.comment_placeholder", "Write a comment…");
+    }
+  }
+  for (const b of typeButtons) {
+    b.addEventListener("click", () => setType(b.dataset.foroType === "QUESTION" ? "QUESTION" : "COMMENT"));
+  }
+  setType("COMMENT"); // initial active state
+
   // ── Wiring ─────────────────────────────────────────────────────────────────
-  commentSubmit?.addEventListener("click", submitComment);
-  questionSubmit?.addEventListener("click", submitQuestion);
+  submit?.addEventListener("click", submitPost);
 
   // Delegated handlers for the dynamic answer composers + delete buttons.
   root.addEventListener("click", (e) => {
@@ -385,7 +417,7 @@ export function mountForo(cfg: ForoConfig): void {
     if ((opener as HTMLElement).dataset.foroFocus) {
       setTimeout(() => {
         root.scrollIntoView({ behavior: "smooth", block: "start" });
-        commentInput?.focus();
+        input?.focus();
       }, 200);
     }
   });

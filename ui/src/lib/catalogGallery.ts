@@ -127,10 +127,12 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
     if (!scope) return;
     const up = scope.querySelector<HTMLElement>('[data-action="vote-up"]');
     const down = scope.querySelector<HTMLElement>('[data-action="vote-down"]');
-    const score = scope.querySelector<HTMLElement>("[data-vote-score]");
+    const upCount = scope.querySelector<HTMLElement>("[data-vote-up-count]");
+    const downCount = scope.querySelector<HTMLElement>("[data-vote-down-count]");
     styleVoteButton(up, tally.my_vote === "POSITIVE", "gallery.vote_up", "text-emerald-500");
     styleVoteButton(down, tally.my_vote === "NEGATIVE", "gallery.vote_down", "text-rose-500");
-    if (score) score.textContent = String(tally.score);
+    if (upCount) upCount.textContent = String(tally.positive);
+    if (downCount) downCount.textContent = String(tally.negative);
   };
 
   // Debounce votes: a burst of rapid clicks on one card coalesces into a single

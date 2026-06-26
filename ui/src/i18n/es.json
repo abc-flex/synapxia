@@ -440,6 +440,8 @@
   "asset_detail_modal": {
     "title_create": "Nuevo Activo",
     "title_edit": "Editar Activo",
+    "title_edit_core": "Editar campos principales",
+    "title_edit_detail": "Editar detalles",
     "subtitle": "Campos principales más las caracterizaciones requeridas por la categoría elegida.",
     "core_section": "Datos principales",
     "characterizations_section": "Caracterización",
@@ -658,6 +660,7 @@
   },
   "common": {
     "active": "Activo",
+    "edit_details": "Editar detalles",
     "inactive": "Inactivo",
     "yes": "Sí",
     "no": "No",
@@ -755,6 +758,10 @@
   },
   "foro": {
     "title": "Discusión",
+    "tag_comment": "Comentario",
+    "tag_question": "Pregunta",
+    "post": "Publicar",
+    "empty": "Aún no hay discusión.",
     "comments": "Comentarios",
     "questions": "Preguntas",
     "add_comment": "Comentar",
@@ -790,8 +797,35 @@
       "REJECTION": "rechazó el activo",
       "DEPRECATION": "marcó como obsoleto el activo",
       "VERSIONING": "creó una nueva versión",
-      "USAGE": "usó el activo"
+      "USAGE": "usó el activo",
+      "PROPOSAL_ASSIGNED": "fue asignado para proponer el activo",
+      "PROPOSAL_NOTIFIED": "fue notificado para proponer el activo",
+      "PROPOSAL_FINISHED": "propuso el activo",
+      "REVIEW_ASSIGNED": "fue asignado para revisar el activo",
+      "REVIEW_NOTIFIED": "fue notificado para revisar el activo",
+      "REVIEW_FINISHED": "revisó el activo",
+      "PUBLICATION_ASSIGNED": "fue asignado para publicar el activo",
+      "PUBLICATION_NOTIFIED": "fue notificado para publicar el activo",
+      "PUBLICATION_FINISHED": "publicó el activo",
+      "MODIFICATION_ASSIGNED": "fue asignado a una modificación",
+      "MODIFICATION_NOTIFIED": "fue notificado de una modificación",
+      "MODIFICATION_FINISHED": "modificó el activo",
+      "REJECTION_FINISHED": "rechazó el activo",
+      "DEPRECATION_FINISHED": "marcó como obsoleto el activo"
     }
+  },
+  "workflow_stage": {
+    "label": "Etapa de revisión",
+    "PROPOSAL": "Propuesta",
+    "REVIEW": "Revisión",
+    "PUBLICATION": "Publicación",
+    "MODIFICATION": "Modificación",
+    "REJECTION": "Rechazo",
+    "DEPRECATION": "Obsolescencia",
+    "VERSIONING": "Versionado",
+    "ASSIGNED": "Asignado",
+    "NOTIFIED": "Notificado",
+    "FINISHED": "Finalizado"
   },
   "related": {
     "title": "Activos relacionados",

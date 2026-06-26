@@ -82,8 +82,8 @@ const {
     <div class="flex-1 space-y-6 overflow-y-auto px-6 py-5">
       <input type="hidden" name="id" id={`${modalId}-id`} />
 
-      {/* Core */}
-      <section>
+      {/* Core (hidden in "detail" section mode) */}
+      <section id={`${modalId}-core-section`}>
         <h4 class="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500" data-i18n="asset_detail_modal.core_section">Core</h4>
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div class="md:col-span-2">
@@ -112,8 +112,8 @@ const {
         </div>
       </section>
 
-      {/* Catalog-specific feature fields */}
-      <section>
+      {/* Catalog-specific feature fields (hidden in "core" section mode) */}
+      <section id={`${modalId}-detail-section`}>
         {!hideDetailsHeading && (
           <h4 class="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500" data-i18n={detailsSectionKey}>Details</h4>
         )}

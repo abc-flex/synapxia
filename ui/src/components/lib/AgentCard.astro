@@ -25,7 +25,8 @@ export interface Props {
   instructionsPreview?: string;
   tags?: string[];
   votable?: boolean;
-  voteScore?: number;
+  votePositive?: number;
+  voteNegative?: number;
   myVote?: string;
   discussCount?: number;
 }
@@ -46,7 +47,8 @@ const {
   instructionsPreview,
   tags = [],
   votable = false,
-  voteScore = 0,
+  votePositive = 0,
+  voteNegative = 0,
   myVote = "",
   discussCount = 0,
 } = Astro.props as Props;
@@ -69,7 +71,8 @@ const extraTools = tools.length - shownTools.length;
   hero={true}
   heroClass="from-violet-500 to-indigo-500"
   votable={votable}
-  voteScore={voteScore}
+  votePositive={votePositive}
+  voteNegative={voteNegative}
   myVote={myVote}
   discussCount={discussCount}
 >

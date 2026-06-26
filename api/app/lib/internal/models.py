@@ -265,6 +265,17 @@ class HistoryEntry(SQLModel):
     created_at: datetime
 
 
+class WorkflowStage(SQLModel):
+    """The asset's current review stage — the latest review-workflow action
+    (PROPOSAL/REVIEW/PUBLICATION/…) with its ``workflow_status``. Read-only and
+    distinct from ``asset.status``; surfaced as a badge in the detail view so the
+    review step (assigned / notified / finished) is visible."""
+    type: str
+    workflow_status: Optional[str] = None
+    actor: Optional[str] = None
+    created_at: datetime
+
+
 class NotificationItem(SQLModel):
     """An open workflow notification (HU-LI11) — the latest row of a per-(asset,
     type) assignment thread directed at the current user, with status ASSIGNED

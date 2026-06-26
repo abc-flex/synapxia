@@ -132,7 +132,59 @@ def test_history_carries_workflow_status(session):
                workflow_status="ASSIGNED")
     review = next(e for e in svc.get_asset_history(session, asset.id) if e["type"] == "REVIEW")
     assert review["workflow_status"] == "ASSIGNED"
-    assert review["summary"] == "reviewed the asset"
+    # Summary is workflow-aware: ASSIGNED reads distinctly from FINISHED.
+    assert review["summary"] == "was assigned to review the asset"
+
+
+# --- Workflow-aware verbs + review stage (review-status surfacing) ---------
+
+def _summ(type, ws):
+    return svc._history_summary(Action(asset=1, user_id=1, type=type, workflow_status=ws))
+
+
+def test_history_summary_distinguishes_workflow_steps():
+    assert _summ("REVIEW", "ASSIGNED") == "was assigned to review the asset"
+    assert _summ("REVIEW", "FINISHED") == "reviewed the asset"
+    assert _summ("PUBLICATION", "ASSIGNED") == "was assigned to publish the asset"
+    assert _summ("PUBLICATION", "FINISHED") == "published the asset"
+    assert _summ("PROPOSAL", "FINISHED") == "proposed the asset"
+    # The bug being fixed: the three PUBLICATION steps must not collapse.
+    assert _summ("PUBLICATION", "ASSIGNED") != _summ("PUBLICATION", "FINISHED")
+    assert _summ("PUBLICATION", "NOTIFIED") != _summ("PUBLICATION", "FINISHED")
+
+
+def test_history_summary_falls_back_without_workflow_status():
+    assert svc._history_summary(
+        Action(asset=1, user_id=1, type=svc.TYPE_COMMENT)) == "commented"
+    assert svc._history_summary(
+        Action(asset=1, user_id=1, type="REVIEW")) == "reviewed the asset"
+
+
+def test_get_workflow_stage_returns_latest(session):
+    asset = _mk_asset(session, created_at=T0)
+    _mk_action(session, asset.id, 1, "PROPOSAL", T0 + timedelta(minutes=1), workflow_status="FINISHED")
+    _mk_action(session, asset.id, 1, "REVIEW", T0 + timedelta(minutes=2), workflow_status="FINISHED")
+    _mk_action(session, asset.id, 1, "PUBLICATION", T0 + timedelta(minutes=3), workflow_status="ASSIGNED")
+
+    stage = svc.get_workflow_stage(session, asset.id)
+    assert stage is not None
+    assert stage["type"] == "PUBLICATION"
+    assert stage["workflow_status"] == "ASSIGNED"
+
+
+def test_get_workflow_stage_none_without_workflow_actions(session):
+    asset = _mk_asset(session, created_at=T0)
+    _mk_action(session, asset.id, 1, svc.TYPE_COMMENT, T0 + timedelta(minutes=1), content="hi")
+    assert svc.get_workflow_stage(session, asset.id) is None
+
+
+def test_workflow_stage_requires_auth(client):
+    assert client.get("/api/actions/workflow/asset/1").status_code in (401, 403)
+
+
+def test_workflow_route_in_openapi(client):
+    paths = client.get("/openapi.json").json()["paths"]
+    assert "/api/actions/workflow/asset/{asset_id}" in paths
 
 
 # --- Route contract --------------------------------------------------------

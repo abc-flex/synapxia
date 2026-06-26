@@ -43,7 +43,10 @@ const {
         <slot name="icon" />
         <div class="min-w-0">
           <h3 id={`${modalId}-name`} class="truncate text-lg font-bold text-gray-900 dark:text-white">—</h3>
-          <span id={`${modalId}-status-pill`} class="mt-1 hidden w-fit items-center rounded-full px-2.5 py-0.5 text-xs font-medium"></span>
+          <div class="mt-1 flex flex-wrap items-center gap-1">
+            <span id={`${modalId}-status-pill`} class="hidden w-fit items-center rounded-full px-2.5 py-0.5 text-xs font-medium"></span>
+            <span id={`${modalId}-stage-pill`} class="hidden w-fit items-center rounded-full border border-gray-300 px-2.5 py-0.5 text-xs font-medium text-gray-600 dark:border-gray-600 dark:text-gray-300"></span>
+          </div>
         </div>
       </div>
       <div class="flex shrink-0 items-center gap-1">
@@ -63,7 +66,7 @@ const {
               <path d="M7.493 18.5c-.425 0-.82-.236-.974-.632A7.48 7.48 0 016 15.125c0-1.75.599-3.358 1.602-4.634.151-.192.373-.309.6-.397.473-.183.89-.514 1.212-.924a9.042 9.042 0 012.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 00.322-1.672V2.75a.75.75 0 01.75-.75 2.25 2.25 0 012.25 2.25c0 1.152-.26 2.243-.722 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 01-2.649 7.521c-.388.482-.987.729-1.605.729H14.23c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 00-1.423-.23h-.777ZM2.331 10.727a11.969 11.969 0 00-.831 4.398 12 12 0 00.52 3.507c.26.85 1.084 1.368 1.973 1.368H4.9c.445 0 .72-.498.523-.898a8.963 8.963 0 01-.924-3.977c0-1.708.476-3.305 1.302-4.666.245-.403-.028-.959-.5-.959H4.25c-.832 0-1.612.453-1.918 1.227Z" />
             </svg>
           </button>
-          <span id={`${modalId}-vote-score`} class="min-w-[1.5rem] text-center text-sm font-semibold text-gray-700 dark:text-gray-200">0</span>
+          <span id={`${modalId}-vote-up-count`} class="min-w-[1rem] text-center text-sm font-semibold text-gray-700 dark:text-gray-200">0</span>
           <button
             type="button"
             id={`${modalId}-vote-down`}
@@ -80,6 +83,7 @@ const {
               </g>
             </svg>
           </button>
+          <span id={`${modalId}-vote-down-count`} class="min-w-[1rem] text-center text-sm font-semibold text-gray-700 dark:text-gray-200">0</span>
         </div>
         <button
           type="button"

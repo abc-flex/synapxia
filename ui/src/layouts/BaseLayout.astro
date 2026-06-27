@@ -45,6 +45,20 @@ const currentModuleName = pathSegments[0] || "";
         to /login). No flash-of-empty-content, no localStorage round-trip. */}
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {/* Apply the saved theme BEFORE first paint so navigating page-to-page
+        doesn't flash the light theme (the interactive toggle wiring runs later
+        in the body). Inline + render-blocking on purpose. */}
+    <script is:inline>
+      (function () {
+        try {
+          var t = localStorage.getItem("theme");
+          if (t !== "dark" && t !== "light") {
+            t = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+          }
+          document.documentElement.classList.toggle("dark", t === "dark");
+        } catch (e) {}
+      })();
+    </script>
     <title>{title}</title>
   </head>
   <body class="bg-slate-50 text-slate-900 dark:bg-gray-950 dark:text-white">

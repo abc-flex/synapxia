@@ -20,6 +20,10 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-06-26 20:30 — polish(ui): taller detail/edit modals + soft tab-switch fade
+- Grew both fixed-height modals a bit (catalog detail `680→760px` / 85→88vh; assets edit `680→760px`) and added a gentle fade-in on tab-panel switch (`@keyframes dt-tab-fade`, 0.18s, scoped to `[data-detail-panel]` + `[role="tabpanel"]`, disabled under `prefers-reduced-motion`) so changing tabs is smooth rather than an abrupt swap.
+- Files affected: `ui/src/styles/globals.css`, `ui/src/components/lib/gallery/CatalogDetailModal.astro`, `ui/src/components/lib/AssetDetailModal.astro`
+
 ## 2026-06-26 20:25 — fix(ui): /lib/assets edit modal jumped on tab switch
 - The Asset Repository "Edit details" modal (`AssetDetailModal`, with the Characterizations / Related Assets / Permissions tabs) used `max-h-[90vh]`, so it sized to each tab's content and resized/re-centered when switching tabs. Gave its form a **fixed height** (`h-[min(680px,90vh)]`) so only the body (`flex-1 overflow-y-auto`) scrolls — same treatment as the catalog detail modal.
 - Files affected: `ui/src/components/lib/AssetDetailModal.astro`

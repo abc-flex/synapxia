@@ -20,6 +20,12 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-06-27 05:51 — fix(ui): dark-mode background on the minimal Layout (landing/login/signup/dashboard)
+- The minimal `Layout.astro` set no body background, so the global base rule (`body { background:#edf2ff; color:#0f172a }`, light-only) won. In dark mode the page stayed light while content used dark-mode text colors -> faint/unreadable text on the logged-out landing page (and login/signup/dashboard).
+- Gave `Layout.astro`'s `<body>` the same theme-aware classes as `BaseLayout`: `bg-slate-50 text-slate-900 dark:bg-gray-950 dark:text-white` (Tailwind utilities override the base rule). Dark mode now renders a dark background + light text; light mode matches the app shell.
+- UI-only. `bun run build` clean.
+- Files affected: `ui/src/layouts/Layout.astro`
+
 ## 2026-06-26 21:58 — polish(ui): DataTable + gallery toolbar pass (Export fix, funnel, shared favorites pill, gallery Propose)
 - **Export bug (all DataTable pages):** removed a leftover duplicate bootstrap `<script type="module">` in `DataTable.astro` that re-imported `/src/components/table/advancedTable` and re-ran `initAdvancedTable`. In dev (Vite resolves `/src/`) it double-bound every handler, so the Export toggle fired twice per click (open→close = nothing visible); in the Vercel build the literal `/src/` import 404'd. The bundled JSON-config script (kept) is now the single init path — also de-duplicates filters/reset/pagination binding.
 - **Reset-filters button** moved into the toolbar's **left** group and restyled **discreet** (borderless, muted, small) so toggling its visibility no longer reflows the right-anchored search box (`DataTableToolbar` gains it, `DataTableSearchExport` loses it).

@@ -20,6 +20,11 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-06-27 05:51 — fix(ui): dark-mode background on the minimal Layout (landing/login/signup/dashboard)
+- The minimal `Layout.astro` set no body background, so the global base rule (`body { background:#edf2ff; color:#0f172a }`, light-only) won. In dark mode the page stayed light while content used dark-mode text colors -> faint/unreadable text on the logged-out landing page (and login/signup/dashboard).
+- Gave `Layout.astro`'s `<body>` the same theme-aware classes as `BaseLayout`: `bg-slate-50 text-slate-900 dark:bg-gray-950 dark:text-white` (Tailwind utilities override the base rule). Dark mode now renders a dark background + light text; light mode matches the app shell.
+- UI-only. `bun run build` clean.
+- Files affected: `ui/src/layouts/Layout.astro`
 ## 2026-06-27 05:42 — fix(ui): production-broken inline `/src/...` script imports across CRUD pages (+ notif guard, Neon remediation)
 - **Root cause:** ~19 CRUD pages used an inline `<script type="module">` importing literal `/scripts/crudClient.js` + `/src/lib/{entity}` paths. Those `/src/...` URLs 404 in the static Vercel build (they only resolve in the dev server), and one failed import aborts the whole module — so `initCrudPage` and the page's `crud-submit` handler never ran -> **create/edit/delete/favorites were dead in production** on every admin/collab/taxo/inits CRUD page + `/lib/assets` (console showed `GET /src/lib/{favorites,assets,auth} 404`).
 - **Fix:** moved `crudClient.js` into `src` (`ui/src/lib/crudClient.js`; deleted the `public/scripts/` copy) and converted all 19 pages to **bundled** Astro `<script>`s using `@/lib/crudClient` + `@/lib/{entity}` (+ `@/utils/*`). Astro now bundles/hashes them into `_astro/*.js` (verified: no `/src/` refs in `dist`; crudClient emitted as a shared chunk). Script bodies unchanged.

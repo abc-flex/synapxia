@@ -265,6 +265,33 @@ export function initAdvancedTable(
             });
     });
 
+    // Header funnels live inside the table's `overflow-x-auto` wrapper. CSS forces
+    // `overflow-y` to `auto` when `overflow-x` is `auto`, so the wrapper clips on
+    // BOTH axes — and the downward dropdown gets cut off when the table is short
+    // (e.g. a filter matched few/zero rows: "the filter list is hidden when the
+    // table is empty"). On open, pin the panel with `position: fixed` anchored
+    // under its summary so it escapes the clip; reset the inline styles on close.
+    document
+        .querySelectorAll<HTMLDetailsElement>(`#${tableId} details[data-dt-head-filter]`)
+        .forEach((details) => {
+            const panel = details.querySelector<HTMLElement>(".dt-head-filter-panel");
+            const summary = details.querySelector<HTMLElement>("summary");
+            if (!panel || !summary) return;
+            details.addEventListener("toggle", () => {
+                if (!details.open) {
+                    panel.style.cssText = "";
+                    return;
+                }
+                const r = summary.getBoundingClientRect();
+                const width = panel.offsetWidth || 192; // min-w-[12rem]
+                const left = Math.max(8, Math.min(r.left, window.innerWidth - width - 8));
+                panel.style.position = "fixed";
+                panel.style.top = `${Math.round(r.bottom + 4)}px`;
+                panel.style.left = `${Math.round(left)}px`;
+                panel.style.marginTop = "0";
+            });
+        });
+
     /* ======================
        FILTRO COMBINADO
     ====================== */

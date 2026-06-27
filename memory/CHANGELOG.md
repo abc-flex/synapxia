@@ -20,6 +20,10 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-06-26 20:25 — fix(ui): /lib/assets edit modal jumped on tab switch
+- The Asset Repository "Edit details" modal (`AssetDetailModal`, with the Characterizations / Related Assets / Permissions tabs) used `max-h-[90vh]`, so it sized to each tab's content and resized/re-centered when switching tabs. Gave its form a **fixed height** (`h-[min(680px,90vh)]`) so only the body (`flex-1 overflow-y-auto`) scrolls — same treatment as the catalog detail modal.
+- Files affected: `ui/src/components/lib/AssetDetailModal.astro`
+
 ## 2026-06-26 20:20 — fix(ui): DataTable list jump (render-all-rows → collapse-to-one-page on load)
 - DataTable pages render every row server-side (full height), then `advancedTable.ts` hides everything past the first page on hydration (default `perPage = 10`) — so a list with >10 rows visibly collapses/resizes on load. Added a **pre-pagination CSS cap**: `tbody[data-dt-prepaginate] > tr:nth-child(n+11){display:none}` (globals.css) shows only the first page at first paint, and the marker is set on the SSR `<tbody>` (`DataTableBody.astro`). `advancedTable.renderPagination()` removes `[data-dt-prepaginate]` after its first pass and from then on manages rows via the `hidden` class (page 2+ unaffected). Keep the `11` in sync with `perPage`. Shared fix → benefits all ~18 DataTable pages (incl. `/lib/assets`); pages with ≤10 rows are unchanged.
 - Files affected: `ui/src/components/table/partials/DataTableBody.astro`, `ui/src/styles/globals.css`, `ui/src/components/table/advancedTable.ts`

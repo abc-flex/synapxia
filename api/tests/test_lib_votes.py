@@ -161,7 +161,7 @@ def test_set_vote_route_maps_integrity_error_to_409(session, client, monkeypatch
         json={"user_id": 1, "asset": asset.id, "content": "POSITIVE"},
     )
     assert r.status_code == 409
-    assert "conflict" in r.json()["detail"].lower()
+    assert "conflict" in r.json()["error"]["message"].lower()
 
 
 # --- Route contract --------------------------------------------------------

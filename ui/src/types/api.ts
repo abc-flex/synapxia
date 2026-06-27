@@ -396,6 +396,27 @@ export interface ApiError {
   detail: string;
 }
 
+// Standardized API envelope (see api/app/internal/responses.py). Every data
+// endpoint under /api/ (except /api/auth/*) returns this shape; `lib/api.ts`
+// unwraps `.data` centrally so callers keep receiving the bare payload.
+export interface ResponseMeta {
+  skip?: number;
+  limit?: number;
+  count?: number;
+}
+
+export interface ErrorBody {
+  code: number;
+  message: string;
+  details?: unknown;
+}
+
+export interface Envelope<T> {
+  data: T | null;
+  error: ErrorBody | null;
+  meta: ResponseMeta;
+}
+
 // Dimension types
 export interface Dimension {
   code: string;

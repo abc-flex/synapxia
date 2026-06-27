@@ -281,6 +281,30 @@ def create_user(data: UserCreate, db: Session = Depends(get_db_session)):
 - 404 — resource not found
 - 409 — unique conflict / illegal state transition
 
+### Response envelope (standardized format)
+Every JSON response under `/api/` — **except `/api/auth/*`** — is wrapped into one
+envelope by a global middleware + exception handlers in `app/main.py` (helpers in
+`app/internal/responses.py`). Routes still `return <model>` / `raise HTTPException(...)`
+as before — **no per-endpoint code changes**:
+
+```jsonc
+// success
+{ "data": <payload>, "error": null, "meta": { "skip": 0, "limit": 100, "count": 12 } }
+// error (HTTP status preserved)
+{ "data": null, "error": { "code": 404, "message": "Asset not found", "details": null }, "meta": {} }
+```
+
+- `meta` echoes `skip`/`limit` from the query + `count` for list payloads (no grand
+  `total` — that would need a COUNT per list endpoint; deferred).
+- **Excluded (native shapes):** `/api/auth/*` (fastapi-users + the bespoke fetches in
+  `ui/src/lib/auth.ts` read raw `{access_token}` / `UserRead` / `{detail}`), `/health`,
+  `/` (root inventory), `/docs`, `/openapi.json`.
+- The UI unwraps `.data` centrally in `ui/src/lib/api.ts` (`unwrapEnvelope`), so the
+  ~27 services + pages are unchanged.
+- **Known limitation:** OpenAPI schemas still describe the *inner* model (the wrapping
+  happens after serialization), so `/docs` shows the un-enveloped shape. Functional, but
+  documenting the envelope per-route is a follow-up.
+
 ### Health endpoint
 `app/admin/routes/health.py` opens a `psycopg2.connect(DATABASE_URL)` and runs
 `SELECT 1`. Returns `{status: "healthy", database: "connected"}` or HTTP 503 with the

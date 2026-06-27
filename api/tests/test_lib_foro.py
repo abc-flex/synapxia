@@ -152,7 +152,7 @@ def test_post_comment_returns_discussion_item(session, client):
     r = client.post("/api/actions/comments",
                     json={"user_id": 1, "asset": asset.id, "content": "great"})
     assert r.status_code == 201
-    body = r.json()
+    body = r.json()["data"]
     assert body["type"] == "COMMENT" and body["content"] == "great"
     assert body["asset"] == asset.id
 
@@ -181,4 +181,4 @@ def test_post_comment_maps_integrity_error_to_409(session, client, monkeypatch):
     r = client.post("/api/actions/comments",
                     json={"user_id": 1, "asset": asset.id, "content": "x"})
     assert r.status_code == 409
-    assert "conflict" in r.json()["detail"].lower()
+    assert "conflict" in r.json()["error"]["message"].lower()

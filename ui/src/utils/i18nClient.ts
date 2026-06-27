@@ -1,6 +1,7 @@
 // Global client-side translation loader
 import en from '../i18n/en.json';
 import es from '../i18n/es.json';
+import { formatRelative } from '../lib/datatable';
 
 const translations = { en, es };
 
@@ -68,6 +69,14 @@ export const loadClientTranslations = () => {
       const translation = getNestedValue(translations[locale], key);
       element.setAttribute('aria-label', translation);
     }
+  });
+
+  // Re-localize relative timestamps (e.g. "2 d ago" / "hace 2 d"). They carry
+  // their raw ISO in data-relative-ts; the data-i18n patch only swaps static
+  // strings, so these need recomputing on load + every language switch.
+  document.querySelectorAll('[data-relative-ts]').forEach((element) => {
+    const ts = element.getAttribute('data-relative-ts');
+    if (ts) element.textContent = formatRelative(ts, locale);
   });
 
   // Dispatch custom event for other components to react

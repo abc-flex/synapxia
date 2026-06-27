@@ -75,10 +75,10 @@ export function initAdvancedTable(
     /* ======================
        COLUMN FILTER (up to two filters, AND-combined)
     ====================== */
-    // A filter slot may be a <select> (toolbar or in a column header) OR an
-    // <input type="checkbox"> rendered as a toggle. Bound by id, so it works
-    // wherever the control lives in the DOM.
-    type FilterEl = HTMLSelectElement | HTMLInputElement | null;
+    // A filter slot may be a <select> (toolbar or in a column header), an
+    // <input type="checkbox"> rendered as a toggle, OR an aria-pressed <button>
+    // (the shared FavoritesPill). Bound by id, so it works wherever it lives.
+    type FilterEl = HTMLSelectElement | HTMLInputElement | HTMLButtonElement | null;
     const filterSelect = document.getElementById(`${tableId}-filter`) as FilterEl;
     const filterSelect2 = document.getElementById(`${tableId}-filter2`) as FilterEl;
     const filterSelect3 = document.getElementById(`${tableId}-filter3`) as FilterEl;
@@ -91,17 +91,24 @@ export function initAdvancedTable(
 
     const isCheckbox = (el: FilterEl): el is HTMLInputElement =>
         el instanceof HTMLInputElement && el.type === "checkbox";
+    // An aria-pressed <button> toggle (the shared FavoritesPill).
+    const isToggleButton = (el: FilterEl): el is HTMLButtonElement =>
+        el instanceof HTMLButtonElement;
 
-    // Read/write a slot's value uniformly across <select> and toggle <input>.
-    // A toggle's "on" value comes from data-on-value (defaults to "yes").
+    // Read/write a slot's value uniformly across <select>, toggle <input>, and
+    // aria-pressed <button>. A toggle's "on" value comes from data-on-value
+    // (defaults to "yes").
     const slotValue = (el: FilterEl): string => {
         if (!el) return "";
         if (isCheckbox(el)) return el.checked ? (el.dataset.onValue || "yes") : "";
+        if (isToggleButton(el))
+            return el.getAttribute("aria-pressed") === "true" ? (el.dataset.onValue || "yes") : "";
         return el.value ?? "";
     };
     const setSlotValue = (el: FilterEl, value: string): void => {
         if (!el) return;
         if (isCheckbox(el)) el.checked = value !== "" && value === (el.dataset.onValue || "yes");
+        else if (isToggleButton(el)) el.setAttribute("aria-pressed", String(value !== ""));
         else el.value = value;
     };
 
@@ -160,6 +167,28 @@ export function initAdvancedTable(
         });
     }
 
+    // Bind a filter slot's change → (sync URL + re-filter). <select>/<input> use
+    // "change"; an aria-pressed <button> (FavoritesPill) has no change event, so
+    // it toggles on "click". After a header-funnel <select> changes, close its
+    // <details> so the list doesn't linger over the filtered table.
+    const bindFilterControl = (el: FilterEl, param: string | null): void => {
+        if (!el) return;
+        if (isToggleButton(el)) {
+            el.addEventListener("click", () => {
+                const on = el.getAttribute("aria-pressed") === "true";
+                el.setAttribute("aria-pressed", String(!on));
+                syncFilterParam(param, slotValue(el));
+                applyFilters();
+            });
+        } else {
+            el.addEventListener("change", () => {
+                syncFilterParam(param, slotValue(el));
+                applyFilters();
+                el.closest<HTMLElement>("[data-dt-head-filter]")?.removeAttribute("open");
+            });
+        }
+    };
+
     if (filterSelect) {
         filterKey = filterSelect.dataset.columnKey ?? null;
 
@@ -169,10 +198,7 @@ export function initAdvancedTable(
         const initialValue = filterParam ?? filterDefaultValue;
         setSlotValue(filterSelect, initialValue);
 
-        filterSelect.addEventListener("change", () => {
-            syncFilterParam(columnFilter, slotValue(filterSelect));
-            applyFilters();
-        });
+        bindFilterControl(filterSelect, columnFilter);
 
         if (initialValue) {
             applyFilters();
@@ -187,10 +213,7 @@ export function initAdvancedTable(
         const initialValue2 = filterParam2 ?? filterDefaultValue2;
         setSlotValue(filterSelect2, initialValue2);
 
-        filterSelect2.addEventListener("change", () => {
-            syncFilterParam(columnFilter2, slotValue(filterSelect2));
-            applyFilters();
-        });
+        bindFilterControl(filterSelect2, columnFilter2);
 
         if (initialValue2) {
             applyFilters();
@@ -205,10 +228,7 @@ export function initAdvancedTable(
         const initialValue3 = filterParam3 ?? filterDefaultValue3;
         setSlotValue(filterSelect3, initialValue3);
 
-        filterSelect3.addEventListener("change", () => {
-            syncFilterParam(columnFilter3, slotValue(filterSelect3));
-            applyFilters();
-        });
+        bindFilterControl(filterSelect3, columnFilter3);
 
         if (initialValue3) {
             applyFilters();
@@ -223,10 +243,7 @@ export function initAdvancedTable(
         const initialValue4 = filterParam4 ?? filterDefaultValue4;
         setSlotValue(filterSelect4, initialValue4);
 
-        filterSelect4.addEventListener("change", () => {
-            syncFilterParam(columnFilter4, slotValue(filterSelect4));
-            applyFilters();
-        });
+        bindFilterControl(filterSelect4, columnFilter4);
 
         if (initialValue4) {
             applyFilters();
@@ -235,6 +252,45 @@ export function initAdvancedTable(
 
     // Reflect initial state (e.g. a filterDefaultValue applied above, or none).
     updateResetVisibility();
+
+    // Close any open header-filter funnel when clicking outside it (the native
+    // <details> has no auto-dismiss). The in-funnel <select> change handler
+    // closes its own funnel; this covers clicks elsewhere on the page.
+    document.addEventListener("click", (e) => {
+        const target = e.target as HTMLElement;
+        document
+            .querySelectorAll<HTMLDetailsElement>("details[data-dt-head-filter][open]")
+            .forEach((d) => {
+                if (!d.contains(target)) d.removeAttribute("open");
+            });
+    });
+
+    // Header funnels live inside the table's `overflow-x-auto` wrapper. CSS forces
+    // `overflow-y` to `auto` when `overflow-x` is `auto`, so the wrapper clips on
+    // BOTH axes — and the downward dropdown gets cut off when the table is short
+    // (e.g. a filter matched few/zero rows: "the filter list is hidden when the
+    // table is empty"). On open, pin the panel with `position: fixed` anchored
+    // under its summary so it escapes the clip; reset the inline styles on close.
+    document
+        .querySelectorAll<HTMLDetailsElement>(`#${tableId} details[data-dt-head-filter]`)
+        .forEach((details) => {
+            const panel = details.querySelector<HTMLElement>(".dt-head-filter-panel");
+            const summary = details.querySelector<HTMLElement>("summary");
+            if (!panel || !summary) return;
+            details.addEventListener("toggle", () => {
+                if (!details.open) {
+                    panel.style.cssText = "";
+                    return;
+                }
+                const r = summary.getBoundingClientRect();
+                const width = panel.offsetWidth || 192; // min-w-[12rem]
+                const left = Math.max(8, Math.min(r.left, window.innerWidth - width - 8));
+                panel.style.position = "fixed";
+                panel.style.top = `${Math.round(r.bottom + 4)}px`;
+                panel.style.left = `${Math.round(left)}px`;
+                panel.style.marginTop = "0";
+            });
+        });
 
     /* ======================
        FILTRO COMBINADO
@@ -425,6 +481,14 @@ export function initAdvancedTable(
         filteredRows.slice(start, end).forEach((row) => {
             row.classList.remove("hidden");
         });
+
+        // Hand off from the CSS pre-pagination cap (which showed the first page
+        // pre-hydration to avoid a render-all-then-collapse jump) to JS row
+        // management. No-op after the first render.
+        document
+            .getElementById(tableId)
+            ?.querySelector("tbody[data-dt-prepaginate]")
+            ?.removeAttribute("data-dt-prepaginate");
 
         // 🔹 Info
         const info = document.getElementById(`${tableId}-pagination-info`);

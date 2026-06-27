@@ -35,7 +35,9 @@ const {
   id={modalId}
   class="rounded-2xl p-0 w-[min(900px,95vw)] max-w-none bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 backdrop:bg-black/60 backdrop:backdrop-blur-sm"
 >
-  <form id={`${modalId}-form`} class="flex flex-col max-h-[90vh]">
+  {/* Fixed height so switching the Characterizations / Related / Permissions
+      tabs doesn't resize/re-center the dialog — only the body scrolls. */}
+  <form id={`${modalId}-form`} class="flex flex-col h-[min(760px,90vh)]">
     {/* ============== Header ============== */}
     <div class="flex items-start justify-between gap-4 px-6 py-4 border-b border-gray-200 dark:border-gray-800">
       <div>

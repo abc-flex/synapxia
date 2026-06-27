@@ -19,15 +19,11 @@ export interface Props {
 const { modalId } = Astro.props as Props;
 ---
 
-<section
-  id={`${modalId}-history`}
-  class="border-t border-gray-200 pt-5 dark:border-gray-800"
->
-  <h4 class="mb-4 text-sm font-bold text-gray-900 dark:text-white" data-i18n="history.title">
-    Activity
-  </h4>
-
+{/* Lives alone in the modal's "History" tab, which already labels it — so no
+    in-section heading or top divider here. The modal body owns the scroll, so
+    no inner max-height/overflow (avoids a nested scrollbar). */}
+<section id={`${modalId}-history`}>
   <p data-history-status class="hidden text-sm text-gray-400 dark:text-gray-500"></p>
 
-  <div data-history-list class="max-h-72 overflow-y-auto"></div>
+  <div data-history-list></div>
 </section>

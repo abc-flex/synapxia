@@ -231,6 +231,41 @@
     z-index: 30;
   }
 
+  /* Pre-pagination cap: before advancedTable.ts hydrates, show only the first
+     page (default perPage = 10 in advancedTable.ts) so the list paints at its
+     paginated height instead of rendering every row then collapsing to one
+     page — that collapse is the visible "jump/resize" on load. The controller
+     removes [data-dt-prepaginate] after its first render and from then on
+     manages row visibility via the `hidden` class. Keep this 11 in sync with
+     `perPage`. */
+  tbody[data-dt-prepaginate] > tr:nth-child(n + 11) {
+    display: none;
+  }
+
+  /* Soften tab switches in the fixed-height detail/edit modals: the newly shown
+     panel fades in instead of snapping. Scoped to the catalog detail view
+     ([data-detail-panel]) and the assets edit modal ([role="tabpanel"]). */
+  [data-detail-panel]:not(.hidden),
+  [role="tabpanel"]:not(.hidden) {
+    animation: dt-tab-fade 0.18s ease-out;
+  }
+  @keyframes dt-tab-fade {
+    from {
+      opacity: 0;
+      transform: translateY(3px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    [data-detail-panel]:not(.hidden),
+    [role="tabpanel"]:not(.hidden) {
+      animation: none;
+    }
+  }
+
   /* Inline column-header filter (funnel) — rendered inside a <th> by
      DataTableHead. A native <details> popover hosting the filter <select>. */
   .dt-head-filter {

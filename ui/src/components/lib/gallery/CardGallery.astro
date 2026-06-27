@@ -13,6 +13,8 @@
  *     {rows.map((r) => <PromptCard {...r} editModalId="prompt-detail-modal" />)}
  *   </CardGallery>
  */
+import FavoritesPill from "@/components/lib/FavoritesPill.astro";
+
 export interface Props {
   galleryId: string;
   /** Dialog id opened by the "New" button (with data-asset-mode="create"). */
@@ -24,6 +26,9 @@ export interface Props {
   searchPlaceholderKey?: string;
   statusAllKey?: string;
   favLabelKey?: string;
+  /** When set, render a primary "Propose" CTA linking here (e.g. /lib/propose?category=PROMPTS). */
+  proposeHref?: string;
+  proposeLabelKey?: string;
 }
 
 const {
@@ -36,6 +41,8 @@ const {
   searchPlaceholderKey = "gallery.search_placeholder",
   statusAllKey = "gallery.status_all",
   favLabelKey = "gallery.favorites_only",
+  proposeHref,
+  proposeLabelKey = "menu_options.propose",
 } = Astro.props as Props;
 ---
 
@@ -68,17 +75,7 @@ const {
     )}
 
     {showFavorites && (
-      <button
-        id={`${galleryId}-fav-filter`}
-        type="button"
-        aria-pressed="false"
-        class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-      >
-        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-          <path d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.3 4.02a1 1 0 00.95.69h4.22c.97 0 1.37 1.24.59 1.81l-3.42 2.48a1 1 0 00-.36 1.12l1.3 4.02c.3.92-.75 1.69-1.54 1.12l-3.41-2.48a1 1 0 00-1.18 0l-3.41 2.48c-.78.57-1.84-.2-1.54-1.12l1.3-4.02a1 1 0 00-.36-1.12L2 9.45c-.78-.57-.38-1.81.6-1.81h4.21a1 1 0 00.95-.69l1.3-4.02z" />
-        </svg>
-        <span data-i18n={favLabelKey}>My favorites</span>
-      </button>
+      <FavoritesPill id={`${galleryId}-fav-filter`} labelKey={favLabelKey} />
     )}
 
     {newModalId && (
@@ -91,6 +88,16 @@ const {
         <span class="text-lg leading-none">+</span>
         <span data-i18n={newLabelKey}>New</span>
       </button>
+    )}
+
+    {proposeHref && (
+      <a
+        href={proposeHref}
+        class="ml-auto inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+      >
+        <span class="text-lg leading-none">+</span>
+        <span data-i18n={proposeLabelKey}>Propose</span>
+      </a>
     )}
   </div>
 

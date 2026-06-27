@@ -163,3 +163,22 @@ def test_with_access_in_openapi_with_permission_scopes(client):
     assert "/api/assets/with-access" in spec["paths"]
     # The response schema advertises the new field.
     assert "permission_scopes" in spec["components"]["schemas"]["AssetWithAccessLevels"]["properties"]
+
+
+def test_is_valid_now_handles_tz_aware_and_naive():
+    """Regression: Postgres TIMESTAMPTZ yields tz-aware valid_from/valid_to, but
+    `now` is naive `datetime.utcnow()`. Comparing them must not raise
+    'can't compare offset-naive and offset-aware datetimes' (the /with-access 500)."""
+    from datetime import timezone
+
+    naive_now = datetime(2026, 1, 1, 12, 0, 0)
+    aware_past = datetime(2025, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+    aware_future = datetime(2027, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+
+    # tz-aware bounds vs a naive now must compare without raising.
+    assert svc._is_valid_now(aware_past, None, naive_now) is True        # started, no end
+    assert svc._is_valid_now(aware_future, None, naive_now) is False     # not started yet
+    assert svc._is_valid_now(aware_past, aware_past, naive_now) is False  # already expired
+    assert svc._is_valid_now(None, aware_future, naive_now) is True       # open start, ends later
+    # And the all-naive path still works.
+    assert svc._is_valid_now(PAST, FUTURE, NOW) is True

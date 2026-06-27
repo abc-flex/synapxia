@@ -9,6 +9,18 @@ import "../styles/globals.css";
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {/* Apply the saved theme before first paint to avoid a light-theme flash. */}
+    <script is:inline>
+      (function () {
+        try {
+          var t = localStorage.getItem("theme");
+          if (t !== "dark" && t !== "light") {
+            t = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+          }
+          document.documentElement.classList.toggle("dark", t === "dark");
+        } catch (e) {}
+      })();
+    </script>
     <title data-i18n="login_page.sign_up">Sign Up - Synapxia</title>
   </head>
   <body

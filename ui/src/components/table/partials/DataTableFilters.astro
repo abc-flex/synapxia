@@ -5,6 +5,7 @@
 // the rest render as <select>s. Both keep the canonical `id` + `data-column-key`
 // so advancedTable.ts binds them identically wherever they live.
 import type { FilterConfig } from "@/types/datatable";
+import FavoritesPill from "@/components/lib/FavoritesPill.astro";
 
 interface Props {
   tableId: string;
@@ -23,19 +24,15 @@ const toggleLabel = (f: FilterConfig): string =>
 {
   hasData && toolbarFilters.map((f) => (
     f.asToggle ? (
-      <label class="flex flex-1 basis-[45%] items-center gap-2 sm:flex-none sm:basis-auto cursor-pointer select-none">
-        <input
-          type="checkbox"
+      <div class="flex-1 basis-[45%] sm:flex-none sm:basis-auto">
+        <FavoritesPill
           id={f.id}
-          data-column-key={f.key}
-          data-on-value={onValue(f)}
-          class="peer sr-only"
+          columnKey={f.key}
+          onValue={onValue(f)}
+          labelKey={toggleLabel(f)}
+          class="w-full justify-center sm:w-auto sm:justify-start"
         />
-        <span class="relative inline-block h-5 w-9 shrink-0 rounded-full bg-gray-200 transition peer-checked:bg-indigo-600 dark:bg-gray-700">
-          <span class="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition peer-checked:translate-x-4"></span>
-        </span>
-        <span class="text-sm font-medium text-gray-700 dark:text-gray-300" data-i18n={toggleLabel(f)}>{toggleLabel(f)}</span>
-      </label>
+      </div>
     ) : (
       <div class="relative flex-1 basis-[45%] sm:flex-none sm:basis-auto">
         <select

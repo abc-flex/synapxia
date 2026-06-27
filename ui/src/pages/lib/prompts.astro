@@ -1,11 +1,9 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumb from "../../components/core/Breadcrumb.astro";
-import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
 import CardGallery from "../../components/lib/gallery/CardGallery.astro";
 import PromptCard from "../../components/lib/PromptCard.astro";
-import PromptFormModal from "../../components/lib/PromptFormModal.astro";
 import PromptDetailModal from "../../components/lib/PromptDetailModal.astro";
 import { getAssetsbyCategory } from "@/lib/assets";
 import { getCharacterizations } from "@/lib/characterizations";
@@ -95,8 +93,13 @@ const resolveStatusLabel = (raw: string): string => {
   return stripped?.label ?? raw;
 };
 
+// Galleries are published-only browse surfaces: hide anything not PUBLISHED
+// (tolerant of the legacy `N-` ordinal prefix on the status code).
+const isPublished = (raw: unknown): boolean =>
+  String(raw ?? "").replace(/^\d+-/, "").toUpperCase() === "PUBLISHED";
+
 // ── Flatten rows for the cards ─────────────────────────────────────────────
-const rows = prompts.map((item) => {
+const rows = prompts.filter((item) => isPublished(item.status)).map((item) => {
   const chars = charsByAsset.get(Number(item.id)) ?? {};
   const tags = Array.isArray(item.tags) ? item.tags : [];
   return {
@@ -104,6 +107,7 @@ const rows = prompts.map((item) => {
     name: item.name,
     description: item.description ?? "",
     subtitle: formatRelative(item.updated_at ?? item.created_at, locale),
+    subtitleTs: item.updated_at ?? item.created_at,
     statusValue: item.status,
     statusLabel: resolveStatusLabel(item.status),
     favorite: favIds.has(item.id) ? "yes" : "no",
@@ -118,9 +122,6 @@ const rows = prompts.map((item) => {
     searchText: [item.name, item.description, tags.join(" ")].filter(Boolean).join(" "),
   };
 });
-
-// Delete confirmation modal field (name shown disabled; id prefilled at runtime).
-const deleteFields = [{ key: "name", label: "asset_modal.name", pk: true, disabled: true }];
 ---
 
 <BaseLayout>
@@ -137,33 +138,21 @@ const deleteFields = [{ key: "name", label: "asset_modal.name", pk: true, disabl
       pageTitleKey="menu_options.prompts"
     />
 
-    {/* Custom prompt create/edit modal */}
-    <PromptFormModal modalId="prompt-detail-modal" statuses={statuses} />
-
     {/* Read-only "big card" view (opened by a whole-card click) */}
     <PromptDetailModal modalId="prompt-view-modal" statuses={statuses} />
 
-    {/* Slim delete confirmation (reuses CrudModal) */}
-    <CrudModal
-      mode="delete"
-      modalId="prompt-delete-modal"
-      entityName="Prompt"
-      fields={deleteFields}
-      showTrigger={false}
-    />
-
     <CardGallery
       galleryId="prompts-gallery"
-      newModalId="prompt-detail-modal"
-      newLabelKey="prompt_modal.new"
       emptyKey="prompt_modal.empty"
-      statuses={statuses}
+      statuses={[]}
+      proposeHref={`/lib/propose?category=${CATEGORY}`}
     >
       {rows.map((r) => (
         <PromptCard
           id={r.id}
           name={r.name}
           subtitle={r.subtitle}
+          subtitleTs={r.subtitleTs}
           description={r.description}
           statusLabel={r.statusLabel}
           statusValue={r.statusValue}
@@ -189,9 +178,8 @@ const deleteFields = [{ key: "name", label: "asset_modal.name", pk: true, disabl
     // avoid the inline `<script type="module">` + `/src/...` import pattern,
     // which 404s in the production build (see memory/CHANGELOG.md 2026-06-15).
     import { initCardGallery } from "@/lib/catalogGallery";
-    import { deleteAsset } from "@/lib/assets";
     import { loadClientTranslations } from "@/utils/i18nClient";
-    import { installGlobalToast, showToast } from "@/lib/toast";
+    import { installGlobalToast } from "@/lib/toast";
 
     initCardGallery({ galleryId: "prompts-gallery", pageSize: 12 });
     loadClientTranslations();
@@ -199,31 +187,5 @@ const deleteFields = [{ key: "name", label: "asset_modal.name", pk: true, disabl
     // Top-layer toast: renders above the native <dialog> detail modal (a plain
     // body-appended toast loses to the modal's browser top layer).
     installGlobalToast();
-
-    // Open + prefill the delete confirmation modal when a card's delete button
-    // fires (the gallery dispatches `gallery-delete` with id + name).
-    const delDialog = document.getElementById("prompt-delete-modal") as HTMLDialogElement | null;
-    document.addEventListener("gallery-delete", (e) => {
-      if (!delDialog) return;
-      const { id, name } = (e as CustomEvent).detail;
-      const idInput = delDialog.querySelector('[name="id"]') as HTMLInputElement | null;
-      const nameInput = delDialog.querySelector('[name="name"]') as HTMLInputElement | null;
-      if (idInput) idInput.value = String(id);
-      if (nameInput) nameInput.value = String(name ?? "");
-      if (!delDialog.open) delDialog.showModal();
-    });
-
-    // Delete handler (create/edit handled by PromptFormModal).
-    document.addEventListener("crud-submit", async (e) => {
-      const { mode, data } = (e as CustomEvent).detail;
-      if (mode !== "delete") return;
-      try {
-        await deleteAsset(Number(data.id));
-        showToast("Prompt deleted successfully!");
-        setTimeout(() => window.location.reload(), 800);
-      } catch (error) {
-        showToast(error instanceof Error ? error.message : "An error occurred", "error");
-      }
-    });
   </script>
 </BaseLayout>

@@ -1,11 +1,9 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumb from "../../components/core/Breadcrumb.astro";
-import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
 import CardGallery from "../../components/lib/gallery/CardGallery.astro";
 import McpCard from "../../components/lib/McpCard.astro";
-import McpFormModal from "../../components/lib/McpFormModal.astro";
 import McpDetailModal from "../../components/lib/McpDetailModal.astro";
 import { getAssetsbyCategory } from "@/lib/assets";
 import { getCharacterizations } from "@/lib/characterizations";
@@ -93,16 +91,6 @@ try {
 }
 const statuses = status.map((s) => ({ value: s.value, label: s.label }));
 
-// ── Execution modes (EXECUTION_MODE) for the MODE select. Options use the
-// label as value to match the seeded/spec data ("Remote"/"Local"). ─────────
-let modes: { value: string; label: string }[] = [];
-try {
-  const items = await getListItemsbyList("EXECUTION_MODE");
-  modes = items.map((m) => ({ value: m.label, label: m.label }));
-} catch {
-  modes = [];
-}
-
 const resolveStatusLabel = (raw: string): string => {
   if (!raw) return "";
   const direct = status.find((s) => s.value === raw);
@@ -111,8 +99,13 @@ const resolveStatusLabel = (raw: string): string => {
   return stripped?.label ?? raw;
 };
 
+// Galleries are published-only browse surfaces: hide anything not PUBLISHED
+// (tolerant of the legacy `N-` ordinal prefix on the status code).
+const isPublished = (raw: unknown): boolean =>
+  String(raw ?? "").replace(/^\d+-/, "").toUpperCase() === "PUBLISHED";
+
 // ── Flatten rows for the cards ─────────────────────────────────────────────
-const rows = mcps.map((item) => {
+const rows = mcps.filter((item) => isPublished(item.status)).map((item) => {
   const chars = charsByAsset.get(Number(item.id)) ?? {};
   const tags = Array.isArray(item.tags) ? item.tags : [];
   // Tools + server config live in the `detail` column (the array / JSON);
@@ -124,6 +117,7 @@ const rows = mcps.map((item) => {
     name: item.name,
     description: overview || item.description || "",
     subtitle: formatRelative(item.updated_at ?? item.created_at, locale),
+    subtitleTs: item.updated_at ?? item.created_at,
     statusValue: item.status,
     statusLabel: resolveStatusLabel(item.status),
     favorite: favIds.has(item.id) ? "yes" : "no",
@@ -140,9 +134,6 @@ const rows = mcps.map((item) => {
       .join(" "),
   };
 });
-
-// Delete confirmation modal field (name shown disabled; id prefilled at runtime).
-const deleteFields = [{ key: "name", label: "asset_modal.name", pk: true, disabled: true }];
 ---
 
 <BaseLayout>
@@ -159,33 +150,21 @@ const deleteFields = [{ key: "name", label: "asset_modal.name", pk: true, disabl
       pageTitleKey="menu_options.mcps"
     />
 
-    {/* Custom MCP create/edit modal */}
-    <McpFormModal modalId="mcp-detail-modal" statuses={statuses} modes={modes} />
-
     {/* Read-only "big card" view (opened by a whole-card click) */}
     <McpDetailModal modalId="mcp-view-modal" statuses={statuses} />
 
-    {/* Slim delete confirmation (reuses CrudModal) */}
-    <CrudModal
-      mode="delete"
-      modalId="mcp-delete-modal"
-      entityName="Mcp"
-      fields={deleteFields}
-      showTrigger={false}
-    />
-
     <CardGallery
       galleryId="mcps-gallery"
-      newModalId="mcp-detail-modal"
-      newLabelKey="mcp_modal.new"
       emptyKey="mcp_modal.empty"
-      statuses={statuses}
+      statuses={[]}
+      proposeHref={`/lib/propose?category=${CATEGORY}`}
     >
       {rows.map((r) => (
         <McpCard
           id={r.id}
           name={r.name}
           subtitle={r.subtitle}
+          subtitleTs={r.subtitleTs}
           description={r.description}
           statusLabel={r.statusLabel}
           statusValue={r.statusValue}
@@ -212,9 +191,8 @@ const deleteFields = [{ key: "name", label: "asset_modal.name", pk: true, disabl
     // avoid the inline `<script type="module">` + `/src/...` import pattern,
     // which 404s in the production build (see memory/CHANGELOG.md 2026-06-15).
     import { initCardGallery } from "@/lib/catalogGallery";
-    import { deleteAsset } from "@/lib/assets";
     import { loadClientTranslations } from "@/utils/i18nClient";
-    import { installGlobalToast, showToast } from "@/lib/toast";
+    import { installGlobalToast } from "@/lib/toast";
 
     initCardGallery({ galleryId: "mcps-gallery", pageSize: 12 });
     loadClientTranslations();
@@ -222,31 +200,5 @@ const deleteFields = [{ key: "name", label: "asset_modal.name", pk: true, disabl
     // Top-layer toast: renders above the native <dialog> detail modal (a plain
     // body-appended toast loses to the modal's browser top layer).
     installGlobalToast();
-
-    // Open + prefill the delete confirmation modal when a card's delete button
-    // fires (the gallery dispatches `gallery-delete` with id + name).
-    const delDialog = document.getElementById("mcp-delete-modal") as HTMLDialogElement | null;
-    document.addEventListener("gallery-delete", (e) => {
-      if (!delDialog) return;
-      const { id, name } = (e as CustomEvent).detail;
-      const idInput = delDialog.querySelector('[name="id"]') as HTMLInputElement | null;
-      const nameInput = delDialog.querySelector('[name="name"]') as HTMLInputElement | null;
-      if (idInput) idInput.value = String(id);
-      if (nameInput) nameInput.value = String(name ?? "");
-      if (!delDialog.open) delDialog.showModal();
-    });
-
-    // Delete handler (create/edit handled by McpFormModal).
-    document.addEventListener("crud-submit", async (e) => {
-      const { mode, data } = (e as CustomEvent).detail;
-      if (mode !== "delete") return;
-      try {
-        await deleteAsset(Number(data.id));
-        showToast("MCP deleted successfully!");
-        setTimeout(() => window.location.reload(), 800);
-      } catch (error) {
-        showToast(error instanceof Error ? error.message : "An error occurred", "error");
-      }
-    });
   </script>
 </BaseLayout>

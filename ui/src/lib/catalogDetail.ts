@@ -59,10 +59,46 @@ function parseList(raw: unknown): string[] {
 
 export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
   if (typeof window === "undefined") return;
-  const { modalId, editModalId, sections } = cfg;
+  const { modalId, sections } = cfg;
 
   const dialog = document.getElementById(modalId) as HTMLDialogElement | null;
   if (!dialog) return;
+
+  // ── Tabs (Detail / Discussion / Activity) ──────────────────────────────────
+  // The body is split into one panel per tab; switching just toggles the active
+  // button styling + which panel is visible. All three sections still hydrate on
+  // open regardless of the active tab (they query by scoped id).
+  const tabButtons = Array.from(
+    dialog.querySelectorAll<HTMLButtonElement>("[data-detail-tab]"),
+  );
+  const tabPanels = Array.from(
+    dialog.querySelectorAll<HTMLElement>("[data-detail-panel]"),
+  );
+
+  function activateTab(name: string): void {
+    for (const btn of tabButtons) {
+      const on = btn.dataset.detailTab === name;
+      btn.setAttribute("aria-selected", String(on));
+      if (on) btn.removeAttribute("tabindex");
+      else btn.setAttribute("tabindex", "-1");
+      btn.classList.toggle("border-indigo-600", on);
+      btn.classList.toggle("text-indigo-600", on);
+      btn.classList.toggle("dark:text-indigo-400", on);
+      btn.classList.toggle("border-transparent", !on);
+      btn.classList.toggle("text-gray-500", !on);
+      btn.classList.toggle("hover:border-gray-300", !on);
+      btn.classList.toggle("hover:text-gray-700", !on);
+      btn.classList.toggle("dark:text-gray-400", !on);
+      btn.classList.toggle("dark:hover:text-gray-200", !on);
+    }
+    for (const panel of tabPanels) {
+      panel.classList.toggle("hidden", panel.dataset.detailPanel !== name);
+    }
+  }
+
+  for (const btn of tabButtons) {
+    btn.addEventListener("click", () => activateTab(btn.dataset.detailTab || "detail"));
+  }
 
   // Hydrate the read-only related-assets section (HU-LI07), the discussion
   // section (comments/questions/answers, HU-LI06), and the read-only activity
@@ -80,8 +116,6 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
   const sectionsEl = document.getElementById(`${modalId}-sections`) as HTMLElement | null;
   const favBtn = document.getElementById(`${modalId}-fav`) as HTMLButtonElement | null;
   const favSvg = favBtn?.querySelector("svg") as SVGElement | null;
-  const editBtn = document.getElementById(`${modalId}-edit`) as HTMLButtonElement | null;
-  const deleteBtn = document.getElementById(`${modalId}-delete`) as HTMLButtonElement | null;
   const voteWrap = document.getElementById(`${modalId}-vote`) as HTMLElement | null;
   const voteUp = document.getElementById(`${modalId}-vote-up`) as HTMLButtonElement | null;
   const voteDown = document.getElementById(`${modalId}-vote-down`) as HTMLButtonElement | null;
@@ -305,6 +339,7 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
     currentId = assetId;
     favoriteOn = false;
     paintFavorite();
+    activateTab("detail"); // every open starts on the Detail tab
     if (nameEl) nameEl.textContent = "…";
     if (descEl) descEl.classList.add("hidden");
     if (sectionsEl) sectionsEl.innerHTML = "";
@@ -321,6 +356,11 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
       getWorkflowStage(currentId)
         .then((stage) => {
           if (seq !== openSeq || !stage) return; // a newer open() superseded this
+          // The badge surfaces *pending* review activity. Once the latest action
+          // is FINISHED it just echoes the status pill (a published asset's
+          // PUBLICATION·FINISHED == "Published"), so hide it for finished stages —
+          // it only shows while an asset is still moving through review.
+          if (stage.workflow_status === "FINISHED") return;
           const typeLabel = tr(`workflow_stage.${stage.type}`, stage.type);
           const statusLabel = stage.workflow_status
             ? tr(`workflow_stage.${stage.workflow_status}`, stage.workflow_status)
@@ -408,29 +448,6 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
     dialog!.close();
   }
 
-  // ── Footer actions ─────────────────────────────────────────────────────────
-  editBtn?.addEventListener("click", () => {
-    if (!currentId) return;
-    const id = currentId;
-    close();
-    const synthetic = document.createElement("button");
-    synthetic.style.display = "none";
-    synthetic.setAttribute("data-modal-open", editModalId);
-    synthetic.setAttribute("data-asset-mode", "edit");
-    synthetic.setAttribute("data-asset-id", String(id));
-    document.body.appendChild(synthetic);
-    synthetic.click();
-    synthetic.remove();
-  });
-
-  deleteBtn?.addEventListener("click", () => {
-    if (!currentId) return;
-    const id = currentId;
-    const name = currentName;
-    close();
-    document.dispatchEvent(new CustomEvent("gallery-delete", { detail: { id, name } }));
-  });
-
   // ── Copy buttons inside the dialog (the gallery copy handler is scoped to the
   //    grid root, which the dialog sits outside of). ──────────────────────────
   dialog.addEventListener("click", async (e) => {
@@ -452,6 +469,9 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
       e.preventDefault();
       const assetId = (opener as HTMLElement).dataset.assetId;
       if (assetId) open(Number(assetId));
+      // The card's discuss shortcut carries data-foro-focus → land on the
+      // Discussion tab (foro.ts then scrolls + focuses the composer).
+      if ((opener as HTMLElement).dataset.foroFocus) activateTab("discussion");
       return;
     }
     const closer = (e.target as HTMLElement).closest?.(`[data-modal-close="${modalId}"]`);

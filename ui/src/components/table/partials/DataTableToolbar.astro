@@ -1,6 +1,7 @@
 ---
 import leftSvg from "@/images/icons/chevron-left.svg?raw";
 import listSvg from "@/images/icons/list-bullet.svg?raw";
+import resetSvg from "@/images/icons/arrow-uturn-left.svg?raw";
 import DataTableFilters from "./DataTableFilters.astro";
 import DataTableSearchExport from "./DataTableSearchExport.astro";
 import type { FilterConfig } from "@/types/datatable";
@@ -84,6 +85,20 @@ const filterCount = filters.filter((f) => f.key && !f.headerColumn).length;
       </button>
     )}
     <DataTableFilters tableId={tableId} hasData={hasData} filters={filters} />
+    {hasData && (
+      <button
+        id={`${tableId}-reset`}
+        type="button"
+        class="hidden inline-flex shrink-0 items-center gap-1 self-start sm:self-center rounded-md px-2 py-1 text-xs font-medium text-gray-500 transition hover:text-gray-700 hover:underline dark:text-gray-400 dark:hover:text-gray-200"
+        data-i18n-title="data_table.reset"
+        title=""
+      >
+        <span class="h-4 w-4 inline-block">
+          <Fragment set:html={resetSvg} />
+        </span>
+        <span data-i18n="data_table.reset">data_table.reset</span>
+      </button>
+    )}
   </div>
 
   <!-- Right: Search & Export -->

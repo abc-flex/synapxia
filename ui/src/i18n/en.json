@@ -834,9 +834,18 @@
     "NOTIFIED": "Notified",
     "FINISHED": "Finished"
   },
+  "asset_status": {
+    "PROPOSED": "Proposed",
+    "FEEDBACK": "Feedback Provided",
+    "PUBLISHED": "Published",
+    "REJECTED": "Rejected",
+    "DEPRECATED": "Deprecated"
+  },
   "related": {
     "title": "Related assets",
     "loading": "Loading related assets…",
+    "empty": "No related assets.",
+    "error": "Could not load related assets.",
     "outgoing": "References",
     "incoming": "Referenced by",
     "type": {
@@ -928,7 +937,11 @@
   "catalog_detail": {
     "copy": "Copy",
     "copied": "Copied to clipboard",
-    "error_load": "Could not load."
+    "error_load": "Could not load.",
+    "tab_detail": "Details",
+    "tab_related": "Related",
+    "tab_discussion": "Discussion",
+    "tab_history": "History"
   },
   "agent_modal": {
     "title_create": "New Agent",

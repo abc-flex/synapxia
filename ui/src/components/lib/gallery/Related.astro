@@ -20,14 +20,9 @@ export interface Props {
 const { modalId } = Astro.props as Props;
 ---
 
-<section
-  id={`${modalId}-related`}
-  class="hidden border-t border-gray-200 pt-5 dark:border-gray-800"
->
-  <h4 class="mb-4 text-sm font-bold text-gray-900 dark:text-white" data-i18n="related.title">
-    Related assets
-  </h4>
-
+{/* Lives alone in the modal's "Related" tab, which already labels it — so no
+    in-section heading or top divider here. */}
+<section id={`${modalId}-related`}>
   <p data-related-status class="hidden text-sm text-gray-400 dark:text-gray-500"></p>
 
   <div data-related-list class="grid gap-2 sm:grid-cols-2"></div>

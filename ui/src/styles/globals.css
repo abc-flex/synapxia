@@ -231,6 +231,17 @@
     z-index: 30;
   }
 
+  /* Pre-pagination cap: before advancedTable.ts hydrates, show only the first
+     page (default perPage = 10 in advancedTable.ts) so the list paints at its
+     paginated height instead of rendering every row then collapsing to one
+     page — that collapse is the visible "jump/resize" on load. The controller
+     removes [data-dt-prepaginate] after its first render and from then on
+     manages row visibility via the `hidden` class. Keep this 11 in sync with
+     `perPage`. */
+  tbody[data-dt-prepaginate] > tr:nth-child(n + 11) {
+    display: none;
+  }
+
   /* Inline column-header filter (funnel) — rendered inside a <th> by
      DataTableHead. A native <details> popover hosting the filter <select>. */
   .dt-head-filter {

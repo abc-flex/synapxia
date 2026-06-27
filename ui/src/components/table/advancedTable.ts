@@ -426,6 +426,14 @@ export function initAdvancedTable(
             row.classList.remove("hidden");
         });
 
+        // Hand off from the CSS pre-pagination cap (which showed the first page
+        // pre-hydration to avoid a render-all-then-collapse jump) to JS row
+        // management. No-op after the first render.
+        document
+            .getElementById(tableId)
+            ?.querySelector("tbody[data-dt-prepaginate]")
+            ?.removeAttribute("data-dt-prepaginate");
+
         // 🔹 Info
         const info = document.getElementById(`${tableId}-pagination-info`);
         if (info) {

@@ -20,6 +20,10 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-06-26 20:20 — fix(ui): DataTable list jump (render-all-rows → collapse-to-one-page on load)
+- DataTable pages render every row server-side (full height), then `advancedTable.ts` hides everything past the first page on hydration (default `perPage = 10`) — so a list with >10 rows visibly collapses/resizes on load. Added a **pre-pagination CSS cap**: `tbody[data-dt-prepaginate] > tr:nth-child(n+11){display:none}` (globals.css) shows only the first page at first paint, and the marker is set on the SSR `<tbody>` (`DataTableBody.astro`). `advancedTable.renderPagination()` removes `[data-dt-prepaginate]` after its first pass and from then on manages rows via the `hidden` class (page 2+ unaffected). Keep the `11` in sync with `perPage`. Shared fix → benefits all ~18 DataTable pages (incl. `/lib/assets`); pages with ≤10 rows are unchanged.
+- Files affected: `ui/src/components/table/partials/DataTableBody.astro`, `ui/src/styles/globals.css`, `ui/src/components/table/advancedTable.ts`
+
 ## 2026-06-26 20:15 — fix(ui): theme flash (light flash on page-to-page navigation)
 - Dark mode is class-based (`:is(.dark …)` via Flowbite's plugin), but the `.dark` class was only applied by a script that runs **after** load (bottom of `BaseLayout`), so every multi-page navigation painted the light theme first, then snapped to dark. Added a tiny **render-blocking `<script is:inline>` in `<head>`** that sets `documentElement.classList.toggle("dark", …)` from `localStorage.theme` (falling back to `prefers-color-scheme`) **before first paint**. Added to `BaseLayout.astro` + `Layout.astro` (cover all authenticated + full-screen pages) and to `login.astro`/`signup.astro` (which define their own `<html>` shell). The existing after-load script still wires the toggle buttons + keeps state in sync. No tailwind config change (darkMode already class via Flowbite). Verified the inline script renders in `<head>` before `<body>`.
 - Files affected: `ui/src/layouts/BaseLayout.astro`, `ui/src/layouts/Layout.astro`, `ui/src/pages/login.astro`, `ui/src/pages/signup.astro`

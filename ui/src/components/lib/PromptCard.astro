@@ -13,6 +13,7 @@ export interface Props {
   id: number | string;
   name: string;
   subtitle?: string;
+  subtitleTs?: string;
   description?: string;
   statusLabel?: string;
   statusValue?: string;
@@ -35,6 +36,7 @@ const {
   id,
   name,
   subtitle,
+  subtitleTs,
   description,
   statusLabel,
   statusValue,
@@ -64,6 +66,7 @@ const chips = [
   id={id}
   name={name}
   subtitle={subtitle}
+  subtitleTs={subtitleTs}
   statusLabel={statusLabel}
   statusValue={statusValue}
   favorite={favorite}

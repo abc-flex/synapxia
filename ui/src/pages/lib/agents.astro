@@ -120,6 +120,7 @@ const rows = agents.filter((item) => isPublished(item.status)).map((item) => {
     name: item.name,
     description: item.description ?? "",
     subtitle: formatRelative(item.updated_at ?? item.created_at, locale),
+    subtitleTs: item.updated_at ?? item.created_at,
     statusValue: item.status,
     statusLabel: resolveStatusLabel(item.status),
     favorite: favIds.has(item.id) ? "yes" : "no",
@@ -166,6 +167,7 @@ const rows = agents.filter((item) => isPublished(item.status)).map((item) => {
           id={r.id}
           name={r.name}
           subtitle={r.subtitle}
+          subtitleTs={r.subtitleTs}
           description={r.description}
           statusLabel={r.statusLabel}
           statusValue={r.statusValue}

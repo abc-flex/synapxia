@@ -834,6 +834,13 @@
     "NOTIFIED": "Notified",
     "FINISHED": "Finished"
   },
+  "asset_status": {
+    "PROPOSED": "Proposed",
+    "FEEDBACK": "Feedback Provided",
+    "PUBLISHED": "Published",
+    "REJECTED": "Rejected",
+    "DEPRECATED": "Deprecated"
+  },
   "related": {
     "title": "Related assets",
     "loading": "Loading related assets…",

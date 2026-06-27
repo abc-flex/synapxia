@@ -55,6 +55,45 @@ SynapxIA is organized into functional modules that cover different aspects of th
 
 ---
 
+## Origin — Why SynapxIA Exists
+
+The adoption of Generative AI inside organizations produces a fast-growing population of
+**software assets related to GenAI** — prompts, MCP servers, agents, agentic flows, skills,
+assistants, RAG applications, and models. In practice these assets are created ad hoc and
+scattered across personal notebooks, chat tools, code repositories, and disconnected
+platforms. They are rarely classified, reviewed, versioned, measured, or connected to the
+business processes they are meant to improve. The result is duplicated effort, no
+traceability, and AI adoption that cannot be governed.
+
+SynapxIA was born from the need to give **governance** to these GenAI software assets.
+
+To define its scope, we first studied the families of services and platforms that today
+solve *parts* of this problem, and evaluated which capabilities each one contributes. That
+analysis — documented in [`Services Evaluated.md`](Services%20Evaluated.md) — looked at:
+
+| Evaluated service family | Reference examples | Capability SynapxIA adopts |
+|--------------------------|--------------------|----------------------------|
+| DevOps repositories / software forges | GitHub, GitLab, Azure DevOps | Contribution/review workflow, versioning, history |
+| Artifact managers | JFrog Artifactory, Sonatype Nexus | A single, classified registry of reusable assets |
+| Internal developer portals (IDP) | Backstage, Port, Datadog IDP | Catalog with ownership, permissions, maturity/adoption scorecards |
+| AI / ML / GenAI hubs | Hugging Face Hub, LangSmith, GPTs | Curated catalogs per asset family, characterizations, publication |
+| Internal communities & Q&A | Stack Internal, Discourse, GitHub Discussions | Community layer: votes, comments, questions/answers, favorites |
+| Initiative & idea prioritization | Aha!, Productboard, Jira Product Discovery | Initiative activation, diagnosis, prioritization, tracking |
+| BI / analytics dashboards | Power BI, Looker Studio, Tableau, Metabase | Dashboards, reports, parameters, embedded analytics |
+| Process / value-chain modeling | BPMN tooling, Porter's value chain | Connecting initiatives and assets to real business processes |
+
+The key finding was that **no single family governs a GenAI asset end to end** — from
+taxonomy and proposal, through review and publication, to reuse, measurement, and connection
+with business processes. Each platform resolves only a slice of the lifecycle.
+
+SynapxIA's design decision was therefore to **articulate rather than replicate**: take the
+pertinent capability from each evaluated family and converge them onto a **single governed
+model** (assets + actions + characterizations + taxonomy). That convergence is exactly what
+the functional modules and principles below describe — they are the direct structuring of
+the evaluated services into one coherent platform.
+
+---
+
 ## Functional Principles
 
 SynapxIA is based on the following functional principles.

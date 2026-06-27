@@ -15,8 +15,8 @@ All collab relationships (assignments, projects) and the permissions themselves 
 gated by ``is_active`` + temporal validity (``valid_from``/``valid_to``). Read-only —
 no new table.
 """
-from datetime import datetime
-from typing import Dict, List, Set
+from datetime import datetime, timezone
+from typing import Dict, List, Optional, Set
 
 from sqlmodel import Session, select
 
@@ -33,11 +33,25 @@ SCOPE_PROJECT = "PROJECT"
 SCOPE_PUBLIC = "PUBLIC"
 
 
+def _as_naive_utc(dt: Optional[datetime]) -> Optional[datetime]:
+    """Normalize to naive UTC so naive (SQLite) and tz-aware (Postgres
+    TIMESTAMPTZ) datetimes can be compared without
+    'can't compare offset-naive and offset-aware datetimes'."""
+    if dt is None:
+        return None
+    if dt.tzinfo is not None:
+        return dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
+
+
 def _is_valid_now(valid_from, valid_to, now: datetime) -> bool:
     """True if a temporal row (assignment/permission) is in effect at ``now``."""
-    if valid_from is not None and valid_from > now:
+    vf = _as_naive_utc(valid_from)
+    vt = _as_naive_utc(valid_to)
+    n = _as_naive_utc(now)
+    if vf is not None and vf > n:
         return False
-    if valid_to is not None and valid_to <= now:
+    if vt is not None and vt <= n:
         return False
     return True
 

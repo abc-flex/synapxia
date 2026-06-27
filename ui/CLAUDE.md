@@ -38,8 +38,7 @@ ui/
 ├── tsconfig.json               # strict TS
 ├── public/
 │   └── scripts/
-│       ├── crudClient.js       # Modal ↔ form ↔ event bus glue
-│       └── dashboard.js        # Dashboard-specific JS
+│       └── dashboard.js        # Dashboard-specific JS  (crudClient moved to src/lib/)
 └── src/
     ├── env.d.ts                # ImportMeta env types
     ├── layouts/
@@ -118,6 +117,7 @@ ui/
     │   └── ClientTranslations.astro    # Injects i18n dict into window for runtime patch
     ├── lib/                            # API service wrappers (one file per entity)
     │   ├── api.ts                      # ⭐ Fetch wrapper: GET/POST/PUT/DELETE + auth header
+    │   ├── crudClient.js               # Modal ↔ form ↔ event bus glue (bundle via @/lib/crudClient)
     │   ├── datatable.ts                # Pure DataTable cell helpers (statusTone/formatDate/formatRelative/renderSubtitle)
     │   ├── auth.ts                     # login/register/logout/getCurrentUser + token storage
     │   ├── navigation.ts               # Builds sidebar from modules + options API
@@ -485,7 +485,20 @@ const fields = [
 </BaseLayout>
 
 <script>
+  // ⚠️ Use a BUNDLED <script> (no `type="module"`) with `@/` imports so Astro
+  // bundles + hashes them. NEVER `<script type="module">` importing absolute
+  // `/src/lib/...` or `/scripts/...` paths — those 404 in the Vercel build and a
+  // single failed import aborts the whole module (kills initCrudPage + submit).
+  import { initCrudPage } from '@/lib/crudClient';
   import { createMyEntity, updateMyEntity, deleteMyEntity } from '@/lib/my_entity';
+
+  // Row edit/delete buttons → modal prefill (reads the page's #my-entity-data JSON).
+  initCrudPage({
+    dataId: "my-entity-data",
+    editModalId: "my-entity-edit-modal",
+    deleteModalId: "my-entity-delete-modal",
+  });
+
   document.addEventListener("crud-submit", async (e) => {
     const { mode, data } = (e as CustomEvent).detail;
     if (mode === "create") await createMyEntity(data);

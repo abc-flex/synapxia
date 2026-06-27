@@ -153,13 +153,13 @@ const fieldKeys = deleteFields.map((f) => f.key);
     >
     </div>
 
-    <script type="module">
+    <script>
       // Inline module so we can import crudClient from /public/ (Astro's
       // hoisted bundler forbids importing /public/* files).
-      import { initCrudPage } from "/scripts/crudClient.js";
-      import { deleteAsset } from "/src/lib/assets";
-      import { setFavorite } from "/src/lib/favorites";
-      import { getUser } from "/src/lib/auth";
+      import { initCrudPage } from "@/lib/crudClient";
+      import { deleteAsset } from "@/lib/assets";
+      import { setFavorite } from "@/lib/favorites";
+      import { getUser } from "@/lib/auth";
 
       // CrudClient drives the delete modal's prefill flow. The table rows
       // are now SSR-rendered (auth cookie → middleware → ALS → apiGet), so

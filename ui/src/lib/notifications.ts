@@ -16,6 +16,7 @@
  * with `textContent` (XSS-safe), mirroring the foro/history renderers.
  */
 import { apiGet, apiPost } from "./api";
+import { isAuthenticated } from "./auth";
 import { formatRelative } from "./datatable";
 import { translate } from "@/utils/i18nClient";
 import type { NotificationItem } from "@/types/api";
@@ -171,5 +172,13 @@ export function mountNotifications(): void {
     }
   });
 
-  void load();
+  // Only a real logged-in user's bell should hit the API. Skip the fetch for
+  // anonymous / not-yet-loaded sessions: without a token it resolves to
+  // user_id=0 server-side (500s on the workflow query), and it flashes an empty
+  // bell on public pages.
+  if (isAuthenticated()) {
+    void load();
+  } else {
+    render(); // empty state + cleared badge, no network call
+  }
 }

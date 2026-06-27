@@ -34,11 +34,10 @@ const {
     </script>
     <title>{title}</title>
   </head>
-  {/* Theme-aware background/text so the minimal layout (landing, login, signup,
-      dashboard) renders correctly in dark mode — mirrors BaseLayout's body.
-      Without this the global base `body` rule (light `#edf2ff`) wins and dark
-      mode shows light text on a light background. */}
   <body class="bg-slate-50 text-slate-900 dark:bg-gray-950 dark:text-white">
+    {/* Theme-aware bg/text mirrors BaseLayout so this minimal layout (landing,
+        login, signup, dashboard) renders correctly in dark mode — the global
+        base `body` rule in globals.css is light-only. */}
     <ClientTranslations />
     <slot />
   </body>

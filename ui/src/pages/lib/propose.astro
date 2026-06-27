@@ -128,6 +128,15 @@ const labelClass = "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
           o.textContent = c.name;
           catSel.appendChild(o);
         }
+        // Preselect the category passed via ?category= (e.g. from a gallery's
+        // "Propose" button). Case-insensitive match; no-ops if absent/unknown.
+        const pre = new URLSearchParams(location.search).get("category");
+        if (pre) {
+          const match = Array.from(catSel.options).find(
+            (o) => o.value && o.value.toUpperCase() === pre.toUpperCase(),
+          );
+          if (match) catSel.value = match.value;
+        }
       } catch {
         /* leave the placeholder; submit will validate */
       }

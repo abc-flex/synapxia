@@ -101,9 +101,9 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
   });
   favToggle?.addEventListener("click", () => {
     const on = favToggle.getAttribute("aria-pressed") === "true";
+    // The FavoritesPill's pressed styling comes from the `aria-pressed:` Tailwind
+    // variant, so we only flip the attribute here (no manual class toggling).
     favToggle.setAttribute("aria-pressed", String(!on));
-    favToggle.classList.toggle("bg-indigo-600", !on);
-    favToggle.classList.toggle("text-white", !on);
     limit = pageSize;
     applyFilters();
   });

@@ -93,8 +93,13 @@ const resolveStatusLabel = (raw: string): string => {
   return stripped?.label ?? raw;
 };
 
+// Galleries are published-only browse surfaces: hide anything not PUBLISHED
+// (tolerant of the legacy `N-` ordinal prefix on the status code).
+const isPublished = (raw: unknown): boolean =>
+  String(raw ?? "").replace(/^\d+-/, "").toUpperCase() === "PUBLISHED";
+
 // ── Flatten rows for the cards ─────────────────────────────────────────────
-const rows = prompts.map((item) => {
+const rows = prompts.filter((item) => isPublished(item.status)).map((item) => {
   const chars = charsByAsset.get(Number(item.id)) ?? {};
   const tags = Array.isArray(item.tags) ? item.tags : [];
   return {
@@ -138,7 +143,8 @@ const rows = prompts.map((item) => {
     <CardGallery
       galleryId="prompts-gallery"
       emptyKey="prompt_modal.empty"
-      statuses={statuses}
+      statuses={[]}
+      proposeHref={`/lib/propose?category=${CATEGORY}`}
     >
       {rows.map((r) => (
         <PromptCard

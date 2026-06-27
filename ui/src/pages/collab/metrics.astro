@@ -192,13 +192,13 @@ const fieldKeys = ["id", ...tableFields.map((f) => f.key)];
     >
     </div>
 
-    <script type="module">
-      import { initCrudPage } from "/scripts/crudClient.js";
+    <script>
+      import { initCrudPage } from "@/lib/crudClient";
       import {
         createMetric,
         updateMetric,
         deleteMetric,
-      } from "/src/lib/metrics";
+      } from "@/lib/metrics";
 
       initCrudPage({
         dataId: "metrics-data",

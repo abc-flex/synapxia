@@ -11,9 +11,9 @@ dimensions used to measure adoption, and the metrics recorded against assignment
 |------|-------|
 | HU-CO01 | Roles |
 | HU-CO02 | Teams |
-| HU-CO03 | – Assignments (users, roles and teams) |
+| HU-CO03 | – Assignments (Users / Roles / Teams) |
 | HU-CO04 | Projects |
-| HU-CO05 | Dimensions |
+| HU-CO05 | Dimensions (Include Metrics) |
 | HU-CO06 | Assignment Dashboard |
 | HU-CO07 | – Metrics |
 
@@ -32,7 +32,7 @@ dimensions used to measure adoption, and the metrics recorded against assignment
   `kanban_board_url`
 - **UI:** [`ui/src/pages/collab/teams.astro`](../../ui/src/pages/collab/teams.astro)
 
-### HU-CO03 · – Assignments (users, roles and teams)
+### HU-CO03 · – Assignments (Users / Roles / Teams)
 > As a **team manager**, I want to **assign a user to a team with a role for a validity
 > period** **so that** team composition is tracked over time (with at most one active
 > assignment per user per team).
@@ -47,11 +47,12 @@ dimensions used to measure adoption, and the metrics recorded against assignment
   Planned, In Progress, On Hold, Completed), `start_date`, `end_date`
 - **UI:** [`ui/src/pages/collab/projects.astro`](../../ui/src/pages/collab/projects.astro)
 
-### HU-CO05 · Dimensions
-> As an **analyst**, I want to **define measurement dimensions** with a unit and a scale
-> **so that** adoption can be measured on consistent axes.
+### HU-CO05 · Dimensions (Include Metrics)
+> As an **analyst**, I want to **define measurement dimensions** with a unit and a scale —
+> and manage their metrics inline — **so that** adoption can be measured on consistent axes.
 - **Data:** `dimensions` — `code`, `name`, `unit` (→ `DIMENSIONS_UNIT`), `scale` (FK →
-  `lists.code` where `type='SCALE'`, e.g. `GENAI_DEV_ADOPTION`, `GENAI_QA_ADOPTION`)
+  `lists.code` where `type='SCALE'`, e.g. `GENAI_DEV_ADOPTION`, `GENAI_QA_ADOPTION`);
+  master-detail over `metrics` (see **HU-CO07**)
 - **UI:** [`ui/src/pages/collab/dimensions.astro`](../../ui/src/pages/collab/dimensions.astro)
 
 ### HU-CO06 · Assignment Dashboard

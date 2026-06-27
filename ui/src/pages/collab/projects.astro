@@ -138,13 +138,13 @@ const fieldKeys = formFields.map((f) => f.key);
     >
     </div>
 
-    <script type="module">
-      import { initCrudPage } from "/scripts/crudClient.js";
+    <script>
+      import { initCrudPage } from "@/lib/crudClient";
       import {
         createProject,
         updateProject,
         deleteProject,
-      } from "/src/lib/projects";
+      } from "@/lib/projects";
 
       initCrudPage({
         dataId: "projects-data",

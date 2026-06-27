@@ -140,13 +140,13 @@ const fieldKeys = formFields.map((f) => f.key);
     >
     </div>
 
-    <script type="module">
-      import { initCrudPage } from "/scripts/crudClient.js";
+    <script>
+      import { initCrudPage } from "@/lib/crudClient";
       import {
         createAssignment,
         updateAssignment,
         deleteAssignment,
-      } from "/src/lib/assignments";
+      } from "@/lib/assignments";
 
       initCrudPage({
         dataId: "assignments-data",

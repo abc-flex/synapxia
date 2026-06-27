@@ -120,13 +120,13 @@ const fieldKeys = ["id", ...formFields.map((f) => f.key)];
     >
     </div>
 
-    <script type="module">
-      import { initCrudPage } from "/scripts/crudClient.js";
+    <script>
+      import { initCrudPage } from "@/lib/crudClient";
       import {
         createSpecification,
         updateSpecification,
         deleteSpecification,
-      } from "/src/lib/specifications";
+      } from "@/lib/specifications";
 
       initCrudPage({
         dataId: "specifications-data",

@@ -101,13 +101,13 @@ const fieldKeys = formFields.map((f) => f.key);
     >
     </div>
 
-    <script type="module">
-      import { initCrudPage } from "/scripts/crudClient.js";
+    <script>
+      import { initCrudPage } from "@/lib/crudClient";
       import {
         createCriteria,
         updateCriteria,
         deleteCriteria,
-      } from "/src/lib/criterias";
+      } from "@/lib/criterias";
 
       initCrudPage({
         dataId: "criterias-data",

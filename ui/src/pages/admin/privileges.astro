@@ -154,13 +154,13 @@ const fieldKeys = ["id", ...formFields.map((f) => f.key)];
     >
     </div>
 
-    <script type="module">
-      import { initCrudPage } from "/scripts/crudClient.js";
+    <script>
+      import { initCrudPage } from "@/lib/crudClient";
       import {
         createPrivilege,
         updatePrivilege,
         deletePrivilege,
-      } from "/src/lib/privileges";
+      } from "@/lib/privileges";
 
       initCrudPage({
         dataId: "privileges-data",

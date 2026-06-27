@@ -96,13 +96,13 @@ const fieldKeys = tableFields.map((f) => f.key);
     >
     </div>
 
-    <script type="module">
-      import { initCrudPage } from "/scripts/crudClient.js";
+    <script>
+      import { initCrudPage } from "@/lib/crudClient";
       import {
         createRole,
         updateRole,
         deleteRole,
-      } from "/src/lib/roles";
+      } from "@/lib/roles";
 
       initCrudPage({
         dataId: "roles-data",

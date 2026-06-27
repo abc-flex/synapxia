@@ -106,13 +106,13 @@ const fieldKeys = formFields.map((f) => f.key);
     >
     </div>
 
-    <script type="module">
-      import { initCrudPage } from "/scripts/crudClient.js";
+    <script>
+      import { initCrudPage } from "@/lib/crudClient";
       import {
         createCategory,
         updateCategory,
         deleteCategory,
-      } from "/src/lib/categories";
+      } from "@/lib/categories";
 
       initCrudPage({
         dataId: "categories-data",

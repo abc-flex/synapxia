@@ -1,13 +1,19 @@
 ---
 /**
- * Propose an asset (HU-Propose) — the review-workflow entry point. A focused
- * form (name / description / category / reviewer / tags / detail) that POSTs to
+ * Propose an asset (HU-Propose) — the review-workflow entry point. POSTs to
  * `/api/assets/propose`, which atomically creates the asset (PROPOSED), its
  * characterizations (from the category's specs), the PROPOSAL + REVIEW actions,
  * and MANAGE permissions — generating the reviewer's notification.
  *
- * Category + reviewer selects are hydrated client-side (per-user data + the
- * Vercel build-time empty-fetch gotcha), via a bundled `@/` script.
+ * Reached from a gallery's "Propose" button with `?category=<CODE>`: the type is
+ * then **locked** (read-only), the heading reads "Propose a Prompt/MCP/Agent",
+ * and a **characterization** section renders one field per the category's spec
+ * features (prefilled with the spec defaults), submitted as `values`. On a direct
+ * visit (no `?category=`) the type stays an editable select and the
+ * characterization section rebuilds whenever it changes.
+ *
+ * Category / reviewer / characterization are hydrated client-side (per-user data
+ * + the Vercel build-time empty-fetch gotcha), via a bundled `@/` script.
  */
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumb from "../../components/core/Breadcrumb.astro";
@@ -53,9 +59,14 @@ const labelClass = "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
       <div class="grid gap-5 sm:grid-cols-2">
         <div>
           <label class={labelClass} for="propose-category" data-i18n="propose.category">Category</label>
+          <!-- Editable selector — used only on a direct visit (no ?category=). -->
           <select id="propose-category" name="category" required class={inputClass}>
             <option value="" data-i18n="propose.category_placeholder">Select a category…</option>
           </select>
+          <!-- Locked display — shown when the type comes from the originating
+               gallery (?category=); the type then can't be changed. -->
+          <input id="propose-category-locked" type="text" readonly
+            class={`${inputClass} hidden cursor-not-allowed bg-gray-100 dark:bg-gray-800`} />
         </div>
         <div>
           <label class={labelClass} for="propose-reviewer" data-i18n="propose.reviewer">Reviewer</label>
@@ -63,6 +74,20 @@ const labelClass = "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
             <option value="" data-i18n="propose.reviewer_auto">Auto-assign</option>
           </select>
         </div>
+      </div>
+
+      <!-- Type-specific characterization (one field per the category's spec
+           features). Populated client-side once the category is known. -->
+      <div id="propose-characterization" class="hidden space-y-4 border-t border-gray-200 pt-5 dark:border-gray-800">
+        <div>
+          <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200" data-i18n="propose.characterization">
+            Characterization
+          </h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400" data-i18n="propose.characterization_hint">
+            Describe the asset against this type's features. Defaults are prefilled; adjust as needed.
+          </p>
+        </div>
+        <div id="propose-characterization-fields" class="grid gap-5 sm:grid-cols-2"></div>
       </div>
 
       <div>
@@ -97,11 +122,29 @@ const labelClass = "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
     // /src imports (those 404 in the Vercel build — see memory/CHANGELOG.md).
     import { getCategories } from "@/lib/categories";
     import { getReviewers, proposeAsset } from "@/lib/propose";
+    import { getSpecificationsbyCategory } from "@/lib/specifications";
     import { loadClientTranslations, translate } from "@/utils/i18nClient";
     import { installGlobalToast, showToast } from "@/lib/toast";
 
     loadClientTranslations();
     installGlobalToast();
+
+    // Tailwind class strings (client island can't read the frontmatter consts).
+    const inputClass =
+      "w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100";
+    const labelClass = "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300";
+
+    // Per-type heading keys (fallback to the generic propose.title).
+    const TITLE_KEYS: Record<string, string> = {
+      PROMPTS: "propose.title_prompts",
+      MCPS: "propose.title_mcps",
+      AGENTS: "propose.title_agents",
+    };
+    // Features whose payload is long-form → render a <textarea>.
+    const RICH_FEATURES = new Set([
+      "PROMPT_TEMPLATE", "EXAMPLE_OUTPUT", "OVERVIEW",
+      "CONTENT", "TOOLS", "SERVER_CONFIG", "INSTRUCTIONS",
+    ]);
 
     const tr = (key: string, fallback: string): string => {
       try {
@@ -115,30 +158,116 @@ const labelClass = "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
 
     const form = document.getElementById("propose-form") as HTMLFormElement | null;
     const catSel = document.getElementById("propose-category") as HTMLSelectElement | null;
+    const catLocked = document.getElementById("propose-category-locked") as HTMLInputElement | null;
     const revSel = document.getElementById("propose-reviewer") as HTMLSelectElement | null;
     const submitBtn = document.getElementById("propose-submit") as HTMLButtonElement | null;
+    const charWrap = document.getElementById("propose-characterization") as HTMLElement | null;
+    const charFields = document.getElementById("propose-characterization-fields") as HTMLElement | null;
 
-    async function fillCategories() {
-      if (!catSel) return;
+    // When the type comes from a gallery, it can't be changed: the editable
+    // select is replaced by a read-only field and we submit this value directly.
+    let lockedCategory: string | null = null;
+
+    function applyTitle(category: string) {
+      const key = TITLE_KEYS[(category || "").toUpperCase()] || "propose.title";
+      const h2 = document.querySelector("h2[data-i18n]") as HTMLElement | null;
+      if (!h2) return;
+      h2.setAttribute("data-i18n", key); // keep correct across language switches
+      h2.textContent = tr(key, h2.textContent || "Propose an asset");
+    }
+
+    function lockCategory(category: string, label: string) {
+      lockedCategory = category;
+      if (catSel) {
+        catSel.value = category;
+        catSel.disabled = true;
+        catSel.removeAttribute("required");
+        catSel.classList.add("hidden");
+      }
+      if (catLocked) {
+        catLocked.value = label;
+        catLocked.classList.remove("hidden");
+      }
+    }
+
+    // One input per the category's spec features, prefilled with the defaults.
+    async function fillCharacterization(category: string) {
+      if (!charWrap || !charFields || !category) return;
       try {
-        const cats = await getCategories(0, 1000);
+        const specs = await getSpecificationsbyCategory(category, 0, 1000);
+        charFields.innerHTML = "";
+        if (!specs.length) {
+          charWrap.classList.add("hidden");
+          return;
+        }
+        for (const s of specs) {
+          const code = s.feature;
+          const rich = RICH_FEATURES.has(code);
+          const cell = document.createElement("div");
+          if (rich) cell.className = "sm:col-span-2";
+
+          const label = document.createElement("label");
+          label.className = labelClass;
+          label.htmlFor = `char-${code}`;
+          label.setAttribute("data-i18n", `feature.${code}`);
+          label.textContent = tr(`feature.${code}`, code);
+          cell.appendChild(label);
+
+          const field = rich
+            ? document.createElement("textarea")
+            : document.createElement("input");
+          if (field instanceof HTMLTextAreaElement) {
+            field.rows = code === "EXAMPLE_OUTPUT" || code === "OVERVIEW" ? 3 : 5;
+          } else {
+            field.type = "text";
+          }
+          field.id = `char-${code}`;
+          field.name = code;
+          field.className = inputClass;
+          field.setAttribute("data-characterization", "1");
+          if (s.default_value != null) field.value = s.default_value;
+          cell.appendChild(field);
+
+          charFields.appendChild(cell);
+        }
+        charWrap.classList.remove("hidden");
+      } catch {
+        charWrap.classList.add("hidden");
+      }
+    }
+
+    async function init() {
+      const pre = new URLSearchParams(location.search).get("category");
+      let cats: { code: string; name: string }[] = [];
+      try {
+        cats = await getCategories(0, 1000);
+      } catch {
+        /* leave the placeholder; submit will validate */
+      }
+      if (catSel) {
         for (const c of cats) {
           const o = document.createElement("option");
           o.value = c.code;
           o.textContent = c.name;
           catSel.appendChild(o);
         }
-        // Preselect the category passed via ?category= (e.g. from a gallery's
-        // "Propose" button). Case-insensitive match; no-ops if absent/unknown.
-        const pre = new URLSearchParams(location.search).get("category");
-        if (pre) {
-          const match = Array.from(catSel.options).find(
-            (o) => o.value && o.value.toUpperCase() === pre.toUpperCase(),
-          );
-          if (match) catSel.value = match.value;
-        }
-      } catch {
-        /* leave the placeholder; submit will validate */
+      }
+
+      const match = pre
+        ? cats.find((c) => c.code.toUpperCase() === pre.toUpperCase())
+        : undefined;
+
+      if (match) {
+        // Locked flow — type fixed by the originating gallery.
+        lockCategory(match.code, match.name);
+        applyTitle(match.code);
+        void fillCharacterization(match.code);
+      } else if (catSel) {
+        // Fallback flow — editable; rebuild characterization on every change.
+        catSel.addEventListener("change", () => {
+          applyTitle(catSel.value);
+          void fillCharacterization(catSel.value);
+        });
       }
     }
 
@@ -157,18 +286,27 @@ const labelClass = "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
       }
     }
 
-    void fillCategories();
+    void init();
     void fillReviewers();
 
     form?.addEventListener("submit", async (e) => {
       e.preventDefault();
       const fd = new FormData(form);
       const name = String(fd.get("name") || "").trim();
-      const category = String(fd.get("category") || "");
+      const category = lockedCategory || String(fd.get("category") || "");
       if (!name || !category) {
         showToast(tr("propose.required", "Name and category are required"), "error");
         return;
       }
+
+      // Collect the per-feature characterization values (non-empty only).
+      const values: Record<string, string> = {};
+      charFields
+        ?.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>("[data-characterization]")
+        .forEach((el) => {
+          const v = (el.value || "").trim();
+          if (v) values[el.name] = v;
+        });
 
       const tagsRaw = String(fd.get("tags") || "").trim();
       const reviewerRaw = String(fd.get("reviewer_id") || "");
@@ -179,6 +317,7 @@ const labelClass = "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
         detail: String(fd.get("detail") || "").trim() || undefined,
         tags: tagsRaw ? tagsRaw.split(",").map((t) => t.trim()).filter(Boolean) : undefined,
         reviewer_id: reviewerRaw ? Number(reviewerRaw) : undefined,
+        values: Object.keys(values).length ? values : undefined,
       };
 
       if (submitBtn) submitBtn.disabled = true;
@@ -186,6 +325,8 @@ const labelClass = "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
         await proposeAsset(payload);
         showToast(tr("propose.success", "Asset proposed for review"), "success");
         form.reset();
+        // Re-prefill the characterization defaults after the native reset.
+        if (lockedCategory) void fillCharacterization(lockedCategory);
       } catch (err) {
         showToast(
           err instanceof Error ? err.message : tr("propose.error", "Could not propose the asset"),

@@ -5,7 +5,7 @@ operation that, in a single transaction, inserts:
   1. the asset (status PROPOSED),
   2. one characterization per feature in the category's specifications,
   3. a PROPOSAL action (FINISHED) for the proposer,
-  4. a REVIEW action (ASSIGNED) for a reviewer (an ADMINISTRATIVE user),
+  4. a REVIEW action (ASSIGNED) for a reviewer (an administrative or REVIEWER user),
   5. MANAGE asset_permissions for the proposer and the reviewer.
 
 Step 4 is the action the notifications menu (HU-LI11) surfaces to the reviewer —
@@ -25,8 +25,10 @@ from ...admin.internal.models import User
 
 logger = logging.getLogger(__name__)
 
-# The profile a reviewer must have (db/sql/12-admin-insert.sql).
-REVIEWER_PROFILE = "ADMINISTRATIVE"
+# Profiles eligible to review a proposal (db/sql/12-admin-insert.sql). Superusers
+# are always eligible too (see list_reviewers / resolve_reviewer). REVIEWER is the
+# dedicated reviewer profile; ADMINISTRATOR/ADMINISTRATIVE are the admin profiles.
+REVIEWER_PROFILES = ("ADMINISTRATOR", "ADMINISTRATIVE", "REVIEWER")
 
 STATUS_PROPOSED = "PROPOSED"
 TYPE_PROPOSAL = "PROPOSAL"
@@ -37,29 +39,44 @@ TARGET_USER = "USER"
 ACCESS_MANAGE = "MANAGE"
 
 
+def _is_eligible(user: User) -> bool:
+    """A user can review if active and either an admin/REVIEWER profile or superuser."""
+    return bool(user.is_active) and (
+        user.profile in REVIEWER_PROFILES or bool(user.is_superuser)
+    )
+
+
 def list_reviewers(session: Session) -> List[User]:
-    """Active users eligible to review (ADMINISTRATIVE profile), id order."""
+    """Active users eligible to review (admin/REVIEWER profile or superuser), id order."""
     return session.exec(
         select(User)
-        .where(User.profile == REVIEWER_PROFILE, User.is_active == True)  # noqa: E712
+        .where(
+            User.is_active == True,  # noqa: E712
+            (User.profile.in_(REVIEWER_PROFILES)) | (User.is_superuser == True),  # noqa: E712
+        )
         .order_by(User.id)
     ).all()
 
 
 def resolve_reviewer(session: Session, reviewer_id: Optional[int]) -> User:
     """Resolve the reviewer for a proposal: the requested user (which must be an
-    active ADMINISTRATIVE user) or, when none is requested, the first eligible
-    one. Raises ValueError if the requested reviewer is invalid or none exist."""
+    active admin/REVIEWER or superuser) or, when none is requested, the first
+    eligible one. Raises ValueError if the requested reviewer is invalid or none
+    exist."""
     if reviewer_id is not None:
         user = session.get(User, reviewer_id)
         if not user or not user.is_active:
             raise ValueError(f"Reviewer '{reviewer_id}' not found or inactive.")
-        if user.profile != REVIEWER_PROFILE:
-            raise ValueError("Reviewer must have the ADMINISTRATIVE profile.")
+        if not _is_eligible(user):
+            raise ValueError(
+                "Reviewer must be an administrator, a REVIEWER, or a superuser."
+            )
         return user
     eligible = list_reviewers(session)
     if not eligible:
-        raise ValueError("No reviewer with the ADMINISTRATIVE profile is available.")
+        raise ValueError(
+            "No eligible reviewer (administrator, REVIEWER, or superuser) is available."
+        )
     return eligible[0]
 
 

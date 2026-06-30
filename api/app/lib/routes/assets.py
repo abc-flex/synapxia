@@ -175,9 +175,10 @@ def list_reviewers(
     _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
 ) -> List[ReviewerOption]:
     """
-    Eligible reviewers for a proposal — active users with the ADMINISTRATIVE
-    profile, as ``{value: id, label: name}`` for the propose form's dropdown.
-    Lives under LIB so a proposer doesn't need ADMIN/USERS access.
+    Eligible reviewers for a proposal — active users with an administrator or
+    REVIEWER profile (or superusers), as ``{value: id, label: name}`` for the
+    propose form's dropdown. Lives under LIB so a proposer doesn't need
+    ADMIN/USERS access.
     """
     return [
         ReviewerOption(
@@ -200,7 +201,8 @@ def propose(
     permissions for both — generating the reviewer's notification.
 
     - **name** / **category**: required
-    - **reviewer_id**: optional (auto-assigned to the first ADMINISTRATIVE user)
+    - **reviewer_id**: optional (auto-assigned to the first eligible reviewer —
+      administrator, REVIEWER, or superuser)
     - **values**: optional per-feature characterization overrides
     """
     try:

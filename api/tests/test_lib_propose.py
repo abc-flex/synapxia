@@ -41,11 +41,12 @@ def _mk_spec(session, category, feature, default_value=None):
     return spec
 
 
-def _mk_user(session, id, username, profile="ADMINISTRATIVE", is_active=True):
+def _mk_user(session, id, username, profile="ADMINISTRATIVE", is_active=True,
+             is_superuser=False):
     u = User(
         id=id, username=username, email=f"{username}@x.co",
         password_hash="x", first_name="Rev", last_name="Iewer",
-        profile=profile, unit="HQ", is_active=is_active,
+        profile=profile, unit="HQ", is_active=is_active, is_superuser=is_superuser,
     )
     session.add(u)
     session.commit()
@@ -144,17 +145,31 @@ def test_no_chars_when_category_has_no_specs(session):
 
 # --- Service: validation + atomicity --------------------------------------
 
-def test_reviewer_must_be_administrative(session):
+def test_reviewer_must_be_eligible(session):
     _mk_category(session)
-    _mk_user(session, 3, "plain", profile="COLLABORATOR")
+    _mk_user(session, 3, "plain", profile="COLLABORATOR")  # not eligible
     with pytest.raises(ValueError):
         svc.propose_asset(session, 42, _req(reviewer_id=3))
 
 
 def test_no_reviewer_available_raises(session):
-    _mk_category(session)  # no ADMINISTRATIVE users
+    _mk_category(session)  # no eligible users
     with pytest.raises(ValueError):
         svc.propose_asset(session, 42, _req())
+
+
+def test_list_reviewers_includes_all_eligible_excludes_others(session):
+    """Eligible = ADMINISTRATOR / ADMINISTRATIVE / REVIEWER profiles, or any
+    superuser. COLLABORATOR and inactive users are excluded."""
+    _mk_user(session, 1, "admin_or", profile="ADMINISTRATOR")
+    _mk_user(session, 2, "admin_ive", profile="ADMINISTRATIVE")
+    _mk_user(session, 3, "reviewer", profile="REVIEWER")
+    _mk_user(session, 4, "root", profile="COLLABORATOR", is_superuser=True)
+    _mk_user(session, 5, "plain", profile="COLLABORATOR")  # excluded
+    _mk_user(session, 6, "ghost", profile="REVIEWER", is_active=False)  # excluded
+
+    ids = [u.id for u in svc.list_reviewers(session)]
+    assert ids == [1, 2, 3, 4]
 
 
 def test_unknown_category_raises_and_writes_nothing(session):
@@ -190,15 +205,17 @@ def test_propose_routes_in_openapi(client):
     assert "/api/assets/reviewers" in paths
 
 
-def test_reviewers_route_lists_administrative_users(session, client):
-    _mk_user(session, 5, "alice")
-    _mk_user(session, 6, "bob", profile="COLLABORATOR")  # excluded
+def test_reviewers_route_lists_eligible_users(session, client):
+    _mk_user(session, 5, "alice", profile="ADMINISTRATOR")
+    _mk_user(session, 6, "carol", profile="REVIEWER")
+    _mk_user(session, 7, "dave", profile="COLLABORATOR", is_superuser=True)
+    _mk_user(session, 8, "bob", profile="COLLABORATOR")  # excluded
     app.dependency_overrides[current_active_user] = _superuser
 
     r = client.get("/api/assets/reviewers")
     assert r.status_code == 200
     body = r.json()["data"]
-    assert [o["value"] for o in body] == [5]
+    assert [o["value"] for o in body] == [5, 6, 7]
 
 
 def test_propose_route_creates_proposed_asset(session, client):

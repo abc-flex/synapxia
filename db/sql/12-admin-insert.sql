@@ -133,6 +133,10 @@ VALUES
     ('COLLABORATOR',
      'Standard Collaborator',
      'Operational user with read access to collaboration, Generative AI, AI initiatives, processes and digital assets, and edit rights only for AI initiative proposals.',
+     'user-group'),
+    ('REVIEWER',
+     'Asset Reviewer',
+     'Reviews proposed library assets before publication: can run the review workflow (review/modify/publish/reject) over digital assets, characterizations and actions.',
      'user-group');
 
 -- **********************************
@@ -257,6 +261,27 @@ VALUES
     ('COLLABORATOR','PROC','PROCESSES',   FALSE),
     ('COLLABORATOR','PROC','VALUE_CHAIN', FALSE),
     ('COLLABORATOR','PROC','MAP',         FALSE);
+
+-- ===== Profile: REVIEWER =====
+-- Dedicated library-asset reviewers: full edit over the LIB review surface
+-- (assets, characterizations, actions) so they can run the propose/review
+-- workflow transitions, plus read access to the curated LIB catalogs.
+INSERT INTO privileges (profile, module, option, can_edit)
+VALUES
+    -- TAXO (read-only — needs to see categories/features behind a proposal)
+    ('REVIEWER','TAXO','CATEGORIES', FALSE),
+    ('REVIEWER','TAXO','FEATURES',   FALSE),
+
+    -- LIB (full edit — the review workflow lives here)
+    ('REVIEWER','LIB','ASSETS',     TRUE),
+    ('REVIEWER','LIB','PROMPTS',    TRUE),
+    ('REVIEWER','LIB','MCPS',       TRUE),
+    ('REVIEWER','LIB','AGENTS',     TRUE),
+    ('REVIEWER','LIB','FLOWS',      TRUE),
+    ('REVIEWER','LIB','SKILLS',     TRUE),
+    ('REVIEWER','LIB','ASSISTANTS', TRUE),
+    ('REVIEWER','LIB','RAG_APPS',   TRUE),
+    ('REVIEWER','LIB','MODELS',     TRUE);
 
 -- **********************************
 -- ********** Table Units ***********

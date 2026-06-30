@@ -875,7 +875,12 @@
     "submit": "Propose for review",
     "required": "Name and category are required",
     "success": "Asset proposed for review",
-    "error": "Could not propose the asset"
+    "error": "Could not propose the asset",
+    "title_prompts": "Propose a Prompt",
+    "title_mcps": "Propose an MCP",
+    "title_agents": "Propose an Agent",
+    "characterization": "Characterization",
+    "characterization_hint": "Describe the asset against this type's features. Defaults are prefilled; adjust as needed."
   },
   "prompt_modal": {
     "title_create": "New Prompt",
@@ -972,5 +977,22 @@
     "tools_more": "more",
     "instructions": "Instructions",
     "instructions_copied": "Instructions copied"
+  },
+  "feature": {
+    "LANGUAGE": "Programming language",
+    "MODE": "Mode of operation",
+    "PLATFORM": "Platform",
+    "REPOSITORY": "Repository",
+    "FRAMEWORK": "Framework",
+    "COMPLEXITY": "Complexity level",
+    "SUGGESTED_MODEL": "Suggested model",
+    "SUGGESTED_TEMPERATURE": "Suggested temperature",
+    "PROMPT_TEMPLATE": "Prompt template",
+    "EXAMPLE_OUTPUT": "Example output",
+    "OVERVIEW": "Overview",
+    "CONTENT": "Content",
+    "TOOLS": "Tools",
+    "SERVER_CONFIG": "Server configuration (JSON)",
+    "INSTRUCTIONS": "Instructions"
   }
 }

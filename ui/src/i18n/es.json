@@ -875,7 +875,12 @@
     "submit": "Proponer para revisión",
     "required": "El nombre y la categoría son obligatorios",
     "success": "Activo propuesto para revisión",
-    "error": "No se pudo proponer el activo"
+    "error": "No se pudo proponer el activo",
+    "title_prompts": "Proponer un Prompt",
+    "title_mcps": "Proponer un MCP",
+    "title_agents": "Proponer un Agente",
+    "characterization": "Caracterización",
+    "characterization_hint": "Describe el activo según las características de este tipo. Los valores por defecto vienen precargados; ajústalos según sea necesario."
   },
   "prompt_modal": {
     "title_create": "Nuevo Prompt",
@@ -972,5 +977,22 @@
     "tools_more": "más",
     "instructions": "Instrucciones",
     "instructions_copied": "Instrucciones copiadas"
+  },
+  "feature": {
+    "LANGUAGE": "Lenguaje de programación",
+    "MODE": "Modo de operación",
+    "PLATFORM": "Plataforma",
+    "REPOSITORY": "Repositorio",
+    "FRAMEWORK": "Framework",
+    "COMPLEXITY": "Nivel de complejidad",
+    "SUGGESTED_MODEL": "Modelo sugerido",
+    "SUGGESTED_TEMPERATURE": "Temperatura sugerida",
+    "PROMPT_TEMPLATE": "Plantilla de prompt",
+    "EXAMPLE_OUTPUT": "Ejemplo de salida",
+    "OVERVIEW": "Resumen",
+    "CONTENT": "Contenido",
+    "TOOLS": "Herramientas",
+    "SERVER_CONFIG": "Configuración del servidor (JSON)",
+    "INSTRUCTIONS": "Instrucciones"
   }
 }

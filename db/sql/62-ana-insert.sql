@@ -1,12 +1,6 @@
  -- **********************************
 -- ******** Table dashboards ********
 -- **********************************
--- Three analytics dashboards measuring Generative AI adoption:
---   1. by the development team as a whole,
---   2. broken down by role,
---   3. broken down by team.
--- type / sources_types / status reference the DASHBOARD_TYPE / SOURCE_TYPE /
--- DASHBOARD_STATUS lists defined in 61-ana-ddl.sql.
 
 INSERT INTO dashboards (id, name, description, type, sources_types, source_url, status, tags, detail) VALUES
     (1, 'GenAI Adoption — Development Team',
@@ -73,9 +67,6 @@ SELECT setval(pg_get_serial_sequence('dashboards', 'id'), (SELECT MAX(id) FROM d
 -- **********************************
 -- ******** Table parameters ********
 -- **********************************
--- Runtime filters for each dashboard. data_type references PARAM_TYPE.
--- `list` is NULL for free selectors backed by tables (role/team) and for
--- date ranges; context_binding is left NULL (no permission-scoped binding).
 
 INSERT INTO parameters (dashboard, name, label, data_type, default_value, is_required, list) VALUES
     -- Dashboard 1: Development Team (overall)
@@ -99,8 +90,6 @@ INSERT INTO parameters (dashboard, name, label, data_type, default_value, is_req
 -- **********************************
 -- ******** Table executions ********
 -- **********************************
--- Sample execution log. status references EXECUTION_STATUS; payload captures
--- the parameter values used for the run.
 
 INSERT INTO executions (id, dashboard, user_id, payload, status, error_message, duration_ms) VALUES
     (1, 1, 0,  '{"date_from": "2026-01-01", "date_to": "2026-06-30", "granularity": "WEEK"}',  'SUCCESS', NULL, 842),
@@ -110,7 +99,6 @@ INSERT INTO executions (id, dashboard, user_id, payload, status, error_message, 
     (5, 3, 0,  '{"date_from": "2026-01-01", "date_to": "2026-06-30", "team": "CORE"}',         'SUCCESS', NULL, 904),
     (6, 3, 40, '{"date_from": "2026-01-01", "date_to": "2026-06-30", "team": "LAB"}',          'TIMEOUT', 'Source query exceeded the 30s limit.', 30000);
 
--- Keep the identity sequence aligned with the explicit ids above
 SELECT setval(pg_get_serial_sequence('executions', 'id'), (SELECT MAX(id) FROM executions));
 
 -- **********************************
@@ -126,7 +114,6 @@ INSERT INTO favorite_dashboards (user_id, dashboard) VALUES
 -- **********************************
 -- **** Table dashboard_permissions *
 -- **********************************
--- target_type / access_level reference the shared TARGET_TYPE / ACCESS_LEVEL lists.
 
 INSERT INTO dashboard_permissions (dashboard, target_type, target_code, access_level) VALUES
     (1, 'PUBLIC', 'ALL',       'VIEW'),

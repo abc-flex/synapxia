@@ -28,6 +28,13 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 - **Tests:** new `api/tests/test_response_envelope.py` (success/list-meta/object + 404 + 422 + auth/root exclusions); existing lib/users tests updated to unwrap `["data"]` / read `["error"]["message"]`. pytest **137 passed** (the 8 `test_auth/health/users` failures are pre-existing -- need a real DB/network; verified identical on the untouched tree). UI `bun run build` clean; `tsc` no new errors.
 - Files affected: `api/app/internal/responses.py` (new), `api/app/main.py`, `ui/src/lib/api.ts`, `ui/src/types/api.ts`, `api/tests/*`, `api/CLAUDE.md`, `AGENTS.md`
 
+## 2026-06-27 16:33 — fix(ui): catalog detail modal — mobile title + tab overflow
+- On phones the `CatalogDetailModal` header over-truncated the asset name (showed "GitHub …" with empty space beside it) and the tab row overflowed, clipping the 4th tab ("Historial").
+- Title: the header's left group is now `flex-1` and the `<h3>` is `line-clamp-2 sm:truncate` — it uses the available width and wraps to two lines on mobile, still truncating on >=sm.
+- Tabs: the tablist is now `flex flex-wrap gap-x-4 gap-y-1 sm:flex-nowrap sm:gap-6` (mirrors `assetDetailTabs`) so all four tabs are visible on narrow screens; desktop unchanged.
+- UI-only, single file. `bun run build` clean.
+- Files affected: `ui/src/components/lib/gallery/CatalogDetailModal.astro`
+
 ## 2026-06-27 05:51 — fix(ui): dark-mode background on the minimal Layout (landing/login/signup/dashboard)
 - The minimal `Layout.astro` set no body background, so the global base rule (`body { background:#edf2ff; color:#0f172a }`, light-only) won. In dark mode the page stayed light while content used dark-mode text colors -> faint/unreadable text on the logged-out landing page (and login/signup/dashboard).
 - Gave `Layout.astro`'s `<body>` the same theme-aware classes as `BaseLayout`: `bg-slate-50 text-slate-900 dark:bg-gray-950 dark:text-white` (Tailwind utilities override the base rule). Dark mode now renders a dark background + light text; light mode matches the app shell.

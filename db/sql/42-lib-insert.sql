@@ -1,8 +1,6 @@
 -- **********************************
 -- ******* Table assets *************
 -- **********************************
--- 4 assets per populated GenAI category: PROMPTS (1,4,5,6),
--- MCPS (2,7,8,9) and AGENTS (3,10,11,12).
 
 INSERT INTO assets (id, name, reference, description, category, status, tags) VALUES
     -- ----- PROMPTS -----
@@ -45,7 +43,6 @@ INSERT INTO assets (id, name, reference, description, category, status, tags) VA
     'An AI agent that designs and maintains automated test suites, generates test cases and wires them into the CI pipeline.',
     'AGENTS', 'PUBLISHED', '["testing", "automation", "ci", "agent"]');
 
--- Keep the identity sequence aligned with the explicit ids above
 SELECT setval(pg_get_serial_sequence('assets', 'id'), (SELECT MAX(id) FROM assets));
 
 -- **********************************
@@ -457,7 +454,6 @@ $$);
 -- **********************************
 -- ****** Table related_assets ******
 -- **********************************
--- Every asset participates in at least one relation (as source or target).
 
 INSERT INTO related_assets (source, target, type) VALUES
     (1, 3, 'DEPENDS_ON'),     -- Python web prompt depends on the Python web agent
@@ -480,11 +476,6 @@ INSERT INTO related_assets (source, target, type) VALUES
 -- **********************************
 -- ******* Table actions ************
 -- **********************************
--- Each asset carries the FULL review workflow:
---   PROPOSAL (FINISHED) -> REVIEW (ASSIGNED -> NOTIFIED -> FINISHED)
---   -> PUBLICATION (ASSIGNED -> NOTIFIED -> FINISHED)
--- followed by votes, a comment and (for most) a threaded question/answer.
--- Proposer/publisher = asset owner; reviewer = admin (user 0).
 
 INSERT INTO actions (id, asset, user_id, type, workflow_status, content, parent) VALUES
     -- ===== Asset 1 — Python Web Development Incremental Prompt (owner 1) =====
@@ -616,7 +607,6 @@ SELECT setval(pg_get_serial_sequence('actions', 'id'), (SELECT MAX(id) FROM acti
 -- **********************************
 -- ****** Table favorite_assets *****
 -- **********************************
--- Each asset is bookmarked by at least one user.
 
 INSERT INTO favorite_assets (user_id, asset) VALUES
     (0, 1),
@@ -635,8 +625,6 @@ INSERT INTO favorite_assets (user_id, asset) VALUES
 -- **********************************
 -- **** Table asset_permissions *****
 -- **********************************
--- Each asset gets a MANAGE owner plus a broader VIEW scope
--- (TEAM / ROLE / UNIT / PUBLIC). PUBLIC ignores target_code.
 
 INSERT INTO asset_permissions (asset, target_type, target_code, access_level) VALUES
     (1,  'USER',   '1',       'MANAGE'),

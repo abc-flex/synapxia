@@ -14,10 +14,6 @@ INSERT INTO criterias (code, name, description, list) VALUES
 -- ******* Table initiatives ********
 -- **********************************
 
--- Initiative: build an Organizational Knowledge Management platform,
--- decomposed into a main initiative plus the related sub-initiatives that
--- make it real (knowledge base, RAG assistant, onboarding hub, community).
-
 INSERT INTO initiatives (id, name, description, expected_impact, priority_level, reference, status, tags, detail, score) VALUES
     (1, 'Organizational Knowledge Management Platform',
      'Develop a centralized platform to capture, organize, share and reuse the organization''s knowledge, reducing information silos and accelerating decision-making.',
@@ -129,7 +125,6 @@ INSERT INTO collaborations (id, init, user_id, type, workflow_status, content, p
     (12, 1, 1,  'ANSWER',    NULL, 'Yes; every answer must ground its response and link back to the source asset.', 5),
     (13, 1, 10, 'COMMENT',   NULL, 'Capturing tacit knowledge from senior staff should be part of the rollout plan.', NULL);
 
--- Keep the identity sequence aligned with the explicit ids above
 SELECT setval(pg_get_serial_sequence('collaborations', 'id'), (SELECT MAX(id) FROM collaborations));
 
 -- **********************************

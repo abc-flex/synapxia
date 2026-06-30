@@ -1,22 +1,6 @@
--- ************************************************
--- ***** Collaboration seed (anonymized) **********
--- ************************************************
--- ACTIVE anonymized version of the real collab roster. This is the dataset that loads
--- by default. The original (real) data lives in 33-collab-insert.sql, which is kept
--- disabled (wrapped in a block comment) as the de-anonymization / revert source.
---
--- To revert to the real data: remove the /* ... */ wrapper in 33-collab-insert.sql and
--- wrap THIS file's body in a /* ... */ block (so only one of the two loads at a time).
---
--- Anonymization applied: users (username, email, first_name, last_name) and teams
--- (code + name). Roles, dimensions and metric values/observations are NOT personal
--- data and are kept as-is so the dataset stays internally consistent.
-
 -- **********************************
 -- ********** Table Roles ***********
 -- **********************************
--- Same role set as 33; ON CONFLICT avoids clashing with the shared roles (BACK, FRONT,
--- QA) seeded by 32-collab-insert.sql.
 
 INSERT INTO roles (code, name, description) VALUES
     ('BACK',      'Backend Developer',        'Responsible for server-side development, APIs, data access and integration with external services, ensuring performance, security and scalability.'),
@@ -49,7 +33,6 @@ VALUES
 -- **********************************
 -- ********** Table Users ***********
 -- **********************************
--- Fictitious identities. username = first.last, email = username@abcflex.com.co.
 
 WITH default_hash AS (
     SELECT '$2b$12$Q/ZWUi06lisvmpto32xbm.5r.ynn8fDfJ1fnLEPoBQqX.BqFAL5tG'::text AS h
@@ -153,8 +136,6 @@ SELECT setval(pg_get_serial_sequence('users', 'id'), (SELECT MAX(id) FROM users)
 -- **********************************
 -- ******* Table Assignments ********
 -- **********************************
--- Linked by email so the assignment lands on the right user regardless of the
--- auto-generated id. team = NULL for cross-cutting roles without a squad.
 
 INSERT INTO assignments (team, user_id, role)
 SELECT a.team, u.id, a.role
@@ -231,7 +212,6 @@ JOIN users u ON u.email = a.email;
 -- **********************************
 -- ******** Table Dimensions ********
 -- **********************************
--- Two GenAI adoption axes, each referencing the matching SCALE list from 31-collab-ddl.sql.
 
 INSERT INTO dimensions (code, name, description, scale, unit) VALUES
     ('GENAI_DEV_ADOPTION', 'GenAI Adoption for Devs',
@@ -244,9 +224,6 @@ INSERT INTO dimensions (code, name, description, scale, unit) VALUES
 -- **********************************
 -- ********** Table Metrics *********
 -- **********************************
--- One adoption measurement per collaborator (measured 2025-12-19). Dimension by role:
--- QA / QA Manager / Automation Engineer on GENAI_QA_ADOPTION, everyone else on
--- GENAI_DEV_ADOPTION. Linked by email. UNDEFINED = not yet measured.
 
 INSERT INTO metrics (dimension, assignment, value, observation, measured_at)
 SELECT m.dimension, a.id, m.value, m.observation, TIMESTAMPTZ '2025-12-19'

@@ -2,11 +2,6 @@
 -- ********* Table: Options *********
 -- **********************************
 
--- Each option carries an `icon` name that must match a file at
--- ui/src/images/icons/<name>.svg (Heroicons-outline style, 24x24,
--- stroke-width 1.5, currentColor). The sidebar renderer inlines the SVG
--- next to the option label.
-
 -- ===== Module: ADMIN =====
 INSERT INTO options (module, code, name, description, sort_order, type, path, icon) VALUES
     ('ADMIN','BUSINESS_UNITS','Business Units',
@@ -268,9 +263,30 @@ VALUES
 -- **********************************
 
 INSERT INTO business_units (code, name, description, type, parent) VALUES
-    ('CORP', 'Corporate', 'Corporate Unit', 'BUSINESS_UNIT', NULL),
-    ('ENG', 'Engineering', 'Engineering Department', 'DEPARTMENT', 'CORP'),
-    ('GEN_AI', 'Generative AI', 'Generative AI', 'AREA', 'ENG');
+    -- Apex
+    ('CORP',     'Corporate',           'Corporate Unit',                                  'BUSINESS_UNIT', NULL),
+
+    -- Departments (report to CORP)
+    ('ENG',      'Engineering',         'Engineering Department',                          'DEPARTMENT',    'CORP'),
+    ('PROD',     'Product & Design',    'Product management and product/UX design',        'DEPARTMENT',    'CORP'),
+    ('GTM',      'Commercial',          'Go-to-market: sales and marketing',               'DEPARTMENT',    'CORP'),
+    ('PEOPLE',   'People & Culture',    'Talent, recruiting and people operations',        'DEPARTMENT',    'CORP'),
+    ('FINOPS',   'Finance & Operations','Finance, administration and corporate operations','DEPARTMENT',    'CORP'),
+
+    -- Areas under Engineering
+    ('GEN_AI',   'Generative AI',       'Generative AI',                                   'AREA',          'ENG'),
+    ('BACKEND',  'Backend Engineering', 'Server-side services and APIs',                   'AREA',          'ENG'),
+    ('FRONTEND', 'Frontend Engineering','Web and client applications',                     'AREA',          'ENG'),
+    ('PLATFORM', 'Platform & DevOps',   'Infrastructure, CI/CD and SRE',                   'AREA',          'ENG'),
+    ('QA_ENG',   'Quality Assurance',   'Test automation and quality engineering',         'AREA',          'ENG'),
+
+    -- Areas under Product & Design
+    ('PM',       'Product Management',  'Product strategy, discovery and roadmap',         'AREA',          'PROD'),
+    ('DESIGN',   'Design & UX',         'Product design, UX research and UI',              'AREA',          'PROD'),
+
+    -- Areas under Commercial
+    ('SALES',    'Sales',               'Account executives and business development',     'AREA',          'GTM'),
+    ('MKT',      'Marketing',           'Demand generation, brand and content',            'AREA',          'GTM');
 
 -- **********************************
 -- ********** Table Users ***********
@@ -288,8 +304,4 @@ INSERT INTO users (id, username, email, password_hash, first_name, last_name, pr
     'GEN_AI',
     TRUE);
 
--- Keep the identity sequence aligned with the explicit ids above.
--- The admin user is id 0 (reserved); real users start at 1, so seed the
--- sequence with is_called = false to make the next nextval() return 1
--- (setval(..., 0) would fail: 0 is below the sequence minimum of 1).
 SELECT setval(pg_get_serial_sequence('users', 'id'), GREATEST((SELECT MAX(id) FROM users), 1), false);

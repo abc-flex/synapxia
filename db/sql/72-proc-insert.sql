@@ -1,22 +1,5 @@
 -- **********************************
--- ******** Seed: Processes *********
--- **********************************
---
--- Value chain of a software development company (Porter's value chain),
--- modeled after the reference "Microsoft's Value Chain Analysis".
---
--- Coding strategy:
---   * Macroprocess: 4 uppercase letters illustrating the name (e.g. 'OPER').
---   * Process:      12 chars => <MACRO(4)>-<NAME(7)> (e.g. 'OPER-DEVELOP').
---
--- Process types (list PROCESS_TYPE, Porter's value chain):
---   PRIMARY -> primary activities  (inbound, operations, outbound, marketing, service)
---   SUPPORT -> support activities  (infrastructure, HR, technology, procurement)
---
--- owner -> users.id (0 = platform admin); unit -> business_units.code.
-
--- **********************************
--- ********* Macroprocesses *********
+-- ******* Tables Processes *********
 -- **********************************
 
 -- ===== Support activities =====
@@ -173,8 +156,6 @@ INSERT INTO processes (code, name, description, type, parent, unit, owner, statu
 -- **********************************
 -- ******** Related Processes *******
 -- **********************************
--- Value chain flow: each downstream primary activity DEPENDS_ON the previous one,
--- and support macroprocesses are USED_BY the primary activities they enable.
 
 -- ===== Primary value chain sequence (source DEPENDS_ON target) =====
 INSERT INTO related_processes (source, target, type, rationale) VALUES
@@ -193,7 +174,6 @@ INSERT INTO related_processes (source, target, type, rationale) VALUES
 -- **********************************
 -- ********* Process Assets **********
 -- **********************************
--- Link processes to digital library assets (assets.id 1..3).
 
 INSERT INTO process_assets (process, asset, rationale) VALUES
     ('OPER-DEVELOP', 1, 'Python web development prompt used during software development.'),
@@ -204,7 +184,6 @@ INSERT INTO process_assets (process, asset, rationale) VALUES
 -- **********************************
 -- ********* Process Inits ***********
 -- **********************************
--- Link processes to GenAI initiatives (initiatives.id 1..5).
 
 INSERT INTO process_inits (process, init, rationale) VALUES
     ('TECH-RESEARC', 1, 'R&D drives the Organizational Knowledge Management Platform.'),

@@ -91,6 +91,12 @@ PgAdmin http://localhost:8080. Seed login: `admin` / `Admin123!`.
 - **API:** pagination via `skip`/`limit`; logical delete via `is_active=False` (records
   retained); status codes 409 (unique conflict), 400 (validation), 403 (auth), 404
   (missing). Auth details in [`api/AUTH.md`](api/AUTH.md).
+- **API response envelope:** every JSON response under `/api/` (except `/api/auth/*`,
+  `/health`, `/`) is wrapped as `{ data, error, meta }` (success) / `{ data:null,
+  error:{code,message,details}, meta }` (error) by a global middleware + exception
+  handlers in `api/app/main.py` (helpers in `api/app/internal/responses.py`). Routes
+  still return bare models / raise `HTTPException`; the UI unwraps `.data` centrally in
+  `ui/src/lib/api.ts`. See [`api/CLAUDE.md`](api/CLAUDE.md) § "Response envelope".
 - **UI types:** three interfaces per entity in `ui/src/types/api.ts` —
   `Entity`, `EntityCreate`, `EntityUpdate`.
 - **UI services:** CRUD wrappers in `ui/src/lib/{entity}.ts` around `lib/api.ts`.

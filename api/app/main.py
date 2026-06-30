@@ -1,10 +1,26 @@
+import json
 import logging
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
+from fastapi.responses import JSONResponse, Response
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
+from fastapi.exception_handlers import (
+    http_exception_handler,
+    request_validation_exception_handler,
+)
+from starlette.datastructures import MutableHeaders
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.types import ASGIApp, Receive, Scope, Send
 
+from .internal.responses import (
+    build_meta,
+    error_envelope,
+    should_wrap,
+    success_envelope,
+)
 from .auth import routes as auth_routes
 
 from .admin.routes import health as admin_health_router
@@ -225,6 +241,77 @@ else:
 # call order: this becomes the outermost middleware, hitting requests
 # before CORS does.
 app.add_middleware(ForwardedHostMiddleware)
+
+
+# ────────────────────────────────────────────────────────────────────────
+# Response envelope — every successful JSON response under /api/ (except
+# /api/auth/*) is wrapped as {data, error: null, meta}; errors are wrapped
+# as {data: null, error: {code, message, details}, meta} by the handlers
+# below. One predictable shape for the UI (ui/src/lib/api.ts unwraps it).
+# Auth (fastapi-users) + /health + / + docs keep their native shapes —
+# see app/internal/responses.py:should_wrap. No per-endpoint edits needed.
+# ────────────────────────────────────────────────────────────────────────
+@app.middleware("http")
+async def wrap_success_envelope(request: Request, call_next):
+    response = await call_next(request)
+    if not should_wrap(request.url.path):
+        return response
+    # Errors are enveloped by the exception handlers; only wrap 2xx JSON here.
+    if not (200 <= response.status_code < 300):
+        return response
+    if not response.headers.get("content-type", "").startswith("application/json"):
+        return response  # e.g. 204 No Content, file/stream responses
+
+    body = b""
+    async for chunk in response.body_iterator:
+        body += chunk
+    if not body:
+        return response
+    try:
+        payload = json.loads(body)
+    except (ValueError, TypeError):
+        # Unexpected non-JSON-parseable body — pass through untouched.
+        return Response(
+            content=body,
+            status_code=response.status_code,
+            headers=dict(response.headers),
+            media_type=response.headers.get("content-type"),
+        )
+
+    # Idempotency guard: don't double-wrap an already-enveloped body.
+    if isinstance(payload, dict) and {"data", "error", "meta"} <= payload.keys():
+        envelope = payload
+    else:
+        envelope = success_envelope(payload, build_meta(request.query_params, payload))
+
+    data_bytes = json.dumps(envelope, default=str).encode("utf-8")
+    # Preserve upstream headers (CORS, etc.); fix the length/type for the new body.
+    headers = MutableHeaders(raw=list(response.raw_headers))
+    headers["content-length"] = str(len(data_bytes))
+    headers["content-type"] = "application/json"
+    return Response(content=data_bytes, status_code=response.status_code, headers=dict(headers))
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_envelope(request: Request, exc: StarletteHTTPException):
+    if should_wrap(request.url.path):
+        return JSONResponse(
+            error_envelope(exc.status_code, exc.detail),
+            status_code=exc.status_code,
+            headers=getattr(exc, "headers", None),
+        )
+    return await http_exception_handler(request, exc)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_envelope(request: Request, exc: RequestValidationError):
+    if should_wrap(request.url.path):
+        return JSONResponse(
+            error_envelope(422, "Validation error", jsonable_encoder(exc.errors())),
+            status_code=422,
+        )
+    return await request_validation_exception_handler(request, exc)
+
 
 # Include routers
 # Authentication module (must be first)

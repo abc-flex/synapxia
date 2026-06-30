@@ -20,6 +20,14 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-06-27 16:44 — refactor(api,ui): standardized response/error envelope
+- Every JSON response under `/api/` (except `/api/auth/*`, `/health`, `/`, docs) is now wrapped in one envelope so the UI consumes a single shape: success -> `{data, error:null, meta}`, error -> `{data:null, error:{code,message,details}, meta}` (HTTP status preserved). `meta` echoes `skip`/`limit` + list `count` (no grand `total` -- deferred; would need a COUNT per list endpoint).
+- **Backend (central, no per-endpoint edits):** new `api/app/internal/responses.py` (envelope models + `should_wrap`/`build_meta`/helpers) + a global `@app.middleware("http")` that wraps 2xx JSON and `HTTPException`/`RequestValidationError` handlers that wrap errors -- all in `api/app/main.py`. `/api/auth/*` excluded (fastapi-users + the bespoke fetches in `ui/src/lib/auth.ts` read raw bodies); `/health` + `/` keep native shapes.
+- **Frontend (central):** `ui/src/lib/api.ts` unwraps `.data` (`unwrapEnvelope`) and `errorFrom` reads `{error:{message}}`; the ~27 services + ~37 call sites are unchanged. New `Envelope`/`ErrorBody`/`ResponseMeta` types in `ui/src/types/api.ts`.
+- **Rollout note (Constitution II):** changes response shapes in place rather than via a versioned route -- done atomically (wrap + UI unwrap in one PR) because the bundled UI is the only consumer. Intentional, documented contract change.
+- **Tests:** new `api/tests/test_response_envelope.py` (success/list-meta/object + 404 + 422 + auth/root exclusions); existing lib/users tests updated to unwrap `["data"]` / read `["error"]["message"]`. pytest **137 passed** (the 8 `test_auth/health/users` failures are pre-existing -- need a real DB/network; verified identical on the untouched tree). UI `bun run build` clean; `tsc` no new errors.
+- Files affected: `api/app/internal/responses.py` (new), `api/app/main.py`, `ui/src/lib/api.ts`, `ui/src/types/api.ts`, `api/tests/*`, `api/CLAUDE.md`, `AGENTS.md`
+
 ## 2026-06-27 16:33 — fix(ui): catalog detail modal — mobile title + tab overflow
 - On phones the `CatalogDetailModal` header over-truncated the asset name (showed "GitHub …" with empty space beside it) and the tab row overflowed, clipping the 4th tab ("Historial").
 - Title: the header's left group is now `flex-1` and the `<h3>` is `line-clamp-2 sm:truncate` — it uses the available width and wraps to two lines on mobile, still truncating on >=sm.

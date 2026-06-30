@@ -5,7 +5,7 @@ def test_list_users_returns_list(client):
     """GET /api/users/ must return a JSON array (empty on fresh SQLite DB)."""
     r = client.get("/api/users/")
     assert r.status_code == 200
-    assert isinstance(r.json(), list)
+    assert isinstance(r.json()["data"], list)
 
 
 def test_list_users_pagination_params_accepted(client):
@@ -18,7 +18,7 @@ def test_list_users_select_returns_list(client):
     """GET /api/users/select must return a JSON array for dropdown consumers."""
     r = client.get("/api/users/select")
     assert r.status_code == 200
-    assert isinstance(r.json(), list)
+    assert isinstance(r.json()["data"], list)
 
 
 def test_get_nonexistent_user_returns_404(client):

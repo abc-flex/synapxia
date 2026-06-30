@@ -66,7 +66,7 @@ def test_get_by_target_returns_incoming_relations(session, client):
 
     r = client.get(f"/api/asset_relations/target/{a.id}")
     assert r.status_code == 200
-    body = r.json()
+    body = r.json()["data"]
     assert len(body) == 1
     assert body[0]["source"] == b.id and body[0]["target"] == a.id
 
@@ -79,7 +79,7 @@ def test_get_by_target_excludes_inactive_relation(session, client):
 
     r = client.get(f"/api/asset_relations/target/{a.id}")
     assert r.status_code == 200
-    assert r.json() == []
+    assert r.json()["data"] == []
 
 
 # --- Resolved related assets (both directions) ------------------------------
@@ -94,7 +94,7 @@ def test_get_related_resolves_both_directions(session, client):
 
     r = client.get(f"/api/asset_relations/related/{a.id}")
     assert r.status_code == 200
-    by_id = {item["id"]: item for item in r.json()}
+    by_id = {item["id"]: item for item in r.json()["data"]}
 
     assert by_id[b.id]["direction"] == "outgoing"
     assert by_id[b.id]["relation_type"] == "DEPENDS_ON"
@@ -111,7 +111,7 @@ def test_get_related_dedupes_bidirectional_outgoing_wins(session, client):
     app.dependency_overrides[current_active_user] = _superuser
 
     r = client.get(f"/api/asset_relations/related/{a.id}")
-    matches = [i for i in r.json() if i["id"] == b.id]
+    matches = [i for i in r.json()["data"] if i["id"] == b.id]
     assert len(matches) == 1  # de-duplicated by other-asset id
     assert matches[0]["direction"] == "outgoing"  # outgoing wins the tie
     assert matches[0]["relation_type"] == "DEPENDS_ON"
@@ -125,7 +125,7 @@ def test_get_related_excludes_inactive_target_asset(session, client):
 
     r = client.get(f"/api/asset_relations/related/{a.id}")
     assert r.status_code == 200
-    assert all(i["id"] != b.id for i in r.json())
+    assert all(i["id"] != b.id for i in r.json()["data"])
 
 
 def test_get_related_excludes_inactive_relation(session, client):
@@ -136,7 +136,7 @@ def test_get_related_excludes_inactive_relation(session, client):
 
     r = client.get(f"/api/asset_relations/related/{a.id}")
     assert r.status_code == 200
-    assert r.json() == []
+    assert r.json()["data"] == []
 
 
 def test_get_related_empty_when_no_relations(session, client):
@@ -145,7 +145,7 @@ def test_get_related_empty_when_no_relations(session, client):
 
     r = client.get(f"/api/asset_relations/related/{a.id}")
     assert r.status_code == 200
-    assert r.json() == []
+    assert r.json()["data"] == []
 
 
 # --- Self-relation guard (existing create contract) -------------------------

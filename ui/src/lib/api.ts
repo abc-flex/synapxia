@@ -126,9 +126,13 @@ async function errorFrom(res: Response, method: string, url: string): Promise<Er
   const text = await res.text().catch(() => '');
   let detail: string = res.statusText;
   try {
-    const json = JSON.parse(text) as ApiError;
-    if (Array.isArray((json as any).detail)) {
-      detail = ((json as any).detail as Array<{ msg?: string }>)
+    const json = JSON.parse(text) as any;
+    if (json && typeof json.error === 'object' && json.error) {
+      // Standardized envelope: { data: null, error: {code, message, details}, meta }.
+      detail = json.error.message ?? String(json.error.code ?? res.statusText);
+    } else if (Array.isArray(json.detail)) {
+      // FastAPI / pydantic validation: { detail: [{msg}, …] } (auth routes).
+      detail = (json.detail as Array<{ msg?: string }>)
         .map((e) => e.msg ?? 'Validation error')
         .join('. ');
     } else if (typeof json.detail === 'string') {
@@ -143,6 +147,25 @@ async function errorFrom(res: Response, method: string, url: string): Promise<Er
 }
 
 /**
+ * Unwrap the standardized success envelope so callers keep receiving the bare
+ * payload. The API wraps data endpoints as `{ data, error, meta }`; we return
+ * `.data`. Anything else (auth routes, legacy/un-enveloped bodies) is returned
+ * as-is — back-compatible.
+ */
+function unwrapEnvelope<T>(json: unknown): T {
+  if (
+    json &&
+    typeof json === 'object' &&
+    'data' in json &&
+    'error' in json &&
+    'meta' in json
+  ) {
+    return (json as { data: T }).data;
+  }
+  return json as T;
+}
+
+/**
  * Generic GET request handler
  */
 export async function apiGet<T>(route: string, init?: RequestInit): Promise<T> {
@@ -154,7 +177,7 @@ export async function apiGet<T>(route: string, init?: RequestInit): Promise<T> {
       headers: { Accept: 'application/json', ...(init?.headers ?? {}) },
     });
     if (!res.ok) throw await errorFrom(res, 'GET', url);
-    return res.json() as Promise<T>;
+    return unwrapEnvelope<T>(await res.json());
   } catch (error) {
     if (error instanceof Error) {
       console.error('API GET error:', error.message);
@@ -186,7 +209,7 @@ export async function apiPost<T, D = any>(route: string, data: D, init?: Request
       body: JSON.stringify(data),
     });
     if (!res.ok) throw await errorFrom(res, 'POST', url);
-    return res.json() as Promise<T>;
+    return unwrapEnvelope<T>(await res.json());
   } catch (error) {
     if (error instanceof Error) {
       console.error('API POST error:', error.message);
@@ -213,7 +236,7 @@ export async function apiPut<T, D = any>(route: string, data: D, init?: RequestI
       body: JSON.stringify(data),
     });
     if (!res.ok) throw await errorFrom(res, 'PUT', url);
-    return res.json() as Promise<T>;
+    return unwrapEnvelope<T>(await res.json());
   } catch (error) {
     if (error instanceof Error) {
       console.error('API PUT error:', error.message);
@@ -236,7 +259,7 @@ export async function apiDelete<T = void>(route: string, init?: RequestInit): Pr
     });
     if (!res.ok) throw await errorFrom(res, 'DELETE', url);
     if (res.status === 204) return undefined as T;
-    return res.json() as Promise<T>;
+    return unwrapEnvelope<T>(await res.json());
   } catch (error) {
     if (error instanceof Error) {
       console.error('API DELETE error:', error.message);

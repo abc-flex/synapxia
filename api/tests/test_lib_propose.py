@@ -197,7 +197,7 @@ def test_reviewers_route_lists_administrative_users(session, client):
 
     r = client.get("/api/assets/reviewers")
     assert r.status_code == 200
-    body = r.json()
+    body = r.json()["data"]
     assert [o["value"] for o in body] == [5]
 
 
@@ -209,7 +209,7 @@ def test_propose_route_creates_proposed_asset(session, client):
     r = client.post("/api/assets/propose",
                     json={"name": "My Prompt", "category": "PROMPTS", "reviewer_id": 7})
     assert r.status_code == 201
-    body = r.json()
+    body = r.json()["data"]
     assert body["status"] == "PROPOSED" and body["name"] == "My Prompt"
 
 

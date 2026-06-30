@@ -179,7 +179,7 @@ def test_get_notifications_returns_current_user_only(session, client):
 
     r = client.get("/api/actions/notifications")
     assert r.status_code == 200
-    body = r.json()
+    body = r.json()["data"]
     assert len(body) == 1 and body[0]["type"] == "REVIEW"
 
 
@@ -190,9 +190,9 @@ def test_notified_route_transitions(session, client):
 
     r = client.post(f"/api/actions/notifications/{a.id}/notified")
     assert r.status_code == 200
-    assert r.json()["workflow_status"] == "NOTIFIED"
+    assert r.json()["data"]["workflow_status"] == "NOTIFIED"
     # The thread is now seen (not unread).
-    items = client.get("/api/actions/notifications").json()
+    items = client.get("/api/actions/notifications").json()["data"]
     assert items[0]["unread"] is False
 
 
@@ -203,8 +203,8 @@ def test_dismiss_route_removes_from_list(session, client):
 
     r = client.post(f"/api/actions/notifications/{a.id}/dismiss")
     assert r.status_code == 200
-    assert r.json()["workflow_status"] == "FINISHED"
-    assert client.get("/api/actions/notifications").json() == []
+    assert r.json()["data"]["workflow_status"] == "FINISHED"
+    assert client.get("/api/actions/notifications").json()["data"] == []
 
 
 def test_cannot_transition_another_users_notification(session, client):

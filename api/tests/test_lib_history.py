@@ -205,7 +205,7 @@ def test_history_route_returns_timeline(session, client):
 
     r = client.get(f"/api/actions/history/asset/{asset.id}")
     assert r.status_code == 200
-    body = r.json()
+    body = r.json()["data"]
     assert [e["type"] for e in body] == [svc.TYPE_COMMENT, "CREATED"]
 
 

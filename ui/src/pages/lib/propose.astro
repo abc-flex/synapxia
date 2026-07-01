@@ -5,30 +5,29 @@
  * characterizations (from the category's specs), the PROPOSAL + REVIEW actions,
  * and MANAGE permissions — generating the reviewer's notification.
  *
- * UX: the form card carries a **type-branded hero** (gradient + icon matching
- * that type's gallery card) and is split into two **tabs** — Details and
- * Characterization — so it isn't one very tall column. Reached from a gallery's
- * "Propose" button with `?category=<CODE>`: the type is then **locked** and the
- * hero/heading/characterization brand to it. On a direct visit (no `?category=`)
- * the type is an editable select and the hero + Characterization tab appear once
- * a type is chosen.
+ * UX: a type-branded hero (gradient + icon matching that type's gallery card)
+ * over a two-tab form (Details / Characterization). Built on the shared UI
+ * primitives in `components/ui/` (Tabs, FormField, Button) + `lib/formClasses`
+ * (input/label classes, `setFieldInvalid`) + `lib/tabs` (`initTabs`).
  *
- * Category / reviewer / characterization are hydrated client-side (per-user data
- * + the Vercel build-time empty-fetch gotcha), via a bundled `@/` script. All
- * inputs stay DOM-mounted (tabs only show/hide) so the submit handler still
- * collects them via FormData + querySelectorAll("[data-characterization]").
+ * Reached from a gallery's "Propose" button with `?category=<CODE>`: the type is
+ * then locked and the hero/heading/characterization brand to it. Direct visit
+ * (no `?category=`) → editable type select; the hero + Characterization tab
+ * appear once a type is chosen. All inputs stay DOM-mounted (tabs only show/
+ * hide) so the submit handler collects them via FormData + querySelectorAll.
  */
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumb from "../../components/core/Breadcrumb.astro";
 import Toast from "../../components/Toast.astro";
+import Tabs from "../../components/ui/Tabs.astro";
+import FormField from "../../components/ui/FormField.astro";
+import Button from "../../components/ui/Button.astro";
+import { inputClass } from "@/lib/formClasses";
 
-const inputClass =
-  "w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100";
-const labelClass = "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300";
-const tabBase =
-  "propose-tab whitespace-nowrap border-b-2 px-1 py-3 text-sm font-medium focus:outline-none";
-const tabOff =
-  "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200";
+const PROPOSE_TABS = [
+  { key: "details", labelKey: "propose.tab_details" },
+  { key: "characterization", labelKey: "propose.tab_characterization", hidden: true },
+];
 ---
 
 <BaseLayout>
@@ -62,76 +61,54 @@ const tabOff =
         </div>
       </div>
 
-      <!-- Tabs -->
-      <div class="border-b border-gray-200 px-6 dark:border-gray-800">
-        <div role="tablist" aria-label="Propose sections" class="-mb-px flex gap-6">
-          <button
-            type="button" role="tab" data-propose-tab="details" aria-selected="true"
-            class={`${tabBase} border-indigo-600 text-indigo-600 dark:text-indigo-400`}
-            data-i18n="propose.tab_details"
-          >Details</button>
-          <button
-            type="button" role="tab" data-propose-tab="characterization" aria-selected="false" tabindex="-1"
-            id="propose-tab-char"
-            class={`${tabBase} ${tabOff} hidden`}
-            data-i18n="propose.tab_characterization"
-          >Characterization</button>
-        </div>
-      </div>
+      <Tabs tabs={PROPOSE_TABS} ariaLabel="Propose sections" />
 
-      <!-- Panels -->
       <div class="px-6 py-5">
-        <!-- Details -->
-        <div data-propose-panel="details" class="space-y-5">
-          <div>
-            <label class={labelClass} for="propose-name" data-i18n="propose.name">Name</label>
+        <!-- Details panel -->
+        <div data-tab-panel="details" class="space-y-5">
+          <FormField controlId="propose-name" labelKey="propose.name"
+            errorId="propose-name-error" errorKey="propose.name_required">
             <input id="propose-name" name="name" type="text" maxlength="100" class={inputClass}
               data-i18n-placeholder="propose.name_placeholder" placeholder="Asset name" />
-            <p id="propose-name-error" class="mt-1 hidden text-xs text-red-600 dark:text-red-400" data-i18n="propose.name_required">Name is required</p>
-          </div>
+          </FormField>
 
-          <div>
-            <label class={labelClass} for="propose-description" data-i18n="propose.description">Description</label>
+          <FormField controlId="propose-description" labelKey="propose.description">
             <textarea id="propose-description" name="description" rows="2" maxlength="500" class={inputClass}
               data-i18n-placeholder="propose.description_placeholder" placeholder="Short description"></textarea>
-          </div>
+          </FormField>
 
           <div class="grid gap-5 sm:grid-cols-2">
-            <div>
-              <label class={labelClass} for="propose-category" data-i18n="propose.category">Category</label>
+            <FormField controlId="propose-category" labelKey="propose.category"
+              errorId="propose-category-error" errorKey="propose.category_required">
               <!-- Editable selector — used only on a direct visit (no ?category=). -->
               <select id="propose-category" name="category" class={inputClass}>
                 <option value="" data-i18n="propose.category_placeholder">Select a category…</option>
               </select>
-              <!-- Locked display — shown when the type comes from the originating
-                   gallery (?category=); the type then can't be changed. -->
+              <!-- Locked display — shown when the type comes from the originating gallery. -->
               <input id="propose-category-locked" type="text" readonly
                 class={`${inputClass} hidden cursor-not-allowed bg-gray-100 dark:bg-gray-800`} />
-              <p id="propose-category-error" class="mt-1 hidden text-xs text-red-600 dark:text-red-400" data-i18n="propose.category_required">Category is required</p>
-            </div>
-            <div>
-              <label class={labelClass} for="propose-reviewer" data-i18n="propose.reviewer">Reviewer</label>
+            </FormField>
+
+            <FormField controlId="propose-reviewer" labelKey="propose.reviewer">
               <select id="propose-reviewer" name="reviewer_id" class={inputClass}>
                 <option value="" data-i18n="propose.reviewer_auto">Auto-assign</option>
               </select>
-            </div>
+            </FormField>
           </div>
 
-          <div>
-            <label class={labelClass} for="propose-tags" data-i18n="propose.tags">Tags</label>
+          <FormField controlId="propose-tags" labelKey="propose.tags">
             <input id="propose-tags" name="tags" type="text" class={inputClass}
               data-i18n-placeholder="propose.tags_placeholder" placeholder="comma, separated, tags" />
-          </div>
+          </FormField>
 
-          <div>
-            <label class={labelClass} for="propose-detail" data-i18n="propose.detail">Detail</label>
+          <FormField controlId="propose-detail" labelKey="propose.detail">
             <textarea id="propose-detail" name="detail" rows="4" class={inputClass}
               data-i18n-placeholder="propose.detail_placeholder" placeholder="Additional detail (optional)"></textarea>
-          </div>
+          </FormField>
         </div>
 
-        <!-- Characterization (one field per the category's spec features). -->
-        <div data-propose-panel="characterization" class="hidden">
+        <!-- Characterization panel -->
+        <div data-tab-panel="characterization" class="hidden">
           <p class="mb-4 text-xs text-gray-500 dark:text-gray-400" data-i18n="propose.characterization_hint">
             Describe the asset against this type's features. Defaults are prefilled; adjust as needed.
           </p>
@@ -141,14 +118,7 @@ const tabOff =
 
       <!-- Footer -->
       <div class="flex justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-800">
-        <button
-          id="propose-submit"
-          type="submit"
-          class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-60"
-          data-i18n="propose.submit"
-        >
-          Propose for review
-        </button>
+        <Button id="propose-submit" type="submit" variant="primary" labelKey="propose.submit" />
       </div>
     </form>
   </div>
@@ -163,27 +133,15 @@ const tabOff =
     import { getSpecificationsbyCategory } from "@/lib/specifications";
     import { loadClientTranslations, translate } from "@/utils/i18nClient";
     import { installGlobalToast, showToast } from "@/lib/toast";
+    import { initTabs } from "@/lib/tabs";
+    import { inputClass, labelClass, setFieldInvalid } from "@/lib/formClasses";
 
     loadClientTranslations();
     installGlobalToast();
 
-    // Tailwind class strings (client island can't read the frontmatter consts).
-    const inputClass =
-      "w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100";
-    const labelClass = "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300";
     const SUBMIT_BASE =
-      "rounded-lg px-4 py-2 text-sm font-semibold text-white transition disabled:opacity-60";
+      "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition disabled:opacity-60";
     const HERO_BASE = "flex items-start gap-4 bg-gradient-to-br px-6 py-5 text-white";
-    const TAB_OFF = [
-      "border-transparent", "text-gray-500", "hover:border-gray-300",
-      "hover:text-gray-700", "dark:text-gray-400", "dark:hover:text-gray-200",
-    ];
-    // Every accent's active-tab classes, so switching accents can clear them all.
-    const ALL_TAB_ON = [
-      "border-indigo-600", "text-indigo-600", "dark:text-indigo-400",
-      "border-emerald-600", "text-emerald-600", "dark:text-emerald-400",
-      "border-violet-600", "text-violet-600", "dark:text-violet-400",
-    ];
 
     // Per-type branding — icons + colors copied from the gallery cards so
     // "Propose a Prompt/MCP/Agent" matches PromptCard / McpCard / AgentCard.
@@ -196,41 +154,27 @@ const tabOff =
     const ICON_DEFAULT =
       `<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14" stroke-linecap="round" /></svg>`;
 
-    type Theme = { grad: string; icon: string; tabOn: string[]; submit: string };
+    type Theme = { grad: string; icon: string; submit: string };
     const THEME_DEFAULT: Theme = {
       grad: "from-indigo-500 to-indigo-600", icon: ICON_DEFAULT,
-      tabOn: ["border-indigo-600", "text-indigo-600", "dark:text-indigo-400"],
       submit: "bg-indigo-600 hover:bg-indigo-700",
     };
     const THEMES: Record<string, Theme> = {
-      PROMPTS: {
-        grad: "from-indigo-500 to-indigo-600", icon: ICON_PROMPT,
-        tabOn: ["border-indigo-600", "text-indigo-600", "dark:text-indigo-400"],
-        submit: "bg-indigo-600 hover:bg-indigo-700",
-      },
-      MCPS: {
-        grad: "from-emerald-500 to-emerald-600", icon: ICON_MCP,
-        tabOn: ["border-emerald-600", "text-emerald-600", "dark:text-emerald-400"],
-        submit: "bg-emerald-600 hover:bg-emerald-700",
-      },
-      AGENTS: {
-        grad: "from-violet-500 to-indigo-500", icon: ICON_AGENT,
-        tabOn: ["border-violet-600", "text-violet-600", "dark:text-violet-400"],
-        submit: "bg-violet-600 hover:bg-violet-700",
-      },
+      PROMPTS: { grad: "from-indigo-500 to-indigo-600", icon: ICON_PROMPT, submit: "bg-indigo-600 hover:bg-indigo-700" },
+      MCPS: { grad: "from-emerald-500 to-emerald-600", icon: ICON_MCP, submit: "bg-emerald-600 hover:bg-emerald-700" },
+      AGENTS: { grad: "from-violet-500 to-indigo-500", icon: ICON_AGENT, submit: "bg-violet-600 hover:bg-violet-700" },
     };
 
-    // Per-type heading keys (fallback to the generic propose.title).
     const TITLE_KEYS: Record<string, string> = {
       PROMPTS: "propose.title_prompts",
       MCPS: "propose.title_mcps",
       AGENTS: "propose.title_agents",
     };
-    // Features whose payload is long-form → render a <textarea>.
     const RICH_FEATURES = new Set([
       "PROMPT_TEMPLATE", "EXAMPLE_OUTPUT", "OVERVIEW",
       "CONTENT", "TOOLS", "SERVER_CONFIG", "INSTRUCTIONS",
     ]);
+    const REVIEWER_ROLES = ["ADMINISTRATOR", "ADMINISTRATIVE", "REVIEWER"];
 
     const tr = (key: string, fallback: string): string => {
       try {
@@ -251,61 +195,27 @@ const tabOff =
     const hero = document.getElementById("propose-hero") as HTMLElement | null;
     const heroIcon = document.getElementById("propose-hero-icon") as HTMLElement | null;
     const heroTitle = document.getElementById("propose-hero-title") as HTMLElement | null;
-    const charTab = document.getElementById("propose-tab-char") as HTMLButtonElement | null;
+    const charTab = document.getElementById("tab-characterization") as HTMLButtonElement | null;
     const charFields = document.getElementById("propose-characterization-fields") as HTMLElement | null;
     const nameErr = document.getElementById("propose-name-error") as HTMLElement | null;
     const catErr = document.getElementById("propose-category-error") as HTMLElement | null;
 
-    // Toggle a field's invalid state: red border + its inline error message.
-    function setInvalid(el: HTMLElement | null, err: HTMLElement | null, invalid: boolean) {
-      if (el) {
-        el.classList.toggle("border-gray-300", !invalid);
-        el.classList.toggle("dark:border-gray-700", !invalid);
-        el.classList.toggle("border-red-500", invalid);
-        el.classList.toggle("dark:border-red-500", invalid);
-        el.setAttribute("aria-invalid", String(invalid));
-      }
-      err?.classList.toggle("hidden", !invalid);
-    }
-
-    const tabButtons = Array.from(
-      document.querySelectorAll<HTMLButtonElement>("[data-propose-tab]"),
-    );
-    const tabPanels = Array.from(
-      document.querySelectorAll<HTMLElement>("[data-propose-panel]"),
-    );
-
-    // When the type comes from a gallery, it can't be changed: the editable
-    // select is replaced by a read-only field and we submit this value directly.
     let lockedCategory: string | null = null;
     let theme: Theme = THEME_DEFAULT;
     // First-time nudge: has the user opened the Characterization tab yet?
     let charVisited = false;
 
-    /* ---- tabs ------------------------------------------------------------- */
-    function styleTab(btn: HTMLButtonElement, on: boolean) {
-      btn.setAttribute("aria-selected", String(on));
-      if (on) btn.removeAttribute("tabindex");
-      else btn.setAttribute("tabindex", "-1");
-      btn.classList.remove(...ALL_TAB_ON, ...TAB_OFF);
-      btn.classList.add(...(on ? theme.tabOn : TAB_OFF));
-    }
-    function activateTab(name: string) {
-      for (const btn of tabButtons) styleTab(btn, btn.dataset.proposeTab === name);
-      for (const p of tabPanels) p.classList.toggle("hidden", p.dataset.proposePanel !== name);
-    }
-    for (const btn of tabButtons) {
-      btn.addEventListener("click", () => {
-        const name = btn.dataset.proposeTab || "details";
-        if (name === "characterization") charVisited = true;
-        activateTab(name);
-      });
-    }
+    // Shared tab toggler; mark the characterization tab "visited" when opened.
+    const tabs = initTabs(document, {
+      onActivate: (key) => {
+        if (key === "characterization") charVisited = true;
+      },
+    });
 
     function setCharTabVisible(visible: boolean) {
       if (!charTab) return;
       charTab.classList.toggle("hidden", !visible);
-      if (!visible && charTab.getAttribute("aria-selected") === "true") activateTab("details");
+      if (!visible && charTab.getAttribute("aria-selected") === "true") tabs.activate("details");
     }
 
     /* ---- branding --------------------------------------------------------- */
@@ -314,9 +224,6 @@ const tabOff =
       if (hero) hero.className = `${HERO_BASE} ${theme.grad}`;
       if (heroIcon) heroIcon.innerHTML = theme.icon;
       if (submitBtn) submitBtn.className = `${SUBMIT_BASE} ${theme.submit}`;
-      // Re-apply active-tab styling in the new accent.
-      const active = tabButtons.find((b) => b.getAttribute("aria-selected") === "true");
-      for (const btn of tabButtons) styleTab(btn, btn === active);
     }
 
     function applyTitle(category: string) {
@@ -397,6 +304,28 @@ const tabOff =
       }
     }
 
+    /* ---- reviewers -------------------------------------------------------- */
+    function reviewerRole(profile: string, isSuper: boolean): string {
+      if (REVIEWER_ROLES.includes(profile)) return tr(`reviewer_role.${profile}`, profile);
+      if (isSuper) return tr("reviewer_role.SUPERUSER", "Superuser");
+      return tr(`reviewer_role.${profile}`, profile);
+    }
+
+    async function fillReviewers() {
+      if (!revSel) return;
+      try {
+        const revs = await getReviewers();
+        for (const r of revs) {
+          const o = document.createElement("option");
+          o.value = String(r.value);
+          o.textContent = `${r.label} — ${reviewerRole(r.profile, r.is_superuser)}`;
+          revSel.appendChild(o);
+        }
+      } catch {
+        /* auto-assign stays the only option */
+      }
+    }
+
     /* ---- init ------------------------------------------------------------- */
     async function init() {
       const pre = new URLSearchParams(location.search).get("category");
@@ -420,41 +349,16 @@ const tabOff =
         : undefined;
 
       if (match) {
-        // Locked flow — type fixed by the originating gallery.
         lockCategory(match.code, match.name);
         syncType(match.code);
       } else if (catSel) {
-        // Fallback flow — editable; rebrand + rebuild on every change.
         catSel.addEventListener("change", () => syncType(catSel.value));
       }
     }
 
-    // Localized role suffix for a reviewer option ("— Administrator", etc.).
-    const REVIEWER_ROLES = ["ADMINISTRATOR", "ADMINISTRATIVE", "REVIEWER"];
-    function reviewerRole(profile: string, isSuper: boolean): string {
-      if (REVIEWER_ROLES.includes(profile)) return tr(`reviewer_role.${profile}`, profile);
-      if (isSuper) return tr("reviewer_role.SUPERUSER", "Superuser");
-      return tr(`reviewer_role.${profile}`, profile);
-    }
-
-    async function fillReviewers() {
-      if (!revSel) return;
-      try {
-        const revs = await getReviewers();
-        for (const r of revs) {
-          const o = document.createElement("option");
-          o.value = String(r.value);
-          o.textContent = `${r.label} — ${reviewerRole(r.profile, r.is_superuser)}`;
-          revSel.appendChild(o);
-        }
-      } catch {
-        /* auto-assign stays the only option */
-      }
-    }
-
     // Clear a field's invalid state as soon as the user fixes it.
-    nameInput?.addEventListener("input", () => setInvalid(nameInput, nameErr, false));
-    catSel?.addEventListener("change", () => setInvalid(catSel, catErr, false));
+    nameInput?.addEventListener("input", () => setFieldInvalid(nameInput, nameErr, false));
+    catSel?.addEventListener("change", () => setFieldInvalid(catSel, catErr, false));
 
     void init();
     void fillReviewers();
@@ -468,11 +372,10 @@ const tabOff =
       const nameBad = !name;
       const catBad = !category;
       // Mark the offending inputs inline (red border + message).
-      setInvalid(nameInput, nameErr, nameBad);
-      setInvalid(catControl, catErr, catBad);
+      setFieldInvalid(nameInput, nameErr, nameBad);
+      setFieldInvalid(catControl, catErr, catBad);
       if (nameBad || catBad) {
-        // Required fields live on the Details tab — surface them there.
-        activateTab("details");
+        tabs.activate("details");
         (nameBad ? nameInput : catControl)?.focus();
         showToast(tr("propose.required", "Name and category are required"), "error");
         return;
@@ -484,7 +387,7 @@ const tabOff =
       const hasCharTab = charTab != null && !charTab.classList.contains("hidden");
       if (hasCharTab && !charVisited) {
         charVisited = true;
-        activateTab("characterization");
+        tabs.activate("characterization");
         showToast(
           tr("propose.review_characterization", "Please review the Characterization tab before proposing."),
           "info",
@@ -518,7 +421,7 @@ const tabOff =
         await proposeAsset(payload);
         showToast(tr("propose.success", "Asset proposed for review"), "success");
         form.reset();
-        activateTab("details");
+        tabs.activate("details");
         charVisited = false; // fresh proposal → nudge again next time
         // Re-prefill the characterization defaults after the native reset.
         const current = lockedCategory || "";

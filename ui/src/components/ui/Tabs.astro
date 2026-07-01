@@ -1,0 +1,55 @@
+---
+/**
+ * Tabs — renders a tablist using the `data-tab` convention. Wire it up client-
+ * side with `initTabs()` from `@/lib/tabs`, which also toggles the matching
+ * `[data-tab-panel="<key>"]` panels — YOU render those panels wherever you want
+ * (Astro forbids dynamic `slot` names, so panels live in the consuming page):
+ *
+ *   <Tabs tabs={[{ key: "details", labelKey: "x.details" }, …]} />
+ *   <div class="px-6 py-5">
+ *     <div data-tab-panel="details">…</div>
+ *     <div data-tab-panel="other" class="hidden">…</div>
+ *   </div>
+ *
+ * First tab is active by default. `hidden: true` renders a tab's button hidden
+ * (reveal later via `document.getElementById('tab-<key>')`).
+ */
+interface Tab {
+  key: string;
+  labelKey?: string;
+  label?: string;
+  hidden?: boolean;
+}
+interface Props {
+  tabs: Tab[];
+  ariaLabel?: string;
+  /** Extra classes on the tablist wrapper. */
+  class?: string;
+}
+
+const { tabs, ariaLabel = "Tabs", class: cls = "border-b border-gray-200 px-6 dark:border-gray-800" } =
+  Astro.props as Props;
+
+const tabBase =
+  "whitespace-nowrap border-b-2 px-1 py-3 text-sm font-medium focus:outline-none";
+const on = "border-indigo-600 text-indigo-600 dark:text-indigo-400";
+const off =
+  "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200";
+---
+
+<div class={cls}>
+  <div role="tablist" aria-label={ariaLabel} class="-mb-px flex gap-6">
+    {tabs.map((t, i) => (
+      <button
+        type="button"
+        role="tab"
+        id={`tab-${t.key}`}
+        data-tab={t.key}
+        aria-selected={i === 0 ? "true" : "false"}
+        tabindex={i === 0 ? undefined : "-1"}
+        class={`${tabBase} ${i === 0 ? on : off}${t.hidden ? " hidden" : ""}`}
+        data-i18n={t.labelKey}
+      >{t.labelKey || t.label}</button>
+    ))}
+  </div>
+</div>

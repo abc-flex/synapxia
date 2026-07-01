@@ -41,6 +41,7 @@ Run everything: `make dev`. Verify: `make test`.
 - **Services:** CRUD wrappers in `ui/src/lib/{entity}.ts` around `lib/api.ts`.
 - **Pages:** `ui/src/pages/{module}/{entity}.astro`. Mirror closest existing page (e.g. `admin/options.astro`).
 - **Components:** reuse `DataTable`, `CrudModal`, `Toast` — don't create new alternatives.
+- **UI primitives (`components/ui/`):** shared, framework-free building blocks — `FormField.astro` (label + control slot + inline error), `Tabs.astro` + `lib/tabs.ts` `initTabs()` (`data-tab`/`data-tab-panel` toggler; render panels yourself — Astro forbids dynamic slot names), `Button.astro` (primary/secondary/ghost). Shared form styling + validation live in `lib/formClasses.ts` (`inputClass`/`labelClass` — importable by BOTH `.astro` frontmatter and client islands, so islands no longer redefine them — plus `setFieldInvalid`). First adopter: `lib/propose.astro`. Prefer these over re-inlining tabs/field markup.
 - **i18n:** every user-facing string in both `ui/src/i18n/en.json` and `es.json`, keyed per entity/module.
 - **Layouts:** `BaseLayout.astro` for sidebar pages; `Layout.astro` for standalone full-screen pages (e.g. `/dashboard`, `/login`).
 - **`@` alias** resolves to `ui/src/` (via `fileURLToPath` in `astro.config.mjs`).

@@ -14,7 +14,6 @@ import { getAsset } from "@/lib/assets";
 import { getCharacterizationsByAsset } from "@/lib/characterizations";
 import { isFavorite, setFavorite } from "@/lib/favorites";
 import { getVoteTally, setVote, getWorkflowStage, type VoteValue } from "@/lib/actions";
-import { mountForo } from "@/lib/foro";
 import { mountRelated } from "@/lib/related";
 import { mountHistory } from "@/lib/history";
 import { styleVoteButton } from "@/lib/catalogGallery";
@@ -100,13 +99,12 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
     btn.addEventListener("click", () => activateTab(btn.dataset.detailTab || "detail"));
   }
 
-  // Hydrate the read-only related-assets section (HU-LI07), the discussion
-  // section (comments/questions/answers, HU-LI06), and the read-only activity
-  // timeline (HU-LI10). Each is self-contained: it hooks the same open trigger
-  // and queries within `#${modalId}-related` / `-foro` / `-history`, so every
-  // catalog using this detail view gets all three.
+  // Hydrate the read-only related-assets section (HU-LI07) and the read-only
+  // activity timeline (HU-LI10). Each is self-contained: it hooks the same open
+  // trigger and queries within `#${modalId}-related` / `-history`. The discussion
+  // section (HU-LI06) is now the `Foro` Svelte island, which self-mounts from
+  // Foro.astro and hooks the same trigger on its own — no wiring needed here.
   mountRelated({ modalId });
-  mountForo({ modalId });
   mountHistory({ modalId });
 
   const nameEl = document.getElementById(`${modalId}-name`) as HTMLElement | null;

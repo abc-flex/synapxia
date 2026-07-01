@@ -28,12 +28,23 @@ screen without rediscovering the patterns.
 `<script>`. For complex interactive surfaces use **Svelte 5** components in
 `ui/src/components/svelte/`, compiled by the raw **`@sveltejs/vite-plugin-svelte`** (added to
 `astro.config.mjs` `vite.plugins`) and **mounted manually** with Svelte's `mount()` from a
-bundled `<script>` — e.g. `ui/src/pages/lib/show-action.astro`. Do **not** use the
-`@astrojs/svelte` *integration* / `client:*` island directives: the only version installable
-from our registry (`9.0.0`) mis-compiles its island `astro-entry` whenever a Svelte island
-shares a page with vanilla `<script>`s (which every `BaseLayout` page has). Manual `mount()`
-sidesteps that entirely and works on Vite 8. Svelte islands reuse the existing `lib/*`
-services and read i18n via `translate()` (not `data-i18n`). No React/Vue.
+bundled `<script>` — e.g. `ui/src/pages/lib/show-action.astro` (page-level), or a component
+shell that self-mounts by querying a `data-*-root` div (`components/core/header/NotificationMenu.astro`
+→ `NotificationBell.svelte`; `components/lib/gallery/Foro.astro` → `Foro.svelte`, the asset
+discussion HU-LI06). Do **not** use the `@astrojs/svelte` *integration* / `client:*` island
+directives: the only version installable from our registry (`9.0.0`) mis-compiles its island
+`astro-entry` whenever a Svelte island shares a page with vanilla `<script>`s (which every
+`BaseLayout` page has). Manual `mount()` sidesteps that entirely and works on Vite 8. Svelte
+islands reuse the existing `lib/*` services and read i18n via `translate()` (not `data-i18n`).
+Template comments inside `.svelte` are `<!-- -->`, **not** JSX `{/* */}`. No React/Vue.
+
+**Migrating a vanilla `mount*(cfg)` controller to Svelte:** move the render/state layer to
+`components/svelte/X.svelte`, self-mount it from the controller's `.astro` shell (render
+`<div data-x-root data-…>` + a bundled `<script>` that `mount()`s the island, reading its
+config from the `data-` attrs), keep the shared `lib/*` services in place (trim the `.ts` to
+just services + pure helpers), and delete the old `mount*` call from the caller. The island
+re-hooks the same DOM triggers (e.g. `[data-modal-open]`) in `onMount`. See the foro migration
+(`lib/foro.ts` 452→98 lines).
 
 ---
 

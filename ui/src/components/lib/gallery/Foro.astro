@@ -1,15 +1,16 @@
 ---
 /**
  * Foro — the asset discussion section (HU-LI06) embedded inside the reusable
- * CatalogDetailModal. Presentational shell only: a comments block and a
- * questions block, each with a composer and a list container that the
- * `mountForo` controller (lib/foro.ts) hydrates on open. Comments/questions/
+ * CatalogDetailModal. Thin host for the `Foro` Svelte island: the interactive
+ * feed + composers are compiled by the raw Svelte Vite plugin and **mounted
+ * manually** via `mount()` (see astro.config.mjs — we don't use the
+ * @astrojs/svelte island mechanism).
+ *
+ * The island self-hooks the same `[data-modal-open="${modalId}"]` open trigger
+ * the detail controller listens for, so it loads the opened asset's discussion
+ * on demand — no per-instance wiring from mountCatalogDetail. Comments/questions/
  * answers are stored as `actions` rows (type COMMENT/QUESTION/ANSWER) — no new
  * table.
- *
- * Ids are scoped by `modalId` so every catalog (prompts/agents/mcps) gets its
- * own discussion section; the controller queries within `#${modalId}-foro` via
- * `data-foro-*` hooks.
  */
 export interface Props {
   /** The detail dialog id, e.g. "mcp-view-modal". */
@@ -18,49 +19,16 @@ export interface Props {
 const { modalId } = Astro.props as Props;
 ---
 
-{/* Lives alone in the modal's "Discussion" tab (which labels it), so no
-    in-section heading. Minimalist layout: the feed reads first, with a slim
-    composer pinned at the bottom. */}
-<section id={`${modalId}-foro`}>
-  <p data-foro-status class="hidden text-sm text-gray-400 dark:text-gray-500"></p>
+<div id={`${modalId}-foro`} data-foro-root data-modal-id={modalId}></div>
 
-  {/* One merged, chronological feed: comments + questions (with threaded answers). */}
-  <div data-foro-feed class="space-y-4"></div>
+<script>
+  import { mount } from "svelte";
+  import Foro from "@/components/svelte/Foro.svelte";
 
-  {/* Slim composer at the end of the discussion: pick Comment or Question, then post. */}
-  <div class="mt-5 border-t border-gray-200 pt-4 dark:border-gray-800">
-    <div class="mb-2 inline-flex rounded-md border border-gray-300 p-0.5 dark:border-gray-700" role="group">
-      <button
-        type="button"
-        data-foro-type="COMMENT"
-        aria-pressed="true"
-        class="rounded px-3 py-1 text-xs font-semibold text-gray-600 transition-colors dark:text-gray-300"
-        data-i18n="foro.tag_comment"
-      >Comment</button>
-      <button
-        type="button"
-        data-foro-type="QUESTION"
-        aria-pressed="false"
-        class="rounded px-3 py-1 text-xs font-semibold text-gray-600 transition-colors dark:text-gray-300"
-        data-i18n="foro.tag_question"
-      >Question</button>
-    </div>
-    <div class="flex items-end gap-2">
-      <textarea
-        data-foro-input
-        rows="1"
-        placeholder="Write a comment…"
-        data-i18n-placeholder="foro.comment_placeholder"
-        class="min-h-[2.5rem] flex-1 resize-y rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-      ></textarea>
-      <button
-        type="button"
-        data-foro-submit
-        class="shrink-0 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
-        data-i18n="foro.post"
-      >
-        Post
-      </button>
-    </div>
-  </div>
-</section>
+  // One page can host more than one detail modal (one per catalog), so mount an
+  // island for every foro root, passing its scoped modalId.
+  document.querySelectorAll<HTMLElement>("[data-foro-root]").forEach((el) => {
+    const modalId = el.dataset.modalId;
+    if (modalId) mount(Foro, { target: el, props: { modalId } });
+  });
+</script>

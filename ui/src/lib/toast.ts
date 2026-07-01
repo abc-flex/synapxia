@@ -19,10 +19,10 @@ export type ToastVariant = "success" | "error" | "info";
 
 const VARIANT_CLASSES: Record<ToastVariant, string> = {
   error:
-    "bg-red-50 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800",
+    "bg-red-50 text-red-800 border-red-200 dark:bg-red-950 dark:text-red-200 dark:border-red-800",
   success:
-    "bg-green-50 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800",
-  info: "bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800",
+    "bg-green-50 text-green-800 border-green-200 dark:bg-green-950 dark:text-green-200 dark:border-green-800",
+  info: "bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-950 dark:text-blue-200 dark:border-blue-800",
 };
 
 let container: HTMLDialogElement | null = null;
@@ -88,7 +88,8 @@ export function showToast(message: string, variant: ToastVariant | string = "inf
   const closeBtn = document.createElement("button");
   closeBtn.type = "button";
   closeBtn.setAttribute("aria-label", "Close");
-  closeBtn.className = "flex-shrink-0 text-gray-400 hover:text-gray-600";
+  closeBtn.className =
+    "flex-shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200";
   closeBtn.textContent = "✕";
 
   row.append(text, closeBtn);

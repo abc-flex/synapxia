@@ -12,8 +12,20 @@ from app.collab.internal.models import (
     Assignment, AssignmentCreate, AssignmentUpdate,
     Project, ProjectCreate, ProjectUpdate,
     Dimension, DimensionCreate, DimensionUpdate,
-    Metric, MetricCreate, MetricUpdate,
+    Metric, MetricCreate, MetricUpdate, MetricByDimension,
 )
+
+
+def test_metric_by_dimension_exposes_edit_fields():
+    """The dashboard grid edits metrics in place, so its projection must carry
+    the metric `id` (to PUT /api/metrics/{id}) and an ISO `measured_at` (to
+    prefill the datetime picker without losing the time component)."""
+    expected = (
+        "id", "name", "email", "role", "team",
+        "metric", "date", "measured_at", "observation",
+    )
+    missing = [f for f in expected if f not in MetricByDimension.model_fields]
+    assert not missing, f"MetricByDimension missing fields: {missing}"
 
 
 def test_project_models_expose_detail_field():

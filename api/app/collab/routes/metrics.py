@@ -85,12 +85,14 @@ def get_by_dimension(
             continue
         by_assignment[metric.assignment] = (
             MetricByDimension(
+                id=metric.id,
                 name=f"{user.first_name} {user.last_name}".strip(),
                 email=user.email,
                 role=role or "",
                 team=team or "",
                 metric=metric.value,
                 date=metric.measured_at.strftime("%d/%m/%Y"),
+                measured_at=metric.measured_at.isoformat(),
                 observation=metric.observation or "",
             ),
             metric.id,

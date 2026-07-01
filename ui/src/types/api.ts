@@ -478,12 +478,14 @@ export interface MetricUpdate {
 // Latest metric value per assignment for a dimension, as of a date.
 // Read-only projection returned by GET /api/metrics/dimension/{code}.
 export interface MetricByDimension {
+  id: number;
   name: string;
   email: string;
   role: string;
   team: string;
   metric: string;
   date: string;
+  measured_at: string;
   observation: string;
 }
 

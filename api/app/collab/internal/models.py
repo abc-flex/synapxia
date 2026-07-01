@@ -278,10 +278,12 @@ class MetricUpdate(SQLModel):
 
 class MetricByDimension(SQLModel):
     """Latest metric value per assignment for a dimension, as of a date."""
+    id: int = Field(description="Metric ID (for edit/update from the dashboard)")
     name: str = Field(description="Full name of the assigned user")
     email: str = Field(description="Email of the assigned user")
     role: str = Field(description="Assignment role code")
     team: str = Field(description="Assignment team code")
     metric: str = Field(description="Metric value")
     date: str = Field(description="Measurement date (DD/MM/YYYY)")
+    measured_at: str = Field(description="Measurement timestamp (ISO 8601)")
     observation: str = Field(description="Metric observation")

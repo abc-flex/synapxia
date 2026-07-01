@@ -330,6 +330,12 @@ favorite/permission rows.
    must have a corresponding DDL entry. Use `make rebuild` to verify.
 5. **Rollback notes.** Destructive changes (none should exist yet) require explicit
    rollback SQL in the commit body and an entry in the AGENTS.md gotchas list.
+6. **No one-off remediation files.** Do **not** create dated/standalone "remediation"
+   SQL (e.g. a `db/remediation/` folder) to patch an already-initialized DB. Put every
+   schema/seed change in the canonical `db/sql/*` files (append to the module DDL/insert
+   or add a fractional-ordinal file per rule 3). Apply changes to an existing DB by
+   re-running the relevant `db/sql` statements / `make rebuild` — not via bespoke
+   dated scripts.
 
 ### What `delete.sql` and `drop.sql` are for
 - **`delete.sql`** — `DELETE FROM …` for every table in reverse-FK order. Wipes data

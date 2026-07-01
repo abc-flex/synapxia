@@ -880,7 +880,9 @@
     "title_mcps": "Propose an MCP",
     "title_agents": "Propose an Agent",
     "characterization": "Characterization",
-    "characterization_hint": "Describe the asset against this type's features. Defaults are prefilled; adjust as needed."
+    "characterization_hint": "Describe the asset against this type's features. Defaults are prefilled; adjust as needed.",
+    "tab_details": "Details",
+    "tab_characterization": "Characterization"
   },
   "prompt_modal": {
     "title_create": "New Prompt",

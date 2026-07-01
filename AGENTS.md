@@ -16,7 +16,7 @@ SynapxIA is a team-collaboration and performance-measurement platform built as a
 |---------|------|-------|------|
 | API | [`api/`](api/CLAUDE.md) | Python ≥3.12, FastAPI + SQLModel, `uv` | 8000 (→80) |
 | UI | [`ui/`](ui/CLAUDE.md) | Astro 4 + Tailwind + Flowbite, Bun | 4321 |
-| DB | [`db/`](db/CLAUDE.md) | PostgreSQL 18, ordered SQL migrations | 5432 |
+| DB | [`db/`](db/CLAUDE.md) | PostgreSQL 18, ordered SQL migrations | 5432 (host 5442) |
 
 API domains live under `api/app/`: `admin, auth, collab, taxo, genai, inits,
 insights, workflows`, with shared plumbing in `api/app/internal/`.

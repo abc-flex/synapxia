@@ -18,7 +18,7 @@ docker-compose up --build
 ```
 
 Esto levantará:
-- **PostgreSQL** en puerto 5432
+- **PostgreSQL** en el puerto 5442 del host (el contenedor escucha en 5432)
 - **FastAPI** en puerto 8000
 
 ### 2. Acceder a la API
@@ -170,7 +170,8 @@ DB_HOST=db              # Host de PostgreSQL
 DB_NAME=sinapxia        # Nombre de la base de datos
 DB_USER=postgres        # Usuario de PostgreSQL
 DB_PASSWORD=postgres    # Contraseña de PostgreSQL
-DB_PORT=5432            # Puerto de PostgreSQL
+DB_PORT=5432            # Puerto interno del contenedor (API + PgAdmin usan db:5432)
+DB_HOST_PORT=5442       # Puerto publicado en el host (localhost:5442) para evitar choques con un 5432 local
 ```
 
 ## Comandos Útiles

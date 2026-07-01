@@ -1,0 +1,189 @@
+---
+/**
+ * Show Action (HU-Show Action) — a read-only view of a workflow OUTCOME action
+ * (PUBLICATION / REJECTION) directed at the current user. Reached by clicking
+ * such a notification in the header bell (`/lib/show-action?action={id}`).
+ *
+ * Opening it marks the notification seen (ASSIGNED → NOTIFIED, idempotent) so the
+ * bell un-bolds. It reuses existing endpoints only (GET /api/actions/{id} +
+ * GET /api/assets/{id} + the notified/dismiss transitions) — no backend change.
+ * This is NOT the review flow (HU-Review / HU-Modify), which is built later.
+ */
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import Toast from "../../components/Toast.astro";
+import Button from "../../components/ui/Button.astro";
+---
+
+<BaseLayout>
+  <div class="mx-auto w-full max-w-2xl">
+    <Breadcrumb
+      moduleName="AI Library"
+      pageName="Notification"
+      pageTitle="Action"
+      homeLink="/"
+      moduleNameKey="modules.LIB"
+      pageNameKey="show_action.title"
+      pageTitleKey="show_action.title"
+    />
+
+    <article
+      id="sa-card"
+      class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
+    >
+      <!-- Outcome hero (gradient + icon re-themed client-side by action type). -->
+      <div id="sa-hero" class="flex items-start gap-4 bg-gradient-to-br from-indigo-500 to-indigo-600 px-6 py-5 text-white">
+        <span id="sa-icon" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/20 text-white">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" stroke-linecap="round" />
+          </svg>
+        </span>
+        <div class="min-w-0">
+          <h1 id="sa-title" class="text-lg font-semibold" data-i18n="show_action.title">Action</h1>
+          <p id="sa-asset" class="mt-0.5 truncate text-sm text-white/85"></p>
+        </div>
+      </div>
+
+      <div class="space-y-4 px-6 py-5">
+        <div>
+          <p class="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="show_action.message">
+            Message
+          </p>
+          <p id="sa-message" class="whitespace-pre-wrap text-sm text-gray-800 dark:text-gray-200"></p>
+        </div>
+        <p id="sa-time" class="text-xs text-gray-400 dark:text-gray-500"></p>
+      </div>
+
+      <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-800">
+        <Button id="sa-back" variant="ghost" labelKey="show_action.back" />
+        <Button id="sa-dismiss" variant="secondary" labelKey="show_action.dismiss" />
+      </div>
+    </article>
+  </div>
+
+  <Toast message="" variant="info" open={false} />
+
+  <script>
+    import { getAction } from "@/lib/actions";
+    import { dismissNotification, markNotified } from "@/lib/notifications";
+    import { getAsset } from "@/lib/assets";
+    import { formatRelative } from "@/lib/datatable";
+    import { loadClientTranslations, translate } from "@/utils/i18nClient";
+    import { installGlobalToast, showToast } from "@/lib/toast";
+
+    loadClientTranslations();
+    installGlobalToast();
+
+    const tr = (key: string, fallback: string): string => {
+      try {
+        const v = translate(key);
+        if (v && v !== key) return v;
+      } catch {
+        /* non-fatal */
+      }
+      return fallback;
+    };
+    const locale = (): string =>
+      (typeof localStorage !== "undefined" && localStorage.getItem("lang")) || "en";
+
+    const HERO_BASE = "flex items-start gap-4 bg-gradient-to-br px-6 py-5 text-white";
+    const ICON_CHECK =
+      `<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9" /><path d="M8.5 12.5l2.5 2.5 4.5-5" stroke-linecap="round" stroke-linejoin="round" /></svg>`;
+    const ICON_X =
+      `<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9" /><path d="M15 9l-6 6M9 9l6 6" stroke-linecap="round" /></svg>`;
+    const ICON_INFO =
+      `<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" stroke-linecap="round" /></svg>`;
+
+    type Theme = { grad: string; icon: string; titleKey: string };
+    const THEMES: Record<string, Theme> = {
+      PUBLICATION: { grad: "from-emerald-500 to-emerald-600", icon: ICON_CHECK, titleKey: "show_action.outcome_published" },
+      REJECTION: { grad: "from-red-500 to-red-600", icon: ICON_X, titleKey: "show_action.outcome_rejected" },
+    };
+    const THEME_DEFAULT: Theme = { grad: "from-indigo-500 to-indigo-600", icon: ICON_INFO, titleKey: "show_action.title" };
+
+    const hero = document.getElementById("sa-hero") as HTMLElement | null;
+    const heroIcon = document.getElementById("sa-icon") as HTMLElement | null;
+    const titleEl = document.getElementById("sa-title") as HTMLElement | null;
+    const assetEl = document.getElementById("sa-asset") as HTMLElement | null;
+    const messageEl = document.getElementById("sa-message") as HTMLElement | null;
+    const timeEl = document.getElementById("sa-time") as HTMLElement | null;
+    const backBtn = document.getElementById("sa-back") as HTMLButtonElement | null;
+    const dismissBtn = document.getElementById("sa-dismiss") as HTMLButtonElement | null;
+
+    const actionId = Number(new URLSearchParams(location.search).get("action") || "");
+
+    function applyTheme(type: string) {
+      const t = THEMES[(type || "").toUpperCase()] || THEME_DEFAULT;
+      if (hero) hero.className = `${HERO_BASE} ${t.grad}`;
+      if (heroIcon) heroIcon.innerHTML = t.icon;
+      if (titleEl) {
+        titleEl.setAttribute("data-i18n", t.titleKey);
+        titleEl.textContent = tr(t.titleKey, titleEl.textContent || "Action");
+      }
+    }
+
+    function goBack() {
+      if (history.length > 1) history.back();
+      else window.location.href = "/";
+    }
+
+    async function load() {
+      if (!actionId) {
+        if (messageEl) messageEl.textContent = tr("show_action.not_found", "This notification could not be found.");
+        return;
+      }
+      let action: Awaited<ReturnType<typeof getAction>>;
+      try {
+        action = await getAction(actionId);
+      } catch {
+        applyTheme("");
+        if (assetEl) assetEl.textContent = "";
+        if (messageEl) messageEl.textContent = tr("show_action.not_found", "This notification could not be found.");
+        return;
+      }
+
+      applyTheme(action.type);
+
+      // Asset name (best-effort; fall back to #id).
+      let assetName = `#${action.asset}`;
+      try {
+        const asset = await getAsset(action.asset);
+        if (asset && asset.name) assetName = asset.name;
+      } catch {
+        /* keep the #id fallback */
+      }
+      if (assetEl) assetEl.textContent = assetName;
+
+      const msg = (action.content || action.detail || "").trim();
+      if (messageEl) {
+        messageEl.textContent = msg || tr("show_action.no_message", "No message provided.");
+        messageEl.classList.toggle("italic", !msg);
+        messageEl.classList.toggle("text-gray-400", !msg);
+      }
+      if (timeEl && action.created_at) timeEl.textContent = formatRelative(action.created_at, locale());
+
+      // Opening the outcome marks it seen (ASSIGNED → NOTIFIED); idempotent.
+      try {
+        await markNotified(actionId);
+      } catch {
+        /* not the owner / already past ASSIGNED — non-fatal */
+      }
+    }
+
+    backBtn?.addEventListener("click", goBack);
+    dismissBtn?.addEventListener("click", async () => {
+      if (!actionId) return goBack();
+      dismissBtn.disabled = true;
+      try {
+        await dismissNotification(actionId);
+        showToast(tr("show_action.dismissed", "Notification dismissed"), "success");
+        setTimeout(goBack, 600);
+      } catch {
+        dismissBtn.disabled = false;
+        showToast(tr("notifications.error", "Could not update the notification"), "error");
+      }
+    });
+
+    void load();
+  </script>
+</BaseLayout>

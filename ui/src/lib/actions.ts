@@ -23,6 +23,11 @@ export async function getActions(skip = 0, limit = 1000): Promise<Action[]> {
   return apiGet<Action[]>(`/api/actions/${buildQueryString({ skip, limit })}`);
 }
 
+/** A single action by id (incl. content/detail) — used by the Show Action view. */
+export async function getAction(id: number): Promise<Action> {
+  return apiGet<Action>(`/api/actions/${encodeURIComponent(String(id))}`);
+}
+
 /** Authoritative vote tally for one asset (+ the current user's `my_vote`). */
 export async function getVoteTally(assetId: number): Promise<VoteTally> {
   return apiGet<VoteTally>(

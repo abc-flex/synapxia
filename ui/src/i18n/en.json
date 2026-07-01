@@ -33,7 +33,8 @@
       "MODIFICATION": "Modification",
       "PUBLICATION": "Publication",
       "REJECTION": "Rejection"
-    }
+    },
+    "review_coming_soon": "The review view is coming soon."
   },
   "coming_soon": {
     "badge": "Coming soon",
@@ -1005,5 +1006,16 @@
     "ADMINISTRATIVE": "Operational Admin",
     "REVIEWER": "Reviewer",
     "SUPERUSER": "Superuser"
+  },
+  "show_action": {
+    "title": "Action",
+    "outcome_published": "Asset published",
+    "outcome_rejected": "Asset rejected",
+    "message": "Message",
+    "no_message": "No message provided.",
+    "back": "Back",
+    "dismiss": "Dismiss",
+    "dismissed": "Notification dismissed",
+    "not_found": "This notification could not be found."
   }
 }

@@ -33,7 +33,8 @@
       "MODIFICATION": "Modificación",
       "PUBLICATION": "Publicación",
       "REJECTION": "Rechazo"
-    }
+    },
+    "review_coming_soon": "La vista de revisión estará disponible pronto."
   },
   "coming_soon": {
     "badge": "Próximamente",
@@ -1005,5 +1006,16 @@
     "ADMINISTRATIVE": "Admin operativo",
     "REVIEWER": "Revisor",
     "SUPERUSER": "Superusuario"
+  },
+  "show_action": {
+    "title": "Acción",
+    "outcome_published": "Activo publicado",
+    "outcome_rejected": "Activo rechazado",
+    "message": "Mensaje",
+    "no_message": "No se proporcionó ningún mensaje.",
+    "back": "Volver",
+    "dismiss": "Descartar",
+    "dismissed": "Notificación descartada",
+    "not_found": "No se encontró esta notificación."
   }
 }

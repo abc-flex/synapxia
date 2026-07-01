@@ -20,6 +20,14 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-07-01 16:47 — fix(db): publish Postgres on host port 5442 (configurable) to avoid host 5432 clashes
+- **Problem:** the DB container published on host `5432:5432`, colliding with a local Postgres or another project's Docker container already bound to host 5432 (compose fails with "port is already allocated").
+- **Fix:** remapped only the **host** side to a new default `5442`, made it configurable via a new **`DB_HOST_PORT`** env var — `docker-compose.yml` now maps `${DB_HOST_PORT:-5442}:5432`. The **container port stays 5432**, so in-network consumers (the API and PgAdmin reach it as `db:5432`) and `DB_PORT` (the API's internal connection port) are **unchanged** — no code/connection-string changes.
+- `.env.template` documents both knobs (`DB_PORT` = in-network/container; `DB_HOST_PORT` = host-published, default 5442). Host clients (psql/DBeaver/a locally-run API) now use `localhost:5442`.
+- Docs refreshed to distinguish in-network vs host port: `Makefile` (`make dev` info block), `db/CLAUDE.md`, root `CLAUDE.md`, `AGENTS.md`, `docs/GETTING_STARTED.md`, `API.md`, `memory/MEMORY.md`.
+- **Verify:** `docker compose config` interpolates `published: "5442"` by default and honors `DB_HOST_PORT` overrides; container `target: 5432` and the API's `db:5432` connection unchanged. Applies on `docker compose up` (no volume rebuild needed — it's a port mapping).
+- Files affected: `docker-compose.yml`, `.env.template`, `Makefile`, `db/CLAUDE.md`, `CLAUDE.md`, `AGENTS.md`, `docs/GETTING_STARTED.md`, `API.md`, `memory/MEMORY.md`
+
 ## 2026-07-01 01:56 — feat(lib): HU-Notifications click-through + HU-Show Action (PUBLICATION/REJECTION)
 - Finished the last open item of **HU-Notifications** (the rest — grouped list, ASSIGNED bold / NOTIFIED dismissible, remove→FINISHED — was already built & tested): **clicking a notification now opens the matching user story**. `PUBLICATION`/`REJECTION` → the new read-only **Show Action** view; `REVIEW`/`MODIFICATION` → a "coming soon" toast + mark-seen (the review flow is deferred).
 - **New `HU-Show Action`** (`ui/src/pages/lib/show-action.astro`, `/lib/show-action?action={id}`): a read-only outcome card branded by type (PUBLICATION → emerald/check, REJECTION → red/x), showing the asset name, the action message (`content`/`detail`), and a relative timestamp. Opening it **marks the notification seen** (ASSIGNED→NOTIFIED, idempotent) so the bell un-bolds; footer has **Back** + **Dismiss** (inserts FINISHED). Built on the shared `components/ui/Button` primitive + the propose hero pattern.

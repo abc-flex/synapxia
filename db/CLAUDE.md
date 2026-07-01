@@ -15,7 +15,7 @@ needs to extend or debug the schema.
 | Item | Value |
 |------|-------|
 | Engine | PostgreSQL 18 |
-| Container port | 5432 (mapped to host 5432) |
+| Container port | 5432 (published on host `5442` by default — override via `DB_HOST_PORT`) |
 | Migration tool | Ordered raw SQL files (no Alembic/Flyway/Liquibase) |
 | Initialization | Docker entrypoint auto-runs files in `/docker-entrypoint-initdb.d/` lexically |
 | Persistence | `synapxia-db-volume` (named Docker volume) |
@@ -193,7 +193,7 @@ boot of a fresh volume.**
 ```yaml
 db:
   image: postgres:18
-  ports: ["5432:5432"]
+  ports: ["${DB_HOST_PORT:-5442}:5432"]   # host 5442 → container 5432 (avoid host 5432 clashes)
   volumes:
     - ./db/sql:/docker-entrypoint-initdb.d   # auto-run on fresh init
     - synapxia-db-volume:/var/lib/postgresql/data

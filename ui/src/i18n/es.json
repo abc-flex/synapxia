@@ -882,7 +882,9 @@
     "characterization": "Caracterización",
     "characterization_hint": "Describe el activo según las características de este tipo. Los valores por defecto vienen precargados; ajústalos según sea necesario.",
     "tab_details": "Detalles",
-    "tab_characterization": "Caracterización"
+    "tab_characterization": "Caracterización",
+    "name_required": "El nombre es obligatorio",
+    "category_required": "La categoría es obligatoria"
   },
   "prompt_modal": {
     "title_create": "Nuevo Prompt",

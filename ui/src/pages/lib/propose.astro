@@ -85,13 +85,14 @@ const tabOff =
         <div data-propose-panel="details" class="space-y-5">
           <div>
             <label class={labelClass} for="propose-name" data-i18n="propose.name">Name</label>
-            <input id="propose-name" name="name" type="text" class={inputClass}
+            <input id="propose-name" name="name" type="text" maxlength="100" class={inputClass}
               data-i18n-placeholder="propose.name_placeholder" placeholder="Asset name" />
+            <p id="propose-name-error" class="mt-1 hidden text-xs text-red-600 dark:text-red-400" data-i18n="propose.name_required">Name is required</p>
           </div>
 
           <div>
             <label class={labelClass} for="propose-description" data-i18n="propose.description">Description</label>
-            <textarea id="propose-description" name="description" rows="2" class={inputClass}
+            <textarea id="propose-description" name="description" rows="2" maxlength="500" class={inputClass}
               data-i18n-placeholder="propose.description_placeholder" placeholder="Short description"></textarea>
           </div>
 
@@ -106,6 +107,7 @@ const tabOff =
                    gallery (?category=); the type then can't be changed. -->
               <input id="propose-category-locked" type="text" readonly
                 class={`${inputClass} hidden cursor-not-allowed bg-gray-100 dark:bg-gray-800`} />
+              <p id="propose-category-error" class="mt-1 hidden text-xs text-red-600 dark:text-red-400" data-i18n="propose.category_required">Category is required</p>
             </div>
             <div>
               <label class={labelClass} for="propose-reviewer" data-i18n="propose.reviewer">Reviewer</label>
@@ -251,6 +253,20 @@ const tabOff =
     const heroTitle = document.getElementById("propose-hero-title") as HTMLElement | null;
     const charTab = document.getElementById("propose-tab-char") as HTMLButtonElement | null;
     const charFields = document.getElementById("propose-characterization-fields") as HTMLElement | null;
+    const nameErr = document.getElementById("propose-name-error") as HTMLElement | null;
+    const catErr = document.getElementById("propose-category-error") as HTMLElement | null;
+
+    // Toggle a field's invalid state: red border + its inline error message.
+    function setInvalid(el: HTMLElement | null, err: HTMLElement | null, invalid: boolean) {
+      if (el) {
+        el.classList.toggle("border-gray-300", !invalid);
+        el.classList.toggle("dark:border-gray-700", !invalid);
+        el.classList.toggle("border-red-500", invalid);
+        el.classList.toggle("dark:border-red-500", invalid);
+        el.setAttribute("aria-invalid", String(invalid));
+      }
+      err?.classList.toggle("hidden", !invalid);
+    }
 
     const tabButtons = Array.from(
       document.querySelectorAll<HTMLButtonElement>("[data-propose-tab]"),
@@ -421,6 +437,10 @@ const tabOff =
       }
     }
 
+    // Clear a field's invalid state as soon as the user fixes it.
+    nameInput?.addEventListener("input", () => setInvalid(nameInput, nameErr, false));
+    catSel?.addEventListener("change", () => setInvalid(catSel, catErr, false));
+
     void init();
     void fillReviewers();
 
@@ -429,10 +449,16 @@ const tabOff =
       const fd = new FormData(form);
       const name = String(fd.get("name") || "").trim();
       const category = lockedCategory || String(fd.get("category") || "");
-      if (!name || !category) {
+      const catControl = lockedCategory ? catLocked : catSel;
+      const nameBad = !name;
+      const catBad = !category;
+      // Mark the offending inputs inline (red border + message).
+      setInvalid(nameInput, nameErr, nameBad);
+      setInvalid(catControl, catErr, catBad);
+      if (nameBad || catBad) {
         // Required fields live on the Details tab — surface them there.
         activateTab("details");
-        nameInput?.focus();
+        (nameBad ? nameInput : catControl)?.focus();
         showToast(tr("propose.required", "Name and category are required"), "error");
         return;
       }

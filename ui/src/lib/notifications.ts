@@ -9,11 +9,11 @@
  *   POST /api/actions/notifications/{id}/dismiss  → insert FINISHED (remove)
  * The current user comes from the JWT — no user id is sent. No new table.
  *
- * Scope note: per the roadmap, the propose/review workflow that *generates*
- * assignments (HU-Review/Modify/Show-Action) isn't built yet, and those
- * destination views don't exist — so clicking an item marks it seen
- * (ASSIGNED→NOTIFIED) in place rather than navigating. Asset names are rendered
- * with `textContent` (XSS-safe), mirroring the foro/history renderers.
+ * Click-through (HU-Notifications): PUBLICATION/REJECTION open the read-only
+ * Show Action view (`/lib/show-action?action={id}`), which marks the item seen on
+ * open. REVIEW/MODIFICATION would open the review flow — not built yet — so they
+ * show a "coming soon" toast and mark seen (ASSIGNED→NOTIFIED) in place. Asset
+ * names are rendered with `textContent` (XSS-safe), mirroring foro/history.
  */
 import { apiGet, apiPost } from "./api";
 import { isAuthenticated } from "./auth";
@@ -91,6 +91,7 @@ export function mountNotifications(): void {
     const article = document.createElement("article");
     article.className = "notification-item";
     article.dataset.notifId = String(it.id);
+    article.dataset.notifType = it.type;
     if (it.unread) article.dataset.unread = "1";
 
     const body = document.createElement("div");
@@ -160,8 +161,22 @@ export function mountNotifications(): void {
     }
 
     const article = target.closest<HTMLElement>("[data-notif-id]");
-    if (article && article.dataset.unread === "1") {
-      const id = Number(article.dataset.notifId);
+    if (!article) return;
+    const id = Number(article.dataset.notifId);
+    const type = article.dataset.notifType || "";
+
+    // Click opens the matching user story (HU-Notifications). PUBLICATION /
+    // REJECTION → the read-only Show Action view (which marks it seen on open).
+    if (type === "PUBLICATION" || type === "REJECTION") {
+      window.location.href = `/lib/show-action?action=${encodeURIComponent(String(id))}`;
+      return;
+    }
+
+    // REVIEW / MODIFICATION → the review flow isn't built yet: tell the user and
+    // mark the item seen in place (ASSIGNED → NOTIFIED) so the bell un-bolds.
+    (window as any).showToast?.(
+      tr("notifications.review_coming_soon", "The review view is coming soon."), "info");
+    if (article.dataset.unread === "1") {
       try {
         await markNotified(id);
         await load(); // refresh (item un-bolds, gains a dismiss control)

@@ -1,0 +1,29 @@
+---
+/**
+ * Button — a Tailwind button with primary / secondary / ghost variants.
+ * Label via i18n key (`labelKey`) or the default slot.
+ */
+interface Props {
+  id?: string;
+  type?: "button" | "submit" | "reset";
+  variant?: "primary" | "secondary" | "ghost";
+  labelKey?: string;
+  class?: string;
+}
+
+const { id, type = "button", variant = "primary", labelKey, class: cls = "" } =
+  Astro.props as Props;
+
+const base =
+  "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition focus:outline-none disabled:opacity-60";
+const variants: Record<string, string> = {
+  primary: "bg-indigo-600 text-white hover:bg-indigo-700",
+  secondary:
+    "border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800",
+  ghost: "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800",
+};
+---
+
+<button id={id} type={type} class={`${base} ${variants[variant] || variants.primary} ${cls}`} data-i18n={labelKey}>
+  <slot>{labelKey}</slot>
+</button>

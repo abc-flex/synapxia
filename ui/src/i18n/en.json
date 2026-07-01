@@ -33,7 +33,8 @@
       "MODIFICATION": "Modification",
       "PUBLICATION": "Publication",
       "REJECTION": "Rejection"
-    }
+    },
+    "review_coming_soon": "The review view is coming soon."
   },
   "coming_soon": {
     "badge": "Coming soon",
@@ -879,7 +880,17 @@
     "submit": "Propose for review",
     "required": "Name and category are required",
     "success": "Asset proposed for review",
-    "error": "Could not propose the asset"
+    "error": "Could not propose the asset",
+    "title_prompts": "Propose a Prompt",
+    "title_mcps": "Propose an MCP",
+    "title_agents": "Propose an Agent",
+    "characterization": "Characterization",
+    "characterization_hint": "Describe the asset against this type's features. Defaults are prefilled; adjust as needed.",
+    "tab_details": "Details",
+    "tab_characterization": "Characterization",
+    "name_required": "Name is required",
+    "category_required": "Category is required",
+    "review_characterization": "Please review the Characterization tab before proposing."
   },
   "prompt_modal": {
     "title_create": "New Prompt",
@@ -976,5 +987,39 @@
     "tools_more": "more",
     "instructions": "Instructions",
     "instructions_copied": "Instructions copied"
+  },
+  "feature": {
+    "LANGUAGE": "Programming language",
+    "MODE": "Mode of operation",
+    "PLATFORM": "Platform",
+    "REPOSITORY": "Repository",
+    "FRAMEWORK": "Framework",
+    "COMPLEXITY": "Complexity level",
+    "SUGGESTED_MODEL": "Suggested model",
+    "SUGGESTED_TEMPERATURE": "Suggested temperature",
+    "PROMPT_TEMPLATE": "Prompt template",
+    "EXAMPLE_OUTPUT": "Example output",
+    "OVERVIEW": "Overview",
+    "CONTENT": "Content",
+    "TOOLS": "Tools",
+    "SERVER_CONFIG": "Server configuration (JSON)",
+    "INSTRUCTIONS": "Instructions"
+  },
+  "reviewer_role": {
+    "ADMINISTRATOR": "Administrator",
+    "ADMINISTRATIVE": "Operational Admin",
+    "REVIEWER": "Reviewer",
+    "SUPERUSER": "Superuser"
+  },
+  "show_action": {
+    "title": "Action",
+    "outcome_published": "Asset published",
+    "outcome_rejected": "Asset rejected",
+    "message": "Message",
+    "no_message": "No message provided.",
+    "back": "Back",
+    "dismiss": "Dismiss",
+    "dismissed": "Notification dismissed",
+    "not_found": "This notification could not be found."
   }
 }

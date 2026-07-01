@@ -8,7 +8,7 @@
 import { apiGet, apiPost } from "./api";
 import type { Asset, ProposeRequest, ReviewerOption } from "../types/api";
 
-/** Eligible reviewers (active ADMINISTRATIVE users) for the propose form. */
+/** Eligible reviewers (active administrators, REVIEWERs, or superusers) for the propose form. */
 export async function getReviewers(): Promise<ReviewerOption[]> {
   return apiGet<ReviewerOption[]>("/api/assets/reviewers");
 }

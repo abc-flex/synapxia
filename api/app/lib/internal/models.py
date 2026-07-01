@@ -428,7 +428,7 @@ class ProposeRequest(SQLModel):
     optionally overrides the category specs' default characterization values
     (feature code → value); omitted features fall back to the spec default.
     ``reviewer_id`` is optional — when omitted the service auto-assigns the first
-    eligible (ADMINISTRATIVE) reviewer."""
+    eligible reviewer (administrator, REVIEWER, or superuser)."""
     name: str = Field(max_length=100, description="Asset name")
     description: Optional[str] = Field(
         default=None, max_length=500, description="Asset description")
@@ -437,12 +437,15 @@ class ProposeRequest(SQLModel):
     tags: Optional[Any] = Field(default=None, description="Asset tags (JSON)")
     detail: Optional[str] = Field(default=None, description="Asset detail")
     reviewer_id: Optional[int] = Field(
-        default=None, description="Reviewer user id (ADMINISTRATIVE); auto-assigned if omitted")
+        default=None,
+        description="Reviewer user id (administrator/REVIEWER/superuser); auto-assigned if omitted")
     values: Optional[Dict[str, str]] = Field(
         default=None, description="Optional per-feature characterization values (feature → value)")
 
 
 class ReviewerOption(SQLModel):
-    """A selectable reviewer for the propose form ({value, label})."""
+    """A selectable reviewer for the propose form ({value, label, profile, is_superuser})."""
     value: int = Field(description="Reviewer user id")
     label: str = Field(description="Reviewer display name")
+    profile: str = Field(description="Reviewer profile code (ADMINISTRATOR/ADMINISTRATIVE/REVIEWER/…)")
+    is_superuser: bool = Field(default=False, description="Whether the reviewer is a superuser")

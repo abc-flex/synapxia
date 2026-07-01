@@ -1,5 +1,11 @@
 /**
- * toast — top-layer notifications.
+ * toast — top-layer notifications, styled after Sonner (https://sonner.emilkowal.sk).
+ *
+ * Sonner itself is React-only and this UI is deliberately framework-free
+ * (Astro + vanilla TS), so this is a dependency-free re-creation of Sonner's
+ * look & feel: a neutral opaque card with a colored status icon, rounded
+ * corners + subtle shadow, anchored **bottom-right**, stacked with the newest
+ * nearest the corner, sliding up + fading in and out.
  *
  * Why a `<dialog>`: the catalog detail view is a native `<dialog>.showModal()`,
  * which the browser promotes into the *top layer* — a paint layer that sits
@@ -17,13 +23,18 @@
 
 export type ToastVariant = "success" | "error" | "info";
 
-const VARIANT_CLASSES: Record<ToastVariant, string> = {
-  error:
-    "bg-red-50 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800",
+// Colored status icon per variant (Sonner shows a neutral card + colored icon).
+const VARIANT_ICONS: Record<ToastVariant, string> = {
   success:
-    "bg-green-50 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800",
-  info: "bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800",
+    `<svg class="h-5 w-5 text-green-600 dark:text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9" /><path d="M8.5 12.5l2.5 2.5 4.5-5" stroke-linecap="round" stroke-linejoin="round" /></svg>`,
+  error:
+    `<svg class="h-5 w-5 text-red-600 dark:text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9" /><path d="M15 9l-6 6M9 9l6 6" stroke-linecap="round" /></svg>`,
+  info:
+    `<svg class="h-5 w-5 text-blue-600 dark:text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" stroke-linecap="round" /></svg>`,
 };
+
+const CLOSE_ICON =
+  `<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18" stroke-linecap="round" /></svg>`;
 
 let container: HTMLDialogElement | null = null;
 
@@ -35,21 +46,23 @@ function getContainer(): HTMLDialogElement {
   dlg.id = "toast-layer";
   dlg.setAttribute("aria-live", "polite");
   dlg.setAttribute("aria-atomic", "true");
-  // Neutralize the default <dialog> box and pin it top-right. `pointer-events:
+  // Neutralize the default <dialog> box and pin it bottom-right. `pointer-events:
   // none` lets clicks pass through the empty container; each toast re-enables
-  // them for itself so its close button stays clickable.
+  // them for itself so its close button stays clickable. With `bottom` fixed and
+  // block-flow children, the box grows upward and the newest (last-appended)
+  // toast sits nearest the corner — matching Sonner.
   Object.assign(dlg.style, {
     position: "fixed",
-    top: "1rem",
+    bottom: "1rem",
     right: "1rem",
+    top: "auto",
     left: "auto",
-    bottom: "auto",
     margin: "0",
     padding: "0",
     border: "0",
     background: "transparent",
     width: "auto",
-    maxWidth: "28rem",
+    maxWidth: "calc(100vw - 2rem)",
     maxHeight: "none",
     overflow: "visible",
     pointerEvents: "none",
@@ -75,24 +88,29 @@ export function showToast(message: string, variant: ToastVariant | string = "inf
 
   const toast = document.createElement("div");
   toast.setAttribute("role", "alert");
-  toast.style.pointerEvents = "auto";
-  toast.className = `mb-2 max-w-md p-4 rounded-lg border shadow-lg transition-all duration-300 ${VARIANT_CLASSES[v]}`;
+  // Sonner-style neutral card: opaque surface, colored icon, soft border + shadow.
+  toast.className =
+    "pointer-events-auto mt-3 flex w-[356px] max-w-full items-start gap-3 rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-900 shadow-lg dark:border-gray-800 dark:bg-gray-900 dark:text-gray-100";
+  toast.style.transition = "opacity 0.3s ease, transform 0.3s ease";
+  toast.style.opacity = "0";
+  toast.style.transform = "translateY(16px)";
 
-  const row = document.createElement("div");
-  row.className = "flex items-start gap-3";
+  const icon = document.createElement("span");
+  icon.className = "mt-0.5 flex-shrink-0";
+  icon.innerHTML = VARIANT_ICONS[v];
 
   const text = document.createElement("div");
-  text.className = "flex-1 text-sm font-medium";
+  text.className = "flex-1 font-medium leading-snug";
   text.textContent = message;
 
   const closeBtn = document.createElement("button");
   closeBtn.type = "button";
   closeBtn.setAttribute("aria-label", "Close");
-  closeBtn.className = "flex-shrink-0 text-gray-400 hover:text-gray-600";
-  closeBtn.textContent = "✕";
+  closeBtn.className =
+    "-mr-1 -mt-1 flex-shrink-0 rounded p-1 text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300";
+  closeBtn.innerHTML = CLOSE_ICON;
 
-  row.append(text, closeBtn);
-  toast.appendChild(row);
+  toast.append(icon, text, closeBtn);
 
   let removed = false;
   const remove = () => {
@@ -105,7 +123,7 @@ export function showToast(message: string, variant: ToastVariant | string = "inf
   };
   const dismiss = () => {
     toast.style.opacity = "0";
-    toast.style.transform = "translateX(100%)";
+    toast.style.transform = "translateY(16px)";
     setTimeout(remove, 300);
   };
   closeBtn.addEventListener("click", dismiss);
@@ -122,7 +140,13 @@ export function showToast(message: string, variant: ToastVariant | string = "inf
     /* show() can throw if the dialog was removed; the next toast re-creates it. */
   }
 
-  setTimeout(dismiss, 5000);
+  // Animate in on the next frame (start state was set above).
+  requestAnimationFrame(() => {
+    toast.style.opacity = "1";
+    toast.style.transform = "translateY(0)";
+  });
+
+  setTimeout(dismiss, 4000);
 }
 
 /** Register `window.showToast` so existing handlers reach the top-layer toast. */

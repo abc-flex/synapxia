@@ -1,0 +1,37 @@
+---
+/**
+ * FormField — a labelled form control with an optional inline error message.
+ *
+ * Renders the label + your control (default slot) + a hidden error `<p>` that
+ * `setFieldInvalid()` (from `@/lib/formClasses`) reveals on validation failure.
+ * Put the actual `<input>/<select>/<textarea id={controlId} class={inputClass}>`
+ * in the slot so its id/name stay under your control.
+ */
+import { labelClass, fieldErrorClass } from "@/lib/formClasses";
+
+interface Props {
+  /** id of the control in the slot (drives the label's `for`). */
+  controlId: string;
+  /** i18n key for the label (fallback: `label`). */
+  labelKey?: string;
+  label?: string;
+  /** When set, renders an inline error `<p id={errorId}>` (hidden until invalid). */
+  errorId?: string;
+  errorKey?: string;
+  error?: string;
+  /** Extra classes on the wrapper (e.g. `sm:col-span-2`). */
+  class?: string;
+}
+
+const {
+  controlId, labelKey, label = "", errorId, errorKey, error = "", class: cls = "",
+} = Astro.props as Props;
+---
+
+<div class={cls}>
+  <label class={labelClass} for={controlId} data-i18n={labelKey}>{labelKey || label}</label>
+  <slot />
+  {errorId && (
+    <p id={errorId} class={fieldErrorClass} data-i18n={errorKey}>{errorKey || error}</p>
+  )}
+</div>

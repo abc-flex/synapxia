@@ -33,7 +33,8 @@
       "MODIFICATION": "Modificación",
       "PUBLICATION": "Publicación",
       "REJECTION": "Rechazo"
-    }
+    },
+    "review_coming_soon": "La vista de revisión estará disponible pronto."
   },
   "coming_soon": {
     "badge": "Próximamente",
@@ -879,7 +880,17 @@
     "submit": "Proponer para revisión",
     "required": "El nombre y la categoría son obligatorios",
     "success": "Activo propuesto para revisión",
-    "error": "No se pudo proponer el activo"
+    "error": "No se pudo proponer el activo",
+    "title_prompts": "Proponer un Prompt",
+    "title_mcps": "Proponer un MCP",
+    "title_agents": "Proponer un Agente",
+    "characterization": "Caracterización",
+    "characterization_hint": "Describe el activo según las características de este tipo. Los valores por defecto vienen precargados; ajústalos según sea necesario.",
+    "tab_details": "Detalles",
+    "tab_characterization": "Caracterización",
+    "name_required": "El nombre es obligatorio",
+    "category_required": "La categoría es obligatoria",
+    "review_characterization": "Revisa la pestaña de Caracterización antes de proponer."
   },
   "prompt_modal": {
     "title_create": "Nuevo Prompt",
@@ -976,5 +987,39 @@
     "tools_more": "más",
     "instructions": "Instrucciones",
     "instructions_copied": "Instrucciones copiadas"
+  },
+  "feature": {
+    "LANGUAGE": "Lenguaje de programación",
+    "MODE": "Modo de operación",
+    "PLATFORM": "Plataforma",
+    "REPOSITORY": "Repositorio",
+    "FRAMEWORK": "Framework",
+    "COMPLEXITY": "Nivel de complejidad",
+    "SUGGESTED_MODEL": "Modelo sugerido",
+    "SUGGESTED_TEMPERATURE": "Temperatura sugerida",
+    "PROMPT_TEMPLATE": "Plantilla de prompt",
+    "EXAMPLE_OUTPUT": "Ejemplo de salida",
+    "OVERVIEW": "Resumen",
+    "CONTENT": "Contenido",
+    "TOOLS": "Herramientas",
+    "SERVER_CONFIG": "Configuración del servidor (JSON)",
+    "INSTRUCTIONS": "Instrucciones"
+  },
+  "reviewer_role": {
+    "ADMINISTRATOR": "Administrador",
+    "ADMINISTRATIVE": "Admin operativo",
+    "REVIEWER": "Revisor",
+    "SUPERUSER": "Superusuario"
+  },
+  "show_action": {
+    "title": "Acción",
+    "outcome_published": "Activo publicado",
+    "outcome_rejected": "Activo rechazado",
+    "message": "Mensaje",
+    "no_message": "No se proporcionó ningún mensaje.",
+    "back": "Volver",
+    "dismiss": "Descartar",
+    "dismissed": "Notificación descartada",
+    "not_found": "No se encontró esta notificación."
   }
 }

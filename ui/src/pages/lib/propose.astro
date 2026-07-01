@@ -1,21 +1,33 @@
 ---
 /**
- * Propose an asset (HU-Propose) — the review-workflow entry point. A focused
- * form (name / description / category / reviewer / tags / detail) that POSTs to
+ * Propose an asset (HU-Propose) — the review-workflow entry point. POSTs to
  * `/api/assets/propose`, which atomically creates the asset (PROPOSED), its
  * characterizations (from the category's specs), the PROPOSAL + REVIEW actions,
  * and MANAGE permissions — generating the reviewer's notification.
  *
- * Category + reviewer selects are hydrated client-side (per-user data + the
- * Vercel build-time empty-fetch gotcha), via a bundled `@/` script.
+ * UX: a type-branded hero (gradient + icon matching that type's gallery card)
+ * over a two-tab form (Details / Characterization). Built on the shared UI
+ * primitives in `components/ui/` (Tabs, FormField, Button) + `lib/formClasses`
+ * (input/label classes, `setFieldInvalid`) + `lib/tabs` (`initTabs`).
+ *
+ * Reached from a gallery's "Propose" button with `?category=<CODE>`: the type is
+ * then locked and the hero/heading/characterization brand to it. Direct visit
+ * (no `?category=`) → editable type select; the hero + Characterization tab
+ * appear once a type is chosen. All inputs stay DOM-mounted (tabs only show/
+ * hide) so the submit handler collects them via FormData + querySelectorAll.
  */
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumb from "../../components/core/Breadcrumb.astro";
 import Toast from "../../components/Toast.astro";
+import Tabs from "../../components/ui/Tabs.astro";
+import FormField from "../../components/ui/FormField.astro";
+import Button from "../../components/ui/Button.astro";
+import { inputClass } from "@/lib/formClasses";
 
-const inputClass =
-  "w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100";
-const labelClass = "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300";
+const PROPOSE_TABS = [
+  { key: "details", labelKey: "propose.tab_details" },
+  { key: "characterization", labelKey: "propose.tab_characterization", hidden: true },
+];
 ---
 
 <BaseLayout>
@@ -32,60 +44,81 @@ const labelClass = "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
 
     <form
       id="propose-form"
-      class="space-y-5 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900"
+      class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
     >
-      <p class="text-sm text-gray-500 dark:text-gray-400" data-i18n="propose.subtitle">
-        Submit a new asset for review. A reviewer will be notified to approve, request changes, or reject it.
-      </p>
-
-      <div>
-        <label class={labelClass} for="propose-name" data-i18n="propose.name">Name</label>
-        <input id="propose-name" name="name" type="text" required class={inputClass}
-          data-i18n-placeholder="propose.name_placeholder" placeholder="Asset name" />
-      </div>
-
-      <div>
-        <label class={labelClass} for="propose-description" data-i18n="propose.description">Description</label>
-        <textarea id="propose-description" name="description" rows="2" class={inputClass}
-          data-i18n-placeholder="propose.description_placeholder" placeholder="Short description"></textarea>
-      </div>
-
-      <div class="grid gap-5 sm:grid-cols-2">
-        <div>
-          <label class={labelClass} for="propose-category" data-i18n="propose.category">Category</label>
-          <select id="propose-category" name="category" required class={inputClass}>
-            <option value="" data-i18n="propose.category_placeholder">Select a category…</option>
-          </select>
-        </div>
-        <div>
-          <label class={labelClass} for="propose-reviewer" data-i18n="propose.reviewer">Reviewer</label>
-          <select id="propose-reviewer" name="reviewer_id" class={inputClass}>
-            <option value="" data-i18n="propose.reviewer_auto">Auto-assign</option>
-          </select>
+      <!-- Type-branded hero (gradient + icon re-themed client-side by category). -->
+      <div id="propose-hero" class="flex items-start gap-4 bg-gradient-to-br from-indigo-500 to-indigo-600 px-6 py-5 text-white">
+        <span id="propose-hero-icon" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/20 text-white">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+          </svg>
+        </span>
+        <div class="min-w-0">
+          <h1 id="propose-hero-title" class="text-lg font-semibold" data-i18n="propose.title">Propose an asset</h1>
+          <p class="mt-0.5 text-sm text-white/85" data-i18n="propose.subtitle">
+            Submit a new asset for review. A reviewer will be notified to approve, request changes, or reject it.
+          </p>
         </div>
       </div>
 
-      <div>
-        <label class={labelClass} for="propose-tags" data-i18n="propose.tags">Tags</label>
-        <input id="propose-tags" name="tags" type="text" class={inputClass}
-          data-i18n-placeholder="propose.tags_placeholder" placeholder="comma, separated, tags" />
+      <Tabs tabs={PROPOSE_TABS} ariaLabel="Propose sections" />
+
+      <div class="px-6 py-5">
+        <!-- Details panel -->
+        <div data-tab-panel="details" class="space-y-5">
+          <FormField controlId="propose-name" labelKey="propose.name"
+            errorId="propose-name-error" errorKey="propose.name_required">
+            <input id="propose-name" name="name" type="text" maxlength="100" class={inputClass}
+              data-i18n-placeholder="propose.name_placeholder" placeholder="Asset name" />
+          </FormField>
+
+          <FormField controlId="propose-description" labelKey="propose.description">
+            <textarea id="propose-description" name="description" rows="2" maxlength="500" class={inputClass}
+              data-i18n-placeholder="propose.description_placeholder" placeholder="Short description"></textarea>
+          </FormField>
+
+          <div class="grid gap-5 sm:grid-cols-2">
+            <FormField controlId="propose-category" labelKey="propose.category"
+              errorId="propose-category-error" errorKey="propose.category_required">
+              <!-- Editable selector — used only on a direct visit (no ?category=). -->
+              <select id="propose-category" name="category" class={inputClass}>
+                <option value="" data-i18n="propose.category_placeholder">Select a category…</option>
+              </select>
+              <!-- Locked display — shown when the type comes from the originating gallery. -->
+              <input id="propose-category-locked" type="text" readonly
+                class={`${inputClass} hidden cursor-not-allowed bg-gray-100 dark:bg-gray-800`} />
+            </FormField>
+
+            <FormField controlId="propose-reviewer" labelKey="propose.reviewer">
+              <select id="propose-reviewer" name="reviewer_id" class={inputClass}>
+                <option value="" data-i18n="propose.reviewer_auto">Auto-assign</option>
+              </select>
+            </FormField>
+          </div>
+
+          <FormField controlId="propose-tags" labelKey="propose.tags">
+            <input id="propose-tags" name="tags" type="text" class={inputClass}
+              data-i18n-placeholder="propose.tags_placeholder" placeholder="comma, separated, tags" />
+          </FormField>
+
+          <FormField controlId="propose-detail" labelKey="propose.detail">
+            <textarea id="propose-detail" name="detail" rows="4" class={inputClass}
+              data-i18n-placeholder="propose.detail_placeholder" placeholder="Additional detail (optional)"></textarea>
+          </FormField>
+        </div>
+
+        <!-- Characterization panel -->
+        <div data-tab-panel="characterization" class="hidden">
+          <p class="mb-4 text-xs text-gray-500 dark:text-gray-400" data-i18n="propose.characterization_hint">
+            Describe the asset against this type's features. Defaults are prefilled; adjust as needed.
+          </p>
+          <div id="propose-characterization-fields" class="grid gap-5 sm:grid-cols-2"></div>
+        </div>
       </div>
 
-      <div>
-        <label class={labelClass} for="propose-detail" data-i18n="propose.detail">Detail</label>
-        <textarea id="propose-detail" name="detail" rows="4" class={inputClass}
-          data-i18n-placeholder="propose.detail_placeholder" placeholder="Additional detail (optional)"></textarea>
-      </div>
-
-      <div class="flex justify-end">
-        <button
-          id="propose-submit"
-          type="submit"
-          class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
-          data-i18n="propose.submit"
-        >
-          Propose for review
-        </button>
+      <!-- Footer -->
+      <div class="flex justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-800">
+        <Button id="propose-submit" type="submit" variant="primary" labelKey="propose.submit" />
       </div>
     </form>
   </div>
@@ -97,11 +130,51 @@ const labelClass = "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
     // /src imports (those 404 in the Vercel build — see memory/CHANGELOG.md).
     import { getCategories } from "@/lib/categories";
     import { getReviewers, proposeAsset } from "@/lib/propose";
+    import { getSpecificationsbyCategory } from "@/lib/specifications";
     import { loadClientTranslations, translate } from "@/utils/i18nClient";
     import { installGlobalToast, showToast } from "@/lib/toast";
+    import { initTabs } from "@/lib/tabs";
+    import { inputClass, labelClass, setFieldInvalid } from "@/lib/formClasses";
 
     loadClientTranslations();
     installGlobalToast();
+
+    const SUBMIT_BASE =
+      "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition disabled:opacity-60";
+    const HERO_BASE = "flex items-start gap-4 bg-gradient-to-br px-6 py-5 text-white";
+
+    // Per-type branding — icons + colors copied from the gallery cards so
+    // "Propose a Prompt/MCP/Agent" matches PromptCard / McpCard / AgentCard.
+    const ICON_PROMPT =
+      `<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 10h8M8 14h5M21 12a8 8 0 0 1-8 8H7l-4 3v-5a8 8 0 1 1 18-6z" stroke-linecap="round" stroke-linejoin="round" /></svg>`;
+    const ICON_MCP =
+      `<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="6" rx="1.5" /><rect x="3" y="14" width="18" height="6" rx="1.5" /><path d="M7 7h.01M7 17h.01" stroke-linecap="round" /></svg>`;
+    const ICON_AGENT =
+      `<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="6" y="6" width="12" height="12" rx="2" /><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3" stroke-linecap="round" /></svg>`;
+    const ICON_DEFAULT =
+      `<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14" stroke-linecap="round" /></svg>`;
+
+    type Theme = { grad: string; icon: string; submit: string };
+    const THEME_DEFAULT: Theme = {
+      grad: "from-indigo-500 to-indigo-600", icon: ICON_DEFAULT,
+      submit: "bg-indigo-600 hover:bg-indigo-700",
+    };
+    const THEMES: Record<string, Theme> = {
+      PROMPTS: { grad: "from-indigo-500 to-indigo-600", icon: ICON_PROMPT, submit: "bg-indigo-600 hover:bg-indigo-700" },
+      MCPS: { grad: "from-emerald-500 to-emerald-600", icon: ICON_MCP, submit: "bg-emerald-600 hover:bg-emerald-700" },
+      AGENTS: { grad: "from-violet-500 to-indigo-500", icon: ICON_AGENT, submit: "bg-violet-600 hover:bg-violet-700" },
+    };
+
+    const TITLE_KEYS: Record<string, string> = {
+      PROMPTS: "propose.title_prompts",
+      MCPS: "propose.title_mcps",
+      AGENTS: "propose.title_agents",
+    };
+    const RICH_FEATURES = new Set([
+      "PROMPT_TEMPLATE", "EXAMPLE_OUTPUT", "OVERVIEW",
+      "CONTENT", "TOOLS", "SERVER_CONFIG", "INSTRUCTIONS",
+    ]);
+    const REVIEWER_ROLES = ["ADMINISTRATOR", "ADMINISTRATIVE", "REVIEWER"];
 
     const tr = (key: string, fallback: string): string => {
       try {
@@ -114,32 +187,128 @@ const labelClass = "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
     };
 
     const form = document.getElementById("propose-form") as HTMLFormElement | null;
+    const nameInput = document.getElementById("propose-name") as HTMLInputElement | null;
     const catSel = document.getElementById("propose-category") as HTMLSelectElement | null;
+    const catLocked = document.getElementById("propose-category-locked") as HTMLInputElement | null;
     const revSel = document.getElementById("propose-reviewer") as HTMLSelectElement | null;
     const submitBtn = document.getElementById("propose-submit") as HTMLButtonElement | null;
+    const hero = document.getElementById("propose-hero") as HTMLElement | null;
+    const heroIcon = document.getElementById("propose-hero-icon") as HTMLElement | null;
+    const heroTitle = document.getElementById("propose-hero-title") as HTMLElement | null;
+    const charTab = document.getElementById("tab-characterization") as HTMLButtonElement | null;
+    const charFields = document.getElementById("propose-characterization-fields") as HTMLElement | null;
+    const nameErr = document.getElementById("propose-name-error") as HTMLElement | null;
+    const catErr = document.getElementById("propose-category-error") as HTMLElement | null;
 
-    async function fillCategories() {
-      if (!catSel) return;
-      try {
-        const cats = await getCategories(0, 1000);
-        for (const c of cats) {
-          const o = document.createElement("option");
-          o.value = c.code;
-          o.textContent = c.name;
-          catSel.appendChild(o);
-        }
-        // Preselect the category passed via ?category= (e.g. from a gallery's
-        // "Propose" button). Case-insensitive match; no-ops if absent/unknown.
-        const pre = new URLSearchParams(location.search).get("category");
-        if (pre) {
-          const match = Array.from(catSel.options).find(
-            (o) => o.value && o.value.toUpperCase() === pre.toUpperCase(),
-          );
-          if (match) catSel.value = match.value;
-        }
-      } catch {
-        /* leave the placeholder; submit will validate */
+    let lockedCategory: string | null = null;
+    let theme: Theme = THEME_DEFAULT;
+    // First-time nudge: has the user opened the Characterization tab yet?
+    let charVisited = false;
+
+    // Shared tab toggler; mark the characterization tab "visited" when opened.
+    const tabs = initTabs(document, {
+      onActivate: (key) => {
+        if (key === "characterization") charVisited = true;
+      },
+    });
+
+    function setCharTabVisible(visible: boolean) {
+      if (!charTab) return;
+      charTab.classList.toggle("hidden", !visible);
+      if (!visible && charTab.getAttribute("aria-selected") === "true") tabs.activate("details");
+    }
+
+    /* ---- branding --------------------------------------------------------- */
+    function applyTheme(category: string) {
+      theme = THEMES[(category || "").toUpperCase()] || THEME_DEFAULT;
+      if (hero) hero.className = `${HERO_BASE} ${theme.grad}`;
+      if (heroIcon) heroIcon.innerHTML = theme.icon;
+      if (submitBtn) submitBtn.className = `${SUBMIT_BASE} ${theme.submit}`;
+    }
+
+    function applyTitle(category: string) {
+      if (!heroTitle) return;
+      const key = TITLE_KEYS[(category || "").toUpperCase()] || "propose.title";
+      heroTitle.setAttribute("data-i18n", key); // keep correct across language switches
+      heroTitle.textContent = tr(key, heroTitle.textContent || "Propose an asset");
+    }
+
+    function lockCategory(category: string, label: string) {
+      lockedCategory = category;
+      if (catSel) {
+        catSel.value = category;
+        catSel.disabled = true;
+        catSel.classList.add("hidden");
       }
+      if (catLocked) {
+        catLocked.value = label;
+        catLocked.classList.remove("hidden");
+      }
+    }
+
+    // Everything that must react to the chosen type, in one place.
+    function syncType(category: string) {
+      charVisited = false; // a new type → its characterization hasn't been reviewed yet
+      applyTitle(category);
+      applyTheme(category);
+      void fillCharacterization(category);
+    }
+
+    /* ---- characterization ------------------------------------------------- */
+    async function fillCharacterization(category: string) {
+      if (!charFields || !category) {
+        setCharTabVisible(false);
+        return;
+      }
+      try {
+        const specs = await getSpecificationsbyCategory(category, 0, 1000);
+        charFields.innerHTML = "";
+        if (!specs.length) {
+          setCharTabVisible(false);
+          return;
+        }
+        for (const s of specs) {
+          const code = s.feature;
+          const rich = RICH_FEATURES.has(code);
+          const cell = document.createElement("div");
+          if (rich) cell.className = "sm:col-span-2";
+
+          const label = document.createElement("label");
+          label.className = labelClass;
+          label.htmlFor = `char-${code}`;
+          label.setAttribute("data-i18n", `feature.${code}`);
+          label.textContent = tr(`feature.${code}`, code);
+          cell.appendChild(label);
+
+          const field = rich
+            ? document.createElement("textarea")
+            : document.createElement("input");
+          if (field instanceof HTMLTextAreaElement) {
+            field.rows = code === "EXAMPLE_OUTPUT" || code === "OVERVIEW" ? 3 : 5;
+          } else {
+            field.type = "text";
+          }
+          field.id = `char-${code}`;
+          field.name = code;
+          field.className = inputClass;
+          field.setAttribute("data-characterization", "1");
+          if (s.default_value != null) field.value = s.default_value;
+          cell.appendChild(field);
+
+          charFields.appendChild(cell);
+        }
+        setCharTabVisible(true);
+        loadClientTranslations(); // patch the new [data-i18n] labels
+      } catch {
+        setCharTabVisible(false);
+      }
+    }
+
+    /* ---- reviewers -------------------------------------------------------- */
+    function reviewerRole(profile: string, isSuper: boolean): string {
+      if (REVIEWER_ROLES.includes(profile)) return tr(`reviewer_role.${profile}`, profile);
+      if (isSuper) return tr("reviewer_role.SUPERUSER", "Superuser");
+      return tr(`reviewer_role.${profile}`, profile);
     }
 
     async function fillReviewers() {
@@ -149,7 +318,7 @@ const labelClass = "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
         for (const r of revs) {
           const o = document.createElement("option");
           o.value = String(r.value);
-          o.textContent = r.label;
+          o.textContent = `${r.label} — ${reviewerRole(r.profile, r.is_superuser)}`;
           revSel.appendChild(o);
         }
       } catch {
@@ -157,18 +326,83 @@ const labelClass = "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
       }
     }
 
-    void fillCategories();
+    /* ---- init ------------------------------------------------------------- */
+    async function init() {
+      const pre = new URLSearchParams(location.search).get("category");
+      let cats: { code: string; name: string }[] = [];
+      try {
+        cats = await getCategories(0, 1000);
+      } catch {
+        /* leave the placeholder; submit will validate */
+      }
+      if (catSel) {
+        for (const c of cats) {
+          const o = document.createElement("option");
+          o.value = c.code;
+          o.textContent = c.name;
+          catSel.appendChild(o);
+        }
+      }
+
+      const match = pre
+        ? cats.find((c) => c.code.toUpperCase() === pre.toUpperCase())
+        : undefined;
+
+      if (match) {
+        lockCategory(match.code, match.name);
+        syncType(match.code);
+      } else if (catSel) {
+        catSel.addEventListener("change", () => syncType(catSel.value));
+      }
+    }
+
+    // Clear a field's invalid state as soon as the user fixes it.
+    nameInput?.addEventListener("input", () => setFieldInvalid(nameInput, nameErr, false));
+    catSel?.addEventListener("change", () => setFieldInvalid(catSel, catErr, false));
+
+    void init();
     void fillReviewers();
 
     form?.addEventListener("submit", async (e) => {
       e.preventDefault();
       const fd = new FormData(form);
       const name = String(fd.get("name") || "").trim();
-      const category = String(fd.get("category") || "");
-      if (!name || !category) {
+      const category = lockedCategory || String(fd.get("category") || "");
+      const catControl = lockedCategory ? catLocked : catSel;
+      const nameBad = !name;
+      const catBad = !category;
+      // Mark the offending inputs inline (red border + message).
+      setFieldInvalid(nameInput, nameErr, nameBad);
+      setFieldInvalid(catControl, catErr, catBad);
+      if (nameBad || catBad) {
+        tabs.activate("details");
+        (nameBad ? nameInput : catControl)?.focus();
         showToast(tr("propose.required", "Name and category are required"), "error");
         return;
       }
+
+      // First-time nudge: characterization is optional (defaults apply), but if
+      // this type has a Characterization tab and the user hasn't opened it yet,
+      // send them there once before actually proposing.
+      const hasCharTab = charTab != null && !charTab.classList.contains("hidden");
+      if (hasCharTab && !charVisited) {
+        charVisited = true;
+        tabs.activate("characterization");
+        showToast(
+          tr("propose.review_characterization", "Please review the Characterization tab before proposing."),
+          "info",
+        );
+        return;
+      }
+
+      // Collect the per-feature characterization values (non-empty only).
+      const values: Record<string, string> = {};
+      charFields
+        ?.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>("[data-characterization]")
+        .forEach((el) => {
+          const v = (el.value || "").trim();
+          if (v) values[el.name] = v;
+        });
 
       const tagsRaw = String(fd.get("tags") || "").trim();
       const reviewerRaw = String(fd.get("reviewer_id") || "");
@@ -179,6 +413,7 @@ const labelClass = "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
         detail: String(fd.get("detail") || "").trim() || undefined,
         tags: tagsRaw ? tagsRaw.split(",").map((t) => t.trim()).filter(Boolean) : undefined,
         reviewer_id: reviewerRaw ? Number(reviewerRaw) : undefined,
+        values: Object.keys(values).length ? values : undefined,
       };
 
       if (submitBtn) submitBtn.disabled = true;
@@ -186,6 +421,12 @@ const labelClass = "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-
         await proposeAsset(payload);
         showToast(tr("propose.success", "Asset proposed for review"), "success");
         form.reset();
+        tabs.activate("details");
+        charVisited = false; // fresh proposal → nudge again next time
+        // Re-prefill the characterization defaults after the native reset.
+        const current = lockedCategory || "";
+        if (current) void fillCharacterization(current);
+        else setCharTabVisible(false);
       } catch (err) {
         showToast(
           err instanceof Error ? err.message : tr("propose.error", "Could not propose the asset"),

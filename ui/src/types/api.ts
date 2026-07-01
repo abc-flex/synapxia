@@ -619,6 +619,8 @@ export interface ProposeRequest {
 export interface ReviewerOption {
   value: number;
   label: string;
+  profile: string;
+  is_superuser: boolean;
 }
 
 export interface AssetCreate {

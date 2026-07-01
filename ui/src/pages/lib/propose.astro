@@ -422,6 +422,14 @@ const tabOff =
       }
     }
 
+    // Localized role suffix for a reviewer option ("— Administrator", etc.).
+    const REVIEWER_ROLES = ["ADMINISTRATOR", "ADMINISTRATIVE", "REVIEWER"];
+    function reviewerRole(profile: string, isSuper: boolean): string {
+      if (REVIEWER_ROLES.includes(profile)) return tr(`reviewer_role.${profile}`, profile);
+      if (isSuper) return tr("reviewer_role.SUPERUSER", "Superuser");
+      return tr(`reviewer_role.${profile}`, profile);
+    }
+
     async function fillReviewers() {
       if (!revSel) return;
       try {
@@ -429,7 +437,7 @@ const tabOff =
         for (const r of revs) {
           const o = document.createElement("option");
           o.value = String(r.value);
-          o.textContent = r.label;
+          o.textContent = `${r.label} — ${reviewerRole(r.profile, r.is_superuser)}`;
           revSel.appendChild(o);
         }
       } catch {

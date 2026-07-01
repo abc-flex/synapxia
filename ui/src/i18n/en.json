@@ -998,5 +998,11 @@
     "TOOLS": "Tools",
     "SERVER_CONFIG": "Server configuration (JSON)",
     "INSTRUCTIONS": "Instructions"
+  },
+  "reviewer_role": {
+    "ADMINISTRATOR": "Administrator",
+    "ADMINISTRATIVE": "Operational Admin",
+    "REVIEWER": "Reviewer",
+    "SUPERUSER": "Superuser"
   }
 }

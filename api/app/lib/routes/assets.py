@@ -184,6 +184,8 @@ def list_reviewers(
         ReviewerOption(
             value=u.id,
             label=(f"{u.first_name} {u.last_name}".strip() or u.username),
+            profile=u.profile,
+            is_superuser=bool(u.is_superuser),
         )
         for u in propose_service.list_reviewers(session)
     ]

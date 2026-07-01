@@ -216,6 +216,11 @@ def test_reviewers_route_lists_eligible_users(session, client):
     assert r.status_code == 200
     body = r.json()["data"]
     assert [o["value"] for o in body] == [5, 6, 7]
+    # Each option carries its profile + superuser flag for a "name — role" label.
+    by_id = {o["value"]: o for o in body}
+    assert by_id[5]["profile"] == "ADMINISTRATOR" and by_id[5]["is_superuser"] is False
+    assert by_id[6]["profile"] == "REVIEWER"
+    assert by_id[7]["is_superuser"] is True
 
 
 def test_propose_route_creates_proposed_asset(session, client):

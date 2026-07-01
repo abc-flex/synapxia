@@ -444,6 +444,8 @@ class ProposeRequest(SQLModel):
 
 
 class ReviewerOption(SQLModel):
-    """A selectable reviewer for the propose form ({value, label})."""
+    """A selectable reviewer for the propose form ({value, label, profile, is_superuser})."""
     value: int = Field(description="Reviewer user id")
     label: str = Field(description="Reviewer display name")
+    profile: str = Field(description="Reviewer profile code (ADMINISTRATOR/ADMINISTRATIVE/REVIEWER/…)")
+    is_superuser: bool = Field(default=False, description="Whether the reviewer is a superuser")

@@ -9,6 +9,7 @@ import { getDimensions } from "@/lib/dimensions";
 import { getAssignments } from "@/lib/assignments";
 import { getTeamsSelect } from "@/lib/teams";
 import { getUsersSelect } from "@/lib/users";
+import { getRolesSelect } from "@/lib/roles";
 import { getListItemsbyList } from "@/lib/list_items";
 import { getListsbyType } from "@/lib/lists";
 
@@ -65,6 +66,14 @@ try {
   users = [];
 }
 
+let roles: any[] = [];
+try {
+  roles = await getRolesSelect();
+} catch (error) {
+  console.error('Failed to fetch roles:', error);
+  roles = [];
+}
+
 // Load the items of every SCALE-type list so the value select can be refreshed
 // client-side depending on the selected dimension. `scalesByList` maps each
 // SCALE list code -> its items; `dimensionScale` maps each dimension code -> the
@@ -92,45 +101,81 @@ const teamName = (id: any) =>
   teams.find((t: any) => String(t.value) === String(id))?.label || id;
 const userName = (id: any) =>
   users.find((u: any) => String(u.value) === String(id))?.label || id;
+const roleName = (code: any) =>
+  roles.find((r: any) => String(r.value) === String(code))?.label || code;
 
 const assignmentById = new Map(
   assignments.map((a: any) => [
     String(a.id),
-    { team: teamName(a.team), user: userName(a.user_id) },
+    { team: teamName(a.team), role: roleName(a.role), user: userName(a.user_id) },
   ])
 );
 
-const assignmentLabel = (id: any) => {
+// Row title = the assigned user (bold); its secondary segment = "RoleName — TeamName"
+// (team may be null → dropped). The leading "— " comes from the .dt-title-secondary CSS.
+const assignmentUser = (id: any) => assignmentById.get(String(id))?.user || "";
+const assignmentRoleTeam = (id: any) => {
   const a = assignmentById.get(String(id));
-  if (!a) return id;
-  return [a.team, a.user].filter(Boolean).join(" — ");
+  if (!a) return "";
+  return [a.role, a.team].filter(Boolean).join(" — ");
 };
 
-// Map assignments to select options with readable label
-const assignmentOptions = assignments.map((a: any) => ({
-  code: a.id,
-  name: `${teamName(a.team)} / ${userName(a.user_id)}`,
-}));
+// Map assignments to select options with readable label, sorted by
+// userName → teamName → roleName so the dropdown reads alphabetically by person.
+const assignmentOptions = assignments
+  .map((a: any) => ({
+    code: a.id,
+    user: String(userName(a.user_id)),
+    team: a.team ? String(teamName(a.team)) : "",
+    role: String(roleName(a.role)),
+  }))
+  .sort(
+    (x: any, y: any) =>
+      x.user.localeCompare(y.user) ||
+      x.team.localeCompare(y.team) ||
+      x.role.localeCompare(y.role),
+  )
+  .map((a: any) => ({
+    code: a.code,
+    // Team may be null (unassigned) — drop it from the label in that case.
+    name: [a.user, a.role, a.team].filter(Boolean).join(" — "),
+  }));
 
 const columns = [
-  { key: "dimension", label: "metric_modal.dimension", as: "title", subtitleKey: "assignment_label", subtitleFormat: "text" },
+  { key: "user_name", label: "metric_modal.assignment", as: "title", titleSecondaryKey: "role_team", subtitleKey: "dimension", subtitleFormat: "text" },
   { key: "assignment", label: "metric_modal.assignment", visible: false },
-  { key: "assignment_label", label: "metric_modal.assignment", visible: false },
+  { key: "role_team", label: "metric_modal.assignment", visible: false },
+  { key: "dimension", label: "metric_modal.dimension", visible: false },
   { key: "value", label: "metric_modal.value", visible: true },
   { key: "measured_at", label: "metric_modal.measured_at", as: "date" },
 ];
-const data = metrics.map((item) => ({
-  id: item.id,
-  dimension: item.dimension,
-  assignment: item.assignment,
-  assignment_label: assignmentLabel(item.assignment),
-  value: item.value,
-  observation: item.observation,
-  measured_at: item.measured_at,
-  is_active: item.is_active,
-  created_at: item.created_at,
-  updated_at: item.updated_at,
-}));
+const data = metrics
+  .map((item) => {
+    const a = assignmentById.get(String(item.assignment));
+    return {
+      id: item.id,
+      dimension: item.dimension,
+      assignment: item.assignment,
+      user_name: assignmentUser(item.assignment),
+      role_team: assignmentRoleTeam(item.assignment),
+      // Split sort keys (not displayed) so rows order by user → role → team.
+      _sort_user: String(a?.user || ""),
+      _sort_role: String(a?.role || ""),
+      _sort_team: String(a?.team || ""),
+      value: item.value,
+      observation: item.observation,
+      measured_at: item.measured_at,
+      is_active: item.is_active,
+      created_at: item.created_at,
+      updated_at: item.updated_at,
+    };
+  })
+  .sort(
+    (x, y) =>
+      x._sort_user.localeCompare(y._sort_user) ||
+      x._sort_role.localeCompare(y._sort_role) ||
+      x._sort_team.localeCompare(y._sort_team),
+  );
 const tableFields = [
   { key: "dimension", label: "metric_modal.dimension", type: "select" as const, options: dimensions, pk: true, required: true },
   { key: "assignment", label: "metric_modal.assignment", type: "select" as const, options: assignmentOptions, pk: true, required: true },

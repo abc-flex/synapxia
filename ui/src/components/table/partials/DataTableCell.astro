@@ -14,7 +14,12 @@ const { col, row, locale } = Astro.props as Props;
 <td class="px-2 py-1" data-label={t(locale, col.label)} data-col={col.as ?? "text"}>
   {col.as === "title" ? (
     <>
-      <span class="dt-title">{row[col.key]}</span>
+      <span class="dt-title">
+        {row[col.key]}
+        {col.titleSecondaryKey && row[col.titleSecondaryKey] && (
+          <span class="dt-title-secondary">{row[col.titleSecondaryKey]}</span>
+        )}
+      </span>
       {col.subtitleKey && renderSubtitle(col, row, locale) && (
         <span class="dt-subtitle">{renderSubtitle(col, row, locale)}</span>
       )}

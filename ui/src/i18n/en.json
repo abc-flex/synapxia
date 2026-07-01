@@ -93,7 +93,7 @@
     "projects": "Projects",
     "dimensions": "Dimensions",
     "metrics": "Metrics",
-    "assignment": "Assignment Dashboard",
+    "dashboard": "Assignment Dashboard",
     "assets": "Asset Repository",
     "characterizations": "Asset Characterization",
     "prompts": "Prompt Gallery",
@@ -402,7 +402,11 @@
   "assignment_dashboard": {
     "dimension": "Dimension",
     "date": "As-of date",
-    "empty_message": "No assignments found for this dimension and date"
+    "team": "Team",
+    "role": "Role",
+    "empty_message": "No assignments found for this dimension and date",
+    "metric_saved": "Metric updated successfully",
+    "metric_save_error": "Error updating metric"
   },
   "asset_modal": {
     "name": "Name",

@@ -429,6 +429,20 @@
   /* slate-500 */
   margin-top: 1px;
 }
+/* Inline secondary segment after the bold title (e.g. team/role next to a name):
+   normal weight, muted, separated by an em dash. */
+.datatable-dense .dt-title-secondary {
+  font-weight: 400;
+  color: #64748b;
+  /* slate-500 */
+}
+.datatable-dense .dt-title-secondary::before {
+  content: " — ";
+}
+.dark .datatable-dense .dt-title-secondary {
+  color: #94a3b8;
+  /* slate-400 */
+}
 .dark .datatable-dense .dt-title {
   color: #f1f5f9;
   /* slate-100 */

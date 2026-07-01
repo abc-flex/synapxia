@@ -1,11 +1,26 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import CrudModal from "../../components/forms/CrudModal.astro";
 
 // Dimension + as-of date are chosen client-side; the secured endpoint
 // (GET /api/metrics/dimension/{code}?date=...) needs the JWT from localStorage,
 // so the grid is fetched and rendered in the browser, not at build time.
 const dimensionFilter = Astro.url.searchParams.get("dimension") || "";
+
+// The dashboard is a graphical view of metrics, so editing an avatar reuses the
+// exact same Edit Metric modal as collab/metrics.astro (shared CrudModal). Since
+// the metric's dimension + assignment can't change on edit, they're shown as
+// disabled text inputs (no need to load the full option lists — just display the
+// current values, filled client-side in openEditModal). Only `value` (from the
+// dimension's SCALE list), `observation` and `measured_at` are editable.
+const metricFields = [
+  { key: "dimension", label: "metric_modal.dimension", type: "text" as const, disabled: true },
+  { key: "assignment", label: "metric_modal.assignment", type: "text" as const, disabled: true },
+  { key: "value", label: "metric_modal.value", type: "select" as const, options: [], required: true },
+  { key: "observation", label: "metric_modal.observation", type: "textarea" as const, placeholder: "Optional observation" },
+  { key: "measured_at", label: "metric_modal.measured_at", type: "calendar" as const, withTime: true },
+];
 ---
 
 <BaseLayout>
@@ -17,8 +32,8 @@ const dimensionFilter = Astro.url.searchParams.get("dimension") || "";
       pageTitle="Assigments Dashboard"
       homeLink="/"
       moduleNameKey="modules.COLLAB"
-      pageNameKey="menu_options.assignment"
-      pageTitleKey="menu_options.assignment"
+      pageNameKey="menu_options.dashboard"
+      pageTitleKey="menu_options.dashboard"
     />
     <!-- Breadcrumb End -->
 
@@ -70,70 +85,15 @@ const dimensionFilter = Astro.url.searchParams.get("dimension") || "";
     </div>
   </div>
 
-  <!-- Modal for Assignment Details -->
-  <div id="assignmentModal" class="hidden fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center">
-    <div class="bg-white rounded-2xl p-8 w-[800px] max-w-5xl shadow-2xl border border-slate-200">
-      <div class="flex justify-between items-start mb-6">
-        <h3 id="modalAssignmentName" class="text-2xl font-bold text-gray-900"></h3>
-        <button id="closeModalBtn" class="text-gray-400 hover:text-gray-600 text-2xl transition">
-          ✕
-        </button>
-      </div>
-
-      <div class="space-y-4">
-        <div>
-          <label class="block text-sm font-semibold text-gray-600 mb-1">Email:</label>
-          <span id="modalAssignmentEmail" class="text-slate-900"></span>
-        </div>
-        <div class="flex flex-col gap-4 md:flex-row md:gap-4">
-          <div class="flex-1">
-            <label class="block text-sm font-semibold text-gray-600 mb-1">Rol:</label>
-            <span id="modalAssignmentRole" class="text-slate-900"></span>
-          </div>
-          <div class="flex-1">
-            <label class="block text-sm font-semibold text-gray-600 mb-1">Equipo:</label>
-            <span id="modalAssignmentTeam" class="text-slate-900"></span>
-          </div>
-          <div class="flex-1">
-            <label class="block text-sm font-semibold text-gray-600 mb-1">Fecha:</label>
-            <span id="modalAssignmentDate" class="text-slate-900"></span>
-          </div>
-        </div>
-        <div>
-          <label for="modalMetricSelect" class="block text-sm font-semibold text-gray-600 mb-2">
-            Métrica actual:
-          </label>
-          <select
-            id="modalMetricSelect"
-            class="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition shadow-sm"
-          >
-            <option value="UNDEFINED">---</option>
-            <option value="NO_USAGE">No Usage</option>
-            <option value="LOW">Low</option>
-            <option value="MODERATE">Moderate</option>
-            <option value="HIGH">High</option>
-            <option value="VERY_HIGH">Very High</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-semibold text-gray-600 mb-1">Observación:</label>
-          <textarea
-            id="modalAssignmentObservation"
-            class="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition min-h-[120px] shadow-sm"
-          ></textarea>
-        </div>
-      </div>
-
-      <div class="flex gap-3 mt-8">
-        <button
-          id="saveMetricBtn"
-          class="flex-1 px-5 py-3 bg-blue-50 text-indigo-600 font-semibold rounded-2xl border border-blue-200 shadow-sm hover:border-indigo-300 hover:text-indigo-700 transition transform hover:-translate-y-0.5"
-        >
-          Guardar Métrica
-        </button>
-      </div>
-    </div>
-  </div>
+  <!-- Edit modal: same shared CrudModal used by collab/metrics.astro. Options
+       are injected client-side before opening (see openEditModal). -->
+  <CrudModal
+    mode="edit"
+    modalId="metric-edit-modal"
+    entityName="Metric"
+    fields={metricFields}
+    showTrigger={false}
+  />
 
   <style>
     .avatar-tooltip {
@@ -162,8 +122,17 @@ const dimensionFilter = Astro.url.searchParams.get("dimension") || "";
 
   <script>
     import { getDimensions } from "@/lib/dimensions";
-    import { getMetricsByDimension } from "@/lib/metrics";
+    import { getMetricsByDimension, updateMetric } from "@/lib/metrics";
+    import { getListsbyType } from "@/lib/lists";
+    import { getListItemsbyList } from "@/lib/list_items";
+    import { getTeamsSelect } from "@/lib/teams";
+    import { getRolesSelect } from "@/lib/roles";
     import type { MetricByDimension } from "@/types/api";
+
+    // Grid row = the API projection + the raw (un-normalized) metric value, kept
+    // for the edit modal's value <select> (the `metric` field is normalized to a
+    // colour bucket for the avatar).
+    type GridRow = MetricByDimension & { rawValue: string };
 
     // ----- Constants & helpers (ported from former server-side frontmatter) -----
     const METRIC_LEVELS = ["UNDEFINED", "NO_USAGE", "LOW", "MODERATE", "HIGH", "VERY_HIGH"];
@@ -235,15 +204,33 @@ const dimensionFilter = Astro.url.searchParams.get("dimension") || "";
     }
 
     // ----- Application state -----
-    let assignments: MetricByDimension[] = [];
-    let currentAssignment: MetricByDimension | null = null;
+    let assignments: GridRow[] = [];
+    // Cached lookups feeding the edit modal's selects (populated client-side
+    // because the metrics endpoints are JWT-secured — same reason the grid is).
+    let dimensionList: any[] = [];
+    let scalesByList: Record<string, any[]> = {};
+    let dimensionScale: Record<string, string> = {};
+    // Team/role code -> name, to show the assignment as "TeamName / RoleName / UserName".
+    let teamsByCode: Record<string, string> = {};
+    let rolesByCode: Record<string, string> = {};
 
     document.addEventListener("DOMContentLoaded", async () => {
       setupStaticListeners();
       initDateInput();
-      await loadDimensions();
+      await Promise.all([loadDimensions(), loadScales(), loadLookups()]);
       await reload();
     });
+
+    // Team + role name lookups for the edit modal's assignment label.
+    async function loadLookups() {
+      try {
+        const [teams, roles] = await Promise.all([getTeamsSelect(), getRolesSelect()]);
+        teamsByCode = Object.fromEntries(teams.map((t: any) => [String(t.value), t.label]));
+        rolesByCode = Object.fromEntries(roles.map((r: any) => [String(r.value), r.label]));
+      } catch (err) {
+        console.error("Failed to load team/role lookups", err);
+      }
+    }
 
     // Default the as-of date to today (local).
     function initDateInput() {
@@ -263,6 +250,12 @@ const dimensionFilter = Astro.url.searchParams.get("dimension") || "";
       if (!select) return;
       try {
         const dimensions = await getDimensions();
+        dimensionList = dimensions;
+        // Each dimension measures against a SCALE list (its `scale` FK, falling
+        // back to its own code) — this drives the value <select> options.
+        dimensionScale = Object.fromEntries(
+          dimensions.map((d: any) => [d.code, d.scale || d.code]),
+        );
         const initial = select.getAttribute("data-initial-dimension") || "";
         select.innerHTML = dimensions
           .map(
@@ -276,6 +269,37 @@ const dimensionFilter = Astro.url.searchParams.get("dimension") || "";
         console.error("Failed to load dimensions", err);
         showNotification("Error loading dimensions", "error");
       }
+    }
+
+    // Load every SCALE list's items so the edit modal's value <select> can be
+    // rebuilt for whichever dimension is on screen (mirrors metrics.astro).
+    async function loadScales() {
+      try {
+        const scaleLists = await getListsbyType("SCALE");
+        const entries = await Promise.all(
+          scaleLists.map(
+            async (l: any) => [l.code, await getListItemsbyList(l.code)] as const,
+          ),
+        );
+        scalesByList = Object.fromEntries(entries);
+      } catch (err) {
+        console.error("Failed to load scale lists", err);
+        scalesByList = {};
+      }
+    }
+
+    // Value options for a dimension: its SCALE list's items, filtered to the
+    // user's language (falls back to another language if the current has none).
+    function valueOptionsFor(dimensionCode: string): any[] {
+      const scaleCode = dimensionScale[dimensionCode];
+      const items = (scaleCode && scalesByList[scaleCode]) || [];
+      if (items.length === 0) return [];
+      const lang = localStorage.getItem("lang") || "en";
+      const langs = new Set(items.map((i: any) => i.lang));
+      const target = langs.has(lang)
+        ? lang
+        : items.find((i: any) => i.lang)?.lang || lang;
+      return items.filter((i: any) => !i.lang || i.lang === target);
     }
 
     // Fetch the assignments grid for the selected dimension + as-of date.
@@ -293,7 +317,12 @@ const dimensionFilter = Astro.url.searchParams.get("dimension") || "";
       const cutoff = `${dateValue}T23:59:59`;
       try {
         const rows = await getMetricsByDimension(dimensionCode, cutoff);
-        assignments = rows.map((row) => ({ ...row, metric: normalizeMetricValue(row.metric) }));
+        // Keep the raw value for editing; `metric` is normalized for the avatar colour.
+        assignments = rows.map((row) => ({
+          ...row,
+          rawValue: row.metric,
+          metric: normalizeMetricValue(row.metric),
+        }));
         (window as any).assignmentsData = assignments;
       } catch (err) {
         console.error("Failed to load metrics by dimension", err);
@@ -326,8 +355,8 @@ const dimensionFilter = Astro.url.searchParams.get("dimension") || "";
       thead.innerHTML = `
         <tr class="border-b border-slate-200">
           <th class="text-slate-900 text-center px-2 py-3 font-semibold sticky top-0 z-10 border border-slate-200">
-            <span class="uppercase">Team</span> &#11208;<br>
-            <span class="uppercase">Role</span> &#11206;
+            <span class="uppercase" data-i18n="assignment_dashboard.team">Team</span> &#11208;<br>
+            <span class="uppercase" data-i18n="assignment_dashboard.role">Role</span> &#11206;
           </th>
           ${teams
             .map(
@@ -384,11 +413,11 @@ const dimensionFilter = Astro.url.searchParams.get("dimension") || "";
       wireAvatars();
     }
 
-    function avatarMarkup(emp: MetricByDimension): string {
+    function avatarMarkup(emp: GridRow): string {
       const initials = getInitials(emp.name);
       const metricClass = getMetricColorClass(emp.metric);
       return `<div class="avatar-wrapper relative inline-block group">
-        <button class="avatar w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer transition-transform hover:scale-110 ${metricClass}" data-email="${escapeHtml(
+        <button class="avatar w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer transition-transform hover:scale-110 ${metricClass}" data-metric-id="${emp.id}" data-email="${escapeHtml(
           emp.email,
         )}" data-name="${escapeHtml(emp.name)}">${escapeHtml(initials)}</button>
         <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 text-white text-xs px-3 py-2 rounded whitespace-nowrap z-50 pointer-events-none shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200">${escapeHtml(
@@ -399,63 +428,104 @@ const dimensionFilter = Astro.url.searchParams.get("dimension") || "";
 
     // ----- Listeners -----
     function setupStaticListeners() {
-      document.getElementById("closeModalBtn")?.addEventListener("click", closeModal);
-      document.getElementById("assignmentModal")?.addEventListener("click", (e) => {
-        if ((e.target as HTMLElement).id === "assignmentModal") closeModal();
-      });
-      document.getElementById("saveMetricBtn")?.addEventListener("click", saveMetric);
       document.getElementById("dimensionSelect")?.addEventListener("change", reload);
       document.getElementById("asOfDate")?.addEventListener("change", reload);
+
+      // The shared CrudModal dispatches `crud-submit` on save — persist the edit
+      // (only value/observation/measured_at are editable; the PK selects are
+      // disabled and therefore excluded from the form data) and refresh the grid.
+      document.addEventListener("crud-submit", async (e) => {
+        const detail = (e as CustomEvent).detail || {};
+        if (detail.modalId !== "metric-edit-modal") return;
+        const { data } = detail;
+        try {
+          await updateMetric(parseInt(data.id, 10), {
+            value: data.value,
+            observation: data.observation || undefined,
+            measured_at: data.measured_at || undefined,
+            is_active: true,
+          });
+          showNotification(t("assignment_dashboard.metric_saved", "Metric updated successfully"), "info");
+          await reload();
+        } catch (err) {
+          console.error("Failed to update metric", err);
+          showNotification(
+            t("assignment_dashboard.metric_save_error", "Error updating metric"),
+            "error",
+          );
+        }
+      });
     }
 
     function wireAvatars() {
       document.querySelectorAll<HTMLButtonElement>(".avatar").forEach((btn) => {
         btn.addEventListener("click", () => {
-          const email = btn.getAttribute("data-email") || "";
-          openAssignmentModal(email);
+          const id = Number(btn.getAttribute("data-metric-id"));
+          const row = assignments.find((a) => a.id === id);
+          if (row) openEditModal(row);
         });
       });
     }
 
     // ----- Modal -----
-    function openAssignmentModal(email: string) {
-      const assignment = assignments.find((a) => a.email === email);
-      if (!assignment) return;
-      currentAssignment = assignment;
+    // Prefill and open the shared Edit Metric modal for the clicked avatar.
+    // dimension + assignment are read-only context (disabled → not submitted);
+    // value/observation/measured_at are editable and persisted on save.
+    function openEditModal(row: GridRow) {
+      const modal = document.getElementById("metric-edit-modal") as HTMLDialogElement | null;
+      if (!modal) return;
 
-      (document.getElementById("modalAssignmentName") as HTMLElement).textContent = assignment.name;
-      (document.getElementById("modalAssignmentEmail") as HTMLElement).textContent = assignment.email;
-      (document.getElementById("modalAssignmentRole") as HTMLElement).textContent = assignment.role;
-      (document.getElementById("modalAssignmentTeam") as HTMLElement).textContent = assignment.team || "-";
-      (document.getElementById("modalAssignmentDate") as HTMLElement).textContent = assignment.date;
-      (document.getElementById("modalAssignmentObservation") as HTMLTextAreaElement).value =
-        assignment.observation || "";
-      (document.getElementById("modalMetricSelect") as HTMLSelectElement).value = assignment.metric;
+      const dimensionCode =
+        (document.getElementById("dimensionSelect") as HTMLSelectElement | null)?.value || "";
+      const dimName =
+        dimensionList.find((d) => d.code === dimensionCode)?.name || dimensionCode;
 
-      document.getElementById("assignmentModal")?.classList.remove("hidden");
-    }
+      // Dimension — read-only text showing the current dimension name.
+      const dimInput = modal.querySelector('input[name="dimension"]') as HTMLInputElement | null;
+      if (dimInput) dimInput.value = dimName;
 
-    function closeModal() {
-      document.getElementById("assignmentModal")?.classList.add("hidden");
-      currentAssignment = null;
-    }
-
-    // Updates the in-memory grid only. Persisting the edit back to the API
-    // (POST/PUT a metric) is a separate, not-yet-wired step.
-    function saveMetric() {
-      if (!currentAssignment) return;
-      const newMetric = (document.getElementById("modalMetricSelect") as HTMLSelectElement).value;
-      const newObservation = (document.getElementById("modalAssignmentObservation") as HTMLTextAreaElement)
-        .value;
-
-      const index = assignments.findIndex((a) => a.email === currentAssignment!.email);
-      if (index !== -1) {
-        assignments[index].metric = newMetric;
-        assignments[index].observation = newObservation;
-        showNotification("Métrica actualizada (solo en pantalla)", "info");
-        closeModal();
-        renderGrid();
+      // Assignment — read-only text "UserName — RoleName — TeamName" (team dropped
+      // when null), matching collab/metrics; disabled → not submitted, purely context.
+      const asgInput = modal.querySelector('input[name="assignment"]') as HTMLInputElement | null;
+      if (asgInput) {
+        const teamLbl = teamsByCode[row.team] || row.team;
+        const roleLbl = rolesByCode[row.role] || row.role;
+        asgInput.value = [row.name, roleLbl, teamLbl].filter(Boolean).join(" — ");
       }
+
+      // Value select — options from the dimension's SCALE list; select current.
+      const valSelect = modal.querySelector('select[name="value"]') as HTMLSelectElement | null;
+      if (valSelect) {
+        valSelect.innerHTML = "";
+        const options = valueOptionsFor(dimensionCode);
+        if (options.length === 0 && row.rawValue) {
+          // No scale loaded — keep the current value editable at minimum.
+          const opt = document.createElement("option");
+          opt.value = row.rawValue;
+          opt.textContent = row.rawValue;
+          valSelect.appendChild(opt);
+        } else {
+          for (const item of options) {
+            const opt = document.createElement("option");
+            opt.value = item.value;
+            opt.textContent = item.label || item.value;
+            valSelect.appendChild(opt);
+          }
+        }
+        valSelect.value = row.rawValue;
+      }
+
+      const obs = modal.querySelector('textarea[name="observation"]') as HTMLTextAreaElement | null;
+      if (obs) obs.value = row.observation || "";
+
+      // datetime-local expects "YYYY-MM-DDTHH:mm"; the ISO string slices cleanly.
+      const measured = modal.querySelector('input[name="measured_at"]') as HTMLInputElement | null;
+      if (measured) measured.value = (row.measured_at || "").slice(0, 16);
+
+      const idInput = modal.querySelector('input[name="id"]') as HTMLInputElement | null;
+      if (idInput) idInput.value = String(row.id);
+
+      modal.showModal();
     }
   </script>
 </BaseLayout>

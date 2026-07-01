@@ -85,9 +85,9 @@ const data = assignments.map((item) => ({
   valid_to: item.valid_to ? new Date(item.valid_to).toISOString().split('T')[0] : null,
 }));
 const formFields = [
-  { key: "team", label: "assignment_modal.team", type: "select" as const, options: teams, required: false },
   { key: "user_id", label: "assignment_modal.user_id", type: "select" as const, options: users, required: true },
   { key: "role", label: "assignment_modal.role", type: "select" as const, options: roles, required: true },
+  { key: "team", label: "assignment_modal.team", type: "select" as const, options: teams, required: false },
   { key: "observation", label: "assignment_modal.observation", required: false },
   { key: "valid_from", label: "assignment_modal.valid_from", type: "calendar" as const, withTime: false, required: false },
   { key: "valid_to", label: "assignment_modal.valid_to", type: "calendar" as const, withTime: false, required: false }

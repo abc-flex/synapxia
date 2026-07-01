@@ -93,7 +93,7 @@
     "projects": "Proyectos",
     "dimensions": "Dimensiones",
     "metrics": "Métricas",
-    "assignment": "Panel de Métricas",
+    "dashboard": "Panel de Métricas",
     "assets": "Repositorio de Activos",
     "characterizations": "Caracterización de Activos",
     "prompts": "Galería de Prompts",
@@ -402,7 +402,11 @@
   "assignment_dashboard": {
     "dimension": "Dimensión",
     "date": "Fecha de corte",
-    "empty_message": "No se encontraron asignaciones para esta dimensión y fecha"
+    "team": "Equipo",
+    "role": "Rol",
+    "empty_message": "No se encontraron asignaciones para esta dimensión y fecha",
+    "metric_saved": "Métrica actualizada correctamente",
+    "metric_save_error": "Error al actualizar la métrica"
   },
   "asset_modal": {
     "name": "Nombre",

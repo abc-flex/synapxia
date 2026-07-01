@@ -29,6 +29,9 @@ export interface ColumnConfig {
   /** ONLY for as:"title" — field used for the muted second line. */
   subtitleKey?: string;
   subtitleFormat?: "relative" | "text" | "date";
+  /** ONLY for as:"title" — field rendered inline after the bold title in a
+   * lighter/normal weight (e.g. a person's team/role next to their name). */
+  titleSecondaryKey?: string;
   /** ONLY for as:"date" — defaults to "date". */
   dateFormat?: "date" | "relative";
 }

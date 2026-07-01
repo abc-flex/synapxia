@@ -31,7 +31,12 @@ screen without rediscovering the patterns.
 bundled `<script>` — e.g. `ui/src/pages/lib/show-action.astro` (page-level), or a component
 shell that self-mounts by querying a `data-*-root` div (`components/core/header/NotificationMenu.astro`
 → `NotificationBell.svelte`; `components/lib/gallery/Foro.astro` → `Foro.svelte`, the asset
-discussion HU-LI06). Do **not** use the `@astrojs/svelte` *integration* / `client:*` island
+discussion HU-LI06). When a vanilla controller exposes an **imperative API a parent drives**
+(e.g. the old `assetDetailTabs`, whose parent calls `tabs.hydrate/flush/reset`), expose the
+same methods as `export function`s in the component and mount it directly: `const tabs =
+mount(AssetDetailTabs, { target, props })` returns those exports, so the parent's orchestration
+is unchanged (see `components/lib/AssetDetailModal.astro` → `AssetDetailTabs.svelte`). Do **not**
+use the `@astrojs/svelte` *integration* / `client:*` island
 directives: the only version installable from our registry (`9.0.0`) mis-compiles its island
 `astro-entry` whenever a Svelte island shares a page with vanilla `<script>`s (which every
 `BaseLayout` page has). Manual `mount()` sidesteps that entirely and works on Vite 8. Svelte

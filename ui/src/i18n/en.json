@@ -884,7 +884,8 @@
     "tab_details": "Details",
     "tab_characterization": "Characterization",
     "name_required": "Name is required",
-    "category_required": "Category is required"
+    "category_required": "Category is required",
+    "review_characterization": "Please review the Characterization tab before proposing."
   },
   "prompt_modal": {
     "title_create": "New Prompt",

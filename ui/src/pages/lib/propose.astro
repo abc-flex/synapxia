@@ -279,6 +279,8 @@ const tabOff =
     // select is replaced by a read-only field and we submit this value directly.
     let lockedCategory: string | null = null;
     let theme: Theme = THEME_DEFAULT;
+    // First-time nudge: has the user opened the Characterization tab yet?
+    let charVisited = false;
 
     /* ---- tabs ------------------------------------------------------------- */
     function styleTab(btn: HTMLButtonElement, on: boolean) {
@@ -293,7 +295,11 @@ const tabOff =
       for (const p of tabPanels) p.classList.toggle("hidden", p.dataset.proposePanel !== name);
     }
     for (const btn of tabButtons) {
-      btn.addEventListener("click", () => activateTab(btn.dataset.proposeTab || "details"));
+      btn.addEventListener("click", () => {
+        const name = btn.dataset.proposeTab || "details";
+        if (name === "characterization") charVisited = true;
+        activateTab(name);
+      });
     }
 
     function setCharTabVisible(visible: boolean) {
@@ -335,6 +341,7 @@ const tabOff =
 
     // Everything that must react to the chosen type, in one place.
     function syncType(category: string) {
+      charVisited = false; // a new type → its characterization hasn't been reviewed yet
       applyTitle(category);
       applyTheme(category);
       void fillCharacterization(category);
@@ -471,6 +478,20 @@ const tabOff =
         return;
       }
 
+      // First-time nudge: characterization is optional (defaults apply), but if
+      // this type has a Characterization tab and the user hasn't opened it yet,
+      // send them there once before actually proposing.
+      const hasCharTab = charTab != null && !charTab.classList.contains("hidden");
+      if (hasCharTab && !charVisited) {
+        charVisited = true;
+        activateTab("characterization");
+        showToast(
+          tr("propose.review_characterization", "Please review the Characterization tab before proposing."),
+          "info",
+        );
+        return;
+      }
+
       // Collect the per-feature characterization values (non-empty only).
       const values: Record<string, string> = {};
       charFields
@@ -498,6 +519,7 @@ const tabOff =
         showToast(tr("propose.success", "Asset proposed for review"), "success");
         form.reset();
         activateTab("details");
+        charVisited = false; // fresh proposal → nudge again next time
         // Re-prefill the characterization defaults after the native reset.
         const current = lockedCategory || "";
         if (current) void fillCharacterization(current);

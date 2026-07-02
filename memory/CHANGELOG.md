@@ -20,6 +20,14 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-07-02 15:27 — fix(pgadmin): publish PgAdmin on host port 8090 (configurable) to avoid host 8080 clashes
+- **Problem:** PgAdmin published on host `8080:80`, colliding with another project already bound to host 8080 (compose fails with "port is already allocated"). Mirrors the earlier DB host-port fix.
+- **Fix:** remapped only the **host** side to a new default `8090`, configurable via a new **`PGADMIN_HOST_PORT`** env var — `docker-compose.yml` now maps `${PGADMIN_HOST_PORT:-8090}:80`. The **container port stays 80**, so nothing internal changes; only the browser URL moves to `http://localhost:8090`.
+- `.env.template` documents `PGADMIN_HOST_PORT` (default 8090) next to the PgAdmin creds.
+- Docs refreshed 8080 → 8090: `Makefile` (`make up`/`make dev`/help banners), `AGENTS.md`, `db/CLAUDE.md`, `docs/GETTING_STARTED.md` (service table + access table + troubleshooting).
+- **Verify:** `docker compose config` interpolates `published: "8090"` by default and honors `PGADMIN_HOST_PORT` overrides; container `target: 80` unchanged. Applies on `docker compose up` (port mapping only, no rebuild).
+- Files affected: `docker-compose.yml`, `.env.template`, `Makefile`, `AGENTS.md`, `db/CLAUDE.md`, `docs/GETTING_STARTED.md`, `memory/MEMORY.md`
+
 ## 2026-07-02 05:41 — feat(lib): Propose form is a two-step wizard with spec-driven required characterization
 - **Two-step Propose flow.** On `/lib/propose`, when the chosen type has a Characterization step the single footer button is now stepped: **Details → "Caracterizar"** (validates name/category, then advances to the Characterization tab, no post) and **Characterization → "Proponer para revisión"** (posts). The label is driven by the active tab + whether the category has specs (`updateSubmitLabel`); the old soft "first-visit nudge" (`charVisited`) is removed. Categories without specs stay single-step.
 - **Per-field required, driven by the specifications table.** Added a **`required BOOLEAN NOT NULL DEFAULT FALSE`** column to `specifications` — required-ness is per-(category, feature), so a feature can be required for one type and optional for another (e.g. `AGENTS.INSTRUCTIONS` required, `AGENTS.TOOLS` optional; seeded `PROMPTS.PROMPT_TEMPLATE` + `MCPS.SERVER_CONFIG` required too). The propose form reads `spec.required`, marks required fields with a red `*` (a sibling span so a language switch doesn't wipe it), and step 2 blocks the post (red border + focus + toast `propose.characterization_required`) until every required field is filled; optional fields may stay blank (defaults apply).

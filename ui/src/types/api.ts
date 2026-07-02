@@ -628,6 +628,18 @@ export interface ReviewRequest {
   feedback?: string;
 }
 
+// Proposer resubmitting an asset after "request changes" (HU-Modify): edits the
+// asset + characterizations and sends it back to the original reviewer. Category
+// is fixed; `values` overrides characterization values (feature→value).
+export interface ModifyRequest {
+  name?: string;
+  description?: string;
+  reference?: string;
+  tags?: string[];
+  detail?: string;
+  values?: Record<string, string>;
+}
+
 // A selectable reviewer for the propose form ({value: id, label: name}).
 export interface ReviewerOption {
   value: number;

@@ -767,7 +767,7 @@
     "vote_remove": "Remove vote",
     "vote_signin": "Sign in to vote",
     "discuss": "Comment or ask a question",
-    "proposed": "Your asset has been proposed for review."
+    "proposed": "Your asset has been proposed and is now under review."
   },
   "foro": {
     "title": "Discussion",
@@ -1041,5 +1041,22 @@
     "error": "Could not submit the review",
     "not_found": "This review could not be found.",
     "not_a_review": "This notification is not a review."
+  },
+  "modify": {
+    "title": "Edit & resubmit",
+    "subtitle": "Address the reviewer's feedback, then resubmit for review.",
+    "feedback_label": "Reviewer feedback",
+    "no_feedback": "No feedback was provided.",
+    "name": "Name",
+    "description": "Description",
+    "characterizations": "Characterization",
+    "resubmit": "Resubmit for review",
+    "cancel": "Cancel",
+    "resubmitted": "Asset resubmitted for review.",
+    "name_required": "Please enter a name.",
+    "characterization_required": "Please fill in all required fields.",
+    "error": "Could not resubmit the asset",
+    "not_found": "This modification could not be found.",
+    "not_a_modification": "This notification is not a modification request."
   }
 }

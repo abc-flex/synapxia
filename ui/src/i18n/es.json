@@ -767,7 +767,7 @@
     "vote_remove": "Quitar voto",
     "vote_signin": "Inicia sesión para votar",
     "discuss": "Comentar o preguntar",
-    "proposed": "Tu activo ha sido propuesto para revisión."
+    "proposed": "Tu activo ha sido propuesto y ahora está en revisión."
   },
   "foro": {
     "title": "Discusión",
@@ -1041,5 +1041,22 @@
     "error": "No se pudo enviar la revisión",
     "not_found": "No se encontró esta revisión.",
     "not_a_review": "Esta notificación no es una revisión."
+  },
+  "modify": {
+    "title": "Editar y reenviar",
+    "subtitle": "Atiende los comentarios del revisor y luego reenvía para revisión.",
+    "feedback_label": "Comentarios del revisor",
+    "no_feedback": "No se proporcionaron comentarios.",
+    "name": "Nombre",
+    "description": "Descripción",
+    "characterizations": "Caracterización",
+    "resubmit": "Reenviar para revisión",
+    "cancel": "Cancelar",
+    "resubmitted": "Activo reenviado para revisión.",
+    "name_required": "Por favor ingresa un nombre.",
+    "characterization_required": "Por favor completa todos los campos obligatorios.",
+    "error": "No se pudo reenviar el activo",
+    "not_found": "No se encontró esta modificación.",
+    "not_a_modification": "Esta notificación no es una solicitud de modificación."
   }
 }

@@ -9,10 +9,11 @@ from sqlalchemy.exc import IntegrityError
 
 from ..internal.models import (
     Asset, AssetCreate, AssetUpdate, AssetPermission, AssetWithAccessLevels,
-    ProposeRequest, ReviewerOption, ReviewRequest,
+    ProposeRequest, ReviewerOption, ReviewRequest, ModifyRequest,
 )
 from ..internal import propose_service
 from ..internal import review_service
+from ..internal import modify_service
 from ..internal import permissions_service
 from ...taxo.internal.models import Category
 from ..internal.dependencies import get_db_session
@@ -250,6 +251,38 @@ def review(
         logger.error("Integrity error on review (asset=%s reviewer=%s)", asset_id, current.id)
         raise HTTPException(
             status_code=409, detail="Could not review the asset due to a data conflict")
+
+
+@router.post("/{asset_id}/resubmit", response_model=Asset)
+def resubmit(
+    asset_id: int, payload: ModifyRequest, session: Session = Depends(get_db_session),
+    current: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
+) -> Asset:
+    """
+    Resubmit an asset for re-review after a reviewer requested changes (HU-Modify).
+    In one transaction: updates the asset's editable fields + its characterizations,
+    closes the proposer's MODIFICATION assignment (MODIFICATION/FINISHED), sets the
+    asset status back to PROPOSED, and re-arms the original reviewer (REVIEW/ASSIGNED).
+
+    - Editable: `name`, `description`, `reference`, `tags`, `detail`, and per-feature
+      characterization `values` (category is fixed).
+
+    403 if the caller isn't the proposer holding the open MODIFICATION assignment;
+    409 if the asset is not awaiting modification (status != FEEDBACK).
+    """
+    try:
+        return modify_service.resubmit_asset(session, current, asset_id, payload)
+    except modify_service.ModifyForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
+    except modify_service.ModifyConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except IntegrityError:
+        session.rollback()
+        logger.error("Integrity error on resubmit (asset=%s proposer=%s)", asset_id, current.id)
+        raise HTTPException(
+            status_code=409, detail="Could not resubmit the asset due to a data conflict")
 
 
 @router.get("/{asset_id}", response_model=Asset)

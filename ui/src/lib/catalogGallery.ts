@@ -16,6 +16,7 @@ import { setFavorite } from "@/lib/favorites";
 import { setVote, getVoteTally, type VoteValue } from "@/lib/actions";
 import { getUser } from "@/lib/auth";
 import { translate } from "@/utils/i18nClient";
+import { showToast } from "@/lib/toast";
 import type { VoteTally } from "@/types/api";
 
 /**
@@ -66,8 +67,13 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
   const params = new URLSearchParams(window.location.search);
   if (params.has("proposed")) {
     const msg = translate("gallery.proposed");
-    (window as unknown as { showToast?: (m: string, t: string) => void }).showToast?.(
-      msg && msg !== "gallery.proposed" ? msg : "Your asset has been proposed for review.",
+    // Import `showToast` directly (not `window.showToast`): this runs at page
+    // load, before `installGlobalToast()` defines the global, so the global
+    // would still be undefined here.
+    showToast(
+      msg && msg !== "gallery.proposed"
+        ? msg
+        : "Your asset has been proposed and is now under review.",
       "success",
     );
     params.delete("proposed");
@@ -168,7 +174,7 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
       const tally = await setVote(userId, id, value);
       paintVote(scope, tally);
     } catch (err) {
-      (window as any).showToast?.(
+      showToast(
         err instanceof Error ? err.message : "Could not register your vote",
         "error",
       );
@@ -204,7 +210,7 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
       e.stopPropagation();
       const user = getUser() as any;
       if (!user || (user.id === undefined || user.id === null)) {
-        (window as any).showToast?.("Sign in to manage favorites", "error");
+        showToast("Sign in to manage favorites", "error");
         return;
       }
       const id = Number(favBtn.dataset.id);
@@ -215,7 +221,7 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
         if (favToggle?.getAttribute("aria-pressed") === "true") applyFilters();
       } catch (err) {
         paintStar(favBtn, wasOn); // revert
-        (window as any).showToast?.(
+        showToast(
           err instanceof Error ? err.message : "Could not update favorite",
           "error",
         );
@@ -233,7 +239,7 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
       e.stopPropagation();
       const user = getUser() as any;
       if (!user || user.id === undefined || user.id === null) {
-        (window as any).showToast?.("Sign in to vote", "error");
+        showToast("Sign in to vote", "error");
         return;
       }
       const id = Number(voteBtn.dataset.id);
@@ -276,9 +282,9 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
       const okMsg = copyBtn.dataset.copyOk || "Copied";
       try {
         await navigator.clipboard.writeText(text);
-        (window as any).showToast?.(okMsg, "success");
+        showToast(okMsg, "success");
       } catch {
-        (window as any).showToast?.("Could not copy", "error");
+        showToast("Could not copy", "error");
       }
       return;
     }

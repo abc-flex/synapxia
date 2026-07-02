@@ -330,7 +330,17 @@ const PROPOSE_TABS = [
         }
         setCharTabVisible(true);
         loadClientTranslations(); // patch the new [data-i18n] labels
-      } catch {
+      } catch (err) {
+        // Don't silently drop the whole Characterization step. A specs-endpoint
+        // failure (e.g. a 500 because the DB is missing the `required` column
+        // before a rebuild) otherwise just makes the tab vanish with no clue —
+        // surface it so it's diagnosable. (An empty spec list returns above and
+        // stays silent — that's a legit "no characterization" category.)
+        console.error("Failed to load specifications for", category, err);
+        showToast(
+          tr("propose.characterization_load_error", "Could not load the characterization fields. Try again."),
+          "error",
+        );
         setCharTabVisible(false);
       }
     }

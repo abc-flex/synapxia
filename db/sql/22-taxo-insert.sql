@@ -71,24 +71,24 @@ INSERT INTO features (code, name, type, description) VALUES
 -- ****** Table specifications ******
 -- **********************************
 
-INSERT INTO specifications (category, feature, default_value) VALUES
-    -- Features for a PROMPT category
-    ('PROMPTS', 'PLATFORM', 'VSCode'),
-    ('PROMPTS', 'SUGGESTED_MODEL', 'GPT-5'),
-    ('PROMPTS', 'SUGGESTED_TEMPERATURE', '0.2'),
-    ('PROMPTS', 'PROMPT_TEMPLATE', NULL),
-    ('PROMPTS', 'EXAMPLE_OUTPUT', NULL),
+INSERT INTO specifications (category, feature, default_value, required) VALUES
+    -- Features for a PROMPT category (PROMPT_TEMPLATE is the core content → required)
+    ('PROMPTS', 'PLATFORM', 'VSCode', FALSE),
+    ('PROMPTS', 'SUGGESTED_MODEL', 'GPT-5', FALSE),
+    ('PROMPTS', 'SUGGESTED_TEMPERATURE', '0.2', FALSE),
+    ('PROMPTS', 'PROMPT_TEMPLATE', NULL, TRUE),
+    ('PROMPTS', 'EXAMPLE_OUTPUT', NULL, FALSE),
 
-    -- Features for a MCPS category
-    ('MCPS', 'MODE', 'Remote'),
-    ('MCPS', 'OVERVIEW', NULL),
-    ('MCPS', 'CONTENT', NULL),
-    ('MCPS', 'TOOLS', NULL),
-    ('MCPS', 'SERVER_CONFIG', NULL),
+    -- Features for a MCPS category (SERVER_CONFIG is the core content → required)
+    ('MCPS', 'MODE', 'Remote', FALSE),
+    ('MCPS', 'OVERVIEW', NULL, FALSE),
+    ('MCPS', 'CONTENT', NULL, FALSE),
+    ('MCPS', 'TOOLS', NULL, FALSE),
+    ('MCPS', 'SERVER_CONFIG', NULL, TRUE),
 
-    -- Features for a AGENT category
-    ('AGENTS', 'PLATFORM', 'VSCode'),
-    ('AGENTS', 'SUGGESTED_MODEL', 'GPT-5'),
-    ('AGENTS', 'SUGGESTED_TEMPERATURE', '0.2'),
-    ('AGENTS', 'INSTRUCTIONS', NULL),
-    ('AGENTS', 'TOOLS', NULL);
+    -- Features for a AGENT category (INSTRUCTIONS required, TOOLS optional)
+    ('AGENTS', 'PLATFORM', 'VSCode', FALSE),
+    ('AGENTS', 'SUGGESTED_MODEL', 'GPT-5', FALSE),
+    ('AGENTS', 'SUGGESTED_TEMPERATURE', '0.2', FALSE),
+    ('AGENTS', 'INSTRUCTIONS', NULL, TRUE),
+    ('AGENTS', 'TOOLS', NULL, FALSE);

@@ -20,6 +20,14 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-07-02 16:31 — fix(lib): surface Propose characterization-load failures (stop silently hiding the tab)
+- **Symptom:** on `/lib/propose?category=AGENTS` (and MCPS/PROMPTS) the Characterization tab disappeared and the button stayed "Propose for review" instead of the stepped "Caracterizar".
+- **Root cause:** `fillCharacterization` loads its fields from `GET /api/specifications/category/{code}`; its single `try/catch` called `setCharTabVisible(false)` on **any** error, silently dropping the whole step (and, since `hasCharStep()` then returns false, leaving the button on step-1's fallback label). The trigger was the additive `required` column: it's in the `Specification` model + DDL but not in a DB that hasn't been rebuilt, so the specs endpoint 500s. (Additive DDL only applies on a fresh volume — `make rebuild` locally, or `ALTER TABLE specifications ADD COLUMN required …` on Neon.)
+- **Fix (code):** the `catch` now `console.error`s and shows a toast (`propose.characterization_load_error`, en+es) instead of hiding the tab silently — a broken specs endpoint is now diagnosable. A legitimately empty spec list still returns quietly (no toast). No behavior change once the DB has the column.
+- **The tab returns after the DB gets the `required` column** (`make rebuild` / `ALTER`); this change just makes the failure visible rather than a mystery.
+- **Verify:** `bun run build` clean; `tsc` shows only pre-existing `advancedTable.ts` errors. Manual: with the column applied, `/lib/propose?category=AGENTS|PROMPTS|MCPS` shows the tab + "Caracterizar" stepper; without it, the page now shows an error toast.
+- Files affected: `ui/src/pages/lib/propose.astro`, `ui/src/i18n/en.json`, `ui/src/i18n/es.json`
+
 ## 2026-07-02 15:27 — fix(pgadmin): publish PgAdmin on host port 8090 (configurable) to avoid host 8080 clashes
 - **Problem:** PgAdmin published on host `8080:80`, colliding with another project already bound to host 8080 (compose fails with "port is already allocated"). Mirrors the earlier DB host-port fix.
 - **Fix:** remapped only the **host** side to a new default `8090`, configurable via a new **`PGADMIN_HOST_PORT`** env var — `docker-compose.yml` now maps `${PGADMIN_HOST_PORT:-8090}:80`. The **container port stays 80**, so nothing internal changes; only the browser URL moves to `http://localhost:8090`.

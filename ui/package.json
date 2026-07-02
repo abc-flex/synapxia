@@ -15,11 +15,13 @@
     "@astrojs/vercel": "^8.0.0",
     "astro": "^5.0.0",
     "flowbite": "^2.4.1",
-    "simple-datatables": "^9.0.3"
+    "simple-datatables": "^9.0.3",
+    "svelte": "^5.56.4"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
     "@rollup/rollup-linux-arm64-gnu": "^4.61.1",
+    "@sveltejs/vite-plugin-svelte": "^7.1.2",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "autoprefixer": "^10.4.19",
@@ -28,5 +30,8 @@
     "postcss": "^8.4.32",
     "tailwindcss": "^3.4.8",
     "typescript": "^5.5.0"
+  },
+  "overrides": {
+    "vite": "^8.0.0"
   }
 }

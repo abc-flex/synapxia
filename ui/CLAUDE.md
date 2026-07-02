@@ -14,7 +14,8 @@ screen without rediscovering the patterns.
 
 | Item | Value |
 |------|-------|
-| Framework | Astro 4 (static + island hydration) |
+| Framework | Astro 5 (SSR, `output: "server"`) + Vite 8 |
+| Islands | Svelte 5 (manual `mount()`; raw `@sveltejs/vite-plugin-svelte`, not `@astrojs/svelte`) |
 | Styling | Tailwind CSS 3 + Flowbite (Tailwind component lib, loaded via CDN) |
 | Tables | `simple-datatables` (search, pagination, export) |
 | Package manager | Bun |
@@ -23,8 +24,32 @@ screen without rediscovering the patterns.
 | State | `localStorage` (no Redux/Zustand) |
 | i18n | Custom JSON + runtime `data-i18n` patch |
 
-**No client framework** — pages are Astro components; interactive bits are vanilla JS or
-small inline `<script>` blocks. No React/Vue.
+**Svelte for heavy islands; vanilla by default.** Simple pages stay Astro + vanilla
+`<script>`. For complex interactive surfaces use **Svelte 5** components in
+`ui/src/components/svelte/`, compiled by the raw **`@sveltejs/vite-plugin-svelte`** (added to
+`astro.config.mjs` `vite.plugins`) and **mounted manually** with Svelte's `mount()` from a
+bundled `<script>` — e.g. `ui/src/pages/lib/show-action.astro` (page-level), or a component
+shell that self-mounts by querying a `data-*-root` div (`components/core/header/NotificationMenu.astro`
+→ `NotificationBell.svelte`; `components/lib/gallery/Foro.astro` → `Foro.svelte`, the asset
+discussion HU-LI06). When a vanilla controller exposes an **imperative API a parent drives**
+(e.g. the old `assetDetailTabs`, whose parent calls `tabs.hydrate/flush/reset`), expose the
+same methods as `export function`s in the component and mount it directly: `const tabs =
+mount(AssetDetailTabs, { target, props })` returns those exports, so the parent's orchestration
+is unchanged (see `components/lib/AssetDetailModal.astro` → `AssetDetailTabs.svelte`). Do **not**
+use the `@astrojs/svelte` *integration* / `client:*` island
+directives: the only version installable from our registry (`9.0.0`) mis-compiles its island
+`astro-entry` whenever a Svelte island shares a page with vanilla `<script>`s (which every
+`BaseLayout` page has). Manual `mount()` sidesteps that entirely and works on Vite 8. Svelte
+islands reuse the existing `lib/*` services and read i18n via `translate()` (not `data-i18n`).
+Template comments inside `.svelte` are `<!-- -->`, **not** JSX `{/* */}`. No React/Vue.
+
+**Migrating a vanilla `mount*(cfg)` controller to Svelte:** move the render/state layer to
+`components/svelte/X.svelte`, self-mount it from the controller's `.astro` shell (render
+`<div data-x-root data-…>` + a bundled `<script>` that `mount()`s the island, reading its
+config from the `data-` attrs), keep the shared `lib/*` services in place (trim the `.ts` to
+just services + pure helpers), and delete the old `mount*` call from the caller. The island
+re-hooks the same DOM triggers (e.g. `[data-modal-open]`) in `onMount`. See the foro migration
+(`lib/foro.ts` 452→98 lines).
 
 ---
 

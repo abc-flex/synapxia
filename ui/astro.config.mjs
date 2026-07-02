@@ -1,5 +1,6 @@
 import { defineConfig } from "astro/config";
 import tailwind from "@astrojs/tailwind";
+import { svelte } from "@sveltejs/vite-plugin-svelte";
 import vercel from "@astrojs/vercel/serverless";
 import { fileURLToPath } from "node:url";
 import dns from "node:dns";
@@ -15,8 +16,15 @@ export default defineConfig({
   // to prerendering with `export const prerender = true` (e.g. /login).
   output: "server",
   adapter: vercel(),
+  // NOTE: we deliberately do NOT use the @astrojs/svelte *integration* — the
+  // only installable version here mis-compiles its island `astro-entry` when a
+  // Svelte island shares a page with vanilla <script>s (as every BaseLayout
+  // page does). Instead we register the raw Svelte Vite plugin so `.svelte`
+  // files compile, and mount components manually via Svelte 5's `mount()` from
+  // a bundled <script> — matching this app's existing mount-in-a-script style.
   integrations: [tailwind()],
   vite: {
+    plugins: [svelte()],
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),

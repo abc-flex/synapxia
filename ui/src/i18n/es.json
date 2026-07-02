@@ -888,6 +888,8 @@
     "characterization_hint": "Describe el activo según las características de este tipo. Los valores por defecto vienen precargados; ajústalos según sea necesario.",
     "tab_details": "Detalles",
     "tab_characterization": "Caracterización",
+    "characterize": "Caracterizar",
+    "characterization_required": "Completa los campos de caracterización obligatorios.",
     "name_required": "El nombre es obligatorio",
     "category_required": "La categoría es obligatoria",
     "review_characterization": "Revisa la pestaña de Caracterización antes de proponer."

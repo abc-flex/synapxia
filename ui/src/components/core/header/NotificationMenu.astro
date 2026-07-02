@@ -1,59 +1,20 @@
 ---
 /**
- * NotificationMenu — header bell + dropdown listing the current user's open
- * workflow notifications (HU-LI11). The list is hydrated client-side from
- * `/api/actions/notifications` (per-user, needs the JWT), so the shell here is
- * presentational only — `data-notif-*` hooks are filled by `mountNotifications`
- * (lib/notifications.ts). Clicking an ASSIGNED item marks it seen; NOTIFIED
- * items show a Dismiss control.
+ * NotificationMenu — header bell (HU-LI11). Thin host for the `NotificationBell`
+ * Svelte island: the interactive bell/dropdown/list is compiled by the raw
+ * Svelte Vite plugin and **mounted manually** via `mount()` (see
+ * astro.config.mjs — we don't use the @astrojs/svelte island mechanism). The
+ * mount wrapper uses `display:contents` so the `<details>` stays a direct flex
+ * child of the header actions (no layout shift).
  */
-import { t } from "@/i18n";
-import { getLocale } from "@/utils/getLocale";
-import BellIcon from "@/images/icons/bell.svg?raw";
-
-const locale = getLocale(Astro);
-const title = t(locale, "notification_menu.title");
 ---
 
-<details class="notification-menu relative" aria-label="Notifications" data-notif-root>
-  <summary class="notification-trigger group" role="button">
-    <span class="notify-dot hidden" aria-hidden="true" data-notif-dot>
-      <span class="notify-ping"></span>
-    </span>
-    <Fragment set:html={BellIcon} />
-  </summary>
-
-  <div class="notification-dropdown">
-    <div class="flex items-center justify-between pb-3">
-      <h3 class="text-lg font-semibold text-gray-900 dark:text-white/90">
-        <span data-i18n="notification_menu.title">{title}</span>
-        <span
-          data-notif-count
-          class="hidden ml-1 rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300"
-        ></span>
-      </h3>
-      <button
-        class="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-        type="button"
-        onclick="this.closest('details').removeAttribute('open')"
-      >
-        ✕
-      </button>
-    </div>
-
-    <div class="notification-list custom-scrollbar" data-notif-list></div>
-
-    <p
-      data-notif-empty
-      class="py-6 text-center text-sm text-gray-400 dark:text-gray-500"
-      data-i18n="notifications.empty"
-    >
-      You're all caught up.
-    </p>
-  </div>
-</details>
+<div id="notification-bell-root" style="display: contents"></div>
 
 <script>
-  import { mountNotifications } from "@/lib/notifications";
-  mountNotifications();
+  import { mount } from "svelte";
+  import NotificationBell from "@/components/svelte/NotificationBell.svelte";
+
+  const target = document.getElementById("notification-bell-root");
+  if (target) mount(NotificationBell, { target });
 </script>

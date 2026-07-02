@@ -97,6 +97,7 @@ class SpecificationBase(SQLModel):
     feature: str = Field(sa_column=Column(
         'feature', String, ForeignKey('features.code'), primary_key=True))
     default_value: Optional[str] = Field(default=None)
+    required: bool = Field(default=False)
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
@@ -111,6 +112,8 @@ class SpecificationCreate(SQLModel):
     feature: str = Field(max_length=50, description="Feature code")
     default_value: Optional[str] = Field(
         default=None, description="Default value (Any or a List_items.value)")
+    required: Optional[bool] = Field(
+        default=False, description="Whether this feature is required for the category")
     is_active: Optional[bool] = Field(
         default=True, description="Indicates if the specification is active")
 
@@ -118,5 +121,7 @@ class SpecificationCreate(SQLModel):
 class SpecificationUpdate(SQLModel):
     default_value: Optional[str] = Field(
         default=None, description="Default value (Any or a List_items.value)")
+    required: Optional[bool] = Field(
+        default=None, description="Whether this feature is required for the category")
     is_active: Optional[bool] = Field(
         default=None, description="Indicates if the specification is active")

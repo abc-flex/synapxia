@@ -84,11 +84,11 @@ def test_openapi_feature_schema_includes_list():
 
 def test_specification_models_match_ddl_fields():
     """Specification must expose every column from 21-taxo-ddl.sql (regression guard)."""
-    for field in ("category", "feature", "default_value", "is_active", "created_at", "updated_at"):
+    for field in ("category", "feature", "default_value", "required", "is_active", "created_at", "updated_at"):
         assert field in Specification.model_fields
-    for field in ("category", "feature", "default_value", "is_active"):
+    for field in ("category", "feature", "default_value", "required", "is_active"):
         assert field in SpecificationCreate.model_fields
-    for field in ("default_value", "is_active"):
+    for field in ("default_value", "required", "is_active"):
         assert field in SpecificationUpdate.model_fields
 
 
@@ -96,3 +96,30 @@ def test_specification_default_value_accepts_none():
     """`default_value` is optional (TEXT) — None must be valid, not coerced to bool."""
     spec = SpecificationCreate(category="GEN_AI", feature="LANGUAGE", default_value=None)
     assert spec.default_value is None
+
+
+def test_specification_required_round_trips():
+    """A SpecificationCreate carrying `required` must persist it into the row."""
+    payload = SpecificationCreate(category="AGENTS", feature="INSTRUCTIONS", required=True)
+    row = Specification.model_validate(payload)
+    assert row.required is True
+
+
+def test_specification_required_defaults_false():
+    """`required` defaults to False so a feature is optional unless flagged (e.g. TOOLS)."""
+    assert SpecificationCreate(category="AGENTS", feature="TOOLS").required is False
+    assert Specification.model_validate(
+        SpecificationCreate(category="AGENTS", feature="TOOLS")
+    ).required is False
+    # Update stays PATCH-style (None = "leave unchanged").
+    assert SpecificationUpdate().required is None
+
+
+def test_openapi_specification_schema_includes_required():
+    """The published OpenAPI contract must advertise `required` on Specification schemas."""
+    from app.main import app
+
+    schemas = app.openapi()["components"]["schemas"]
+    assert "required" in schemas["Specification"]["properties"]
+    assert "required" in schemas["SpecificationCreate"]["properties"]
+    assert "required" in schemas["SpecificationUpdate"]["properties"]

@@ -220,8 +220,9 @@ const {
 
       {/* ============== Collections tabs (bottom) ============== */}
       {/* Core fields above are always visible; the editable detail collections
-          (Characterizations, Related Assets, Permissions) are built + wired by
-          the shared `assetDetailTabs` module into this container. */}
+          (Characterizations, Related Assets, Permissions) are the
+          `AssetDetailTabs` Svelte island, mount()ed into this container by the
+          script below (which drives it via the returned controller methods). */}
       <div id={`${modalId}-detail-tabs`}></div>
     </div>
 
@@ -259,7 +260,8 @@ const {
   import { createAsset, updateAsset, getAsset } from "@/lib/assets";
   import { isFavorite, setFavorite } from "@/lib/favorites";
   import { getUser } from "@/lib/auth";
-  import { initAssetDetailTabs } from "@/lib/assetDetailTabs";
+  import { mount } from "svelte";
+  import AssetDetailTabs from "@/components/svelte/AssetDetailTabs.svelte";
 
   const modalId = "asset-detail-modal";
 
@@ -275,9 +277,6 @@ const {
     const refField = document.getElementById(`${modalId}-reference`) as HTMLInputElement;
     const tagsField = document.getElementById(`${modalId}-tags`) as HTMLInputElement;
     const titleEl = document.getElementById(`${modalId}-title`) as HTMLElement;
-    const emptyEl = document.getElementById(`${modalId}-empty`) as HTMLElement;
-    const charsEl = document.getElementById(`${modalId}-chars`) as HTMLElement;
-    const specCountEl = document.getElementById(`${modalId}-spec-count`) as HTMLElement;
     const statusBanner = document.getElementById(`${modalId}-status`) as HTMLElement;
     const submitBtn = document.getElementById(`${modalId}-submit`) as HTMLButtonElement;
     const favBtn = document.getElementById(`${modalId}-fav`) as HTMLButtonElement;
@@ -311,11 +310,18 @@ const {
     let favoriteOn = false;
 
     // ── Shared editable detail tabs (chars / related / permissions) ─────────
+    // The tabs are the `AssetDetailTabs` Svelte island; mount() returns the
+    // component's exported controller methods (loadOptions/loadChars/hydrate/
+    // flush/reset/…), so the orchestration below is unchanged from the vanilla
+    // widget it replaces.
     const tabsRoot = document.getElementById(`${modalId}-detail-tabs`) as HTMLElement;
-    const tabs = initAssetDetailTabs(tabsRoot, {
-      idPrefix: modalId,
-      mode: "modal",
-      onError: (m: string) => showStatus(m, "error"),
+    const tabs = mount(AssetDetailTabs, {
+      target: tabsRoot,
+      props: {
+        idPrefix: modalId,
+        mode: "modal",
+        onError: (m: string) => showStatus(m, "error"),
+      },
     });
 
     // ── Section mode ──────────────────────────────────────────────────────

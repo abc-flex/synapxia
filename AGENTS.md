@@ -66,7 +66,7 @@ make shell     # psql into the DB
 ```
 
 URLs after `make up`: UI http://localhost:4321 · API docs http://localhost:8000/docs ·
-PgAdmin http://localhost:8080. Seed login: `admin` / `Admin123!`.
+PgAdmin http://localhost:8090. Seed login: `admin` / `Admin123!`.
 
 ## The five Constitution principles (all MUST)
 

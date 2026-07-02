@@ -19,7 +19,7 @@ needs to extend or debug the schema.
 | Migration tool | Ordered raw SQL files (no Alembic/Flyway/Liquibase) |
 | Initialization | Docker entrypoint auto-runs files in `/docker-entrypoint-initdb.d/` lexically |
 | Persistence | `synapxia-db-volume` (named Docker volume) |
-| Admin UI | pgAdmin on port 8080 |
+| Admin UI | pgAdmin on host port `8090` (container 80; override via `PGADMIN_HOST_PORT`) |
 | Production target | Neon (serverless Postgres on AWS) via `neon-migrate.sh` |
 
 Default credentials (dev): `synapxia` / `synapxia` (user / password / database name).
@@ -231,13 +231,13 @@ same end-state.
 ```yaml
 pgadmin:
   image: dpage/pgadmin4:9.11
-  ports: ["8080:80"]
+  ports: ["${PGADMIN_HOST_PORT:-8090}:80"]   # host 8090 → container 80 (avoid host 8080 clashes)
   environment:
     PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
     PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
 ```
 
-- URL: `http://localhost:8080`
+- URL: `http://localhost:8090` (host port; `PGADMIN_HOST_PORT`)
 - Default credentials (dev): `admin@synapxia.com` / `synapxia` (per `make dev` banner).
 - **Server auto-registration** — currently manual. The compose file references
   `/pgadmin-servers.json.template` + `/pgadmin-entrypoint.sh` but those files are

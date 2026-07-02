@@ -35,7 +35,10 @@ services:
     container_name: synapxia-pgadmin
     image: dpage/pgadmin4:9.11
     ports:
-      - 8080:80
+      # host:container. Only the HOST side is remapped (default 8090) so PgAdmin
+      # doesn't clash with another project already holding host 8080. The
+      # CONTAINER port stays 80. Override per-machine with PGADMIN_HOST_PORT.
+      - ${PGADMIN_HOST_PORT:-8090}:80
     environment:
       - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
       - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}

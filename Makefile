@@ -71,7 +71,7 @@ up:
 	@echo "$(GREEN)Services are starting:$(NC)"
 	@echo "  Frontend:    http://localhost:4321"
 	@echo "  API Docs:    http://localhost:8000/docs"
-	@echo "  PgAdmin:     http://localhost:8080"
+	@echo "  PgAdmin:     http://localhost:8090"
 	@echo ""
 	@make health
 
@@ -173,7 +173,7 @@ dev: up
 	@echo "$(BLUE)Quick Access:$(NC)"
 	@echo "  Frontend:        http://localhost:4321"
 	@echo "  API Swagger:     http://localhost:8000/docs"
-	@echo "  PgAdmin:         http://localhost:8080"
+	@echo "  PgAdmin:         http://localhost:8090"
 	@echo ""
 	@echo "$(BLUE)Login Credentials:$(NC)"
 	@echo "  Username:        admin"
@@ -410,6 +410,6 @@ quickstart: clean up dev
 	@echo "1. Open Frontend:     http://localhost:4321"
 	@echo "2. Login with:        admin / Admin123!"
 	@echo "3. API Docs:          http://localhost:8000/docs"
-	@echo "4. Database Admin:    http://localhost:8080"
+	@echo "4. Database Admin:    http://localhost:8090"
 	@echo ""
 	@echo "Run $(BLUE)make help$(NC) for all commands"

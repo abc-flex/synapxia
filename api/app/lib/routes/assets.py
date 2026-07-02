@@ -9,9 +9,11 @@ from sqlalchemy.exc import IntegrityError
 
 from ..internal.models import (
     Asset, AssetCreate, AssetUpdate, AssetPermission, AssetWithAccessLevels,
-    ProposeRequest, ReviewerOption,
+    ProposeRequest, ReviewerOption, ReviewRequest, ModifyRequest,
 )
 from ..internal import propose_service
+from ..internal import review_service
+from ..internal import modify_service
 from ..internal import permissions_service
 from ...taxo.internal.models import Category
 from ..internal.dependencies import get_db_session
@@ -216,6 +218,71 @@ def propose(
         logger.error("Integrity error on propose (proposer=%s)", current.id)
         raise HTTPException(
             status_code=409, detail="Could not propose the asset due to a data conflict")
+
+
+@router.post("/{asset_id}/review", response_model=Asset)
+def review(
+    asset_id: int, payload: ReviewRequest, session: Session = Depends(get_db_session),
+    current: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
+) -> Asset:
+    """
+    Record a reviewer's decision on a PROPOSED asset (HU-Review). In one
+    transaction: closes the reviewer's REVIEW assignment (REVIEW/FINISHED), sets
+    the asset status, and notifies the proposer with the feedback.
+
+    - **decision**: `approve` → PUBLISHED (+ PUBLICATION), `reject` → REJECTED
+      (+ REJECTION), `changes` → FEEDBACK (+ MODIFICATION)
+    - **feedback**: shown to the proposer (recommended for reject / changes)
+
+    403 if the caller isn't the assigned/eligible reviewer; 409 if the asset is
+    no longer awaiting review.
+    """
+    try:
+        return review_service.review_asset(
+            session, current, asset_id, payload.decision, payload.feedback)
+    except review_service.ReviewForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
+    except review_service.ReviewConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except IntegrityError:
+        session.rollback()
+        logger.error("Integrity error on review (asset=%s reviewer=%s)", asset_id, current.id)
+        raise HTTPException(
+            status_code=409, detail="Could not review the asset due to a data conflict")
+
+
+@router.post("/{asset_id}/resubmit", response_model=Asset)
+def resubmit(
+    asset_id: int, payload: ModifyRequest, session: Session = Depends(get_db_session),
+    current: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
+) -> Asset:
+    """
+    Resubmit an asset for re-review after a reviewer requested changes (HU-Modify).
+    In one transaction: updates the asset's editable fields + its characterizations,
+    closes the proposer's MODIFICATION assignment (MODIFICATION/FINISHED), sets the
+    asset status back to PROPOSED, and re-arms the original reviewer (REVIEW/ASSIGNED).
+
+    - Editable: `name`, `description`, `reference`, `tags`, `detail`, and per-feature
+      characterization `values` (category is fixed).
+
+    403 if the caller isn't the proposer holding the open MODIFICATION assignment;
+    409 if the asset is not awaiting modification (status != FEEDBACK).
+    """
+    try:
+        return modify_service.resubmit_asset(session, current, asset_id, payload)
+    except modify_service.ModifyForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
+    except modify_service.ModifyConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except IntegrityError:
+        session.rollback()
+        logger.error("Integrity error on resubmit (asset=%s proposer=%s)", asset_id, current.id)
+        raise HTTPException(
+            status_code=409, detail="Could not resubmit the asset due to a data conflict")
 
 
 @router.get("/{asset_id}", response_model=Asset)

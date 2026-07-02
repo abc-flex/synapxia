@@ -476,14 +476,17 @@ const PROPOSE_TABS = [
       if (submitBtn) submitBtn.disabled = true;
       try {
         await proposeAsset(payload);
+        // Came from a gallery's Propose CTA → return to that gallery with a flag;
+        // the gallery shows the "proposed" toast on load (see catalogGallery.ts).
+        if (lockedCategory) {
+          window.location.href = "/lib/" + lockedCategory.toLowerCase() + "?proposed=1";
+          return;
+        }
+        // Direct visit (no locked category) → confirm + reset the form in place.
         showToast(tr("propose.success", "Asset proposed for review"), "success");
         form.reset();
         tabs.activate("details");
-        // Re-prefill the characterization defaults after the native reset;
-        // fillCharacterization → setCharTabVisible resets the stepped label.
-        const current = lockedCategory || "";
-        if (current) void fillCharacterization(current);
-        else setCharTabVisible(false);
+        setCharTabVisible(false);
       } catch (err) {
         showToast(
           err instanceof Error ? err.message : tr("propose.error", "Could not propose the asset"),

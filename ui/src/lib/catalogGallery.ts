@@ -16,6 +16,7 @@ import { setFavorite } from "@/lib/favorites";
 import { setVote, getVoteTally, type VoteValue } from "@/lib/actions";
 import { getUser } from "@/lib/auth";
 import { translate } from "@/utils/i18nClient";
+import { showToast } from "@/lib/toast";
 import type { VoteTally } from "@/types/api";
 
 /**
@@ -59,6 +60,26 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
 
   const root = document.getElementById(galleryId);
   if (!root) return;
+
+  // Arrived here from a successful Propose (propose.astro redirects with
+  // `?proposed=1`). Confirm on the gallery, then strip the param so a refresh
+  // doesn't re-toast.
+  const params = new URLSearchParams(window.location.search);
+  if (params.has("proposed")) {
+    const msg = translate("gallery.proposed");
+    // Import `showToast` directly (not `window.showToast`): this runs at page
+    // load, before `installGlobalToast()` defines the global, so the global
+    // would still be undefined here.
+    showToast(
+      msg && msg !== "gallery.proposed"
+        ? msg
+        : "Your asset has been proposed and is now under review.",
+      "success",
+    );
+    params.delete("proposed");
+    const qs = params.toString();
+    window.history.replaceState({}, "", window.location.pathname + (qs ? `?${qs}` : ""));
+  }
 
   const search = document.getElementById(`${galleryId}-search`) as HTMLInputElement | null;
   const statusSel = document.getElementById(`${galleryId}-status`) as HTMLSelectElement | null;
@@ -153,7 +174,7 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
       const tally = await setVote(userId, id, value);
       paintVote(scope, tally);
     } catch (err) {
-      (window as any).showToast?.(
+      showToast(
         err instanceof Error ? err.message : "Could not register your vote",
         "error",
       );
@@ -189,7 +210,7 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
       e.stopPropagation();
       const user = getUser() as any;
       if (!user || (user.id === undefined || user.id === null)) {
-        (window as any).showToast?.("Sign in to manage favorites", "error");
+        showToast("Sign in to manage favorites", "error");
         return;
       }
       const id = Number(favBtn.dataset.id);
@@ -200,7 +221,7 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
         if (favToggle?.getAttribute("aria-pressed") === "true") applyFilters();
       } catch (err) {
         paintStar(favBtn, wasOn); // revert
-        (window as any).showToast?.(
+        showToast(
           err instanceof Error ? err.message : "Could not update favorite",
           "error",
         );
@@ -218,7 +239,7 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
       e.stopPropagation();
       const user = getUser() as any;
       if (!user || user.id === undefined || user.id === null) {
-        (window as any).showToast?.("Sign in to vote", "error");
+        showToast("Sign in to vote", "error");
         return;
       }
       const id = Number(voteBtn.dataset.id);
@@ -261,9 +282,9 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
       const okMsg = copyBtn.dataset.copyOk || "Copied";
       try {
         await navigator.clipboard.writeText(text);
-        (window as any).showToast?.(okMsg, "success");
+        showToast(okMsg, "success");
       } catch {
-        (window as any).showToast?.("Could not copy", "error");
+        showToast("Could not copy", "error");
       }
       return;
     }

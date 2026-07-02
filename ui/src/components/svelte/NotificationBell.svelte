@@ -56,8 +56,18 @@
       window.location.href = `/lib/show-action?action=${encodeURIComponent(String(it.id))}`;
       return;
     }
-    // REVIEW / MODIFICATION → review flow not built yet: notify + mark seen.
-    showToast(t("notifications.review_coming_soon", "The review view is coming soon."), "info");
+    if (it.type === "REVIEW") {
+      // Reviewer's queue → the Review page (it marks the notification seen on open).
+      window.location.href = `/lib/review?action=${encodeURIComponent(String(it.id))}`;
+      return;
+    }
+    if (it.type === "MODIFICATION") {
+      // Proposer's "edit after changes" flow (HU-Modify); the Modify page marks
+      // the notification seen on open.
+      window.location.href = `/lib/modify?action=${encodeURIComponent(String(it.id))}`;
+      return;
+    }
+    // Unknown type → just mark it seen.
     if (it.unread) {
       try {
         await markNotified(it.id);

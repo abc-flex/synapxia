@@ -766,7 +766,8 @@
     "vote_down": "No útil",
     "vote_remove": "Quitar voto",
     "vote_signin": "Inicia sesión para votar",
-    "discuss": "Comentar o preguntar"
+    "discuss": "Comentar o preguntar",
+    "proposed": "Tu activo ha sido propuesto y ahora está en revisión."
   },
   "foro": {
     "title": "Discusión",
@@ -1024,5 +1025,38 @@
     "dismiss": "Descartar",
     "dismissed": "Notificación descartada",
     "not_found": "No se encontró esta notificación."
+  },
+  "review": {
+    "title": "Revisar activo",
+    "subtitle": "Revisa el activo propuesto y luego apruébalo, solicita cambios o recházalo.",
+    "approve": "Aprobar",
+    "request_changes": "Solicitar cambios",
+    "reject": "Rechazar",
+    "feedback_label": "Comentarios",
+    "feedback_placeholder": "Explica tu decisión (obligatorio para rechazar o solicitar cambios)…",
+    "feedback_required": "Agrega comentarios para esta decisión.",
+    "approved": "Activo publicado.",
+    "rejected": "Activo rechazado.",
+    "changes_requested": "Cambios solicitados.",
+    "error": "No se pudo enviar la revisión",
+    "not_found": "No se encontró esta revisión.",
+    "not_a_review": "Esta notificación no es una revisión."
+  },
+  "modify": {
+    "title": "Editar y reenviar",
+    "subtitle": "Atiende los comentarios del revisor y luego reenvía para revisión.",
+    "feedback_label": "Comentarios del revisor",
+    "no_feedback": "No se proporcionaron comentarios.",
+    "name": "Nombre",
+    "description": "Descripción",
+    "characterizations": "Caracterización",
+    "resubmit": "Reenviar para revisión",
+    "cancel": "Cancelar",
+    "resubmitted": "Activo reenviado para revisión.",
+    "name_required": "Por favor ingresa un nombre.",
+    "characterization_required": "Por favor completa todos los campos obligatorios.",
+    "error": "No se pudo reenviar el activo",
+    "not_found": "No se encontró esta modificación.",
+    "not_a_modification": "Esta notificación no es una solicitud de modificación."
   }
 }

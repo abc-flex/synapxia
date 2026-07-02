@@ -449,3 +449,32 @@ class ReviewerOption(SQLModel):
     label: str = Field(description="Reviewer display name")
     profile: str = Field(description="Reviewer profile code (ADMINISTRATOR/ADMINISTRATIVE/REVIEWER/…)")
     is_superuser: bool = Field(default=False, description="Whether the reviewer is a superuser")
+
+
+class ReviewRequest(SQLModel):
+    """Request body for a reviewer's decision on a PROPOSED asset (HU-Review).
+    ``decision`` is one of ``approve`` / ``reject`` / ``changes`` → the asset
+    status becomes PUBLISHED / REJECTED / FEEDBACK and the proposer gets a
+    PUBLICATION / REJECTION / MODIFICATION notification carrying ``feedback``."""
+    decision: str = Field(description="approve | reject | changes")
+    feedback: Optional[str] = Field(
+        default=None, max_length=2000,
+        description="Reviewer's feedback shown to the proposer")
+
+
+class ModifyRequest(SQLModel):
+    """Request body for the proposer resubmitting an asset after a reviewer
+    requested changes (HU-Modify). Edits the asset + its characterizations and
+    resubmits for re-review in one transaction: the asset returns to PROPOSED,
+    the proposer's MODIFICATION assignment is closed (FINISHED), and a fresh
+    REVIEW/ASSIGNED is raised for the original reviewer. ``category`` is NOT
+    editable (it drives the spec/characterization set). ``values`` overrides
+    characterization values per feature (feature code → value)."""
+    name: Optional[str] = Field(default=None, max_length=100, description="Asset name")
+    description: Optional[str] = Field(
+        default=None, max_length=500, description="Asset description")
+    reference: Optional[str] = Field(default=None, description="Asset reference")
+    tags: Optional[Any] = Field(default=None, description="Asset tags (JSON)")
+    detail: Optional[str] = Field(default=None, description="Asset detail")
+    values: Optional[Dict[str, str]] = Field(
+        default=None, description="Per-feature characterization values (feature → value)")

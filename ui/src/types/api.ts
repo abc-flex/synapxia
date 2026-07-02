@@ -620,6 +620,14 @@ export interface ProposeRequest {
   values?: Record<string, string>;
 }
 
+// Reviewer decision on a PROPOSED asset (HU-Review): approve → PUBLISHED,
+// reject → REJECTED, changes → FEEDBACK (each notifies the proposer).
+export type ReviewDecision = "approve" | "reject" | "changes";
+export interface ReviewRequest {
+  decision: ReviewDecision;
+  feedback?: string;
+}
+
 // A selectable reviewer for the propose form ({value: id, label: name}).
 export interface ReviewerOption {
   value: number;

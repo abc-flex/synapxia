@@ -449,3 +449,14 @@ class ReviewerOption(SQLModel):
     label: str = Field(description="Reviewer display name")
     profile: str = Field(description="Reviewer profile code (ADMINISTRATOR/ADMINISTRATIVE/REVIEWER/…)")
     is_superuser: bool = Field(default=False, description="Whether the reviewer is a superuser")
+
+
+class ReviewRequest(SQLModel):
+    """Request body for a reviewer's decision on a PROPOSED asset (HU-Review).
+    ``decision`` is one of ``approve`` / ``reject`` / ``changes`` → the asset
+    status becomes PUBLISHED / REJECTED / FEEDBACK and the proposer gets a
+    PUBLICATION / REJECTION / MODIFICATION notification carrying ``feedback``."""
+    decision: str = Field(description="approve | reject | changes")
+    feedback: Optional[str] = Field(
+        default=None, max_length=2000,
+        description="Reviewer's feedback shown to the proposer")

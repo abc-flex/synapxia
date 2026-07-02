@@ -766,7 +766,8 @@
     "vote_down": "Not helpful",
     "vote_remove": "Remove vote",
     "vote_signin": "Sign in to vote",
-    "discuss": "Comment or ask a question"
+    "discuss": "Comment or ask a question",
+    "proposed": "Your asset has been proposed for review."
   },
   "foro": {
     "title": "Discussion",
@@ -1023,5 +1024,21 @@
     "dismiss": "Dismiss",
     "dismissed": "Notification dismissed",
     "not_found": "This notification could not be found."
+  },
+  "review": {
+    "title": "Review asset",
+    "subtitle": "Review the proposed asset, then approve, request changes, or reject it.",
+    "approve": "Approve",
+    "request_changes": "Request changes",
+    "reject": "Reject",
+    "feedback_label": "Feedback",
+    "feedback_placeholder": "Explain your decision (required to reject or request changes)…",
+    "feedback_required": "Please add feedback for this decision.",
+    "approved": "Asset published.",
+    "rejected": "Asset rejected.",
+    "changes_requested": "Changes requested.",
+    "error": "Could not submit the review",
+    "not_found": "This review could not be found.",
+    "not_a_review": "This notification is not a review."
   }
 }

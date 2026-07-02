@@ -766,7 +766,8 @@
     "vote_down": "No útil",
     "vote_remove": "Quitar voto",
     "vote_signin": "Inicia sesión para votar",
-    "discuss": "Comentar o preguntar"
+    "discuss": "Comentar o preguntar",
+    "proposed": "Tu activo ha sido propuesto para revisión."
   },
   "foro": {
     "title": "Discusión",
@@ -1023,5 +1024,21 @@
     "dismiss": "Descartar",
     "dismissed": "Notificación descartada",
     "not_found": "No se encontró esta notificación."
+  },
+  "review": {
+    "title": "Revisar activo",
+    "subtitle": "Revisa el activo propuesto y luego apruébalo, solicita cambios o recházalo.",
+    "approve": "Aprobar",
+    "request_changes": "Solicitar cambios",
+    "reject": "Rechazar",
+    "feedback_label": "Comentarios",
+    "feedback_placeholder": "Explica tu decisión (obligatorio para rechazar o solicitar cambios)…",
+    "feedback_required": "Agrega comentarios para esta decisión.",
+    "approved": "Activo publicado.",
+    "rejected": "Activo rechazado.",
+    "changes_requested": "Cambios solicitados.",
+    "error": "No se pudo enviar la revisión",
+    "not_found": "No se encontró esta revisión.",
+    "not_a_review": "Esta notificación no es una revisión."
   }
 }

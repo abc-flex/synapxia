@@ -56,7 +56,12 @@
       window.location.href = `/lib/show-action?action=${encodeURIComponent(String(it.id))}`;
       return;
     }
-    // REVIEW / MODIFICATION → review flow not built yet: notify + mark seen.
+    if (it.type === "REVIEW") {
+      // Reviewer's queue → the Review page (it marks the notification seen on open).
+      window.location.href = `/lib/review?action=${encodeURIComponent(String(it.id))}`;
+      return;
+    }
+    // MODIFICATION → the proposer's "edit after changes" flow isn't built yet.
     showToast(t("notifications.review_coming_soon", "The review view is coming soon."), "info");
     if (it.unread) {
       try {

@@ -65,6 +65,13 @@
   const isRich = (feature: string): boolean => RICH_FEATURES.has(feature);
   const charId = (feature: string): string => `modify-char-${feature}`;
 
+  // Only a FEEDBACK asset can be resubmitted. The MODIFICATION action stays
+  // ASSIGNED forever (new row per transition), so this page is reachable for an
+  // asset that already moved on (e.g. resubmitted, or approved/rejected) via a
+  // direct URL / back button / stale tab — where a resubmit would just 409.
+  // Guard the form; only block when we positively know the status isn't FEEDBACK.
+  const blocked = $derived(!!assetStatus && assetStatus !== "FEEDBACK");
+
   function goHome(): void {
     if (window.history.length > 1) window.history.back();
     else window.location.href = "/";
@@ -242,59 +249,65 @@
         {/if}
       </div>
 
-      <!-- Editable name + description -->
-      <div>
-        <label for="modify-name" class={labelClass}>{t("modify.name", "Name")}</label>
-        <input
-          id="modify-name"
-          bind:this={nameEl}
-          bind:value={name}
-          type="text"
-          class={inputClass}
-          oninput={() => setFieldInvalid(nameEl ?? null, null, false)}
-        />
-      </div>
-      <div>
-        <label for="modify-description" class={labelClass}>{t("modify.description", "Description")}</label>
-        <textarea id="modify-description" bind:value={description} rows="3" class={inputClass}></textarea>
-      </div>
-
-      <!-- Editable characterizations -->
-      {#if specs.length > 0}
-        <div class="space-y-3">
-          <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-            {t("modify.characterizations", "Characterization")}
-          </p>
-          {#each specs as spec (spec.feature)}
-            <div>
-              <label for={charId(spec.feature)} class={labelClass}>
-                <span>{t(`feature.${spec.feature}`, spec.feature)}</span>{#if spec.required}<span class="ml-0.5 text-red-500">*</span>{/if}
-              </label>
-              {#if isRich(spec.feature)}
-                <textarea
-                  id={charId(spec.feature)}
-                  bind:value={charValues[spec.feature]}
-                  rows="4"
-                  class={inputClass}
-                  oninput={(e) => setFieldInvalid(e.currentTarget, null, false)}
-                ></textarea>
-              {:else}
-                <input
-                  id={charId(spec.feature)}
-                  bind:value={charValues[spec.feature]}
-                  type="text"
-                  class={inputClass}
-                  oninput={(e) => setFieldInvalid(e.currentTarget, null, false)}
-                />
-              {/if}
-            </div>
-          {/each}
+      {#if blocked}
+        <div class="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">
+          {t("modify.not_actionable", "This asset is no longer awaiting changes.")}
         </div>
+      {:else}
+        <!-- Editable name + description -->
+        <div>
+          <label for="modify-name" class={labelClass}>{t("modify.name", "Name")}</label>
+          <input
+            id="modify-name"
+            bind:this={nameEl}
+            bind:value={name}
+            type="text"
+            class={inputClass}
+            oninput={() => setFieldInvalid(nameEl ?? null, null, false)}
+          />
+        </div>
+        <div>
+          <label for="modify-description" class={labelClass}>{t("modify.description", "Description")}</label>
+          <textarea id="modify-description" bind:value={description} rows="3" class={inputClass}></textarea>
+        </div>
+
+        <!-- Editable characterizations -->
+        {#if specs.length > 0}
+          <div class="space-y-3">
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              {t("modify.characterizations", "Characterization")}
+            </p>
+            {#each specs as spec (spec.feature)}
+              <div>
+                <label for={charId(spec.feature)} class={labelClass}>
+                  <span>{t(`feature.${spec.feature}`, spec.feature)}</span>{#if spec.required}<span class="ml-0.5 text-red-500">*</span>{/if}
+                </label>
+                {#if isRich(spec.feature)}
+                  <textarea
+                    id={charId(spec.feature)}
+                    bind:value={charValues[spec.feature]}
+                    rows="4"
+                    class={inputClass}
+                    oninput={(e) => setFieldInvalid(e.currentTarget, null, false)}
+                  ></textarea>
+                {:else}
+                  <input
+                    id={charId(spec.feature)}
+                    bind:value={charValues[spec.feature]}
+                    type="text"
+                    class={inputClass}
+                    oninput={(e) => setFieldInvalid(e.currentTarget, null, false)}
+                  />
+                {/if}
+              </div>
+            {/each}
+          </div>
+        {/if}
       {/if}
     {/if}
   </div>
 
-  {#if !loading && !error}
+  {#if !loading && !error && !blocked}
     <div class="flex flex-col gap-3 border-t border-gray-200 px-6 py-4 sm:flex-row dark:border-gray-800">
       <button
         type="button"
@@ -311,6 +324,16 @@
         class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-60 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-white/5"
       >
         {t("modify.cancel", "Cancel")}
+      </button>
+    </div>
+  {:else if !loading && !error && blocked}
+    <div class="flex border-t border-gray-200 px-6 py-4 dark:border-gray-800">
+      <button
+        type="button"
+        onclick={goHome}
+        class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-white/5"
+      >
+        {t("modify.cancel", "Back")}
       </button>
     </div>
   {/if}

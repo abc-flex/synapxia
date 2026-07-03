@@ -34,6 +34,7 @@ CREATE TABLE specifications (
     feature         VARCHAR(50)   NOT NULL,
     default_value   TEXT, -- Any or references List_items.value where list IN [select code from lists where type='FEATURE']
     required        BOOLEAN       NOT NULL DEFAULT FALSE, -- feature must be filled when proposing/characterizing an asset of this category
+    sort_order      INTEGER       NOT NULL DEFAULT 0,
     is_active       BOOLEAN       NOT NULL DEFAULT TRUE,
     created_at      TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMPTZ,

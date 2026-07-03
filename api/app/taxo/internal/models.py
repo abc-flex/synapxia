@@ -98,6 +98,7 @@ class SpecificationBase(SQLModel):
         'feature', String, ForeignKey('features.code'), primary_key=True))
     default_value: Optional[str] = Field(default=None)
     required: bool = Field(default=False)
+    sort_order: int = Field(default=0)
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
@@ -114,6 +115,8 @@ class SpecificationCreate(SQLModel):
         default=None, description="Default value (Any or a List_items.value)")
     required: Optional[bool] = Field(
         default=False, description="Whether this feature is required for the category")
+    sort_order: Optional[int] = Field(
+        default=0, description="Display order of this feature within its category")
     is_active: Optional[bool] = Field(
         default=True, description="Indicates if the specification is active")
 
@@ -123,5 +126,7 @@ class SpecificationUpdate(SQLModel):
         default=None, description="Default value (Any or a List_items.value)")
     required: Optional[bool] = Field(
         default=None, description="Whether this feature is required for the category")
+    sort_order: Optional[int] = Field(
+        default=None, description="Display order of this feature within its category")
     is_active: Optional[bool] = Field(
         default=None, description="Indicates if the specification is active")

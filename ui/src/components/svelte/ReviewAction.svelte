@@ -51,6 +51,15 @@
     (c.detail && c.detail.trim()) || (c.value && c.value.trim()) || "";
   const shownChars = $derived(chars.filter((c) => charText(c)));
 
+  // Only a PROPOSED asset can be reviewed. The underlying REVIEW action stays
+  // ASSIGNED forever (every workflow step is a new row, never an update), so this
+  // page is still reachable for an already-decided asset via a direct URL / the
+  // back button / a stale tab — where a decision would just 409. Guard the form
+  // so we don't render dead buttons. Only block when we positively know the
+  // status isn't PROPOSED (if the asset failed to load, fall through and let the
+  // backend 409 be the fallback).
+  const blocked = $derived(!!assetStatus && assetStatus !== "PROPOSED");
+
   function goHome(): void {
     if (window.history.length > 1) window.history.back();
     else window.location.href = "/";
@@ -186,22 +195,28 @@
         </div>
       {/if}
 
-      <div>
-        <label for="review-feedback" class={labelClass}>{t("review.feedback_label", "Feedback")}</label>
-        <textarea
-          id="review-feedback"
-          bind:this={feedbackEl}
-          bind:value={feedback}
-          rows="4"
-          class={inputClass}
-          placeholder={t("review.feedback_placeholder", "Explain your decision (required to reject or request changes)…")}
-          oninput={() => setFieldInvalid(feedbackEl ?? null, null, false)}
-        ></textarea>
-      </div>
+      {#if blocked}
+        <div class="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">
+          {t("review.not_actionable", "This asset is no longer awaiting review.")}
+        </div>
+      {:else}
+        <div>
+          <label for="review-feedback" class={labelClass}>{t("review.feedback_label", "Feedback")}</label>
+          <textarea
+            id="review-feedback"
+            bind:this={feedbackEl}
+            bind:value={feedback}
+            rows="4"
+            class={inputClass}
+            placeholder={t("review.feedback_placeholder", "Explain your decision (required to reject or request changes)…")}
+            oninput={() => setFieldInvalid(feedbackEl ?? null, null, false)}
+          ></textarea>
+        </div>
+      {/if}
     {/if}
   </div>
 
-  {#if !loading && !error}
+  {#if !loading && !error && !blocked}
     <div class="flex flex-col gap-3 border-t border-gray-200 px-6 py-4 sm:flex-row dark:border-gray-800">
       <button type="button" disabled={submitting} onclick={() => decide("approve")} class={`${btnBase} bg-emerald-600 hover:bg-emerald-700`}>
         {t("review.approve", "Approve")}
@@ -211,6 +226,16 @@
       </button>
       <button type="button" disabled={submitting} onclick={() => decide("reject")} class={`${btnBase} bg-red-600 hover:bg-red-700`}>
         {t("review.reject", "Reject")}
+      </button>
+    </div>
+  {:else if !loading && !error && blocked}
+    <div class="flex border-t border-gray-200 px-6 py-4 dark:border-gray-800">
+      <button
+        type="button"
+        onclick={goHome}
+        class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-white/5"
+      >
+        {t("review.back", "Back")}
       </button>
     </div>
   {/if}

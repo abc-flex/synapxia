@@ -1040,7 +1040,9 @@
     "changes_requested": "Changes requested.",
     "error": "Could not submit the review",
     "not_found": "This review could not be found.",
-    "not_a_review": "This notification is not a review."
+    "not_a_review": "This notification is not a review.",
+    "not_actionable": "This asset is no longer awaiting review.",
+    "back": "Back"
   },
   "modify": {
     "title": "Edit & resubmit",
@@ -1057,6 +1059,7 @@
     "characterization_required": "Please fill in all required fields.",
     "error": "Could not resubmit the asset",
     "not_found": "This modification could not be found.",
-    "not_a_modification": "This notification is not a modification request."
+    "not_a_modification": "This notification is not a modification request.",
+    "not_actionable": "This asset is no longer awaiting changes."
   }
 }

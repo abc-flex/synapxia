@@ -84,11 +84,12 @@ def test_openapi_feature_schema_includes_list():
 
 def test_specification_models_match_ddl_fields():
     """Specification must expose every column from 21-taxo-ddl.sql (regression guard)."""
-    for field in ("category", "feature", "default_value", "required", "is_active", "created_at", "updated_at"):
+    for field in ("category", "feature", "default_value", "required", "sort_order",
+                  "is_active", "created_at", "updated_at"):
         assert field in Specification.model_fields
-    for field in ("category", "feature", "default_value", "required", "is_active"):
+    for field in ("category", "feature", "default_value", "required", "sort_order", "is_active"):
         assert field in SpecificationCreate.model_fields
-    for field in ("default_value", "required", "is_active"):
+    for field in ("default_value", "required", "sort_order", "is_active"):
         assert field in SpecificationUpdate.model_fields
 
 
@@ -123,3 +124,50 @@ def test_openapi_specification_schema_includes_required():
     assert "required" in schemas["Specification"]["properties"]
     assert "required" in schemas["SpecificationCreate"]["properties"]
     assert "required" in schemas["SpecificationUpdate"]["properties"]
+
+
+def test_specification_sort_order_round_trips_and_defaults_zero():
+    """`sort_order` persists and defaults to 0 (features unordered unless configured)."""
+    row = Specification.model_validate(
+        SpecificationCreate(category="AGENTS", feature="INSTRUCTIONS", sort_order=20))
+    assert row.sort_order == 20
+    assert SpecificationCreate(category="AGENTS", feature="TOOLS").sort_order == 0
+    assert Specification.model_validate(
+        SpecificationCreate(category="AGENTS", feature="TOOLS")).sort_order == 0
+    # Update stays PATCH-style (None = "leave unchanged").
+    assert SpecificationUpdate().sort_order is None
+
+
+def test_openapi_specification_schema_includes_sort_order():
+    """The published OpenAPI contract must advertise `sort_order` on Specification schemas."""
+    from app.main import app
+
+    schemas = app.openapi()["components"]["schemas"]
+    assert "sort_order" in schemas["Specification"]["properties"]
+    assert "sort_order" in schemas["SpecificationCreate"]["properties"]
+    assert "sort_order" in schemas["SpecificationUpdate"]["properties"]
+
+
+def test_specifications_by_category_ordered_by_sort_order(session, client):
+    """GET /api/specifications/category/{code} returns features in `sort_order`, not
+    alphabetically — this is what drives the Propose/Modify characterization order."""
+    from types import SimpleNamespace
+    from app.main import app
+    from app.auth.routes import current_active_user
+
+    # Insert out of both alphabetical AND insertion order to prove sort_order wins.
+    session.add(Specification(category="PROMPTS", feature="ZZZ_LAST", sort_order=30))
+    session.add(Specification(category="PROMPTS", feature="AAA_MID", sort_order=20))
+    session.add(Specification(category="PROMPTS", feature="MMM_FIRST", sort_order=10))
+    session.commit()
+
+    app.dependency_overrides[current_active_user] = lambda: SimpleNamespace(
+        id=1, username="su", profile="ADMINISTRATOR", is_superuser=True, is_active=True)
+    try:
+        r = client.get("/api/specifications/category/PROMPTS")
+    finally:
+        app.dependency_overrides.pop(current_active_user, None)
+
+    assert r.status_code == 200
+    features = [row["feature"] for row in r.json()["data"]]
+    assert features == ["MMM_FIRST", "AAA_MID", "ZZZ_LAST"]

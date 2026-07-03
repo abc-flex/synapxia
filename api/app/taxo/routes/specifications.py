@@ -29,7 +29,8 @@ def get_all(
     """
     specifications = session.exec(select(Specification).where(Specification.is_active == True)
                                   .offset(skip).limit(limit)
-                                  .order_by(Specification.category, Specification.feature)).all()
+                                  .order_by(Specification.category, Specification.sort_order,
+                                            Specification.feature)).all()
     return specifications
 
 
@@ -42,8 +43,9 @@ def get_by_category(
     _: User = Depends(require_privilege("TAXO", "SPECIFICATIONS", can_edit=False)),
 ) -> List[Specification]:
     """
-    List specifications belonging to a category — used by the asset detail
-    modal to know which feature inputs to render dynamically.
+    List specifications belonging to a category — used by the Propose / Modify /
+    asset-detail forms to know which feature inputs to render, in the configured
+    display order (``sort_order``, then feature code as a stable tiebreaker).
     """
     return session.exec(
         select(Specification)
@@ -51,7 +53,7 @@ def get_by_category(
             Specification.category == category_code,
             Specification.is_active == True,
         )
-        .order_by(Specification.feature)
+        .order_by(Specification.sort_order, Specification.feature)
         .offset(skip)
         .limit(limit)
     ).all()

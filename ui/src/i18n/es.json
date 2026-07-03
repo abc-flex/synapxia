@@ -1040,7 +1040,9 @@
     "changes_requested": "Cambios solicitados.",
     "error": "No se pudo enviar la revisión",
     "not_found": "No se encontró esta revisión.",
-    "not_a_review": "Esta notificación no es una revisión."
+    "not_a_review": "Esta notificación no es una revisión.",
+    "not_actionable": "Este activo ya no está en espera de revisión.",
+    "back": "Volver"
   },
   "modify": {
     "title": "Editar y reenviar",
@@ -1057,6 +1059,7 @@
     "characterization_required": "Por favor completa todos los campos obligatorios.",
     "error": "No se pudo reenviar el activo",
     "not_found": "No se encontró esta modificación.",
-    "not_a_modification": "Esta notificación no es una solicitud de modificación."
+    "not_a_modification": "Esta notificación no es una solicitud de modificación.",
+    "not_actionable": "Este activo ya no está en espera de cambios."
   }
 }

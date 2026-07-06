@@ -9,12 +9,12 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_SCHEMA}
     ports:
-      # host:container. Only the HOST side is remapped (default 5442) so this DB
+      # host:container. Only the HOST side is remapped (default 5433) so this DB
       # doesn't clash with a local Postgres or another project's container already
       # holding host 5432. The CONTAINER port stays 5432 — the API and PgAdmin
       # reach it in-network as `db:5432` (see DB_PORT, which is the internal port).
       # Override the host port per-machine with DB_HOST_PORT in .env.
-      - ${DB_HOST_PORT:-5442}:5432
+      - ${DB_HOST_PORT:-5433}:5432
     volumes:
       # Mount SQL migration files for automatic execution on startup
       - ./db/sql:/docker-entrypoint-initdb.d
@@ -35,10 +35,10 @@ services:
     container_name: synapxia-pgadmin
     image: dpage/pgadmin4:9.11
     ports:
-      # host:container. Only the HOST side is remapped (default 8090) so PgAdmin
+      # host:container. Only the HOST side is remapped (default 8081) so PgAdmin
       # doesn't clash with another project already holding host 8080. The
       # CONTAINER port stays 80. Override per-machine with PGADMIN_HOST_PORT.
-      - ${PGADMIN_HOST_PORT:-8090}:80
+      - ${PGADMIN_HOST_PORT:-8081}:80
     environment:
       - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
       - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
@@ -77,7 +77,10 @@ services:
       - /app/.venv
     working_dir: /app
     ports:
-      - 8000:80
+      # host:container. Only the HOST side is remapped (default 8001) so the API
+      # doesn't clash with another project already holding host 8000. The
+      # CONTAINER port stays 80. Override per-machine with API_HOST_PORT in .env.
+      - ${API_HOST_PORT:-8001}:80
     networks:
       - synapxia-network
     environment:
@@ -92,7 +95,7 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_PORT=${DB_PORT}
       - UV_APP=app.main:app
-      - CORS_ORIGINS=http://localhost:4321,http://localhost:8000,http://localhost:3000
+      - CORS_ORIGINS=http://localhost:4321,http://localhost:8001,http://localhost:3000
     # uvicorn directly (instead of `fastapi dev`) so we can pass
     # --proxy-headers: when the UI's Vite proxy forwards a request, it
     # sets X-Forwarded-Host: localhost:4321 (xfwd in astro.config.mjs).

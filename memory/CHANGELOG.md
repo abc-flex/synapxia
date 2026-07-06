@@ -20,6 +20,13 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-07-06 15:49 — fix(lib): characterizations always render in the configured spec `sort_order`
+- **Problem:** the spec `sort_order` (wired in PR #75) only applied to forms built from the specs endpoint (Propose / Modify / asset-detail tabs). Surfaces that render characterizations directly — notably the **Review page** — still showed features **alphabetically**, from two spots: `GET /api/characterizations/` ordered by `(asset, feature)`, and `getCharacterizationsByAsset` re-sorted by `feature.localeCompare` client-side (which would have overridden any backend order anyway).
+- **Fix (backend):** `GET /api/characterizations/` now outer-joins `assets` → `specifications` (on the asset's category + feature) and orders by `(asset, coalesce(sort_order, 1e6), feature)` — within each asset, rows follow the configured order; features without a spec row go last. `coalesce` keeps NULL ordering deterministic on both Postgres and the SQLite test DB. Additive: no request/response keys changed, pagination preserved.
+- **Fix (frontend):** `getCharacterizationsByAsset` no longer re-sorts alphabetically — it preserves the API order, so every consumer (ReviewAction, AssetDetailModal, …) inherits the configured order with no per-page changes.
+- **Verify:** new `api/tests/test_lib_characterizations.py` (chars inserted alphabetically come back in spec `sort_order`, spec-less feature last); full lib+categories suite **140 passed** on the 3.12 venv; `bun run build` clean, `tsc` only the pre-existing `advancedTable.ts` errors.
+- Files affected: `api/app/lib/routes/characterizations.py`, `api/tests/test_lib_characterizations.py` (new), `ui/src/lib/characterizations.ts`
+
 ## 2026-07-06 14:42 — chore(compose): remap host ports (API 8001, PgAdmin 8081, DB 5433) + API_HOST_PORT knob
 - **Host ports moved** to dodge local clashes: API `8000→8001`, PgAdmin `8090→8081`, DB `5442→5433`. Only the **host** side of each mapping changed — the **container** ports are unchanged (API 80, PgAdmin 80, DB 5432), so nothing in-network moves: the UI still reaches the API via the Vite proxy → `synapxia-api:80`, PgAdmin/API still reach the DB as `db:5432`.
 - **New `API_HOST_PORT` env var** (default 8001) finishes the pattern started by `DB_HOST_PORT`/`PGADMIN_HOST_PORT` — the API's host port was the last hardcoded one. `docker-compose.yml` now maps `${API_HOST_PORT:-8001}:80`; `.env.template` documents it. `CORS_ORIGINS` updated `localhost:8000→8001`.

@@ -27,16 +27,16 @@ export async function getCharacterizations(
 }
 
 /**
- * Convenience: every characterization for a single asset, sorted by feature.
- * Used by AssetDetailModal to pre-populate the dynamic form in edit mode.
+ * Convenience: every characterization for a single asset, in the category's
+ * configured display order — the API sorts by `specifications.sort_order`
+ * (feature code as tiebreaker), so we preserve its order instead of re-sorting
+ * alphabetically here. Used by the Review page, AssetDetailModal, etc.
  */
 export async function getCharacterizationsByAsset(
   assetId: number,
 ): Promise<Characterization[]> {
   const all = await getCharacterizations(0, 1000);
-  return all
-    .filter((c) => Number(c.asset) === Number(assetId))
-    .sort((a, b) => a.feature.localeCompare(b.feature));
+  return all.filter((c) => Number(c.asset) === Number(assetId));
 }
 
 export async function getCharacterization(

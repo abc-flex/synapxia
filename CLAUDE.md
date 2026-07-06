@@ -17,9 +17,9 @@ pointer.
 
 SynapxIA is a modular monolith with three surfaces, run together via Docker Compose:
 
-- **API** — FastAPI + SQLModel (`uv`), port 8000 → see [`api/CLAUDE.md`](api/CLAUDE.md)
+- **API** — FastAPI + SQLModel (`uv`), port 8001 → see [`api/CLAUDE.md`](api/CLAUDE.md)
 - **UI** — Astro + Tailwind (Bun), port 4321 → see [`ui/CLAUDE.md`](ui/CLAUDE.md)
-- **DB** — PostgreSQL 18, SQL migrations, container port 5432 (host `5442`, via `DB_HOST_PORT`) → see [`db/CLAUDE.md`](db/CLAUDE.md)
+- **DB** — PostgreSQL 18, SQL migrations, container port 5432 (host `5433`, via `DB_HOST_PORT`) → see [`db/CLAUDE.md`](db/CLAUDE.md)
 
 ## Everyday commands
 

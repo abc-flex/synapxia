@@ -20,6 +20,13 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-07-06 14:42 — chore(compose): remap host ports (API 8001, PgAdmin 8081, DB 5433) + API_HOST_PORT knob
+- **Host ports moved** to dodge local clashes: API `8000→8001`, PgAdmin `8090→8081`, DB `5442→5433`. Only the **host** side of each mapping changed — the **container** ports are unchanged (API 80, PgAdmin 80, DB 5432), so nothing in-network moves: the UI still reaches the API via the Vite proxy → `synapxia-api:80`, PgAdmin/API still reach the DB as `db:5432`.
+- **New `API_HOST_PORT` env var** (default 8001) finishes the pattern started by `DB_HOST_PORT`/`PGADMIN_HOST_PORT` — the API's host port was the last hardcoded one. `docker-compose.yml` now maps `${API_HOST_PORT:-8001}:80`; `.env.template` documents it. `CORS_ORIGINS` updated `localhost:8000→8001`.
+- **No code changes.** `ui/src/lib/api.ts` uses relative `/api` in the browser and `synapxia-api:80` for SSR, so it never referenced the host port. `make test`'s health curl + the `make dev`/help banners now point at 8001/8081/5433.
+- **Verify:** `docker compose config` interpolates `published: "8001"` (api), `"8081"` (pgadmin), `"5433"` (db) with all container `target`s unchanged. Applies on `docker compose up` (port mapping only — no rebuild). Browser URLs are now API docs `http://localhost:8001/docs`, PgAdmin `http://localhost:8081`; host DB clients use `localhost:5433`.
+- Files affected: `docker-compose.yml`, `.env.template`, `Makefile`, `CLAUDE.md`, `AGENTS.md`, `api/CLAUDE.md`, `db/CLAUDE.md`, `API.md`, `docs/GETTING_STARTED.md`
+
 ## 2026-07-03 20:02 — fix(lib): guard Review/Modify pages against already-decided assets + honor spec `sort_order`
 - **Symptom:** opening a `REVIEW`/`MODIFICATION` notification for an asset that was already decided (e.g. `REJECTED`) still rendered the Approve/Reject/Request-changes (or Resubmit) buttons, and every click 409'd — "Asset 'N' is not awaiting review (status=REJECTED)" — spamming error toasts.
 - **Root cause:** every workflow transition inserts a **new** `actions` row and never mutates the old one, so the original `REVIEW`/`MODIFICATION` action stays `ASSIGNED` forever — the Review/Modify page stayed reachable for an already-decided asset via a direct URL / back button / stale tab. `ReviewAction`/`ModifyAction` only guarded on the action **type**, never the asset's live **status**.

@@ -14,9 +14,9 @@ SynapxIA is a team-collaboration and performance-measurement platform built as a
 
 | Surface | Path | Stack | Port |
 |---------|------|-------|------|
-| API | [`api/`](api/CLAUDE.md) | Python ≥3.12, FastAPI + SQLModel, `uv` | 8000 (→80) |
+| API | [`api/`](api/CLAUDE.md) | Python ≥3.12, FastAPI + SQLModel, `uv` | 8001 (→80) |
 | UI | [`ui/`](ui/CLAUDE.md) | Astro 4 + Tailwind + Flowbite, Bun | 4321 |
-| DB | [`db/`](db/CLAUDE.md) | PostgreSQL 18, ordered SQL migrations | 5432 (host 5442) |
+| DB | [`db/`](db/CLAUDE.md) | PostgreSQL 18, ordered SQL migrations | 5432 (host 5433) |
 
 API domains live under `api/app/`: `admin, auth, collab, taxo, genai, inits,
 insights, workflows`, with shared plumbing in `api/app/internal/`.
@@ -65,8 +65,8 @@ make logs      # all logs  (also logs-api / logs-db / logs-ui)
 make shell     # psql into the DB
 ```
 
-URLs after `make up`: UI http://localhost:4321 · API docs http://localhost:8000/docs ·
-PgAdmin http://localhost:8090. Seed login: `admin` / `Admin123!`.
+URLs after `make up`: UI http://localhost:4321 · API docs http://localhost:8001/docs ·
+PgAdmin http://localhost:8081. Seed login: `admin` / `Admin123!`.
 
 ## The five Constitution principles (all MUST)
 

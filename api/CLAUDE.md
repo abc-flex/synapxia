@@ -20,7 +20,7 @@ or debug the backend.
 | DB driver | psycopg2-binary |
 | Auth | Custom JWT (HS256) + passlib/bcrypt — `fastapi-users` installed but not used directly |
 | Package manager | `uv` (locks via `uv.lock`, pinned mirror in `requirements.txt`) |
-| Container port | 8000 (mapped from container 80) |
+| Container port | 8001 (mapped from container 80) |
 | ASGI server | `uvicorn` (dev), `Mangum` wrapper (Vercel serverless) |
 | OpenAPI | `/docs` (Swagger UI), `/redoc` |
 

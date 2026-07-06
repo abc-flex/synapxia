@@ -130,7 +130,7 @@ const PROPOSE_TABS = [
     // /src imports (those 404 in the Vercel build — see memory/CHANGELOG.md).
     import { getCategories } from "@/lib/categories";
     import { getReviewers, proposeAsset } from "@/lib/propose";
-    import { getSpecificationsbyCategory } from "@/lib/specifications";
+    import { buildCharFieldDefs } from "@/lib/charFields";
     import { loadClientTranslations, translate } from "@/utils/i18nClient";
     import { installGlobalToast, showToast } from "@/lib/toast";
     import { initTabs } from "@/lib/tabs";
@@ -170,10 +170,6 @@ const PROPOSE_TABS = [
       MCPS: "propose.title_mcps",
       AGENTS: "propose.title_agents",
     };
-    const RICH_FEATURES = new Set([
-      "PROMPT_TEMPLATE", "EXAMPLE_OUTPUT", "OVERVIEW",
-      "CONTENT", "TOOLS", "SERVER_CONFIG", "INSTRUCTIONS",
-    ]);
     const REVIEWER_ROLES = ["ADMINISTRATOR", "ADMINISTRATIVE", "REVIEWER"];
 
     const tr = (key: string, fallback: string): string => {
@@ -275,30 +271,35 @@ const PROPOSE_TABS = [
         return;
       }
       try {
-        const specs = await getSpecificationsbyCategory(category, 0, 1000);
+        // Ordered by the spec's sort_order; carries control type (select for
+        // list-backed features / textarea for rich / input), required flag,
+        // FEAT_TYPE badge and description — one source of truth (charFields.ts).
+        const defs = await buildCharFieldDefs(category);
         charFields.innerHTML = "";
         requiredFeatures.clear();
-        if (!specs.length) {
+        if (!defs.length) {
           setCharTabVisible(false);
           return;
         }
-        for (const s of specs) {
-          const code = s.feature;
-          const rich = RICH_FEATURES.has(code);
+        for (const def of defs) {
+          const code = def.feature;
           const cell = document.createElement("div");
-          if (rich) cell.className = "sm:col-span-2";
+          if (def.control === "textarea") cell.className = "sm:col-span-2";
 
+          // Label row: name + required star on the left, FEAT_TYPE badge right.
           // The feature name lives in its own [data-i18n] span so a language
           // switch (loadClientTranslations sets textContent) doesn't wipe the
           // required `*` marker, which sits beside it as a sibling.
+          const labelRow = document.createElement("div");
+          labelRow.className = "flex flex-wrap items-baseline justify-between gap-x-2";
           const label = document.createElement("label");
           label.className = labelClass;
           label.htmlFor = `char-${code}`;
           const labelText = document.createElement("span");
           labelText.setAttribute("data-i18n", `feature.${code}`);
-          labelText.textContent = tr(`feature.${code}`, code);
+          labelText.textContent = tr(`feature.${code}`, def.name);
           label.appendChild(labelText);
-          if (s.required) {
+          if (def.required) {
             requiredFeatures.add(code);
             const star = document.createElement("span");
             star.className = "ml-0.5 text-red-500";
@@ -306,24 +307,54 @@ const PROPOSE_TABS = [
             star.textContent = "*";
             label.appendChild(star);
           }
-          cell.appendChild(label);
+          labelRow.appendChild(label);
+          if (def.type) {
+            const badge = document.createElement("span");
+            badge.className = "shrink-0 text-[10px] uppercase tracking-wide text-gray-400";
+            badge.textContent = def.type;
+            labelRow.appendChild(badge);
+          }
+          cell.appendChild(labelRow);
+          if (def.description) {
+            const desc = document.createElement("p");
+            desc.className = "mb-1 text-xs text-gray-500 dark:text-gray-400 break-words";
+            desc.textContent = def.description;
+            cell.appendChild(desc);
+          }
 
-          const field = rich
-            ? document.createElement("textarea")
-            : document.createElement("input");
-          if (field instanceof HTMLTextAreaElement) {
-            field.rows = code === "EXAMPLE_OUTPUT" || code === "OVERVIEW" ? 3 : 5;
+          let field: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+          if (def.control === "select") {
+            const select = document.createElement("select");
+            const blank = document.createElement("option");
+            blank.value = "";
+            blank.textContent = "—";
+            select.appendChild(blank);
+            for (const opt of def.options) {
+              const option = document.createElement("option");
+              option.value = opt.value;
+              option.textContent = opt.label;
+              select.appendChild(option);
+            }
+            field = select;
+          } else if (def.control === "textarea") {
+            const ta = document.createElement("textarea");
+            ta.rows = code === "EXAMPLE_OUTPUT" || code === "OVERVIEW" ? 3 : 5;
+            field = ta;
           } else {
-            field.type = "text";
+            const input = document.createElement("input");
+            input.type = "text";
+            field = input;
           }
           field.id = `char-${code}`;
           field.name = code;
           field.className = inputClass;
           field.setAttribute("data-characterization", "1");
-          if (s.required) field.setAttribute("data-required", "1");
-          if (s.default_value != null) field.value = s.default_value;
+          if (def.required) field.setAttribute("data-required", "1");
+          if (def.defaultValue) field.value = def.defaultValue;
           // Clear the invalid highlight as soon as the user edits a required field.
-          field.addEventListener("input", () => setFieldInvalid(field, null, false));
+          const clear = () => setFieldInvalid(field, null, false);
+          field.addEventListener("input", clear);
+          field.addEventListener("change", clear);
           cell.appendChild(field);
 
           charFields.appendChild(cell);
@@ -435,7 +466,7 @@ const PROPOSE_TABS = [
       if (hasCharStep()) {
         let firstBad: HTMLElement | null = null;
         charFields
-          ?.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>("[data-required]")
+          ?.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("[data-required]")
           .forEach((el) => {
             const bad = !(el.value || "").trim();
             setFieldInvalid(el, null, bad);
@@ -455,7 +486,7 @@ const PROPOSE_TABS = [
       // Collect the per-feature characterization values (non-empty only).
       const values: Record<string, string> = {};
       charFields
-        ?.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>("[data-characterization]")
+        ?.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("[data-characterization]")
         .forEach((el) => {
           const v = (el.value || "").trim();
           if (v) values[el.name] = v;

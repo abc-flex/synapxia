@@ -13,22 +13,16 @@
   import { getAction } from "@/lib/actions";
   import { getAsset } from "@/lib/assets";
   import { getCharacterizationsByAsset } from "@/lib/characterizations";
-  import { getSpecificationsbyCategory } from "@/lib/specifications";
+  import { buildCharFieldDefs, type CharFieldDef } from "@/lib/charFields";
   import { markNotified } from "@/lib/notifications";
   import { resubmitAsset } from "@/lib/modify";
   import { translate } from "@/utils/i18nClient";
   import { showToast } from "@/lib/toast";
   import { inputClass, labelClass, setFieldInvalid } from "@/lib/formClasses";
-  import type { Characterization, Specification } from "@/types/api";
+  import type { Characterization } from "@/types/api";
 
   const ICON_MODIFY =
     `<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9" stroke-linecap="round"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-
-  // Features whose value is long-form → render as a textarea (mirrors propose.astro).
-  const RICH_FEATURES = new Set([
-    "PROMPT_TEMPLATE", "EXAMPLE_OUTPUT", "OVERVIEW",
-    "CONTENT", "TOOLS", "SERVER_CONFIG", "INSTRUCTIONS",
-  ]);
 
   let langTick = $state(0);
   const t = (key: string, fallback: string): string => {
@@ -54,7 +48,10 @@
 
   let name = $state("");
   let description = $state("");
-  let specs = $state<Specification[]>([]);
+  // Field definitions come from the shared builder (charFields.ts): ordered by
+  // the spec's sort_order, control derived from the feature (select/textarea/
+  // input), plus required flag + FEAT_TYPE badge + description.
+  let fields = $state<CharFieldDef[]>([]);
   let charValues = $state<Record<string, string>>({});
   let submitting = $state(false);
   let nameEl = $state<HTMLInputElement | undefined>(undefined);
@@ -62,7 +59,6 @@
   const actionId = (): number =>
     Number(new URLSearchParams(window.location.search).get("action") || "");
 
-  const isRich = (feature: string): boolean => RICH_FEATURES.has(feature);
   const charId = (feature: string): string => `modify-char-${feature}`;
 
   // Only a FEEDBACK asset can be resubmitted. The MODIFICATION action stays
@@ -96,11 +92,12 @@
       return;
     }
     // Required characterizations must be filled.
-    for (const spec of specs) {
-      if (spec.required && !(charValues[spec.feature] ?? "").trim()) {
-        const el = document.getElementById(charId(spec.feature)) as
+    for (const def of fields) {
+      if (def.required && !(charValues[def.feature] ?? "").trim()) {
+        const el = document.getElementById(charId(def.feature)) as
           | HTMLInputElement
           | HTMLTextAreaElement
+          | HTMLSelectElement
           | null;
         setFieldInvalid(el, null, true);
         el?.focus();
@@ -114,7 +111,7 @@
 
     // Send every visible characterization (trimmed) so edits + clears both apply.
     const values: Record<string, string> = {};
-    for (const spec of specs) values[spec.feature] = (charValues[spec.feature] ?? "").trim();
+    for (const def of fields) values[def.feature] = (charValues[def.feature] ?? "").trim();
 
     submitting = true;
     try {
@@ -172,8 +169,9 @@
         /* keep blanks */
       }
 
-      // Build the characterization editor from the category specs, prefilled with
-      // the asset's existing values (fall back to the spec default).
+      // Build the characterization editor from the shared field definitions
+      // (ordered by sort_order, control per feature), prefilled with the
+      // asset's existing values (fall back to the spec default).
       let existing: Characterization[] = [];
       try {
         existing = await getCharacterizationsByAsset(action.asset);
@@ -183,17 +181,16 @@
       const byFeature = new Map(existing.map((c) => [c.feature, c]));
       if (category) {
         try {
-          const list = await getSpecificationsbyCategory(category, 0, 1000);
-          specs = list;
+          const defs = await buildCharFieldDefs(category);
+          fields = defs;
           const seed: Record<string, string> = {};
-          for (const spec of list) {
-            const cur = byFeature.get(spec.feature);
-            seed[spec.feature] =
-              (cur?.value ?? "") || (spec.default_value ?? "") || "";
+          for (const def of defs) {
+            const cur = byFeature.get(def.feature);
+            seed[def.feature] = (cur?.value ?? "") || def.defaultValue || "";
           }
           charValues = seed;
         } catch {
-          specs = [];
+          fields = [];
         }
       }
 
@@ -271,29 +268,50 @@
           <textarea id="modify-description" bind:value={description} rows="3" class={inputClass}></textarea>
         </div>
 
-        <!-- Editable characterizations -->
-        {#if specs.length > 0}
+        <!-- Editable characterizations (order, control, required + type badge
+             all come from the shared field definitions) -->
+        {#if fields.length > 0}
           <div class="space-y-3">
             <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
               {t("modify.characterizations", "Characterization")}
             </p>
-            {#each specs as spec (spec.feature)}
+            {#each fields as def (def.feature)}
               <div>
-                <label for={charId(spec.feature)} class={labelClass}>
-                  <span>{t(`feature.${spec.feature}`, spec.feature)}</span>{#if spec.required}<span class="ml-0.5 text-red-500">*</span>{/if}
-                </label>
-                {#if isRich(spec.feature)}
+                <div class="flex flex-wrap items-baseline justify-between gap-x-2">
+                  <label for={charId(def.feature)} class={labelClass}>
+                    <span>{t(`feature.${def.feature}`, def.name)}</span>{#if def.required}<span class="ml-0.5 text-red-500" aria-hidden="true">*</span>{/if}
+                  </label>
+                  {#if def.type}
+                    <span class="shrink-0 text-[10px] uppercase tracking-wide text-gray-400">{def.type}</span>
+                  {/if}
+                </div>
+                {#if def.description}
+                  <p class="mb-1 text-xs text-gray-500 dark:text-gray-400 break-words">{def.description}</p>
+                {/if}
+                {#if def.control === "select"}
+                  <select
+                    id={charId(def.feature)}
+                    bind:value={charValues[def.feature]}
+                    class={inputClass}
+                    onchange={(e) => setFieldInvalid(e.currentTarget, null, false)}
+                  >
+                    <option value="">—</option>
+                    {#each def.options as opt (opt.value)}
+                      <option value={opt.value}>{opt.label}</option>
+                    {/each}
+                  </select>
+                {:else if def.control === "textarea"}
                   <textarea
-                    id={charId(spec.feature)}
-                    bind:value={charValues[spec.feature]}
+                    id={charId(def.feature)}
+                    bind:value={charValues[def.feature]}
                     rows="4"
                     class={inputClass}
                     oninput={(e) => setFieldInvalid(e.currentTarget, null, false)}
                   ></textarea>
                 {:else}
                   <input
-                    id={charId(spec.feature)}
-                    bind:value={charValues[spec.feature]}
+                    id={charId(def.feature)}
+                    bind:value={charValues[def.feature]}
                     type="text"
                     class={inputClass}
                     oninput={(e) => setFieldInvalid(e.currentTarget, null, false)}

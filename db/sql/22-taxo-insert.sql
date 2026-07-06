@@ -71,24 +71,24 @@ INSERT INTO features (code, name, type, description) VALUES
 -- ****** Table specifications ******
 -- **********************************
 
-INSERT INTO specifications (category, feature, default_value, required) VALUES
-    -- Features for a PROMPT category (PROMPT_TEMPLATE is the core content → required)
-    ('PROMPTS', 'PLATFORM', 'VSCode', FALSE),
-    ('PROMPTS', 'SUGGESTED_MODEL', 'GPT-5', FALSE),
-    ('PROMPTS', 'SUGGESTED_TEMPERATURE', '0.2', FALSE),
-    ('PROMPTS', 'PROMPT_TEMPLATE', NULL, TRUE),
-    ('PROMPTS', 'EXAMPLE_OUTPUT', NULL, FALSE),
+INSERT INTO specifications (category, feature, default_value, required, sort_order) VALUES
+    -- Features for a PROMPT category
+    ('PROMPTS', 'PROMPT_TEMPLATE', NULL, TRUE, 10),
+    ('PROMPTS', 'PLATFORM', 'VSCode', FALSE, 20),
+    ('PROMPTS', 'SUGGESTED_MODEL', 'GPT-5', FALSE, 30),
+    ('PROMPTS', 'SUGGESTED_TEMPERATURE', '0.2', FALSE, 40),
+    ('PROMPTS', 'EXAMPLE_OUTPUT', NULL, FALSE, 50),
 
-    -- Features for a MCPS category (SERVER_CONFIG is the core content → required)
-    ('MCPS', 'MODE', 'Remote', FALSE),
-    ('MCPS', 'OVERVIEW', NULL, FALSE),
-    ('MCPS', 'CONTENT', NULL, FALSE),
-    ('MCPS', 'TOOLS', NULL, FALSE),
-    ('MCPS', 'SERVER_CONFIG', NULL, TRUE),
+    -- Features for a MCPS category
+    ('MCPS', 'OVERVIEW', NULL, TRUE, 10),
+    ('MCPS', 'CONTENT', NULL, FALSE, 20),
+    ('MCPS', 'MODE', 'Remote', FALSE, 30),
+    ('MCPS', 'TOOLS', NULL, FALSE, 40),
+    ('MCPS', 'SERVER_CONFIG', NULL, FALSE, 50),
 
-    -- Features for a AGENT category (INSTRUCTIONS required, TOOLS optional)
-    ('AGENTS', 'PLATFORM', 'VSCode', FALSE),
-    ('AGENTS', 'SUGGESTED_MODEL', 'GPT-5', FALSE),
-    ('AGENTS', 'SUGGESTED_TEMPERATURE', '0.2', FALSE),
-    ('AGENTS', 'INSTRUCTIONS', NULL, TRUE),
-    ('AGENTS', 'TOOLS', NULL, FALSE);
+    -- Features for a AGENT category
+    ('AGENTS', 'INSTRUCTIONS', NULL, TRUE, 10),
+    ('AGENTS', 'PLATFORM', 'VSCode', FALSE, 20),
+    ('AGENTS', 'SUGGESTED_MODEL', 'GPT-5', FALSE, 30),
+    ('AGENTS', 'SUGGESTED_TEMPERATURE', '0.2', FALSE, 40),
+    ('AGENTS', 'TOOLS', NULL, FALSE, 50);

@@ -375,6 +375,7 @@ export interface Specification {
   feature: string;
   default_value?: string | null;
   required?: boolean;
+  sort_order?: number;
   is_active?: boolean;
   created_at?: string;
   updated_at?: string;
@@ -385,12 +386,14 @@ export interface SpecificationCreate {
   feature: string;
   default_value?: string | null;
   required?: boolean;
+  sort_order?: number;
   is_active?: boolean;
 }
 
 export interface SpecificationUpdate {
   default_value?: string | null;
   required?: boolean;
+  sort_order?: number;
   is_active?: boolean;
 }
 

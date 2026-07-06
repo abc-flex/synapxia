@@ -76,9 +76,9 @@ The stack runs four services defined in [`docker-compose.yml`](../docker-compose
 
 | Service | Tech | Port | Description |
 |---------|------|------|-------------|
-| `db` | PostgreSQL 18 | 5442 | Database (host port; container listens on 5432). Auto-runs SQL scripts in `db/sql/` on first startup. Override the host port with `DB_HOST_PORT`. |
-| `pgadmin` | pgAdmin 4 | 8090 | Web admin UI for the database (host port; container listens on 80). Override the host port with `PGADMIN_HOST_PORT`. |
-| `api` | FastAPI (Python, `uv`) | 8000 | Backend REST API with live reload. |
+| `db` | PostgreSQL 18 | 5433 | Database (host port; container listens on 5432). Auto-runs SQL scripts in `db/sql/` on first startup. Override the host port with `DB_HOST_PORT`. |
+| `pgadmin` | pgAdmin 4 | 8081 | Web admin UI for the database (host port; container listens on 80). Override the host port with `PGADMIN_HOST_PORT`. |
+| `api` | FastAPI (Python, `uv`) | 8001 | Backend REST API with live reload. |
 | `ui` | Astro (Bun) | 4321 | Frontend with live reload. |
 
 **Startup order:** `db` → `api` (waits for DB healthy) → `ui` (waits for API).
@@ -101,7 +101,7 @@ DB_SCHEMA=synapxia
 DB_USER=synapxia
 DB_PASSWORD=synapxia
 DB_PORT=5432        # in-network port (container); API + PgAdmin use db:5432
-DB_HOST_PORT=5442   # host-published port (localhost:5442) to avoid clashing with a local 5432
+DB_HOST_PORT=5433   # host-published port (localhost:5433) to avoid clashing with a local 5432
 PGADMIN_EMAIL=admin@synapxia.com
 PGADMIN_PASSWORD=synapxia
 API_PATH=http://synapxia-api
@@ -142,8 +142,8 @@ Open in your browser:
 | Service | URL |
 |---------|-----|
 | Frontend | http://localhost:4321 |
-| API Docs (Swagger) | http://localhost:8000/docs |
-| PgAdmin | http://localhost:8090 |
+| API Docs (Swagger) | http://localhost:8001/docs |
+| PgAdmin | http://localhost:8081 |
 
 ---
 
@@ -178,6 +178,6 @@ See [`MAKEFILE.md`](MAKEFILE.md) for the full command reference.
 |---------|----------|
 | A container won't start | `make logs` or `make logs-<service>` to see the error. |
 | Database has stale/broken data | `make clean` then `make rebuild` to wipe the volume and re-run migrations. |
-| Port already in use (4321 / 8000 / 8090 / 5442) | Stop the conflicting process, or change the host-side port mapping in `docker-compose.yml` (for the DB set `DB_HOST_PORT`, for PgAdmin set `PGADMIN_HOST_PORT`, in `.env` — the containers still listen on 5432 / 80). |
+| Port already in use (4321 / 8001 / 8081 / 5433) | Stop the conflicting process, or change the host-side port mapping in `docker-compose.yml` (for the DB set `DB_HOST_PORT`, for PgAdmin set `PGADMIN_HOST_PORT`, in `.env` — the containers still listen on 5432 / 80). |
 | Migrations didn't run | They only run on a **fresh** volume. Run `make clean` + `make rebuild` to force re-init. |
 | `setup-database.sh: No such file` | Expected for now — see the note in step 4. |

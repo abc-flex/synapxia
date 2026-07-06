@@ -15,11 +15,11 @@ needs to extend or debug the schema.
 | Item | Value |
 |------|-------|
 | Engine | PostgreSQL 18 |
-| Container port | 5432 (published on host `5442` by default — override via `DB_HOST_PORT`) |
+| Container port | 5432 (published on host `5433` by default — override via `DB_HOST_PORT`) |
 | Migration tool | Ordered raw SQL files (no Alembic/Flyway/Liquibase) |
 | Initialization | Docker entrypoint auto-runs files in `/docker-entrypoint-initdb.d/` lexically |
 | Persistence | `synapxia-db-volume` (named Docker volume) |
-| Admin UI | pgAdmin on host port `8090` (container 80; override via `PGADMIN_HOST_PORT`) |
+| Admin UI | pgAdmin on host port `8081` (container 80; override via `PGADMIN_HOST_PORT`) |
 | Production target | Neon (serverless Postgres on AWS) via `neon-migrate.sh` |
 
 Default credentials (dev): `synapxia` / `synapxia` (user / password / database name).
@@ -193,7 +193,7 @@ boot of a fresh volume.**
 ```yaml
 db:
   image: postgres:18
-  ports: ["${DB_HOST_PORT:-5442}:5432"]   # host 5442 → container 5432 (avoid host 5432 clashes)
+  ports: ["${DB_HOST_PORT:-5433}:5432"]   # host 5433 → container 5432 (avoid host 5432 clashes)
   volumes:
     - ./db/sql:/docker-entrypoint-initdb.d   # auto-run on fresh init
     - synapxia-db-volume:/var/lib/postgresql/data
@@ -231,13 +231,13 @@ same end-state.
 ```yaml
 pgadmin:
   image: dpage/pgadmin4:9.11
-  ports: ["${PGADMIN_HOST_PORT:-8090}:80"]   # host 8090 → container 80 (avoid host 8080 clashes)
+  ports: ["${PGADMIN_HOST_PORT:-8081}:80"]   # host 8081 → container 80 (avoid host 8080 clashes)
   environment:
     PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
     PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
 ```
 
-- URL: `http://localhost:8090` (host port; `PGADMIN_HOST_PORT`)
+- URL: `http://localhost:8081` (host port; `PGADMIN_HOST_PORT`)
 - Default credentials (dev): `admin@synapxia.com` / `synapxia` (per `make dev` banner).
 - **Server auto-registration** — currently manual. The compose file references
   `/pgadmin-servers.json.template` + `/pgadmin-entrypoint.sh` but those files are

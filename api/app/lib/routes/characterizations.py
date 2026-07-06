@@ -6,8 +6,10 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 from sqlalchemy.exc import IntegrityError
 
+from sqlalchemy import and_, func
+
 from ..internal.models import Characterization, CharacterizationCreate, CharacterizationUpdate, Asset
-from ...taxo.internal.models import Feature
+from ...taxo.internal.models import Feature, Specification
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
 from ...internal.permissions import require_privilege
@@ -25,12 +27,29 @@ def get_all(
     """
     List all characterizations with pagination.
 
+    Within each asset, rows follow the category's configured feature order
+    (``specifications.sort_order``, feature code as tiebreaker; features without
+    a spec row go last) — so every consumer renders characterizations in the
+    configured display order.
+
     - **skip**: Number of records to skip (default: 0)
     - **limit**: Maximum number of records to return (default: 100)
     """
-    characterizations = session.exec(select(Characterization).where(Characterization.is_active == True)
-                                     .offset(skip).limit(limit)
-                                     .order_by(Characterization.asset, Characterization.feature)).all()
+    characterizations = session.exec(
+        select(Characterization)
+        .join(Asset, Characterization.asset == Asset.id, isouter=True)
+        .join(Specification, and_(
+            Specification.category == Asset.category,
+            Specification.feature == Characterization.feature,
+        ), isouter=True)
+        .where(Characterization.is_active == True)
+        .offset(skip).limit(limit)
+        # coalesce keeps NULL sort_order (no spec row) deterministic and last on
+        # both Postgres and the SQLite test DB, which order NULLs differently.
+        .order_by(Characterization.asset,
+                  func.coalesce(Specification.sort_order, 1000000),
+                  Characterization.feature)
+    ).all()
     return characterizations
 
 

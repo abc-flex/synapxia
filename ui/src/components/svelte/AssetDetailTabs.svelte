@@ -73,6 +73,7 @@
   interface EnrichedSpec {
     feature: string;
     default_value?: string;
+    required?: boolean;
     featureObj: { code: string; name?: string; description?: string; type?: string; list?: string | null };
     listItems: any[] | null;
   }
@@ -710,7 +711,7 @@
           <div class="rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-white/[0.02] p-3">
             <div class="flex flex-wrap items-baseline justify-between gap-x-2 mb-1.5">
               <label class="block min-w-0 break-words text-sm font-semibold text-gray-800 dark:text-gray-200" for={`${idPrefix}-char-${spec.feature}`}>
-                {t(`features.${spec.feature}`, spec.featureObj.name || spec.feature)}
+                {t(`features.${spec.feature}`, spec.featureObj.name || spec.feature)}{#if spec.required}<span class="ml-0.5 text-red-500" aria-hidden="true">*</span>{/if}
               </label>
               <span class="shrink-0 text-[10px] uppercase tracking-wide text-gray-400">{spec.featureObj.type || ""}</span>
             </div>

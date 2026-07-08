@@ -20,6 +20,10 @@ ENV PATH="/root/.local/bin/:$PATH"
 # Disable development dependencies
 ENV UV_NO_DEV=1
 
+# Give slow/flaky Docker Desktop networks more room than uv's 30s default before
+# a single package download aborts the whole `uv sync` build
+ENV UV_HTTP_TIMEOUT=120
+
 # Copy the project over and install dependencies with uv
 WORKDIR /app
 COPY . /app

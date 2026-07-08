@@ -324,6 +324,31 @@ def get_notifications(
     return actions_service.list_notifications(session, current.id)
 
 
+@router.get("/reviews", response_model=List[NotificationItem])
+def get_review_requests(
+    session: Session = Depends(get_db_session),
+    current: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=False))
+) -> List[NotificationItem]:
+    """
+    The current user's open REVIEW assignments (newest first) — a persistent,
+    browsable queue backing the "Review Requests" page, independent of whatever
+    has been opened/dismissed in the notification bell.
+    """
+    return actions_service.list_review_requests(session, current.id)
+
+
+@router.get("/modifications", response_model=List[NotificationItem])
+def get_pending_modifications(
+    session: Session = Depends(get_db_session),
+    current: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=False))
+) -> List[NotificationItem]:
+    """
+    The current user's open MODIFICATION assignments (newest first) — a
+    persistent, browsable queue backing the "My Modifications" page.
+    """
+    return actions_service.list_pending_modifications(session, current.id)
+
+
 @router.post("/notifications/{id}/notified", response_model=Action)
 def mark_notification_notified(
     id: int, session: Session = Depends(get_db_session),
@@ -351,12 +376,16 @@ def dismiss_notification(
 ) -> Action:
     """
     Dismiss a notification (insert a FINISHED row) — removes it from the list.
+    Only PUBLICATION/REJECTION (informational) notifications can be dismissed;
+    REVIEW/MODIFICATION must be resolved via review/resubmit instead (400).
 
     - **id**: The notification's latest action id (from GET /notifications)
     """
     action = _own_notification(session, id, current)
     try:
         return actions_service.dismiss_notification(session, action)
+    except actions_service.NotificationNotDismissible as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
     except IntegrityError:
         session.rollback()
         raise HTTPException(

@@ -136,7 +136,13 @@
             </p>
             <p class="notification-meta">{typeLabel(it.type)} · {formatRelative(it.created_at, locale())}</p>
           </div>
-          {#if !it.unread}
+          {#if !it.unread && (it.type === "PUBLICATION" || it.type === "REJECTION")}
+            <!-- Only informational types can be dismissed. REVIEW/MODIFICATION
+                 must be resolved via review/resubmit — dismissing them would
+                 insert the same FINISHED row that marks the assignment as
+                 already decided, permanently blocking the assignee from
+                 acting on it. Those stay reachable via the "Review Requests" /
+                 "My Modifications" pages instead. -->
             <button
               type="button"
               class="ml-auto shrink-0 rounded-md px-2 py-1 text-xs font-medium text-gray-400 hover:text-red-600 dark:hover:text-red-400"

@@ -485,9 +485,22 @@ WORKFLOW_FINISHED = "FINISHED"
 # Statuses that keep a thread in the notification list (FINISHED removes it).
 NOTIFICATION_OPEN_STATUSES = (WORKFLOW_ASSIGNED, WORKFLOW_NOTIFIED)
 
+# Types where FINISHED is purely informational (no further action is expected
+# of the assignee) — these are the only ones the bell may dismiss. REVIEW and
+# MODIFICATION assignments must be resolved by actually reviewing/resubmitting;
+# dismissing them would insert the same FINISHED row review_asset()/
+# resubmit_asset() use to mean "already decided", silently revoking the
+# assignee's ability to act (see NotificationNotDismissible below).
+DISMISSIBLE_TYPES = (TYPE_PUBLICATION, TYPE_REJECTION)
 
-def list_notifications(session: Session, user_id: int) -> List[dict]:
-    """The open workflow notifications for a user, newest first.
+
+class NotificationNotDismissible(Exception):
+    """Raised when dismissing a REVIEW/MODIFICATION notification is attempted
+    (→ 400) — those must be resolved via review/resubmit, not dismissed."""
+
+
+def _list_open_actions(session: Session, user_id: int, types) -> List[dict]:
+    """The open workflow actions of ``types`` assigned to a user, newest first.
 
     Groups the user's workflow actions by (asset, type), takes the latest row of
     each thread, and keeps those whose status is ASSIGNED or NOTIFIED. Asset
@@ -499,7 +512,7 @@ def list_notifications(session: Session, user_id: int) -> List[dict]:
         .where(
             Action.user_id == user_id,
             Action.is_active == True,  # noqa: E712
-            Action.type.in_(NOTIFICATION_TYPES),
+            Action.type.in_(types),
             Action.workflow_status.is_not(None),
         )
         .order_by(Action.created_at.asc(), Action.id.asc())
@@ -536,6 +549,24 @@ def list_notifications(session: Session, user_id: int) -> List[dict]:
     ]
     items.sort(key=lambda i: i["created_at"], reverse=True)
     return items
+
+
+def list_notifications(session: Session, user_id: int) -> List[dict]:
+    """The open workflow notifications for a user, newest first (all four
+    notification types — the bell's data source)."""
+    return _list_open_actions(session, user_id, NOTIFICATION_TYPES)
+
+
+def list_review_requests(session: Session, user_id: int) -> List[dict]:
+    """The open REVIEW assignments for a user, newest first — a persistent,
+    browsable queue independent of the (dismissible) notification bell."""
+    return _list_open_actions(session, user_id, (TYPE_REVIEW,))
+
+
+def list_pending_modifications(session: Session, user_id: int) -> List[dict]:
+    """The open MODIFICATION assignments for a user, newest first — a
+    persistent, browsable queue independent of the notification bell."""
+    return _list_open_actions(session, user_id, (TYPE_MODIFICATION,))
 
 
 def _insert_status(session: Session, action: Action, new_status: str) -> Action:
@@ -575,5 +606,15 @@ def mark_notified(session: Session, action: Action) -> Action:
 
 
 def dismiss_notification(session: Session, action: Action) -> Action:
-    """Dismiss an assignment (insert a FINISHED row), removing it from the list."""
+    """Dismiss an assignment (insert a FINISHED row), removing it from the list.
+
+    Only informational types (PUBLICATION/REJECTION) may be dismissed — REVIEW
+    and MODIFICATION must be resolved via review/resubmit instead, otherwise
+    dismissing would insert the same FINISHED row that marks them as already
+    decided (raises NotificationNotDismissible, mapped to 400 by the route).
+    """
+    if action.type not in DISMISSIBLE_TYPES:
+        raise NotificationNotDismissible(
+            f"'{action.type}' notifications must be resolved, not dismissed."
+        )
     return _insert_status(session, action, WORKFLOW_FINISHED)

@@ -151,11 +151,61 @@ def test_mark_notified_is_noop_when_not_assigned(session):
 
 
 def test_dismiss_inserts_finished_and_removes(session):
+    # PUBLICATION/REJECTION are informational — no further action is expected,
+    # so they remain dismissible.
     asset = _mk_asset(session)
-    a = _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, "NOTIFIED", T0)
+    a = _mk_action(session, asset.id, 1, svc.TYPE_PUBLICATION, "NOTIFIED", T0)
 
     svc.dismiss_notification(session, a)
     assert svc.list_notifications(session, 1) == []
+
+
+def test_dismiss_review_is_rejected(session):
+    # REVIEW must be resolved via review_asset(), not dismissed — dismissing it
+    # would insert the same FINISHED row review_asset() uses to mean "already
+    # decided", permanently blocking the reviewer from acting on it.
+    asset = _mk_asset(session)
+    a = _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, "NOTIFIED", T0)
+
+    try:
+        svc.dismiss_notification(session, a)
+        assert False, "expected NotificationNotDismissible"
+    except svc.NotificationNotDismissible:
+        pass
+    # The assignment must still be open (ASSIGNED/NOTIFIED), not FINISHED.
+    items = svc.list_notifications(session, 1)
+    assert len(items) == 1
+    assert items[0]["workflow_status"] == "NOTIFIED"
+
+
+def test_dismiss_modification_is_rejected(session):
+    asset = _mk_asset(session)
+    a = _mk_action(session, asset.id, 1, svc.TYPE_MODIFICATION, "NOTIFIED", T0)
+
+    try:
+        svc.dismiss_notification(session, a)
+        assert False, "expected NotificationNotDismissible"
+    except svc.NotificationNotDismissible:
+        pass
+    assert len(svc.list_notifications(session, 1)) == 1
+
+
+def test_list_review_requests_scoped_to_review_type(session):
+    asset = _mk_asset(session)
+    _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, "ASSIGNED", T0)
+    _mk_action(session, asset.id, 1, svc.TYPE_MODIFICATION, "ASSIGNED", T0 + timedelta(minutes=1))
+
+    items = svc.list_review_requests(session, 1)
+    assert [i["type"] for i in items] == ["REVIEW"]
+
+
+def test_list_pending_modifications_scoped_to_modification_type(session):
+    asset = _mk_asset(session)
+    _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, "ASSIGNED", T0)
+    _mk_action(session, asset.id, 1, svc.TYPE_MODIFICATION, "ASSIGNED", T0 + timedelta(minutes=1))
+
+    items = svc.list_pending_modifications(session, 1)
+    assert [i["type"] for i in items] == ["MODIFICATION"]
 
 
 # --- Route contract --------------------------------------------------------
@@ -169,6 +219,8 @@ def test_notification_routes_in_openapi(client):
     assert "/api/actions/notifications" in paths
     assert "/api/actions/notifications/{id}/notified" in paths
     assert "/api/actions/notifications/{id}/dismiss" in paths
+    assert "/api/actions/reviews" in paths
+    assert "/api/actions/modifications" in paths
 
 
 def test_get_notifications_returns_current_user_only(session, client):
@@ -198,13 +250,34 @@ def test_notified_route_transitions(session, client):
 
 def test_dismiss_route_removes_from_list(session, client):
     asset = _mk_asset(session)
-    a = _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, "NOTIFIED", T0)
+    a = _mk_action(session, asset.id, 1, svc.TYPE_PUBLICATION, "NOTIFIED", T0)
     app.dependency_overrides[current_active_user] = lambda: _user(1)
 
     r = client.post(f"/api/actions/notifications/{a.id}/dismiss")
     assert r.status_code == 200
     assert r.json()["data"]["workflow_status"] == "FINISHED"
     assert client.get("/api/actions/notifications").json()["data"] == []
+
+
+def test_dismiss_route_rejects_review_with_400(session, client):
+    asset = _mk_asset(session)
+    a = _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, "NOTIFIED", T0)
+    app.dependency_overrides[current_active_user] = lambda: _user(1)
+
+    r = client.post(f"/api/actions/notifications/{a.id}/dismiss")
+    assert r.status_code == 400
+    # The assignment must still be reachable, not silently closed.
+    items = client.get("/api/actions/notifications").json()["data"]
+    assert len(items) == 1 and items[0]["type"] == "REVIEW"
+
+
+def test_dismiss_route_rejects_modification_with_400(session, client):
+    asset = _mk_asset(session)
+    a = _mk_action(session, asset.id, 1, svc.TYPE_MODIFICATION, "NOTIFIED", T0)
+    app.dependency_overrides[current_active_user] = lambda: _user(1)
+
+    r = client.post(f"/api/actions/notifications/{a.id}/dismiss")
+    assert r.status_code == 400
 
 
 def test_cannot_transition_another_users_notification(session, client):
@@ -214,3 +287,32 @@ def test_cannot_transition_another_users_notification(session, client):
 
     assert client.post(f"/api/actions/notifications/{other.id}/notified").status_code == 404
     assert client.post(f"/api/actions/notifications/{other.id}/dismiss").status_code == 404
+
+
+def test_reviews_route_returns_only_review_type(session, client):
+    asset = _mk_asset(session)
+    _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, "ASSIGNED", T0)
+    _mk_action(session, asset.id, 1, svc.TYPE_MODIFICATION, "ASSIGNED", T0 + timedelta(minutes=1))
+    app.dependency_overrides[current_active_user] = lambda: _user(1)
+
+    r = client.get("/api/actions/reviews")
+    assert r.status_code == 200
+    body = r.json()["data"]
+    assert len(body) == 1 and body[0]["type"] == "REVIEW"
+
+
+def test_modifications_route_returns_only_modification_type(session, client):
+    asset = _mk_asset(session)
+    _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, "ASSIGNED", T0)
+    _mk_action(session, asset.id, 1, svc.TYPE_MODIFICATION, "ASSIGNED", T0 + timedelta(minutes=1))
+    app.dependency_overrides[current_active_user] = lambda: _user(1)
+
+    r = client.get("/api/actions/modifications")
+    assert r.status_code == 200
+    body = r.json()["data"]
+    assert len(body) == 1 and body[0]["type"] == "MODIFICATION"
+
+
+def test_reviews_and_modifications_require_auth(client):
+    assert client.get("/api/actions/reviews").status_code in (401, 403)
+    assert client.get("/api/actions/modifications").status_code in (401, 403)

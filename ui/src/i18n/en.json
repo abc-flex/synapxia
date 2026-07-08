@@ -113,7 +113,9 @@
     "processes": "Process Catalog",
     "value_chain": "Value Chain",
     "map": "Process Map",
-    "specifications": "Specification"
+    "specifications": "Specification",
+    "review_requests": "Review Requests",
+    "modifications": "My Modifications"
   },
   "crud_modal": {
     "add": "Add",
@@ -1061,5 +1063,25 @@
     "not_found": "This modification could not be found.",
     "not_a_modification": "This notification is not a modification request.",
     "not_actionable": "This asset is no longer awaiting changes."
+  },
+  "review_requests": {
+    "subtitle": "Assets currently assigned to you for review. This list stays here even after you've opened or seen it in the notification bell.",
+    "empty": "You have no pending review requests.",
+    "col_asset": "Asset",
+    "col_status": "Status",
+    "col_assigned": "Assigned",
+    "status_pending": "Pending",
+    "status_seen": "Seen",
+    "open_action": "Open"
+  },
+  "modifications": {
+    "subtitle": "Assets sent back to you for changes. This list stays here even after you've opened or seen it in the notification bell.",
+    "empty": "You have no assets awaiting changes.",
+    "col_asset": "Asset",
+    "col_status": "Status",
+    "col_assigned": "Assigned",
+    "status_pending": "Pending",
+    "status_seen": "Seen",
+    "open_action": "Open"
   }
 }

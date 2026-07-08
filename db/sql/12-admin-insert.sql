@@ -58,6 +58,12 @@ INSERT INTO options (module, code, name, description, sort_order, type, path, ic
     ('LIB','ASSETS','Asset Repository',
      'Inventory of digital assets linked to owners, initiatives and processes.',
      10,'FORM','/lib/assets','archive-box'),
+    ('LIB','REVIEW_REQUESTS','Review Requests',
+     'Assets currently assigned to you for review — a persistent queue independent of the notification bell.',
+     15,'FORM','/lib/review_requests','inbox'),
+    ('LIB','MODIFICATIONS','My Modifications',
+     'Assets sent back to you for changes — a persistent queue independent of the notification bell.',
+     17,'FORM','/lib/modifications','pencil-square'),
     ('LIB','PROMPTS','Prompt Gallery',
      'Curated gallery of reusable GenAI prompts.',
      20,'FORM','/lib/prompts','chat-bubble-bottom-center-text'),
@@ -165,7 +171,9 @@ VALUES
     ('ADMINISTRATOR','COLLAB','DASHBOARD', TRUE),
 
     -- LIB
-    ('ADMINISTRATOR','LIB','ASSETS',     TRUE),
+    ('ADMINISTRATOR','LIB','ASSETS',           TRUE),
+    ('ADMINISTRATOR','LIB','REVIEW_REQUESTS',  FALSE),
+    ('ADMINISTRATOR','LIB','MODIFICATIONS',    FALSE),
     ('ADMINISTRATOR','LIB','PROMPTS',    TRUE),
     ('ADMINISTRATOR','LIB','MCPS',       TRUE),
     ('ADMINISTRATOR','LIB','AGENTS',     TRUE),
@@ -202,7 +210,9 @@ VALUES
     ('ADMINISTRATIVE','COLLAB','DASHBOARD', TRUE),
 
     -- LIB
-    ('ADMINISTRATIVE','LIB','ASSETS',     TRUE),
+    ('ADMINISTRATIVE','LIB','ASSETS',           TRUE),
+    ('ADMINISTRATIVE','LIB','REVIEW_REQUESTS',  FALSE),
+    ('ADMINISTRATIVE','LIB','MODIFICATIONS',    FALSE),
     ('ADMINISTRATIVE','LIB','PROMPTS',    TRUE),
     ('ADMINISTRATIVE','LIB','MCPS',       TRUE),
     ('ADMINISTRATIVE','LIB','AGENTS',     TRUE),
@@ -273,7 +283,9 @@ VALUES
     ('REVIEWER','TAXO','FEATURES',   FALSE),
 
     -- LIB (full edit — the review workflow lives here)
-    ('REVIEWER','LIB','ASSETS',     TRUE),
+    ('REVIEWER','LIB','ASSETS',           TRUE),
+    ('REVIEWER','LIB','REVIEW_REQUESTS',  FALSE),
+    ('REVIEWER','LIB','MODIFICATIONS',    FALSE),
     ('REVIEWER','LIB','PROMPTS',    TRUE),
     ('REVIEWER','LIB','MCPS',       TRUE),
     ('REVIEWER','LIB','AGENTS',     TRUE),

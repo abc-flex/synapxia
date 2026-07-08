@@ -113,7 +113,9 @@
     "processes": "Catálogo de Procesos",
     "value_chain": "Cadena de Valor",
     "map": "Mapa de Procesos",
-    "specifications": "Especificacion"
+    "specifications": "Especificacion",
+    "review_requests": "Solicitudes de Revisión",
+    "modifications": "Mis Modificaciones"
   },
   "crud_modal": {
     "add": "Agregar",
@@ -1061,5 +1063,25 @@
     "not_found": "No se encontró esta modificación.",
     "not_a_modification": "Esta notificación no es una solicitud de modificación.",
     "not_actionable": "Este activo ya no está en espera de cambios."
+  },
+  "review_requests": {
+    "subtitle": "Activos actualmente asignados a ti para revisión. Esta lista permanece aquí incluso después de abrirla o verla en la campana de notificaciones.",
+    "empty": "No tienes solicitudes de revisión pendientes.",
+    "col_asset": "Activo",
+    "col_status": "Estado",
+    "col_assigned": "Asignado",
+    "status_pending": "Pendiente",
+    "status_seen": "Visto",
+    "open_action": "Abrir"
+  },
+  "modifications": {
+    "subtitle": "Activos devueltos a ti para hacer cambios. Esta lista permanece aquí incluso después de abrirla o verla en la campana de notificaciones.",
+    "empty": "No tienes activos en espera de cambios.",
+    "col_asset": "Activo",
+    "col_status": "Estado",
+    "col_assigned": "Asignado",
+    "status_pending": "Pendiente",
+    "status_seen": "Visto",
+    "open_action": "Abrir"
   }
 }

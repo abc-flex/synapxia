@@ -1,0 +1,110 @@
+---
+// My Modifications (persistent proposer queue) — mirrors review_requests.astro
+// for the "request changes" side of the workflow: gives a proposer a durable
+// place to find assets sent back to them for edits, independent of the
+// notification bell. Backed by GET /api/actions/modifications.
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Breadcrumb from "@/components/core/Breadcrumb.astro";
+import { getPendingModifications } from "@/lib/notifications";
+import { getLocale } from "@/utils/getLocale";
+import { t } from "@/i18n";
+import { formatDate } from "@/lib/datatable";
+import type { NotificationItem } from "@/types/api";
+
+const locale = getLocale(Astro);
+
+let items: NotificationItem[] = [];
+try {
+  items = await getPendingModifications();
+} catch (error) {
+  console.error("Failed to fetch pending modifications:", error);
+  items = [];
+}
+---
+
+<BaseLayout title="My Modifications">
+  <div class="mx-auto w-full max-w-full md:p-0">
+    <Breadcrumb
+      moduleName="AI Library"
+      pageName="My Modifications"
+      pageTitle="My Modifications"
+      homeLink="/"
+      moduleNameKey="modules.LIB"
+      pageNameKey="menu_options.modifications"
+      pageTitleKey="menu_options.modifications"
+    />
+
+    <p
+      class="mb-4 text-sm text-gray-500 dark:text-gray-400"
+      data-i18n="modifications.subtitle"
+    >
+      {t(locale, "modifications.subtitle")}
+    </p>
+
+    {
+      items.length === 0 ? (
+        <div class="rounded-xl no-border p-4">
+          <p
+            class="text-sm text-gray-500 dark:text-gray-400"
+            data-i18n="modifications.empty"
+          >
+            {t(locale, "modifications.empty")}
+          </p>
+        </div>
+      ) : (
+        <div class="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-gray-100 text-xs uppercase text-gray-700 border-b border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700">
+              <tr>
+                <th class="px-4 py-2 font-semibold tracking-wide" data-i18n="modifications.col_asset">
+                  {t(locale, "modifications.col_asset")}
+                </th>
+                <th class="px-4 py-2 font-semibold tracking-wide" data-i18n="modifications.col_status">
+                  {t(locale, "modifications.col_status")}
+                </th>
+                <th class="px-4 py-2 font-semibold tracking-wide" data-i18n="modifications.col_assigned">
+                  {t(locale, "modifications.col_assigned")}
+                </th>
+                <th class="px-4 py-2 font-semibold tracking-wide" />
+              </tr>
+            </thead>
+            <tbody class="[&>tr:nth-child(even)]:bg-gray-50 [&>tr:hover]:bg-gray-100 dark:[&>tr:nth-child(even)]:bg-gray-800/40 dark:[&>tr:hover]:bg-gray-800/70">
+              {items.map((it) => (
+                <tr class="border-b border-gray-200 dark:border-gray-800">
+                  <td class="px-4 py-2 font-medium text-gray-900 dark:text-white/90">
+                    {it.asset_name || `#${it.asset}`}
+                  </td>
+                  <td class="px-4 py-2">
+                    <span
+                      class={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        it.unread
+                          ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300"
+                          : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                      }`}
+                    >
+                      <span data-i18n={it.unread ? "modifications.status_pending" : "modifications.status_seen"}>
+                        {t(locale, it.unread ? "modifications.status_pending" : "modifications.status_seen")}
+                      </span>
+                    </span>
+                  </td>
+                  <td class="px-4 py-2 text-gray-500 dark:text-gray-400">
+                    {formatDate(it.created_at, locale)}
+                  </td>
+                  <td class="px-4 py-2 text-right">
+                    <a
+                      href={`/lib/modify?action=${encodeURIComponent(String(it.id))}`}
+                      class="inline-flex items-center rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700"
+                      data-i18n="modifications.open_action"
+                    >
+                      {t(locale, "modifications.open_action")}
+                    </a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )
+    }
+  </div>
+</BaseLayout>

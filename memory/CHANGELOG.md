@@ -20,6 +20,10 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-07-09 03:34 — chore(ui): rename "My Work" account-menu section to "My Workspace"
+- Direct push to `develop` (user-requested, no branch/PR): one-line i18n value edit — `account_menu.my_work` in `ui/src/i18n/en.json` changes from "My Work" to "My Workspace". No logic change; Spanish `"Mi Trabajo"` left as-is.
+- Files affected: `ui/src/i18n/en.json`
+
 ## 2026-07-08 21:13 — refactor(ui): move Review Requests / My Modifications from the LIB sidebar into the profile menu
 - **Why:** the two queue pages added earlier today (below) started as LIB sidebar entries. Follow-up product decision: these are personal "my assigned work" links, not asset-catalog browsing entries, and more review-type queues are expected over time — better homed in the account/profile dropdown (always-visible, not tied to the sidebar's collapse state) than growing the sidebar one entry per review type.
 - **Sidebar removal:** `db/sql/12-admin-insert.sql` no longer seeds `LIB.REVIEW_REQUESTS`/`LIB.MODIFICATIONS` `options`/`privileges` rows. The pages (`/lib/review_requests`, `/lib/modifications`) and their backing endpoints (`GET /api/actions/reviews`/`modifications`) are unchanged — only the sidebar registration is gone. **Deploy note:** any environment that already ran the old seed (i.e. did `make rebuild` after the earlier PR merged) needs a one-off `UPDATE options SET is_active = false WHERE module = 'LIB' AND code IN ('REVIEW_REQUESTS','MODIFICATIONS');` to hide the stale rows (seed files only run on a fresh volume).

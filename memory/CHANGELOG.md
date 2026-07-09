@@ -20,9 +20,9 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
-## 2026-07-09 03:34 — chore(ui): rename "My Work" account-menu section to "My Workspace"
-- Direct push to `develop` (user-requested, no branch/PR): one-line i18n value edit — `account_menu.my_work` in `ui/src/i18n/en.json` changes from "My Work" to "My Workspace". No logic change; Spanish `"Mi Trabajo"` left as-is.
-- Files affected: `ui/src/i18n/en.json`
+## 2026-07-09 03:42 — chore(ui): rename "My Work" account-menu section to "My Workspace"
+- Direct push to `develop` (user-requested, no branch/PR): i18n value edit — `account_menu.my_work` changes from "My Work"/"Mi Trabajo" to "My Workspace"/"Mi Espacio de Trabajo" in both `en.json` and `es.json`. No logic change.
+- Files affected: `ui/src/i18n/en.json`, `ui/src/i18n/es.json`
 
 ## 2026-07-08 21:13 — refactor(ui): move Review Requests / My Modifications from the LIB sidebar into the profile menu
 - **Why:** the two queue pages added earlier today (below) started as LIB sidebar entries. Follow-up product decision: these are personal "my assigned work" links, not asset-catalog browsing entries, and more review-type queues are expected over time — better homed in the account/profile dropdown (always-visible, not tied to the sidebar's collapse state) than growing the sidebar one entry per review type.

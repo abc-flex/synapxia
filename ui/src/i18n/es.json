@@ -19,7 +19,10 @@
     "support": "Soporte",
     "sign_out": "Cerrar sesión",
     "theme": "Tema",
-    "language": "Idioma"
+    "language": "Idioma",
+    "my_work": "Mi Trabajo",
+    "review_requests": "Solicitudes de Revisión",
+    "my_modifications": "Mis Modificaciones"
   },
   "notification_menu": {
     "title": "Notificaciones"

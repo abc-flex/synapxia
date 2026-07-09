@@ -8,6 +8,8 @@ import SupportIcon from "@/images/icons/information-circle.svg?raw";
 import SignOutIcon from "@/images/icons/arrow-left-sign-out.svg?raw";
 import SunIcon from "@/images/icons/sun.svg?raw";
 import MoonIcon from "@/images/icons/moon.svg?raw";
+import ReviewRequestsIcon from "@/images/icons/clipboard-document-check.svg?raw";
+import ModificationsIcon from "@/images/icons/arrow-uturn-left.svg?raw";
 import languagesData from "@/data/languages.json";
 
 const locale = getLocale(Astro);
@@ -16,6 +18,11 @@ interface MenuItem {
   label: string;
   href?: string;
   icon?: string;
+  /** Allow-list of profile codes (e.g. "REVIEWER") that may see this item.
+   * Omitted/empty means visible to everyone. Superusers always see it.
+   * Filtered client-side (see the mount script) — there's no SSR user fetch
+   * in this component, unlike the DB/privilege-driven sidebar. */
+  profiles?: string[];
 }
 
 interface Props {
@@ -23,6 +30,9 @@ interface Props {
   email?: string;
   avatarUrl?: string;
   menuItems?: MenuItem[];
+  /** Personal "my work" links (e.g. Review Requests) shown in their own
+   * section above menuItems, each optionally profile-gated. */
+  workItems?: MenuItem[];
   signOutLabel?: string;
 }
 
@@ -33,6 +43,8 @@ const ICONS: Record<string, string> = {
   "account_menu.edit_profile": EditIcon,
   "account_menu.account_settings": SettingsIcon,
   "account_menu.support": SupportIcon,
+  "account_menu.review_requests": ReviewRequestsIcon,
+  "account_menu.my_modifications": ModificationsIcon,
 };
 
 const {
@@ -44,6 +56,7 @@ const {
     { label: "account_menu.account_settings", href: "/profile" },
     { label: "account_menu.support" },
   ],
+  workItems = [],
   signOutLabel = "account_menu.sign_out",
 } = Astro.props as Props;
 
@@ -119,6 +132,29 @@ const initials = name
         </div>
       </div>
     </div>
+
+    {workItems.length > 0 && (
+      <div class="mb-2 border-b border-gray-200 pb-3 dark:border-gray-800" data-work-section>
+        <span
+          class="mb-1 block px-1 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500"
+          data-i18n="account_menu.my_work"
+        >
+          {t(locale, "account_menu.my_work")}
+        </span>
+        <ul class="flex flex-col gap-1">
+          {workItems.map((item) => (
+            <li data-profiles={item.profiles?.length ? item.profiles.join(",") : undefined}>
+              <a href={item.href || "#"} class="account-link group">
+                <span class="account-link-icon w-4 h-4 inline-block text-current shrink-0" aria-hidden="true">
+                  <Fragment set:html={ICONS[item.label] ?? ""} />
+                </span>
+                <span data-i18n={item.label}>{t(locale, item.label)}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
 
     <ul class="flex flex-col gap-1 border-b border-gray-200 pb-3 dark:border-gray-800">
       {menuItems.map((item) => (
@@ -207,6 +243,26 @@ const initials = name
     setText("account-email", email);
     setText("account-initials", initials);
   }
+
+  // Hide "My Work" items that don't apply to the current user's profile (no
+  // allow-list = visible to everyone; superusers always see everything).
+  // Client-side only — this component has no SSR user fetch, unlike the
+  // DB/privilege-driven sidebar. The dropdown starts closed, so this runs
+  // before the user could ever see a gated item flash.
+  const profile = (user as any)?.profile;
+  const isSuperuser = Boolean((user as any)?.is_superuser);
+  document.querySelectorAll<HTMLLIElement>("[data-profiles]").forEach((li) => {
+    const allowed = (li.dataset.profiles || "").split(",").filter(Boolean);
+    if (allowed.length > 0 && !isSuperuser && (!profile || !allowed.includes(profile))) {
+      li.style.display = "none";
+    }
+  });
+  document.querySelectorAll<HTMLElement>("[data-work-section]").forEach((section) => {
+    const anyVisible = Array.from(section.querySelectorAll("li")).some(
+      (li) => (li as HTMLElement).style.display !== "none"
+    );
+    if (!anyVisible) section.style.display = "none";
+  });
 
   // Sign-out button — async so the refresh-token revocation completes
   // before we navigate away.

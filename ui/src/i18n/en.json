@@ -331,6 +331,8 @@
     "category": "Category",
     "feature": "Feature",
     "default_value": "Default Value",
+    "required": "Is Required?",
+    "sort_order": "Sort Order",
     "one_title": "Specification",
     "many_title": "Specifications",
     "can_edit": "Can Edit",

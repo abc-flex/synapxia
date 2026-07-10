@@ -47,11 +47,13 @@ try {
 }
 
 const columns = [
+  { key: "sort_order", label: "specification_modal.sort_order" },
   { key: "category", label: "specification_modal.category", visible: false },
-  { key: "category_name", label: "specification_modal.category", as: "title", subtitleKey: "feature_name", subtitleFormat: "text" },
+  { key: "feature_name", label: "specification_modal.feature", as: "title", subtitleKey: "category_name", subtitleFormat: "text" },
   { key: "feature", label: "specification_modal.feature", visible: false },
   { key: "feature_name", label: "specification_modal.feature", visible: false },
   { key: "default_value", label: "specification_modal.default_value" },
+  { key: "required", label: "specification_modal.required", as: "boolean" },
 ];
 const data = specifications.map((item) => ({
   id: `${item.category}::${item.feature}`,
@@ -60,6 +62,8 @@ const data = specifications.map((item) => ({
   feature: item.feature,
   feature_name: features.find((f) => String(f.value) === String(item.feature))?.label || item.feature,
   default_value: item.default_value,
+  required: item.required,
+  sort_order: item.sort_order,
   is_active: item.is_active,
   created_at: item.created_at,
   updated_at: item.updated_at,
@@ -68,6 +72,8 @@ const formFields = [
   { key: "category", label: "specification_modal.category", type: "select" as const, options: categories, pk: true, required: true },
   { key: "feature", label: "specification_modal.feature", type: "select" as const, options: features, pk: true, required: true },
   { key: "default_value", label: "specification_modal.default_value", type: "text" as const },
+  { key: "required", label: "specification_modal.required", type: "checkbox" as const },
+  { key: "sort_order", label: "specification_modal.sort_order", type: "number" as const, required: true },
 ];
 const fieldKeys = ["id", ...formFields.map((f) => f.key)];
 ---
@@ -171,6 +177,8 @@ const fieldKeys = ["id", ...formFields.map((f) => f.key)];
               category: data.category,
               feature: data.feature,
               default_value: data.default_value || null,
+              required: data.required || false,
+              sort_order: data.sort_order || 0,
             });
             showToast("Specification created successfully!");
             setTimeout(() => window.location.reload(), 1000);
@@ -178,6 +186,8 @@ const fieldKeys = ["id", ...formFields.map((f) => f.key)];
             // Update existing specification
             await updateSpecification(category, feature, {
               default_value: data.default_value || null,
+              required: data.required || false,
+              sort_order: data.sort_order || 0,
               is_active: data.is_active !== false,
             });
             showToast("Specification updated successfully!");

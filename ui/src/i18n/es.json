@@ -331,6 +331,8 @@
     "category": "Categoría",
     "feature": "Característica",
     "default_value": "Valor Predeterminado",
+    "required": "Es Requerido?",
+    "sort_order": "Orden",
     "one_title": "Especificación",
     "many_title": "Especificaciones",
     "can_edit": "Puede Editar",

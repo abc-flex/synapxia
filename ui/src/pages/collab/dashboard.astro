@@ -96,14 +96,6 @@ const metricFields = [
   />
 
   <style>
-    .avatar-tooltip {
-      @apply hidden;
-    }
-
-    .avatar-wrapper:hover .avatar-tooltip {
-      @apply block;
-    }
-
     @keyframes slideIn {
       from {
         transform: translateX(100%);
@@ -163,17 +155,16 @@ const metricFields = [
         .toUpperCase();
     }
 
-    function getMetricColorClass(metric: string): string {
-      const colorMap: Record<string, string> = {
-        UNDEFINED: "bg-slate-100 text-slate-700 border border-slate-300",
-        NO_USAGE: "bg-red-300 text-red-700 border border-red-500",
-        LOW: "bg-orange-300 text-orange-700 border border-orange-500",
-        MODERATE: "bg-yellow-200 text-yellow-700 border border-yellow-500",
-        HIGH: "bg-lime-300 text-lime-700 border border-lime-500",
-        VERY_HIGH: "bg-green-300 text-green-700 border border-green-500",
-      };
-      return colorMap[metric] || "bg-gray-400";
-    }
+    const METRIC_COLORS: Record<string, string> = {
+      UNDEFINED: "bg-slate-100 text-slate-700 border border-slate-300",
+      NO_USAGE: "bg-red-300 text-red-700 border border-red-500",
+      LOW: "bg-orange-300 text-orange-700 border border-orange-500",
+      MODERATE: "bg-yellow-200 text-yellow-700 border border-yellow-500",
+      HIGH: "bg-lime-300 text-lime-700 border border-lime-500",
+      VERY_HIGH: "bg-green-300 text-green-700 border border-green-500",
+    };
+    const getMetricColorClass = (metric: string): string =>
+      METRIC_COLORS[metric] || "bg-gray-400";
 
     // Minimal i18n lookup against the dict injected by ClientTranslations.astro
     function t(key: string, fallback: string): string {
@@ -323,7 +314,6 @@ const metricFields = [
           rawValue: row.metric,
           metric: normalizeMetricValue(row.metric),
         }));
-        (window as any).assignmentsData = assignments;
       } catch (err) {
         console.error("Failed to load metrics by dimension", err);
         showNotification("Error loading assignments", "error");
@@ -338,11 +328,6 @@ const metricFields = [
       const tbody = document.getElementById("assignmentTbody");
       if (!thead || !tbody) return;
 
-      const withTeam = assignments.filter((a) => a.team && a.team.trim() !== "");
-      const withoutTeam = assignments.filter((a) => !a.team || a.team.trim() === "");
-      const roles = [...new Set(withTeam.map((a) => a.role))];
-      const teams = [...new Set(withTeam.map((a) => a.team))].filter(Boolean);
-
       if (assignments.length === 0) {
         thead.innerHTML = "";
         tbody.innerHTML = `<tr><td class="px-4 py-10 text-center text-slate-500">${escapeHtml(
@@ -350,6 +335,11 @@ const metricFields = [
         )}</td></tr>`;
         return;
       }
+
+      const withTeam = assignments.filter((a) => a.team && a.team.trim() !== "");
+      const withoutTeam = assignments.filter((a) => !a.team || a.team.trim() === "");
+      const roles = [...new Set(withTeam.map((a) => a.role))];
+      const teams = [...new Set(withTeam.map((a) => a.team))].filter(Boolean);
 
       // Header
       thead.innerHTML = `
@@ -410,16 +400,15 @@ const metricFields = [
       }
 
       tbody.innerHTML = roleRows + noTeamRow;
-      wireAvatars();
     }
 
     function avatarMarkup(emp: GridRow): string {
       const initials = getInitials(emp.name);
       const metricClass = getMetricColorClass(emp.metric);
       return `<div class="avatar-wrapper relative inline-block group">
-        <button class="avatar w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer transition-transform hover:scale-110 ${metricClass}" data-metric-id="${emp.id}" data-email="${escapeHtml(
-          emp.email,
-        )}" data-name="${escapeHtml(emp.name)}">${escapeHtml(initials)}</button>
+        <button class="avatar w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer transition-transform hover:scale-110 ${metricClass}" data-metric-id="${emp.id}">${escapeHtml(
+          initials,
+        )}</button>
         <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 text-white text-xs px-3 py-2 rounded whitespace-nowrap z-50 pointer-events-none shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200">${escapeHtml(
           emp.name,
         )}</div>
@@ -430,6 +419,15 @@ const metricFields = [
     function setupStaticListeners() {
       document.getElementById("dimensionSelect")?.addEventListener("change", reload);
       document.getElementById("asOfDate")?.addEventListener("change", reload);
+
+      // Delegated avatar click — bound once and survives grid re-renders (the
+      // <tbody> element is reused; only its innerHTML changes).
+      document.getElementById("assignmentTbody")?.addEventListener("click", (e) => {
+        const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(".avatar");
+        if (!btn) return;
+        const row = assignments.find((a) => a.id === Number(btn.dataset.metricId));
+        if (row) openEditModal(row);
+      });
 
       // The shared CrudModal dispatches `crud-submit` on save — persist the edit
       // (only value/observation/measured_at are editable; the PK selects are
@@ -457,16 +455,6 @@ const metricFields = [
       });
     }
 
-    function wireAvatars() {
-      document.querySelectorAll<HTMLButtonElement>(".avatar").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const id = Number(btn.getAttribute("data-metric-id"));
-          const row = assignments.find((a) => a.id === id);
-          if (row) openEditModal(row);
-        });
-      });
-    }
-
     // ----- Modal -----
     // Prefill and open the shared Edit Metric modal for the clicked avatar.
     // dimension + assignment are read-only context (disabled → not submitted);
@@ -475,55 +463,44 @@ const metricFields = [
       const modal = document.getElementById("metric-edit-modal") as HTMLDialogElement | null;
       if (!modal) return;
 
+      // Set any named form control (input/textarea/select) by value.
+      const setValue = (name: string, value: string) => {
+        const el = modal.querySelector<
+          HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+        >(`[name="${name}"]`);
+        if (el) el.value = value;
+      };
+
       const dimensionCode =
         (document.getElementById("dimensionSelect") as HTMLSelectElement | null)?.value || "";
-      const dimName =
-        dimensionList.find((d) => d.code === dimensionCode)?.name || dimensionCode;
+      const dimName = dimensionList.find((d) => d.code === dimensionCode)?.name || dimensionCode;
+      const teamLbl = teamsByCode[row.team] || row.team;
+      const roleLbl = rolesByCode[row.role] || row.role;
 
-      // Dimension — read-only text showing the current dimension name.
-      const dimInput = modal.querySelector('input[name="dimension"]') as HTMLInputElement | null;
-      if (dimInput) dimInput.value = dimName;
+      // Read-only context (disabled → not submitted): dimension name, and the
+      // assignment as "UserName — RoleName — TeamName" (team dropped when null).
+      setValue("dimension", dimName);
+      setValue("assignment", [row.name, roleLbl, teamLbl].filter(Boolean).join(" — "));
 
-      // Assignment — read-only text "UserName — RoleName — TeamName" (team dropped
-      // when null), matching collab/metrics; disabled → not submitted, purely context.
-      const asgInput = modal.querySelector('input[name="assignment"]') as HTMLInputElement | null;
-      if (asgInput) {
-        const teamLbl = teamsByCode[row.team] || row.team;
-        const roleLbl = rolesByCode[row.role] || row.role;
-        asgInput.value = [row.name, roleLbl, teamLbl].filter(Boolean).join(" — ");
-      }
-
-      // Value select — options from the dimension's SCALE list; select current.
+      // Value select — rebuild options from the dimension's SCALE list (falling
+      // back to the current raw value when no scale is loaded), then select it.
       const valSelect = modal.querySelector('select[name="value"]') as HTMLSelectElement | null;
       if (valSelect) {
-        valSelect.innerHTML = "";
         const options = valueOptionsFor(dimensionCode);
-        if (options.length === 0 && row.rawValue) {
-          // No scale loaded — keep the current value editable at minimum.
-          const opt = document.createElement("option");
-          opt.value = row.rawValue;
-          opt.textContent = row.rawValue;
-          valSelect.appendChild(opt);
-        } else {
-          for (const item of options) {
-            const opt = document.createElement("option");
-            opt.value = item.value;
-            opt.textContent = item.label || item.value;
-            valSelect.appendChild(opt);
-          }
-        }
+        const fallback = row.rawValue ? [{ value: row.rawValue, label: row.rawValue }] : [];
+        valSelect.innerHTML = (options.length ? options : fallback)
+          .map(
+            (i: any) =>
+              `<option value="${escapeHtml(i.value)}">${escapeHtml(i.label || i.value)}</option>`,
+          )
+          .join("");
         valSelect.value = row.rawValue;
       }
 
-      const obs = modal.querySelector('textarea[name="observation"]') as HTMLTextAreaElement | null;
-      if (obs) obs.value = row.observation || "";
-
+      setValue("observation", row.observation || "");
       // datetime-local expects "YYYY-MM-DDTHH:mm"; the ISO string slices cleanly.
-      const measured = modal.querySelector('input[name="measured_at"]') as HTMLInputElement | null;
-      if (measured) measured.value = (row.measured_at || "").slice(0, 16);
-
-      const idInput = modal.querySelector('input[name="id"]') as HTMLInputElement | null;
-      if (idInput) idInput.value = String(row.id);
+      setValue("measured_at", (row.measured_at || "").slice(0, 16));
+      setValue("id", String(row.id));
 
       modal.showModal();
     }

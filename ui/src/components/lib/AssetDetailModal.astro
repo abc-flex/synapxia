@@ -309,7 +309,7 @@ const {
      component. We use the literal id (not define:vars) so the script can
      be statically hoisted by Astro/Vite.
      ============================================================ */
-  import { createAsset, createAssetVersion, getAsset, bumpVersionLabel } from "@/lib/assets";
+  import { createAsset, createAssetVersion, updateAsset, getAsset, bumpVersionLabel } from "@/lib/assets";
   import type { ChangeType } from "@/types/api";
   import { isFavorite, setFavorite } from "@/lib/favorites";
   import { getUser } from "@/lib/auth";
@@ -513,12 +513,15 @@ const {
             : "Edit Asset";
       titleEl.setAttribute("data-i18n", titleKey);
       titleEl.textContent = tr(titleKey, titleFallback);
-      // Saving an edit creates a new version — surface the picker and say so
-      // on the submit button.
-      changeTypeFieldset?.classList.remove("hidden");
-      submitBtn.setAttribute("data-i18n", "asset_detail_modal.save_new_version");
-      submitBtn.textContent = tr("asset_detail_modal.save_new_version", "Save new version");
-      renderVersionPreview(); // paint immediately (1.0.0 until the asset loads)
+      // Versioning is scoped to the CHARACTERIZATION (detail) edits — only
+      // when that section is being saved do we surface the change-type picker
+      // and the "Save new version" button. Core-only edits save in place.
+      if (section !== "core") {
+        changeTypeFieldset?.classList.remove("hidden");
+        submitBtn.setAttribute("data-i18n", "asset_detail_modal.save_new_version");
+        submitBtn.textContent = tr("asset_detail_modal.save_new_version", "Save new version");
+        renderVersionPreview(); // paint immediately (1.0.0 until the asset loads)
+      }
       dialog.showModal();
 
       const user = getUser() as any;
@@ -624,29 +627,32 @@ const {
         let assetId: number;
         let savedMsg = tr("asset_detail_modal.saved", "Asset saved.");
         if (editingAssetId) {
-          // Editing an existing asset ALWAYS saves as a new version
-          // (HU-LI09): one transactional call bumps `current_version` by the
-          // picked change type, applies the section's edits and snapshots the
-          // characterizations under the new label. Sections:
-          //   "core"   → core fields only, `values` omitted (server copies
-          //              the current characterizations forward);
-          //   "detail" → characterizations snapshot only, core untouched;
-          //   ""       → both.
+          // What gets VERSIONED is the characterization set (HU-LI09): saving
+          // the detail section creates a new version — one transactional call
+          // bumps `current_version` by the picked change type and snapshots
+          // the characterizations under the new label. Core fields are NOT
+          // versioned: they save in place via plain PUT. Sections:
+          //   "core"   → in-place update only, no version;
+          //   "detail" → characterization snapshot as a new version;
+          //   ""       → core in place + characterizations versioned.
           assetId = editingAssetId;
-          const changeType = (new FormData(form).get("change_type") || "patch") as ChangeType;
-          const { is_active: _ia, ...coreForVersion } = corePayload;
-          const saved = await createAssetVersion(assetId, {
-            change_type: changeType,
-            ...(editSection !== "detail" ? coreForVersion : {}),
-            ...(editSection !== "core" ? { values: tabs.charSnapshot() } : {}),
-          });
-          // Relations/permissions are not versioned — flush them as before
-          // (minus the characterizations the version call already wrote).
-          if (editSection !== "core") await tabs.flush(assetId, { skipChars: true });
-          savedMsg = tr(
-            "asset_detail_modal.version_saved",
-            "Asset saved as new version.",
-          ).replace("{version}", saved.current_version ?? "");
+          if (editSection !== "detail") {
+            await updateAsset(assetId, corePayload);
+          }
+          if (editSection !== "core") {
+            const changeType = (new FormData(form).get("change_type") || "patch") as ChangeType;
+            const saved = await createAssetVersion(assetId, {
+              change_type: changeType,
+              values: tabs.charSnapshot(),
+            });
+            // Relations/permissions are not versioned — flush them as before
+            // (minus the characterizations the version call already wrote).
+            await tabs.flush(assetId, { skipChars: true });
+            savedMsg = tr(
+              "asset_detail_modal.version_saved",
+              "Asset saved as new version.",
+            ).replace("{version}", saved.current_version ?? "");
+          }
         } else {
           // Create mode is unversioned — the new asset starts at 1.0.0.
           const saved = await createAsset(corePayload);

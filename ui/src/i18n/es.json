@@ -13,6 +13,11 @@
   "breadcrumb": {
     "home": "Inicio"
   },
+  "search": {
+    "suggested": "Sugerido",
+    "results": "Resultados",
+    "no_results": "Sin opciones coincidentes"
+  },
   "account_menu": {
     "edit_profile": "Editar perfil",
     "account_settings": "Configuración de cuenta",

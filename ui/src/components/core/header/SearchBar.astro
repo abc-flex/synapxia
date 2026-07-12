@@ -1,7 +1,11 @@
 ---
+/**
+ * SearchBar — thin host for the `SearchPalette` Svelte island (searches the
+ * sidebar's modules/options, ranked client-side; see lib/searchIndex.ts). Same
+ * manual-mount pattern as NotificationMenu.astro → NotificationBell.svelte.
+ */
 import { t } from "@/i18n";
 import { getLocale } from "@/utils/getLocale";
-import SearchIcon from "@/images/icons/search.svg?raw";
 
 const locale = getLocale(Astro);
 
@@ -16,25 +20,17 @@ const {
 } = Astro.props as Props;
 ---
 
-<div class={className}>
-  <form>
-    <div class="relative">
-      <span class="absolute top-1/2 left-4 -translate-y-1/2 h-5 w-5 text-gray-400">
-        <Fragment set:html={SearchIcon} />
-      </span>
-      <input
-        type="text"
-        placeholder={t(locale, placeholder)}
-        data-i18n-placeholder={placeholder}
-        class="h-11 w-full rounded-lg border border-gray-200 bg-transparent py-2.5 pr-14 pl-12 text-sm text-gray-800 placeholder:text-gray-400 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-      />
-      <button
-        type="button"
-        class="absolute top-1/2 right-2.5 inline-flex -translate-y-1/2 items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-50 px-[7px] py-[4.5px] text-xs text-gray-500 dark:border-gray-800 dark:bg-white/5 dark:text-gray-400"
-      >
-        <span>⌘</span>
-        <span>K</span>
-      </button>
-    </div>
-  </form>
-</div>
+<div id="header-search-root" class={className} data-placeholder={t(locale, placeholder)}></div>
+
+<script>
+  import { mount } from "svelte";
+  import SearchPalette from "@/components/svelte/SearchPalette.svelte";
+
+  const target = document.getElementById("header-search-root");
+  if (target) {
+    mount(SearchPalette, {
+      target,
+      props: { placeholder: target.dataset.placeholder || "Search or type command..." },
+    });
+  }
+</script>

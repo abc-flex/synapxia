@@ -477,6 +477,7 @@
     "fields": "campos",
     "saved": "Activo guardado.",
     "version_saved": "Activo guardado como versión {version}.",
+    "save_new_version": "Guardar nueva versión",
     "current_version": "Versión actual",
     "change_type_label": "¿Qué tipo de cambio es?",
     "change_type_major": "Mayor",

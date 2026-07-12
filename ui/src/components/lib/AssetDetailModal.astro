@@ -270,6 +270,17 @@ const {
             </label>
           ))}
         </div>
+        {/* Live preview: previous version → the label this save will create,
+            with the digit that bumps highlighted. Recomputed on pill change. */}
+        <div
+          id={`${modalId}-version-preview`}
+          class="mt-2 flex items-center gap-2 font-mono text-sm"
+          aria-live="polite"
+        >
+          <span data-prev class="text-gray-400 line-through decoration-gray-300 dark:text-gray-500 dark:decoration-gray-600"></span>
+          <span aria-hidden="true" class="text-indigo-500 font-bold">→</span>
+          <span data-next class="font-semibold text-gray-800 dark:text-gray-100"></span>
+        </div>
       </fieldset>
       <button
         type="button"
@@ -298,7 +309,7 @@ const {
      component. We use the literal id (not define:vars) so the script can
      be statically hoisted by Astro/Vite.
      ============================================================ */
-  import { createAsset, createAssetVersion, getAsset } from "@/lib/assets";
+  import { createAsset, createAssetVersion, getAsset, bumpVersionLabel } from "@/lib/assets";
   import type { ChangeType } from "@/types/api";
   import { isFavorite, setFavorite } from "@/lib/favorites";
   import { getUser } from "@/lib/auth";
@@ -349,9 +360,48 @@ const {
     const clearStatus = () => statusBanner?.classList.add("hidden");
 
     let editingAssetId: number | null = null;
+    // The loaded asset's version label — drives the "old → new" preview.
+    let currentVersionLabel = "1.0.0";
     // Favorite state. Edit mode toggles immediately (a per-user preference
     // orthogonal to the draft); create mode stages the bit until the id exists.
     let favoriteOn = false;
+
+    // ── Version preview ("v1.2.0 → v1.3.0", bumping digit highlighted) ─────
+    const versionPreview = document.getElementById(`${modalId}-version-preview`) as HTMLElement;
+    const HIGHLIGHT_CLASSES = [
+      "font-bold", "text-indigo-600", "dark:text-indigo-400",
+      "bg-indigo-50", "dark:bg-indigo-500/20", "rounded", "px-1",
+    ];
+    const DIGIT_INDEX: Record<ChangeType, number> = { major: 0, minor: 1, patch: 2 };
+
+    function selectedChangeType(): ChangeType {
+      const checked = form.querySelector<HTMLInputElement>('input[name="change_type"]:checked');
+      return (checked?.value as ChangeType) || "patch";
+    }
+
+    function renderVersionPreview() {
+      if (!versionPreview) return;
+      const prevEl = versionPreview.querySelector("[data-prev]") as HTMLElement;
+      const nextEl = versionPreview.querySelector("[data-next]") as HTMLElement;
+      if (!prevEl || !nextEl) return;
+      const changeType = selectedChangeType();
+      const nextLabel = bumpVersionLabel(currentVersionLabel, changeType);
+      prevEl.textContent = `v${currentVersionLabel}`;
+      // Rebuild the new label digit-by-digit so the bumping one stands out.
+      nextEl.replaceChildren(document.createTextNode("v"));
+      nextLabel.split(".").forEach((digit, i) => {
+        if (i > 0) nextEl.appendChild(document.createTextNode("."));
+        const span = document.createElement("span");
+        span.textContent = digit;
+        if (i === DIGIT_INDEX[changeType]) span.classList.add(...HIGHLIGHT_CLASSES);
+        nextEl.appendChild(span);
+      });
+    }
+
+    // The pills live in the always-rendered footer — bind once.
+    form.querySelectorAll<HTMLInputElement>('input[name="change_type"]').forEach((radio) => {
+      radio.addEventListener("change", renderVersionPreview);
+    });
 
     // ── Shared editable detail tabs (chars / related / permissions) ─────────
     // The tabs are the `AssetDetailTabs` Svelte island; mount() returns the
@@ -426,11 +476,15 @@ const {
       form.reset(); // also re-checks the default "patch" change-type radio
       idField.value = "";
       editingAssetId = null;
+      currentVersionLabel = "1.0.0";
       favoriteOn = false;
       paintFavorite();
       tabs.reset();
       versionBadge?.classList.add("hidden");
       changeTypeFieldset?.classList.add("hidden");
+      // Create mode saves plainly; edit mode re-labels to "Save new version".
+      submitBtn.setAttribute("data-i18n", "common.save");
+      submitBtn.textContent = tr("common.save", "Save");
       clearStatus();
     }
 
@@ -459,8 +513,12 @@ const {
             : "Edit Asset";
       titleEl.setAttribute("data-i18n", titleKey);
       titleEl.textContent = tr(titleKey, titleFallback);
-      // Saving an edit creates a new version — surface the picker.
+      // Saving an edit creates a new version — surface the picker and say so
+      // on the submit button.
       changeTypeFieldset?.classList.remove("hidden");
+      submitBtn.setAttribute("data-i18n", "asset_detail_modal.save_new_version");
+      submitBtn.textContent = tr("asset_detail_modal.save_new_version", "Save new version");
+      renderVersionPreview(); // paint immediately (1.0.0 until the asset loads)
       dialog.showModal();
 
       const user = getUser() as any;
@@ -492,10 +550,12 @@ const {
           ? asset.tags.join(", ")
           : (asset.tags ?? "");
         categorySel.value = asset.category ?? "";
+        currentVersionLabel = asset.current_version ?? "1.0.0";
         if (versionBadge) {
-          versionBadge.textContent = `v${asset.current_version ?? "1.0.0"}`;
+          versionBadge.textContent = `v${currentVersionLabel}`;
           versionBadge.classList.remove("hidden");
         }
+        renderVersionPreview();
 
         // Load + seed all three detail tabs (chars/relations/permissions).
         await tabs.hydrate(editingAssetId, asset.category ?? "");

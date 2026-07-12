@@ -43,10 +43,19 @@ const {
       <div>
         <h3
           id={`${modalId}-title`}
-          class="text-lg font-bold text-gray-900 dark:text-white"
-          data-i18n="asset_detail_modal.title_create"
+          class="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white"
         >
-          New Asset
+          <span
+            id={`${modalId}-title-text`}
+            data-i18n="asset_detail_modal.title_create"
+          >New Asset</span>
+          {/* Current version badge — filled + shown only in edit mode. */}
+          <span
+            id={`${modalId}-version`}
+            class="hidden rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300"
+            title="Current version"
+            data-i18n-title="asset_detail_modal.current_version"
+          ></span>
         </h3>
         <p
           id={`${modalId}-subtitle`}
@@ -228,8 +237,40 @@ const {
 
     {/* ============== Footer ============== */}
     <div
-      class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-800"
+      class="flex flex-wrap items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-800"
     >
+      {/* Change-type picker (HU-LI09) — edit mode only: saving an existing
+          asset creates a NEW VERSION, and the chosen kind of change decides
+          which digit of the semver label bumps. Hidden in create mode. */}
+      <fieldset id={`${modalId}-change-type`} class="hidden mr-auto">
+        <legend
+          class="mb-1 text-xs font-medium text-gray-500 dark:text-gray-400"
+          data-i18n="asset_detail_modal.change_type_label"
+        >
+          What kind of change is this?
+        </legend>
+        <div class="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 p-1 dark:border-gray-700 dark:bg-gray-800">
+          {[
+            { value: "patch", key: "asset_detail_modal.change_type_patch", label: "Patch", checked: true },
+            { value: "minor", key: "asset_detail_modal.change_type_minor", label: "Minor", checked: false },
+            { value: "major", key: "asset_detail_modal.change_type_major", label: "Major", checked: false },
+          ].map((ct) => (
+            <label class="cursor-pointer">
+              <input
+                type="radio"
+                name="change_type"
+                value={ct.value}
+                checked={ct.checked}
+                class="peer sr-only"
+              />
+              <span
+                class="inline-block rounded-full px-3 py-1 text-xs font-semibold text-gray-500 transition-colors peer-checked:bg-indigo-600 peer-checked:text-white dark:text-gray-400"
+                data-i18n={ct.key}
+              >{ct.label}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
       <button
         type="button"
         data-modal-close={modalId}
@@ -257,7 +298,8 @@ const {
      component. We use the literal id (not define:vars) so the script can
      be statically hoisted by Astro/Vite.
      ============================================================ */
-  import { createAsset, updateAsset, getAsset } from "@/lib/assets";
+  import { createAsset, createAssetVersion, getAsset } from "@/lib/assets";
+  import type { ChangeType } from "@/types/api";
   import { isFavorite, setFavorite } from "@/lib/favorites";
   import { getUser } from "@/lib/auth";
   import { mount } from "svelte";
@@ -276,7 +318,9 @@ const {
     const descField = document.getElementById(`${modalId}-description`) as HTMLTextAreaElement;
     const refField = document.getElementById(`${modalId}-reference`) as HTMLInputElement;
     const tagsField = document.getElementById(`${modalId}-tags`) as HTMLInputElement;
-    const titleEl = document.getElementById(`${modalId}-title`) as HTMLElement;
+    const titleEl = document.getElementById(`${modalId}-title-text`) as HTMLElement;
+    const versionBadge = document.getElementById(`${modalId}-version`) as HTMLElement;
+    const changeTypeFieldset = document.getElementById(`${modalId}-change-type`) as HTMLFieldSetElement;
     const statusBanner = document.getElementById(`${modalId}-status`) as HTMLElement;
     const submitBtn = document.getElementById(`${modalId}-submit`) as HTMLButtonElement;
     const favBtn = document.getElementById(`${modalId}-fav`) as HTMLButtonElement;
@@ -379,12 +423,14 @@ const {
 
     // ── Reset / open / close ──────────────────────────────────────────────
     function resetForm() {
-      form.reset();
+      form.reset(); // also re-checks the default "patch" change-type radio
       idField.value = "";
       editingAssetId = null;
       favoriteOn = false;
       paintFavorite();
       tabs.reset();
+      versionBadge?.classList.add("hidden");
+      changeTypeFieldset?.classList.add("hidden");
       clearStatus();
     }
 
@@ -413,6 +459,8 @@ const {
             : "Edit Asset";
       titleEl.setAttribute("data-i18n", titleKey);
       titleEl.textContent = tr(titleKey, titleFallback);
+      // Saving an edit creates a new version — surface the picker.
+      changeTypeFieldset?.classList.remove("hidden");
       dialog.showModal();
 
       const user = getUser() as any;
@@ -444,6 +492,10 @@ const {
           ? asset.tags.join(", ")
           : (asset.tags ?? "");
         categorySel.value = asset.category ?? "";
+        if (versionBadge) {
+          versionBadge.textContent = `v${asset.current_version ?? "1.0.0"}`;
+          versionBadge.classList.remove("hidden");
+        }
 
         // Load + seed all three detail tabs (chars/relations/permissions).
         await tabs.hydrate(editingAssetId, asset.category ?? "");
@@ -509,20 +561,36 @@ const {
       };
 
       try {
-        // Persist only the section being edited:
-        //   "detail" → just the tabs (asset core untouched);
-        //   "core"   → just the asset core (skip the tabs);
-        //   ""       → full save (core, then tabs).
         let assetId: number;
-        if (editSection === "detail") {
-          if (!editingAssetId) throw new Error("Missing asset id");
+        let savedMsg = tr("asset_detail_modal.saved", "Asset saved.");
+        if (editingAssetId) {
+          // Editing an existing asset ALWAYS saves as a new version
+          // (HU-LI09): one transactional call bumps `current_version` by the
+          // picked change type, applies the section's edits and snapshots the
+          // characterizations under the new label. Sections:
+          //   "core"   → core fields only, `values` omitted (server copies
+          //              the current characterizations forward);
+          //   "detail" → characterizations snapshot only, core untouched;
+          //   ""       → both.
           assetId = editingAssetId;
-          await tabs.flush(assetId);
+          const changeType = (new FormData(form).get("change_type") || "patch") as ChangeType;
+          const { is_active: _ia, ...coreForVersion } = corePayload;
+          const saved = await createAssetVersion(assetId, {
+            change_type: changeType,
+            ...(editSection !== "detail" ? coreForVersion : {}),
+            ...(editSection !== "core" ? { values: tabs.charSnapshot() } : {}),
+          });
+          // Relations/permissions are not versioned — flush them as before
+          // (minus the characterizations the version call already wrote).
+          if (editSection !== "core") await tabs.flush(assetId, { skipChars: true });
+          savedMsg = tr(
+            "asset_detail_modal.version_saved",
+            "Asset saved as new version.",
+          ).replace("{version}", saved.current_version ?? "");
         } else {
-          const saved = editingAssetId
-            ? await updateAsset(editingAssetId, corePayload)
-            : await createAsset(corePayload);
-          assetId = Number(saved.id ?? editingAssetId);
+          // Create mode is unversioned — the new asset starts at 1.0.0.
+          const saved = await createAsset(corePayload);
+          assetId = Number(saved.id);
           if (editSection !== "core") await tabs.flush(assetId);
         }
 
@@ -536,7 +604,7 @@ const {
           }
         }
 
-        showStatus(tr("asset_detail_modal.saved", "Asset saved."), "ok");
+        showStatus(savedMsg, "ok");
         setTimeout(() => {
           closeModal();
           window.location.reload();

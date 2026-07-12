@@ -17,6 +17,9 @@ class AssetBase(SQLModel):
     tags: Optional[Any] = Field(
         default=None, sa_column=Column("tags", JSON))
     detail: Optional[str] = Field(default=None)
+    # Semver-style label of the asset's current version (HU-LI09). Bumped only
+    # by version_service.create_version — never via AssetCreate/AssetUpdate.
+    current_version: Optional[str] = Field(default="1.0.0", max_length=30)
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
@@ -69,10 +72,15 @@ class CharacterizationBase(SQLModel):
     # `asset` is BIGINT (FK to assets.id) per the DDL; was incorrectly typed
     # as str/assets.code which caused SELECTs to fail with column type
     # mismatches. Also: DB column is `detail` (singular), not `details`.
+    # `version_label` is part of the DB primary key
+    # (asset, version_label, feature) — each asset version carries its own
+    # characterization row set (HU-LI09).
     asset: int = Field(sa_column=Column(
         'asset', BigInteger, ForeignKey('assets.id'), primary_key=True))
     feature: str = Field(sa_column=Column(
         'feature', String, ForeignKey('features.code'), primary_key=True))
+    version_label: str = Field(default="1.0.0", sa_column=Column(
+        'version_label', String, primary_key=True, default="1.0.0"))
     value: Optional[str] = Field(default=None)
     detail: Optional[str] = Field(default=None)
     is_active: bool = Field(default=True)
@@ -411,6 +419,7 @@ class AssetWithAccessLevels(SQLModel):
     status: str
     tags: Optional[Any] = None
     detail: Optional[str] = None
+    current_version: Optional[str] = None
     is_active: bool = True
     created_at: datetime
     updated_at: Optional[datetime] = None
@@ -460,6 +469,32 @@ class ReviewRequest(SQLModel):
     feedback: Optional[str] = Field(
         default=None, max_length=2000,
         description="Reviewer's feedback shown to the proposer")
+
+
+class VersionRequest(SQLModel):
+    """Request body for saving a new version of an asset (HU-LI09, versioning
+    half). One transaction: apply the core-field edits, snapshot the
+    characterizations under the bumped ``version_label``, set the asset's
+    ``current_version`` and log a VERSIONING/FINISHED action. ``change_type``
+    picks which digit of the semver label bumps (major → X+1.0.0,
+    minor → X.Y+1.0, patch → X.Y.Z+1). ``values`` is the FULL desired
+    characterization set (feature → value): omitted or blank features are not
+    carried to the new version; ``None`` means "core-only save — copy the
+    current version's characterizations forward unchanged"."""
+    change_type: str = Field(description="major | minor | patch")
+    name: Optional[str] = Field(default=None, max_length=100, description="Asset name")
+    description: Optional[str] = Field(
+        default=None, max_length=500, description="Asset description")
+    category: Optional[str] = Field(
+        default=None, max_length=50, description="Category code")
+    reference: Optional[str] = Field(default=None, description="Asset reference")
+    status: Optional[str] = Field(
+        default=None, max_length=100, description="Asset status")
+    tags: Optional[Any] = Field(default=None, description="Asset tags (JSON)")
+    detail: Optional[str] = Field(default=None, description="Asset detail")
+    values: Optional[Dict[str, str]] = Field(
+        default=None,
+        description="Full desired characterization set (feature → value); None copies the current version forward")
 
 
 class ModifyRequest(SQLModel):

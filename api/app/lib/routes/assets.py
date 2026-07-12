@@ -9,11 +9,12 @@ from sqlalchemy.exc import IntegrityError
 
 from ..internal.models import (
     Asset, AssetCreate, AssetUpdate, AssetPermission, AssetWithAccessLevels,
-    ProposeRequest, ReviewerOption, ReviewRequest, ModifyRequest,
+    ProposeRequest, ReviewerOption, ReviewRequest, ModifyRequest, VersionRequest,
 )
 from ..internal import propose_service
 from ..internal import review_service
 from ..internal import modify_service
+from ..internal import version_service
 from ..internal import permissions_service
 from ...taxo.internal.models import Category
 from ..internal.dependencies import get_db_session
@@ -99,6 +100,7 @@ def get_all_with_access(
             status=asset.status,
             tags=asset.tags,
             detail=asset.detail,
+            current_version=asset.current_version,
             is_active=asset.is_active,
             created_at=asset.created_at,
             updated_at=asset.updated_at,
@@ -283,6 +285,36 @@ def resubmit(
         logger.error("Integrity error on resubmit (asset=%s proposer=%s)", asset_id, current.id)
         raise HTTPException(
             status_code=409, detail="Could not resubmit the asset due to a data conflict")
+
+
+@router.post("/{asset_id}/versions", response_model=Asset)
+def create_version(
+    asset_id: int, payload: VersionRequest, session: Session = Depends(get_db_session),
+    current: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
+) -> Asset:
+    """
+    Save the edits as a NEW VERSION of the asset (HU-LI09, versioning half).
+    In one transaction: bumps `current_version` by the chosen `change_type`
+    (major → X+1.0.0 / minor → X.Y+1.0 / patch → X.Y.Z+1), applies the core
+    edits, writes the new version's characterization rows under the bumped
+    `version_label` (prior versions keep theirs untouched), and logs a
+    VERSIONING/FINISHED action.
+
+    - `values` is the FULL desired characterization set (feature → value);
+      omit it entirely for a core-only save (current set is copied forward).
+
+    400 for a bad `change_type` or unknown category; 404 for a missing asset;
+    409 when the bumped label already exists (e.g. two concurrent saves racing
+    from the same version).
+    """
+    try:
+        return version_service.create_version(session, current, asset_id, payload)
+    except version_service.VersionConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    except ValueError as exc:
+        if "not found" in str(exc).lower():
+            raise HTTPException(status_code=404, detail=str(exc))
+        raise HTTPException(status_code=400, detail=str(exc))
 
 
 @router.get("/{asset_id}", response_model=Asset)

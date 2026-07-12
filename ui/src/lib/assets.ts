@@ -4,7 +4,7 @@
  */
 
 import { apiGet, apiPost, apiPut, apiDelete, buildQueryString } from './api';
-import type { Asset, AssetCreate, AssetUpdate, AssetWithAccessLevels } from '../types/api';
+import type { Asset, AssetCreate, AssetUpdate, AssetVersionRequest, AssetWithAccessLevels } from '../types/api';
 
 /**
  * Fetch all assets with optional pagination
@@ -77,6 +77,19 @@ export async function createAsset(data: AssetCreate): Promise<Asset> {
  */
 export async function updateAsset(id: number, data: AssetUpdate): Promise<Asset> {
   return apiPut<Asset, AssetUpdate>(`/api/assets/${encodeURIComponent(id)}`, data);
+}
+
+/**
+ * Save edits to an existing asset as a NEW VERSION (HU-LI09). One transaction
+ * server-side: bumps `current_version` by `change_type`, applies the core
+ * edits, snapshots the characterizations under the new version label and logs
+ * a VERSIONING action. Leave `values` undefined for a core-only save.
+ * @param id - Asset id to version
+ * @param data - Change type + edited fields (+ optional full characterization set)
+ * @returns Promise with the updated asset (carrying the new current_version)
+ */
+export async function createAssetVersion(id: number, data: AssetVersionRequest): Promise<Asset> {
+  return apiPost<Asset, AssetVersionRequest>(`/api/assets/${encodeURIComponent(id)}/versions`, data);
 }
 
 /**

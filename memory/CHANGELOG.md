@@ -20,6 +20,10 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-07-12 15:13 — refactor(ui): hide "My Modifications" from the account menu, keep "Review Requests"
+- The account menu's "My Work" section listed both `account_menu.review_requests` and `account_menu.my_modifications` as persistent links. Product call: proposer modifications are ephemeral (reached via the bell's MODIFICATION notification when needed) and don't need a standing menu entry, while reviewers need "My Reviews" durably accessible regardless of the bell. Removed the `my_modifications` entry from `Header.astro`'s `workItems` array and cleaned up the now-unused `ModificationsIcon` import/ICON mapping in `AccountMenu.astro`. `/lib/modifications` page, its resubmit backend, and the bell's MODIFICATION click-through are untouched — only the account-menu shortcut is gone.
+- Files affected: `ui/src/components/core/header/Header.astro`, `ui/src/components/core/header/AccountMenu.astro`
+
 ## 2026-07-09 03:42 — chore(ui): rename "My Work" account-menu section to "My Workspace"
 - Direct push to `develop` (user-requested, no branch/PR): i18n value edit — `account_menu.my_work` changes from "My Work"/"Mi Trabajo" to "My Workspace"/"Mi Espacio de Trabajo" in both `en.json` and `es.json`. No logic change.
 - Files affected: `ui/src/i18n/en.json`, `ui/src/i18n/es.json`

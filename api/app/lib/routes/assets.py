@@ -4,7 +4,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select, SQLModel
-from sqlalchemy import cast, String, func
+from sqlalchemy import cast, String
 from sqlalchemy.exc import IntegrityError
 
 from ..internal.models import (
@@ -24,6 +24,15 @@ from ...admin.internal.models import User
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/assets", tags=["assets"])
+
+
+def _ensure_manage(session: Session, user: User, asset_id: int) -> None:
+    """Per-asset write guard (HU-LI08): MANAGE grant or superuser required.
+    Layered INSIDE the module-level `require_privilege` RBAC gate."""
+    try:
+        permissions_service.require_asset_manage(session, user, asset_id)
+    except permissions_service.AssetAccessForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
 
 
 @router.get("/", response_model=List[Asset])
@@ -51,46 +60,62 @@ def get_all_with_access(
     current: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
 ) -> List[AssetWithAccessLevels]:
     """
-    List assets with an aggregated per-asset access summary.
+    List the assets THE CALLER CAN ACCESS, with a per-asset access summary.
+
+    Visibility is caller-scoped (HU-LI08): only assets with an active,
+    temporally-valid `asset_permissions` grant reaching the current user (via
+    USER/ROLE/TEAM/UNIT/PROJECT/PUBLIC) are returned — an asset with no grants
+    is hidden. Superusers see every active asset. Access filtering happens
+    BEFORE `skip`/`limit`, so pages stay full and stable.
 
     Each row adds `access_levels` (distinct active access levels granted on the
-    asset, e.g. VIEW/MANAGE), `is_public` (any active permission targeting
-    PUBLIC), and `permission_scopes` (the scope-types — USER/ROLE/TEAM/UNIT/
-    PROJECT/PUBLIC — by which the **current user** is granted access; drives the
-    privileges/permisos filter). The existing `GET /api/assets/` contract is
+    asset to anyone), `is_public` (any active permission targeting PUBLIC),
+    `permission_scopes` (the scope-types by which the current user is granted
+    access; drives the privileges/permisos filter), and `my_access` (the
+    caller's effective level, MANAGE beats VIEW — superusers always MANAGE;
+    drives the row action gating). The existing `GET /api/assets/` contract is
     unchanged.
 
     - **skip**: Number of records to skip (default: 0)
     - **limit**: Maximum number of records to return (default: 100)
     """
-    # Aggregate active permissions per asset (distinct access levels + public flag).
-    access_agg = (
-        select(
-            AssetPermission.asset.label("asset"),
-            func.array_agg(func.distinct(AssetPermission.access_level)).label(
-                "access_levels"),
-            func.bool_or(AssetPermission.target_type == "PUBLIC").label(
-                "is_public"),
+    if current.is_superuser:
+        access_map: dict = {}
+        query = select(Asset).where(Asset.is_active == True)  # noqa: E712
+    else:
+        access_map = permissions_service.accessible_assets(session, current)
+        if not access_map:
+            return []
+        query = select(Asset).where(
+            Asset.is_active == True,  # noqa: E712
+            Asset.id.in_(list(access_map)),  # type: ignore[attr-defined]
         )
-        .where(AssetPermission.is_active == True)
-        .group_by(AssetPermission.asset)
-        .subquery()
-    )
-
-    rows = session.exec(
-        select(Asset, access_agg.c.access_levels, access_agg.c.is_public)
-        .outerjoin(access_agg, Asset.id == access_agg.c.asset)
-        .where(Asset.is_active == True)
-        .offset(skip).limit(limit)
-        .order_by(Asset.name)
+    assets = session.exec(
+        query.order_by(Asset.name).offset(skip).limit(limit)
     ).all()
+    asset_ids = [asset.id for asset in assets]
+
+    # Asset-wide summary (who-is-granted-what display fields). Mirrors the old
+    # SQL aggregate's semantics exactly: is_active only, no temporal check —
+    # only visibility/my_access honor validity windows.
+    summary_perms = session.exec(
+        select(AssetPermission).where(
+            AssetPermission.asset.in_(asset_ids),  # type: ignore[attr-defined]
+            AssetPermission.is_active == True,  # noqa: E712
+        )
+    ).all() if asset_ids else []
+    levels_by_asset: dict = {}
+    public_assets: set = set()
+    for p in summary_perms:
+        levels_by_asset.setdefault(p.asset, set()).add(p.access_level)
+        if p.target_type == "PUBLIC":
+            public_assets.add(p.asset)
 
     # Per-current-user scope-types granting access, for the assets on this page.
-    asset_ids = [asset.id for asset, _al, _ip in rows]
     scopes_by_asset = permissions_service.assets_user_scopes(session, current, asset_ids)
 
     result: List[AssetWithAccessLevels] = []
-    for asset, access_levels, is_public in rows:
+    for asset in assets:
         result.append(AssetWithAccessLevels(
             id=asset.id,
             name=asset.name,
@@ -104,9 +129,11 @@ def get_all_with_access(
             is_active=asset.is_active,
             created_at=asset.created_at,
             updated_at=asset.updated_at,
-            access_levels=list(access_levels) if access_levels else [],
-            is_public=bool(is_public),
+            access_levels=sorted(levels_by_asset.get(asset.id, set())),
+            is_public=asset.id in public_assets,
             permission_scopes=scopes_by_asset.get(asset.id, []),
+            my_access=(permissions_service.ACCESS_MANAGE if current.is_superuser
+                       else access_map.get(asset.id)),
         ))
     return result
 
@@ -305,8 +332,11 @@ def create_version(
 
     400 for a bad `change_type` or unknown category; 404 for a missing asset;
     409 when the bumped label already exists (e.g. two concurrent saves racing
-    from the same version).
+    from the same version). 403 unless the caller holds MANAGE on the asset
+    (non-superusers probing an unknown asset get 403 rather than 404 — no
+    grant can exist for it, and existence isn't disclosed).
     """
+    _ensure_manage(session, current, asset_id)
     try:
         return version_service.create_version(session, current, asset_id, payload)
     except version_service.VersionConflict as exc:
@@ -338,10 +368,12 @@ def get(
 @router.post("/", response_model=Asset, status_code=201)
 def create(
     asset: AssetCreate, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
+    current: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
 ) -> Asset:
     """
-    Create a new asset.
+    Create a new asset. The creator is auto-granted a USER/MANAGE permission
+    (same as the propose flow) so the asset stays visible and editable to them
+    under the caller-scoped repo listing.
 
     - **name**: Asset name (required)
     - **status**: Asset status (required)
@@ -364,6 +396,13 @@ def create(
     try:
         db = Asset.model_validate(asset)
         session.add(db)
+        session.flush()  # populate db.id for the grant row (same txn)
+        session.add(AssetPermission(
+            asset=db.id,
+            target_type=permissions_service.SCOPE_USER,
+            target_code=str(current.id),
+            access_level=permissions_service.ACCESS_MANAGE,
+        ))
         session.commit()
         session.refresh(db)
         logger.info(f"Asset created: {db.id}")
@@ -380,10 +419,10 @@ def create(
 @router.put("/{asset_id}", response_model=Asset)
 def update(
     asset_id: int, update: AssetUpdate, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
+    current: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
 ) -> Asset:
     """
-    Update an existing asset.
+    Update an existing asset. Requires MANAGE on the asset (or superuser).
 
     - **asset_id**: Unique asset id to update
     - Only provided fields are updated
@@ -391,6 +430,7 @@ def update(
     asset = session.get(Asset, asset_id)
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
+    _ensure_manage(session, current, asset_id)
 
     # Validate that the category exists if provided
     if update.category is not None:
@@ -418,10 +458,10 @@ def update(
 @router.delete("/{asset_id}", response_model=Asset, status_code=200)
 def delete(
     asset_id: int, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
+    current: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
 ) -> Asset:
     """
-    Delete an asset (logical delete).
+    Delete an asset (logical delete). Requires MANAGE on the asset (or superuser).
 
     Performs a logical delete by setting is_active=False instead of removing the record.
 
@@ -430,6 +470,7 @@ def delete(
     asset = session.get(Asset, asset_id)
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
+    _ensure_manage(session, current, asset_id)
 
     # Check if already inactive
     if not asset.is_active:

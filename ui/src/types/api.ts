@@ -696,11 +696,16 @@ export interface AssetUpdate {
 }
 
 // Read projection from GET /api/assets/with-access: Asset + aggregated access summary.
+// The listing itself is caller-scoped (HU-LI08): only assets with a grant reaching the
+// current user are returned (superusers see everything).
 export interface AssetWithAccessLevels extends Asset {
   access_levels: string[]; // distinct active access levels, e.g. ["VIEW","MANAGE"]
   is_public: boolean;       // true if any active permission targets PUBLIC
   // Scope-types granting the CURRENT user access (USER/ROLE/TEAM/UNIT/PROJECT/PUBLIC).
   permission_scopes: string[];
+  // The CURRENT user's effective access level (MANAGE beats VIEW; superusers
+  // always MANAGE). Drives the repo's per-row edit/delete gating.
+  my_access?: "VIEW" | "MANAGE" | null;
 }
 
 // ============================================================================

@@ -1,9 +1,11 @@
 """Contract/permission tests for GET /api/assets/with-access (Constitution III).
 
-The aggregation itself (Postgres array_agg / bool_or) can't execute on the
-SQLite in-memory test DB, so correctness of the access summary is verified
-manually against Postgres (`make dev`). Here we lock down the security gate:
-the new endpoint must require authentication like its sibling `GET /api/assets/`.
+The route's access summary is now computed Python-side (the old Postgres-only
+array_agg/bool_or aggregate was replaced when the listing became caller-scoped,
+HU-LI08), so its behavior runs on the SQLite test DB — see
+test_lib_access_enforcement.py for the visibility/my_access coverage. Here we
+lock down the security gate: the endpoint must require authentication like its
+sibling `GET /api/assets/`.
 """
 
 

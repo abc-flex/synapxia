@@ -91,6 +91,9 @@ const data = assets.map((item) => ({
   status: item.status,
   status_name: resolveStatusLabel(item.status),
   current_version: item.current_version ?? "1.0.0",
+  // Per-row action gating (HU-LI08): only MANAGE holders get edit/delete/
+  // detail buttons (VIEW rows render read-only; backend enforces regardless).
+  can_manage: item.my_access === "MANAGE",
   tags: item.tags,
   tags_display: Array.isArray(item.tags) ? item.tags.join(", ") : item.tags || "",
   detail: item.detail,
@@ -347,6 +350,7 @@ const fieldKeys = deleteFields.map((f) => f.key);
           favoriteAction={true}
           favoriteKey="favorite"
           detailExpand={true}
+          manageKey="can_manage"
         />
       </div>
     </div>

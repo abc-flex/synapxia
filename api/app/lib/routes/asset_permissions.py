@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from ..internal.models import (
     AssetPermission, AssetPermissionCreate, AssetPermissionUpdate, Asset,
 )
+from ..internal import permissions_service
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
 from ...internal.permissions import require_privilege
@@ -20,6 +21,16 @@ router = APIRouter(prefix="/api/asset_permissions", tags=["asset_permissions"])
 # Privilege option: permissions are a subordinate resource managed from the
 # Assets screen, so they gate on (LIB, ASSETS) — the seeded option. An
 # "ASSET_PERMISSIONS" option was never seeded and would 403 every non-superuser.
+
+
+def _ensure_manage(session: Session, user: User, asset_id: int) -> None:
+    """Per-asset write guard (HU-LI08): only MANAGE holders (or superusers) may
+    grant/revoke permissions on an asset — otherwise a VIEW-only user could
+    escalate by granting themselves MANAGE."""
+    try:
+        permissions_service.require_asset_manage(session, user, asset_id)
+    except permissions_service.AssetAccessForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
 
 
 @router.get("/", response_model=List[AssetPermission])
@@ -72,10 +83,10 @@ def get(
 @router.post("/", response_model=AssetPermission, status_code=201)
 def create(
     permission: AssetPermissionCreate, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
+    current: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
 ) -> AssetPermission:
     """
-    Create a new asset permission.
+    Create a new asset permission. Requires MANAGE on the asset.
 
     - **asset**: Asset id (required, must exist)
     - **target_type** / **target_code** / **access_level**: required
@@ -85,6 +96,8 @@ def create(
         raise HTTPException(
             status_code=400,
             detail=f"Asset with id '{permission.asset}' does not exist")
+
+    _ensure_manage(session, current, permission.asset)
 
     # Reject a duplicate ACTIVE grant for the same (asset, target_type, target_code,
     # access_level) so a re-add doesn't pile up rows.
@@ -122,12 +135,14 @@ def update(
     permission_id: int,
     update: AssetPermissionUpdate,
     session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True)),
+    current: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True)),
 ) -> AssetPermission:
-    """Update an existing asset permission (only provided fields)."""
+    """Update an existing asset permission (only provided fields). Requires
+    MANAGE on the asset."""
     permission = session.get(AssetPermission, permission_id)
     if not permission:
         raise HTTPException(status_code=404, detail="Asset permission not found")
+    _ensure_manage(session, current, permission.asset)
 
     for key, value in update.model_dump(exclude_unset=True).items():
         setattr(permission, key, value)
@@ -142,12 +157,14 @@ def update(
 @router.delete("/{permission_id}", response_model=AssetPermission, status_code=200)
 def delete(
     permission_id: int, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
+    current: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
 ) -> AssetPermission:
-    """Logical delete: set is_active=False (the record is retained)."""
+    """Logical delete: set is_active=False (the record is retained). Requires
+    MANAGE on the asset."""
     permission = session.get(AssetPermission, permission_id)
     if not permission:
         raise HTTPException(status_code=404, detail="Asset permission not found")
+    _ensure_manage(session, current, permission.asset)
     if not permission.is_active:
         raise HTTPException(
             status_code=400,

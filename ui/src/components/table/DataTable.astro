@@ -64,6 +64,9 @@ const {
   favoriteKey = "favorite",
   // Per-row master-detail expand button (emits data-action="detail").
   detailExpand = false,
+  // Per-row action gating (HU-LI08): name of a boolean row field; rows where
+  // it isn't true hide edit/delete/detail-expand. null = unconditional (default).
+  manageKey = null,
 } = Astro.props as {
   columns?: ColumnConfig[];
   data?: Record<string, any>[];
@@ -98,6 +101,7 @@ const {
   favoriteAction?: boolean;
   favoriteKey?: string;
   detailExpand?: boolean;
+  manageKey?: string | null;
 };
 
 // Filtrar columnas visibles (ocultar si visible: false)
@@ -147,6 +151,7 @@ const filterConfigs = buildFilterConfigs(tableId, [
         detailExpand={detailExpand}
         favoriteAction={favoriteAction}
         favoriteKey={favoriteKey}
+        manageKey={manageKey}
       />
     </table>
   </div>

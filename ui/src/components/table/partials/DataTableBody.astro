@@ -13,6 +13,7 @@ interface Props {
   detailExpand?: boolean;
   favoriteAction?: boolean;
   favoriteKey?: string;
+  manageKey?: string | null;
 }
 const {
   data,
@@ -24,6 +25,7 @@ const {
   detailExpand = false,
   favoriteAction = false,
   favoriteKey = "favorite",
+  manageKey = null,
 } = Astro.props as Props;
 ---
 <tbody
@@ -44,6 +46,7 @@ const {
           detailExpand={detailExpand}
           favoriteAction={favoriteAction}
           favoriteKey={favoriteKey}
+          manageKey={manageKey}
         />
       </tr>
     ))

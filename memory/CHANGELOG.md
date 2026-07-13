@@ -20,6 +20,16 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-07-13 16:38 — fix(ui): icon-only toolbar buttons on mobile (galleries + DataTable)
+
+- **Toolbar buttons stopped eating the whole row on phones.** The Prompt/MCP/Agent gallery's "★ My favorites" pill and "+ Propose"/"+ New" buttons, and the shared DataTable toolbar's "+ New X" and "Export" buttons, always rendered icon **and** full text label — on a 390px viewport the row overflowed into stacked full-width buttons. Below `sm` each now collapses to icon-only (`hidden sm:inline` on the label `<span>`), keeping the icon and gaining a `title`/`data-i18n-title` fallback for the accessible name; `sm`+ is unchanged.
+- `FavoritesPill.astro` gained an opt-in `collapseLabelOnMobile` prop (default `false`) so its other consumer — the `/lib/assets` DataTableFilters 2-per-row mobile grid, where the label should stay visible — is untouched; only `CardGallery.astro` passes `true`.
+- Added `flex-wrap` as a defensive overflow safety net on `DataTableToolbar.astro`'s inner button row and `CrudModal.astro`'s footer (no visible change today, guards against a future long label overflowing on narrow phones).
+- Verified with a Playwright smoke test at 390×844 (stubbed API): favorites pill and propose link render icon-only with a title fallback on `/lib/prompts`; "+ User"/"Export" collapse to icon-only with no horizontal overflow on `/admin/users`; both pages show full labels again at a 1280px desktop viewport. `bun run build` clean.
+- Files affected: `ui/src/components/lib/gallery/CardGallery.astro`, `ui/src/components/lib/FavoritesPill.astro`, `ui/src/components/table/partials/{DataTableSearchExport,DataTableToolbar}.astro`, `ui/src/components/forms/CrudModal.astro`
+
+---
+
 ## 2026-07-13 14:57 — fix(ui): mobile responsive fixes across header + LIB galleries/repo
 
 - **Notification panel cut off on phones**: `.notification-dropdown` was `absolute right-0 w-80` anchored to the bell — on phones the bell sits mid-header so the 320px panel ran off the left edge. Below `sm` it now switches to `position: fixed; left/right: 0.75rem; top: 4.25rem` — pinned to the viewport under the sticky header, full width. Desktop unchanged.

@@ -231,6 +231,20 @@
     z-index: 30;
   }
 
+  /* On phones the bell sits mid-header, so a bell-anchored w-80 panel runs off
+     the LEFT edge of the screen. Pin it to the viewport instead, just under
+     the sticky header, spanning (almost) the full width. */
+  @media (max-width: 639px) {
+    .notification-dropdown {
+      position: fixed;
+      left: 0.75rem;
+      right: 0.75rem;
+      top: 4.25rem;
+      width: auto;
+      margin-top: 0;
+    }
+  }
+
   /* Pre-pagination cap: before advancedTable.ts hydrates, show only the first
      page (default perPage = 10 in advancedTable.ts) so the list paints at its
      paginated height instead of rendering every row then collapsing to one

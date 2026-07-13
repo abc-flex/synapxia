@@ -152,11 +152,11 @@
       oninput={onInput}
       onfocus={openPanel}
       onkeydown={onKeydown}
-      class="h-11 w-full rounded-lg border border-gray-200 bg-transparent py-2.5 pr-14 pl-12 text-sm text-gray-800 placeholder:text-gray-400 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
+      class="h-11 w-full rounded-lg border border-gray-200 bg-transparent py-2.5 pr-4 sm:pr-14 pl-12 text-sm text-gray-800 placeholder:text-gray-400 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
     />
     <button
       type="button"
-      class="absolute top-1/2 right-2.5 inline-flex -translate-y-1/2 items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-50 px-[7px] py-[4.5px] text-xs text-gray-500 dark:border-gray-800 dark:bg-white/5 dark:text-gray-400"
+      class="hidden sm:inline-flex absolute top-1/2 right-2.5 -translate-y-1/2 items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-50 px-[7px] py-[4.5px] text-xs text-gray-500 dark:border-gray-800 dark:bg-white/5 dark:text-gray-400"
       onclick={() => { inputEl?.focus(); openPanel(); }}
     >
       <span>⌘</span>

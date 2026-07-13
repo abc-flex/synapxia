@@ -132,6 +132,7 @@ const rows = agents.filter((item) => isPublished(item.status)).map((item) => {
     tools,
     instructionsPreview: truncate(instructions),
     tags,
+    version: item.current_version ?? "1.0.0",
     searchText: [item.name, item.description, tools.join(" "), instructions, tags.join(" ")]
       .filter(Boolean)
       .join(" "),
@@ -184,6 +185,7 @@ const rows = agents.filter((item) => isPublished(item.status)).map((item) => {
           voteNegative={r.voteNegative}
           myVote={r.myVote}
           discussCount={r.discussCount}
+          version={r.version}
         />
       ))}
     </CardGallery>

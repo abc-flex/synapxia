@@ -20,6 +20,18 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-07-13 14:57 — fix(ui): mobile responsive fixes across header + LIB galleries/repo
+
+- **Notification panel cut off on phones**: `.notification-dropdown` was `absolute right-0 w-80` anchored to the bell — on phones the bell sits mid-header so the 320px panel ran off the left edge. Below `sm` it now switches to `position: fixed; left/right: 0.75rem; top: 4.25rem` — pinned to the viewport under the sticky header, full width. Desktop unchanged.
+- **Search bar missing on mobile**: `SearchBar.astro`'s host div was `hidden lg:block` — the search input is now visible at every breakpoint (`flex-1` on phones/tablets, fixed width from `lg`). `Header.astro` hides the brand name text below `sm` (keeps the logo) so the input gets real width next to the hamburger; the header's flex-1 spacer is now `lg`-only (redundant once the search bar itself flexes). `SearchPalette.svelte` hides the decorative ⌘K badge below `sm` and trims the input's right padding to match.
+- **Detail modal tabs wrapping to two rows**: both tab rows (`CatalogDetailModal.astro`'s Details/Related/Discussion/History and `AssetDetailTabs.svelte`'s Characterizations/Related/Permissions) used `flex-wrap … sm:flex-nowrap` — deliberately wrapping below `sm`. Now `flex-nowrap overflow-x-auto no-scrollbar` at every breakpoint: one horizontally-scrollable row.
+- **Asset name truncating too early in the detail modal**: the header packed the name + vote bar + favorite + close into one row, leaving the title only ~130px on a phone. Below `sm` the header now wraps: the actions row (votes/star/close) stays on top via `order-1 ml-auto`, the name+pills group drops to its own full-width line via `order-2 basis-full` — the existing `line-clamp-2` then gets the whole modal width to work with (still ends in a proper ellipsis on the 2nd line). Collapses back to the single-row desktop layout from `sm` up.
+- **Missing version tag on catalog cards/modal**: `Asset.current_version` (added in HU-LI09) wasn't surfaced anywhere in the read-only galleries. `GalleryCard.astro` gained an optional `version` prop rendered as a small mono `vX.Y.Z` chip beside the status pill (threaded through `PromptCard`/`McpCard`/`AgentCard` and the three gallery pages' row mapping); `CatalogDetailModal.astro` gained a matching header pill, filled by `catalogDetail.ts` from the loaded asset (`asset.current_version ?? "1.0.0"`), reset alongside the other pills on each `open()`.
+- Verified with a Playwright smoke test at a 390×844 mobile viewport (stubbed API): search input visible, notification panel fully on-screen, gallery card shows the version chip, detail modal tabs render on one row, and the title box now spans the full modal width. `bun run build` clean.
+- Files affected: `ui/src/styles/globals.css`, `ui/src/components/core/header/{Header,SearchBar}.astro`, `ui/src/components/svelte/{SearchPalette,AssetDetailTabs}.svelte`, `ui/src/components/lib/gallery/{CatalogDetailModal,GalleryCard}.astro`, `ui/src/components/lib/{PromptCard,McpCard,AgentCard}.astro`, `ui/src/lib/catalogDetail.ts`, `ui/src/pages/lib/{prompts,mcps,agents}.astro`
+
+---
+
 ## 2026-07-12 20:26 — feat(lib): enforce per-asset permissions in the repo (HU-LI08)
 
 - **The `asset_permissions` substrate is now enforced** (it was fully modeled + seeded but consulted by nothing). Decisions: no grant = hidden (superusers see all); VIEW rows appear in the repo read-only; MANAGE required for every per-asset write.

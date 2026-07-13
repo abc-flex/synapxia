@@ -30,6 +30,7 @@ export interface Props {
   voteNegative?: number;
   myVote?: string;
   discussCount?: number;
+  version?: string;
 }
 
 const {
@@ -53,6 +54,7 @@ const {
   voteNegative = 0,
   myVote = "",
   discussCount = 0,
+  version,
 } = Astro.props as Props;
 
 const MAX_TOOLS = 4;
@@ -78,6 +80,7 @@ const extraTools = tools.length - shownTools.length;
   voteNegative={voteNegative}
   myVote={myVote}
   discussCount={discussCount}
+  version={version}
 >
   <span slot="icon" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/20 text-white">
     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">

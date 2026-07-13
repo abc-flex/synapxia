@@ -16,7 +16,9 @@ interface Props {
 
 const {
   placeholder = "header.search_placeholder",
-  className = "hidden lg:block min-w-[380px]",
+  // Visible on every breakpoint: flexes to fill the bar's middle on phones,
+  // keeps the fixed desktop width from lg up.
+  className = "min-w-0 flex-1 lg:flex-none lg:min-w-[380px]",
 } = Astro.props as Props;
 ---
 

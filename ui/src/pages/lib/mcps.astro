@@ -129,6 +129,7 @@ const rows = mcps.filter((item) => isPublished(item.status)).map((item) => {
     tools,
     serverConfig: chars.SERVER_CONFIG?.detail || chars.SERVER_CONFIG?.value,
     tags,
+    version: item.current_version ?? "1.0.0",
     searchText: [item.name, overview, item.description, tools.join(" "), tags.join(" ")]
       .filter(Boolean)
       .join(" "),
@@ -181,6 +182,7 @@ const rows = mcps.filter((item) => isPublished(item.status)).map((item) => {
           voteNegative={r.voteNegative}
           myVote={r.myVote}
           discussCount={r.discussCount}
+          version={r.version}
         />
       ))}
     </CardGallery>

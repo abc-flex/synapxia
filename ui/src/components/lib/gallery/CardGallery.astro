@@ -75,7 +75,7 @@ const {
     )}
 
     {showFavorites && (
-      <FavoritesPill id={`${galleryId}-fav-filter`} labelKey={favLabelKey} />
+      <FavoritesPill id={`${galleryId}-fav-filter`} labelKey={favLabelKey} collapseLabelOnMobile={true} />
     )}
 
     {newModalId && (
@@ -83,20 +83,24 @@ const {
         type="button"
         data-modal-open={newModalId}
         data-asset-mode="create"
+        title=""
+        data-i18n-title={newLabelKey}
         class="ml-auto inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:bg-indigo-500 dark:hover:bg-indigo-400"
       >
         <span class="text-lg leading-none">+</span>
-        <span data-i18n={newLabelKey}>New</span>
+        <span data-i18n={newLabelKey} class="hidden sm:inline">New</span>
       </button>
     )}
 
     {proposeHref && (
       <a
         href={proposeHref}
+        title=""
+        data-i18n-title={proposeLabelKey}
         class="ml-auto inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:bg-indigo-500 dark:hover:bg-indigo-400"
       >
         <span class="text-lg leading-none">+</span>
-        <span data-i18n={proposeLabelKey}>Propose</span>
+        <span data-i18n={proposeLabelKey} class="hidden sm:inline">Propose</span>
       </a>
     )}
   </div>

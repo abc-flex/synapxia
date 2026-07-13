@@ -53,11 +53,14 @@ import SearchBar from "./SearchBar.astro";
         mockup: logo + name on the left of the bar. */}
     {
       showBrandOnMobile ? (
-        <a href="/" class="flex min-w-0 items-center gap-2 lg:hidden" aria-label={title}>
+        <a href="/" class="flex shrink-0 items-center gap-2 lg:hidden" aria-label={title}>
           <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-sm font-semibold text-white">
             IA
           </span>
-          <span class="truncate text-base font-bold text-gray-900 dark:text-white">
+          {/* Name hidden on phones (< sm) so the search bar keeps usable
+              width between the logo and the bell/avatar; still shown on
+              tablet, where there's room for both. */}
+          <span class="hidden truncate text-base font-bold text-gray-900 sm:inline dark:text-white">
             {title}
           </span>
         </a>
@@ -66,8 +69,9 @@ import SearchBar from "./SearchBar.astro";
 
     <SearchBar />
 
-    {/* Spacer pushes the controls to the right edge */}
-    <div class="flex-1"></div>
+    {/* Spacer pushes the controls to the right edge — only needed from lg up,
+        where SearchBar switches to a fixed width instead of flexing. */}
+    <div class="hidden flex-1 lg:block"></div>
 
     <div class="flex shrink-0 items-center gap-1.5 sm:gap-2">
       {/* Theme + language live in the header on tablet/desktop; on phones the bar

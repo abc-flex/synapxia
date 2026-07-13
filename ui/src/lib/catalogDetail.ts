@@ -109,6 +109,7 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
 
   const nameEl = document.getElementById(`${modalId}-name`) as HTMLElement | null;
   const statusPill = document.getElementById(`${modalId}-status-pill`) as HTMLElement | null;
+  const versionPill = document.getElementById(`${modalId}-version-pill`) as HTMLElement | null;
   const stagePill = document.getElementById(`${modalId}-stage-pill`) as HTMLElement | null;
   const descEl = document.getElementById(`${modalId}-desc`) as HTMLElement | null;
   const sectionsEl = document.getElementById(`${modalId}-sections`) as HTMLElement | null;
@@ -342,6 +343,7 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
     if (descEl) descEl.classList.add("hidden");
     if (sectionsEl) sectionsEl.innerHTML = "";
     if (statusPill) statusPill.classList.add("hidden");
+    if (versionPill) versionPill.classList.add("hidden");
     if (stagePill) stagePill.classList.add("hidden");
     // Guard: a related-asset click re-opens this same modal in place, so the
     // dialog may already be open — calling showModal() twice would throw.
@@ -400,6 +402,11 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
       if (seq !== openSeq) return; // superseded by a newer open()
       currentName = asset.name ?? "";
       if (nameEl) nameEl.textContent = currentName || "—";
+
+      if (versionPill) {
+        versionPill.textContent = `v${asset.current_version ?? "1.0.0"}`;
+        versionPill.classList.remove("hidden");
+      }
 
       if (statusPill) {
         const label = resolveStatusLabel(asset.status ?? "");

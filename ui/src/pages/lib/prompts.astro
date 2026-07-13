@@ -119,6 +119,7 @@ const rows = prompts.filter((item) => isPublished(item.status)).map((item) => {
     platform: chars.PLATFORM?.value,
     temperature: chars.SUGGESTED_TEMPERATURE?.value,
     tags,
+    version: item.current_version ?? "1.0.0",
     searchText: [item.name, item.description, tags.join(" ")].filter(Boolean).join(" "),
   };
 });
@@ -168,6 +169,7 @@ const rows = prompts.filter((item) => isPublished(item.status)).map((item) => {
           voteNegative={r.voteNegative}
           myVote={r.myVote}
           discussCount={r.discussCount}
+          version={r.version}
         />
       ))}
     </CardGallery>

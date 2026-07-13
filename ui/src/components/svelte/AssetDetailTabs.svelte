@@ -665,7 +665,7 @@
 <div bind:this={rootEl}>
   <!-- Tabs header -->
   <div class="border-b border-gray-200 dark:border-gray-800">
-    <div role="tablist" aria-label="Asset detail sections" class="-mb-px flex flex-wrap gap-x-4 gap-y-1 text-sm font-medium sm:flex-nowrap sm:gap-6">
+    <div role="tablist" aria-label="Asset detail sections" class="-mb-px flex flex-nowrap gap-4 overflow-x-auto no-scrollbar text-sm font-medium sm:gap-6">
       <button
         type="button"
         role="tab"

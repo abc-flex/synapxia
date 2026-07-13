@@ -20,6 +20,15 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-07-13 16:55 — fix(ui): gallery detail-modal header reorders on mobile (title+close same row, votes/favorite below)
+
+- **Close button now shares the title's row; votes/favorite moved below.** The previous mobile layout (from the same-day responsive pass) put the votes+favorite+close cluster on the top row and the title+pills below. Per user feedback that pairing was backwards — the close (X) button should sit beside the title, and the like/dislike/favorite buttons should drop below instead.
+- `CatalogDetailModal.astro`'s header (shared by the Prompt/MCP/Agent galleries' read-only detail modal) now has 3 flex children instead of 2: the title+pills group (`order-1 flex-1`, no longer `basis-full`) shares row 1 with the close button (`order-2 shrink-0`, pulled out of the old votes/favorite wrapper); the votes+favorite group (`order-3 basis-full`) now forces its own line below. `sm:order-2`/`sm:order-3` on the votes/favorite and close groups restore the original single-row desktop layout (title left, votes+favorite+close cluster right) — unchanged from before this fix.
+- Verified with a Playwright smoke test opening a gallery card's detail modal at 390×844 (title and close render on the same row's y-position; votes/favorite render on a lower y-position) and at 1280×900 (title, votes/favorite, and close all render on the same row's y-position — no regression). `bun run build` clean.
+- Files affected: `ui/src/components/lib/gallery/CatalogDetailModal.astro`
+
+---
+
 ## 2026-07-13 16:38 — fix(ui): icon-only toolbar buttons on mobile (galleries + DataTable)
 
 - **Toolbar buttons stopped eating the whole row on phones.** The Prompt/MCP/Agent gallery's "★ My favorites" pill and "+ Propose"/"+ New" buttons, and the shared DataTable toolbar's "+ New X" and "Export" buttons, always rendered icon **and** full text label — on a 390px viewport the row overflowed into stacked full-width buttons. Below `sm` each now collapses to icon-only (`hidden sm:inline` on the label `<span>`), keeping the icon and gaining a `title`/`data-i18n-title` fallback for the accessible name; `sm`+ is unchanged.

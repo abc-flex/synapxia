@@ -11,6 +11,10 @@ interface Props {
   detailExpand?: boolean;
   favoriteAction?: boolean;
   favoriteKey?: string;
+  /** Per-row gating (HU-LI08): name of a boolean row field; when set and the
+   * row's value isn't true, the mutation buttons (edit/delete/detail-expand)
+   * are not rendered. Unset (default) = today's unconditional buttons. */
+  manageKey?: string | null;
 }
 const {
   row,
@@ -20,7 +24,10 @@ const {
   detailExpand = false,
   favoriteAction = false,
   favoriteKey = "favorite",
+  manageKey = null,
 } = Astro.props as Props;
+
+const canManage = !manageKey || row[manageKey] === true;
 ---
 <td class="actions-cell px-2 py-1 text-right space-x-0">
   <div class="actions-wrapper">
@@ -37,7 +44,7 @@ const {
       </a>
       <span class="dot">•</span>
     )}
-    {detailExpand && (
+    {detailExpand && canManage && (
       <button
         class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded detail-expand-btn"
         data-id={row.id}
@@ -67,30 +74,34 @@ const {
         </span>
       </button>
     )}
-    {(detailExpand || favoriteAction) && <span class="dot">•</span>}
-    <button
-      class="p-1 hover:bg-blue-100 rounded edit-btn"
-      data-id={row.id}
-      data-action="edit"
-      data-modal-open={`${i18Item}-edit-modal`}
-      data-i18n-title={`${i18Item}_modal.edit`}
-      title=""
-    >
-      <span class="w-5 h-5 inline-block">
-        <Fragment set:html={editSvg} />
-      </span>
-    </button>
-    <button
-      class="p-1 hover:bg-red-100 rounded delete-btn"
-      data-id={row.id}
-      data-action="delete"
-      data-modal-open={`${i18Item}-delete-modal`}
-      data-i18n-title={`${i18Item}_modal.delete`}
-      title=""
-    >
-    <span class="w-5 h-5 inline-block">
-      <Fragment set:html={deleteSvg} />
-    </span>
-    </button>
+    {(detailExpand || favoriteAction) && canManage && <span class="dot">•</span>}
+    {canManage && (
+      <button
+        class="p-1 hover:bg-blue-100 rounded edit-btn"
+        data-id={row.id}
+        data-action="edit"
+        data-modal-open={`${i18Item}-edit-modal`}
+        data-i18n-title={`${i18Item}_modal.edit`}
+        title=""
+      >
+        <span class="w-5 h-5 inline-block">
+          <Fragment set:html={editSvg} />
+        </span>
+      </button>
+    )}
+    {canManage && (
+      <button
+        class="p-1 hover:bg-red-100 rounded delete-btn"
+        data-id={row.id}
+        data-action="delete"
+        data-modal-open={`${i18Item}-delete-modal`}
+        data-i18n-title={`${i18Item}_modal.delete`}
+        title=""
+      >
+        <span class="w-5 h-5 inline-block">
+          <Fragment set:html={deleteSvg} />
+        </span>
+      </button>
+    )}
   </div>
 </td>

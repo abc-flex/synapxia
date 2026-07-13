@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy import and_, func
 
 from ..internal.models import Characterization, CharacterizationCreate, CharacterizationUpdate, Asset
+from ..internal import permissions_service
 from ...taxo.internal.models import Feature, Specification
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
@@ -17,6 +18,14 @@ from ...admin.internal.models import User
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/characterizations", tags=["characterizations"])
+
+
+def _ensure_manage(session: Session, user: User, asset_id: int) -> None:
+    """Per-asset write guard (HU-LI08): MANAGE grant or superuser required."""
+    try:
+        permissions_service.require_asset_manage(session, user, asset_id)
+    except permissions_service.AssetAccessForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
 
 
 def _current_label(session: Session, asset_id) -> str:
@@ -95,7 +104,7 @@ def get(
 @router.post("/", response_model=Characterization, status_code=201)
 def create(
     characterization: CharacterizationCreate, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "CHARACTERIZATIONS", can_edit=True))
+    current: User = Depends(require_privilege("LIB", "CHARACTERIZATIONS", can_edit=True))
 ) -> Characterization:
     """
     Create a new characterization.
@@ -113,6 +122,8 @@ def create(
             status_code=400,
             detail=f"Asset with code '{characterization.asset}' does not exist"
         )
+
+    _ensure_manage(session, current, characterization.asset)
 
     # Validate that the feature exists
     feature = session.get(
@@ -166,10 +177,10 @@ def update(
     feature_code: str,
     characterization_update: CharacterizationUpdate,
     session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "CHARACTERIZATIONS", can_edit=True)),
+    current: User = Depends(require_privilege("LIB", "CHARACTERIZATIONS", can_edit=True)),
 ) -> Characterization:
     """
-    Update an existing characterization.
+    Update an existing characterization. Requires MANAGE on the asset.
 
     - **code**: Asset code
     - **feature_code**: Feature code
@@ -185,6 +196,7 @@ def update(
     if not characterization:
         raise HTTPException(
             status_code=404, detail="Characterization not found")
+    _ensure_manage(session, current, characterization.asset)
 
     update_data = characterization_update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
@@ -204,10 +216,10 @@ def update(
 @router.delete("/{code}/{feature_code}", response_model=Characterization, status_code=200)
 def delete(
     code: str, feature_code: str, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "CHARACTERIZATIONS", can_edit=True))
+    current: User = Depends(require_privilege("LIB", "CHARACTERIZATIONS", can_edit=True))
 ) -> Characterization:
     """
-    Delete a characterization (logical delete).
+    Delete a characterization (logical delete). Requires MANAGE on the asset.
 
     Performs a logical delete by setting is_active=False instead of deleting the record.
 
@@ -224,6 +236,7 @@ def delete(
     if not characterization:
         raise HTTPException(
             status_code=404, detail="Characterization not found")
+    _ensure_manage(session, current, characterization.asset)
 
     # Check if already inactive
     if not characterization.is_active:

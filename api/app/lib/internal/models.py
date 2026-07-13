@@ -426,6 +426,9 @@ class AssetWithAccessLevels(SQLModel):
     access_levels: List[str] = Field(default_factory=list)
     is_public: bool = False
     permission_scopes: List[str] = Field(default_factory=list)
+    # The CALLER's effective access level on the asset ("MANAGE" | "VIEW";
+    # superusers always "MANAGE"). Drives the repo's per-row action gating.
+    my_access: Optional[str] = None
 
 
 # Propose Models (HU-Propose) — the review-workflow entry point

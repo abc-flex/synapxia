@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from ..internal.models import (
     AssetRelation, AssetRelationCreate, AssetRelationUpdate, Asset, RelatedAsset,
 )
+from ..internal import permissions_service
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
 from ...internal.permissions import require_privilege
@@ -16,6 +17,16 @@ from ...admin.internal.models import User
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/asset_relations", tags=["asset_relations"])
+
+
+def _ensure_manage(session: Session, user: User, asset_id: int) -> None:
+    """Per-asset write guard (HU-LI08): MANAGE grant or superuser required.
+    Relations are managed FROM the source asset's detail tab, so writes guard
+    on the source only (the target need only exist)."""
+    try:
+        permissions_service.require_asset_manage(session, user, asset_id)
+    except permissions_service.AssetAccessForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
 
 # NOTE on privilege option: relations are subordinate resources managed from
 # the Assets screen, so they gate on (LIB, ASSETS) — the option that's
@@ -181,7 +192,7 @@ def get(
 @router.post("/", response_model=AssetRelation, status_code=201)
 def create(
     relation: AssetRelationCreate, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
+    current: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
 ) -> AssetRelation:
     """
     Create a new asset relation.
@@ -214,6 +225,8 @@ def create(
             status_code=400,
             detail="Source and target assets cannot be the same"
         )
+
+    _ensure_manage(session, current, relation.source)
 
     # Validate that the relation does not already exist
     existing = session.exec(
@@ -252,10 +265,10 @@ def update(
     target_id: int,
     update: AssetRelationUpdate,
     session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True)),
+    current: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True)),
 ) -> AssetRelation:
     """
-    Update an existing asset relation.
+    Update an existing asset relation. Requires MANAGE on the source asset.
 
     - **source_id**: Source asset id
     - **target_id**: Target asset id
@@ -269,6 +282,7 @@ def update(
     ).first()
     if not relation:
         raise HTTPException(status_code=404, detail="Asset relation not found")
+    _ensure_manage(session, current, source_id)
 
     update_data = update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
@@ -287,10 +301,10 @@ def update(
 @router.delete("/{source_id}/{target_id}", response_model=AssetRelation, status_code=200)
 def delete(
     source_id: int, target_id: int, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
+    current: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
 ) -> AssetRelation:
     """
-    Delete an asset relation (logical delete).
+    Delete an asset relation (logical delete). Requires MANAGE on the source asset.
 
     Performs a logical delete by setting is_active=False instead of removing the record.
 
@@ -305,6 +319,7 @@ def delete(
     ).first()
     if not relation:
         raise HTTPException(status_code=404, detail="Asset relation not found")
+    _ensure_manage(session, current, source_id)
 
     # Check if already inactive
     if not relation.is_active:

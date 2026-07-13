@@ -39,13 +39,13 @@ const {
   {/* Fixed height so switching tabs doesn't resize/re-center the dialog — only
       the inner panel scrolls. */}
   <div class="flex h-[min(760px,88vh)] flex-col">
-    {/* Header — wraps on mobile: the actions row (votes/star/close) stays on
-        top, right-aligned via ml-auto, while the name+pills group drops to
-        its own full-width line below so the title gets real room to wrap
-        instead of clamping after a few characters. From sm up this collapses
-        back to the original single row (name left, actions right). */}
-    <div class="flex flex-wrap items-start justify-between gap-3 border-b border-gray-200 px-6 py-4 sm:flex-nowrap sm:gap-4 dark:border-gray-800">
-      <div class="order-2 flex min-w-0 basis-full items-center gap-3 sm:order-none sm:basis-auto sm:flex-1">
+    {/* Header — wraps on mobile: the title+pills group shares its row with
+        the close button (order-1/order-2), while votes+favorite drop to
+        their own full-width line below via basis-full. From sm up this
+        collapses back to the original single row (name left, votes+favorite
+        +close right, in that order). */}
+    <div class="flex flex-wrap items-start gap-3 border-b border-gray-200 px-6 py-4 sm:flex-nowrap sm:gap-4 dark:border-gray-800">
+      <div class="order-1 flex min-w-0 flex-1 items-center gap-3">
         <slot name="icon" />
         <div class="min-w-0">
           <h3 id={`${modalId}-name`} class="text-lg font-bold text-gray-900 line-clamp-2 sm:truncate dark:text-white">—</h3>
@@ -56,7 +56,18 @@ const {
           </div>
         </div>
       </div>
-      <div class="order-1 ml-auto flex shrink-0 items-center gap-1 sm:order-none sm:ml-0">
+      <button
+        type="button"
+        data-modal-close={modalId}
+        class="order-2 shrink-0 rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 sm:order-3 dark:hover:bg-gray-800"
+        aria-label="Close"
+        data-i18n-aria-label="common.close"
+      >
+        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+        </svg>
+      </button>
+      <div class="order-3 flex basis-full shrink-0 items-center gap-1 sm:order-2 sm:basis-auto">
         {/* Vote bar (HU-LI05) — sits beside the favorite; hydrated + unhidden by mountCatalogDetail. */}
         <div id={`${modalId}-vote`} class="mr-1 hidden items-center gap-0.5">
           <button
@@ -102,17 +113,6 @@ const {
         >
           <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
             <path d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.3 4.02a1 1 0 00.95.69h4.22c.97 0 1.37 1.24.59 1.81l-3.42 2.48a1 1 0 00-.36 1.12l1.3 4.02c.3.92-.75 1.69-1.54 1.12l-3.41-2.48a1 1 0 00-1.18 0l-3.41 2.48c-.78.57-1.84-.2-1.54-1.12l1.3-4.02a1 1 0 00-.36-1.12L2 9.45c-.78-.57-.38-1.81.6-1.81h4.21a1 1 0 00.95-.69l1.3-4.02z" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          data-modal-close={modalId}
-          class="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
-          aria-label="Close"
-          data-i18n-aria-label="common.close"
-        >
-          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
           </svg>
         </button>
       </div>

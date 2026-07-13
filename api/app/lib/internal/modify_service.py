@@ -125,11 +125,16 @@ def resubmit_asset(
                 setattr(asset, key, updates[key])
                 changed = True
         # 2. Update characterizations in place (create any missing row).
+        #    Review-loop edits stay on the CURRENT version's rows — resubmit
+        #    never bumps `current_version` (only the repo save flow versions,
+        #    see version_service).
+        version_label = asset.current_version or "1.0.0"
         for feature, value in (data.values or {}).items():
             char = session.exec(
                 select(Characterization).where(
                     Characterization.asset == asset_id,
                     Characterization.feature == feature,
+                    Characterization.version_label == version_label,
                 )
             ).first()
             if char:
@@ -138,7 +143,8 @@ def resubmit_asset(
                 session.add(char)
             else:
                 session.add(Characterization(
-                    asset=asset_id, feature=feature, value=value))
+                    asset=asset_id, feature=feature, value=value,
+                    version_label=version_label))
         # 3. Close the proposer's MODIFICATION assignment.
         session.add(Action(
             asset=asset_id, user_id=proposer.id,

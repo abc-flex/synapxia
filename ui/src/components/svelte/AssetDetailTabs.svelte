@@ -490,28 +490,45 @@
     await loadChars(cat ?? "");
   }
 
-  export async function flush(id: number): Promise<void> {
-    // 1. Characterizations
+  /** The staged characterization set (feature → trimmed value, blanks
+   * omitted = deletes) — what a version save sends as `values` so the server
+   * snapshots the whole set atomically instead of this component flushing
+   * per-row (see AssetDetailModal's edit-mode save). */
+  export function charSnapshot(): Record<string, string> {
+    const snapshot: Record<string, string> = {};
     for (const spec of loadedSpecs) {
-      const featureCode = spec.feature;
-      const newValue = (charValues[featureCode] ?? "").trim();
-      const existing = initialCharByFeature.get(featureCode);
-      if (!newValue) {
-        if (existing) {
-          try {
-            await deleteCharacterization(id, featureCode);
-          } catch {
-            /* already gone */
+      const value = (charValues[spec.feature] ?? "").trim();
+      if (value) snapshot[spec.feature] = value;
+    }
+    return snapshot;
+  }
+
+  export async function flush(id: number, opts?: { skipChars?: boolean }): Promise<void> {
+    // 1. Characterizations — skipped when a version save already snapshotted
+    //    them server-side (relations/permissions are not versioned and always
+    //    flush here).
+    if (!opts?.skipChars) {
+      for (const spec of loadedSpecs) {
+        const featureCode = spec.feature;
+        const newValue = (charValues[featureCode] ?? "").trim();
+        const existing = initialCharByFeature.get(featureCode);
+        if (!newValue) {
+          if (existing) {
+            try {
+              await deleteCharacterization(id, featureCode);
+            } catch {
+              /* already gone */
+            }
           }
+          continue;
         }
-        continue;
-      }
-      if (existing) {
-        if (existing.value !== newValue) {
-          await updateCharacterization(id, featureCode, { value: newValue });
+        if (existing) {
+          if (existing.value !== newValue) {
+            await updateCharacterization(id, featureCode, { value: newValue });
+          }
+        } else {
+          await createCharacterization({ asset: id, feature: featureCode, value: newValue });
         }
-      } else {
-        await createCharacterization({ asset: id, feature: featureCode, value: newValue });
       }
     }
 

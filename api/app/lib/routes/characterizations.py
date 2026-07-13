@@ -19,6 +19,14 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/characterizations", tags=["characterizations"])
 
 
+def _current_label(session: Session, asset_id) -> str:
+    """The asset's current version label — the only generation the (asset,
+    feature)-keyed CRUD below may read or touch (prior labels are history,
+    HU-LI09)."""
+    asset = session.get(Asset, asset_id)
+    return (asset.current_version or "1.0.0") if asset else "1.0.0"
+
+
 @router.get("/", response_model=List[Characterization])
 def get_all(
     skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
@@ -32,6 +40,9 @@ def get_all(
     a spec row go last) — so every consumer renders characterizations in the
     configured display order.
 
+    Only the asset's CURRENT version's rows are listed (HU-LI09): prior
+    ``version_label`` generations stay stored as history but are not returned.
+
     - **skip**: Number of records to skip (default: 0)
     - **limit**: Maximum number of records to return (default: 100)
     """
@@ -43,6 +54,9 @@ def get_all(
             Specification.feature == Characterization.feature,
         ), isouter=True)
         .where(Characterization.is_active == True)
+        # coalesce keeps NULL current_version assets on their default label.
+        .where(Characterization.version_label ==
+               func.coalesce(Asset.current_version, "1.0.0"))
         .offset(skip).limit(limit)
         # coalesce keeps NULL sort_order (no spec row) deterministic and last on
         # both Postgres and the SQLite test DB, which order NULLs differently.
@@ -67,7 +81,8 @@ def get(
     characterization = session.exec(
         select(Characterization).where(
             Characterization.asset == code,
-            Characterization.feature == feature_code
+            Characterization.feature == feature_code,
+            Characterization.version_label == _current_label(session, code),
         )
     ).first()
     if not characterization:
@@ -108,11 +123,16 @@ def create(
             detail=f"Feature with code '{characterization.feature}' does not exist"
         )
 
+    # New rows always land on the asset's CURRENT version (clients cannot
+    # write historical labels — CharacterizationCreate has no version field).
+    version_label = asset.current_version or "1.0.0"
+
     # Validate that the characterization doesn't already exist
     existing_char = session.exec(
         select(Characterization).where(
             Characterization.asset == characterization.asset,
-            Characterization.feature == characterization.feature
+            Characterization.feature == characterization.feature,
+            Characterization.version_label == version_label,
         )
     ).first()
     if existing_char:
@@ -123,6 +143,7 @@ def create(
 
     try:
         db_char = Characterization.model_validate(characterization)
+        db_char.version_label = version_label
         session.add(db_char)
         session.commit()
         session.refresh(db_char)
@@ -152,12 +173,13 @@ def update(
 
     - **code**: Asset code
     - **feature_code**: Feature code
-    - Only provided fields are updated
+    - Only provided fields are updated (current version's row only)
     """
     characterization = session.exec(
         select(Characterization).where(
             Characterization.asset == code,
-            Characterization.feature == feature_code
+            Characterization.feature == feature_code,
+            Characterization.version_label == _current_label(session, code),
         )
     ).first()
     if not characterization:
@@ -195,7 +217,8 @@ def delete(
     characterization = session.exec(
         select(Characterization).where(
             Characterization.asset == code,
-            Characterization.feature == feature_code
+            Characterization.feature == feature_code,
+            Characterization.version_label == _current_label(session, code),
         )
     ).first()
     if not characterization:

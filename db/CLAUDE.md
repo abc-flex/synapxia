@@ -116,8 +116,8 @@ new modules between existing bands.
 ### Lib — `db/sql/41-lib-ddl.sql`
 | Table | PK | Key columns | Notes |
 |-------|------|-------------|-------|
-| `assets` | `id` (bigserial) | `code`, `name`, `category` (FK), `status`, `tags` (JSONB), `details` (JSONB) | Flexible metadata via JSON |
-| `characterizations` | `(asset, feature)` | `value` | Asset × feature → free-text value |
+| `assets` | `id` (bigserial) | `code`, `name`, `category` (FK), `status`, `tags` (JSONB), `details` (JSONB), `current_version` | Flexible metadata via JSON; semver label bumped by the versioning flow (HU-LI09) |
+| `characterizations` | `(asset, version_label, feature)` | `value` | Asset × feature → free-text value, one row set per asset version |
 | `favorite_assets` | `(user_id, asset)` | — | User bookmarks |
 | `actions` | `id` (bigserial) | `type`, `asset`, `user_id`, `description`, `created_at` | Audit log (PROPOSAL, USAGE, COMMENT, VOTE, …) |
 | `related_assets` | `(source, target)` | `relation_type`, `description` | DEPENDS_ON, EXTENDS, SIMILAR_TO, … |

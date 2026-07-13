@@ -4,7 +4,23 @@
  */
 
 import { apiGet, apiPost, apiPut, apiDelete, buildQueryString } from './api';
-import type { Asset, AssetCreate, AssetUpdate, AssetWithAccessLevels } from '../types/api';
+import type { Asset, AssetCreate, AssetUpdate, AssetVersionRequest, AssetWithAccessLevels, ChangeType } from '../types/api';
+
+/**
+ * Client-side mirror of the backend's `version_service.bump_label` — used for
+ * the live "v1.2.0 → v1.3.0" preview in the edit modal. Display-only: the
+ * server recomputes the label authoritatively on save. Malformed or missing
+ * labels are treated as the 1.0.0 base, matching the backend.
+ */
+export function bumpVersionLabel(label: string | undefined | null, changeType: ChangeType): string {
+  const match = /^(\d+)\.(\d+)\.(\d+)$/.exec((label ?? '').trim());
+  const [major, minor, patch] = match
+    ? [Number(match[1]), Number(match[2]), Number(match[3])]
+    : [1, 0, 0];
+  if (changeType === 'major') return `${major + 1}.0.0`;
+  if (changeType === 'minor') return `${major}.${minor + 1}.0`;
+  return `${major}.${minor}.${patch + 1}`;
+}
 
 /**
  * Fetch all assets with optional pagination
@@ -77,6 +93,19 @@ export async function createAsset(data: AssetCreate): Promise<Asset> {
  */
 export async function updateAsset(id: number, data: AssetUpdate): Promise<Asset> {
   return apiPut<Asset, AssetUpdate>(`/api/assets/${encodeURIComponent(id)}`, data);
+}
+
+/**
+ * Save edits to an existing asset as a NEW VERSION (HU-LI09). One transaction
+ * server-side: bumps `current_version` by `change_type`, applies the core
+ * edits, snapshots the characterizations under the new version label and logs
+ * a VERSIONING action. Leave `values` undefined for a core-only save.
+ * @param id - Asset id to version
+ * @param data - Change type + edited fields (+ optional full characterization set)
+ * @returns Promise with the updated asset (carrying the new current_version)
+ */
+export async function createAssetVersion(id: number, data: AssetVersionRequest): Promise<Asset> {
+  return apiPost<Asset, AssetVersionRequest>(`/api/assets/${encodeURIComponent(id)}/versions`, data);
 }
 
 /**

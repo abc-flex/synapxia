@@ -604,6 +604,9 @@ export interface Asset {
   status: string;
   tags?: string[];
   detail?: string;
+  // Semver label of the asset's current version (HU-LI09); bumped only via
+  // POST /api/assets/{id}/versions, never through AssetCreate/AssetUpdate.
+  current_version?: string;
   is_active?: boolean;
   created_at?: string;
   updated_at?: string;
@@ -638,6 +641,25 @@ export interface ModifyRequest {
   name?: string;
   description?: string;
   reference?: string;
+  tags?: string[];
+  detail?: string;
+  values?: Record<string, string>;
+}
+
+// Saving edits to an existing asset as a NEW VERSION (HU-LI09): the user picks
+// the change type and the matching digit of the semver label bumps
+// (major → X+1.0.0, minor → X.Y+1.0, patch → X.Y.Z+1). `values` is the FULL
+// desired characterization set (feature→value; blanks/omissions drop the
+// feature); leave it undefined for a core-only save (server copies the current
+// characterizations forward unchanged).
+export type ChangeType = "major" | "minor" | "patch";
+export interface AssetVersionRequest {
+  change_type: ChangeType;
+  name?: string;
+  description?: string;
+  category?: string;
+  reference?: string;
+  status?: string;
   tags?: string[];
   detail?: string;
   values?: Record<string, string>;
@@ -689,6 +711,9 @@ export interface AssetWithAccessLevels extends Asset {
 export interface Characterization {
   asset: number;
   feature: string;
+  // Version generation this row belongs to (part of the DB PK); list
+  // endpoints only return the asset's current version's rows.
+  version_label?: string;
   value?: string;
   detail?: string;
   is_active?: boolean;

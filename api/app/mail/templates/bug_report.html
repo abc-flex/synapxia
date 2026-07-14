@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        h1 { color: #d97706; }
+        .field { margin: 12px 0; }
+        .label { font-size: 12px; font-weight: bold; text-transform: uppercase; color: #999; }
+        .value { white-space: pre-wrap; }
+        .footer { font-size: 12px; color: #999; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>New Bug Report #{{ report_id }}</h1>
+        <div class="field">
+            <div class="label">Reported by</div>
+            <div class="value">{{ reporter }}</div>
+        </div>
+        {% if page_url %}
+        <div class="field">
+            <div class="label">Page</div>
+            <div class="value">{{ page_url }}</div>
+        </div>
+        {% endif %}
+        <div class="field">
+            <div class="label">Description</div>
+            <div class="value">{{ description }}</div>
+        </div>
+        <div class="footer">
+            <p>Screenshot and attachments (if any) are stored with the report — view it in the admin API.</p>
+            <p>&copy; 2026 SynapxIA. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -20,7 +20,6 @@
   },
   "account_menu": {
     "edit_profile": "Editar perfil",
-    "account_settings": "Configuración de cuenta",
     "support": "Soporte",
     "sign_out": "Cerrar sesión",
     "theme": "Tema",
@@ -123,7 +122,8 @@
     "map": "Mapa de Procesos",
     "specifications": "Especificacion",
     "review_requests": "Solicitudes de Revisión",
-    "modifications": "Mis Modificaciones"
+    "modifications": "Mis Modificaciones",
+    "support": "Soporte"
   },
   "crud_modal": {
     "add": "Agregar",
@@ -589,6 +589,16 @@
     "status_pwd_updated": "Contraseña actualizada.",
     "status_pwd_error": "No se pudo cambiar la contraseña."
   },
+  "support_page": {
+    "title": "Soporte",
+    "contact_heading": "Contáctanos",
+    "contact_body": "¿Tienes una pregunta o necesitas ayuda? Escríbele directamente a nuestro equipo de soporte por correo — normalmente respondemos dentro de un día hábil.",
+    "contact_cta": "Enviar correo a soporte",
+    "contact_subject": "Solicitud de soporte de SynapxIA",
+    "report_heading": "Reportar un error",
+    "report_body": "¿Encontraste algo que no funciona? Captura una pantalla, marca exactamente dónde está el problema y describe qué pasó — nosotros nos encargamos del resto.",
+    "report_cta": "Reportar un error"
+  },
   "login_page": {
     "title": "Inicia Sesión",
     "welcome": "Bienvenido",
@@ -706,6 +716,28 @@
     "back": "Atrás",
     "next": "Siguiente",
     "confirm": "Confirmar"
+  },
+  "bug_report": {
+    "fab_title": "Reportar un error",
+    "panel_title": "Reportar un error",
+    "capture_cta": "Capturar una pantalla",
+    "retake": "Volver a capturar",
+    "tool_pen": "Dibujar",
+    "tool_rect": "Rectángulo",
+    "undo": "Deshacer",
+    "clear": "Limpiar",
+    "attach_images": "Adjuntar imágenes",
+    "remove_attachment": "Quitar",
+    "description_label": "¿Qué salió mal?",
+    "description_placeholder": "Describe el error — ¿qué esperabas y qué pasó en su lugar?",
+    "cancel": "Cancelar",
+    "submit": "Enviar",
+    "submitting": "Enviando…",
+    "description_required": "Por favor describe el error.",
+    "too_many_attachments": "Puedes adjuntar hasta 3 imágenes.",
+    "capture_error": "No se pudo capturar la pantalla — aún puedes enviar el reporte sin ella.",
+    "submitted": "Gracias — tu reporte fue enviado.",
+    "submit_error": "No se pudo enviar el reporte."
   },
   "signup": {
     "title": "Crear una cuenta",

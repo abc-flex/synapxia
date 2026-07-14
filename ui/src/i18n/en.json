@@ -20,7 +20,6 @@
   },
   "account_menu": {
     "edit_profile": "Edit profile",
-    "account_settings": "Account settings",
     "support": "Support",
     "sign_out": "Sign out",
     "theme": "Theme",
@@ -123,7 +122,8 @@
     "map": "Process Map",
     "specifications": "Specification",
     "review_requests": "Review Requests",
-    "modifications": "My Modifications"
+    "modifications": "My Modifications",
+    "support": "Support"
   },
   "crud_modal": {
     "add": "Add",
@@ -589,6 +589,16 @@
     "status_pwd_updated": "Password updated.",
     "status_pwd_error": "Could not change password."
   },
+  "support_page": {
+    "title": "Support",
+    "contact_heading": "Contact us",
+    "contact_body": "Have a question or need a hand? Reach our support team directly by email — we usually reply within one business day.",
+    "contact_cta": "Email support",
+    "contact_subject": "SynapxIA support request",
+    "report_heading": "Report a bug",
+    "report_body": "Found something broken? Capture a screenshot, mark exactly where the issue is, and describe what happened — we'll take it from there.",
+    "report_cta": "Report a bug"
+  },
   "login_page": {
     "title": "Sign In",
     "welcome": "Welcome Back",
@@ -706,6 +716,28 @@
     "back": "Back",
     "next": "Next",
     "confirm": "Confirm"
+  },
+  "bug_report": {
+    "fab_title": "Report a bug",
+    "panel_title": "Report a bug",
+    "capture_cta": "Capture a screenshot",
+    "retake": "Retake",
+    "tool_pen": "Draw",
+    "tool_rect": "Rectangle",
+    "undo": "Undo",
+    "clear": "Clear",
+    "attach_images": "Attach images",
+    "remove_attachment": "Remove",
+    "description_label": "What went wrong?",
+    "description_placeholder": "Describe the bug — what did you expect, what happened instead?",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "submitting": "Submitting…",
+    "description_required": "Please describe the bug.",
+    "too_many_attachments": "You can attach up to 3 images.",
+    "capture_error": "Could not capture a screenshot — you can still submit without one.",
+    "submitted": "Thanks — your report was submitted.",
+    "submit_error": "Could not submit the report."
   },
   "signup": {
     "title": "Create an account",

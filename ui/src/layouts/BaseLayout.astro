@@ -3,6 +3,7 @@ import "../styles/globals.css";
 import Header from "../components/core/header/Header.astro";
 import SideBar from "../components/core/sidebar/SideBar.astro";
 import ClientTranslations from "../components/ClientTranslations.astro";
+import BugReportWidget from "../components/core/BugReportWidget.astro";
 import { getNavigationData } from "@/lib/navigation";
 
 interface Props {
@@ -79,6 +80,8 @@ const currentModuleName = pathSegments[0] || "";
         </main>
       </div>
     </div>
+
+    <BugReportWidget />
   </body>
 </html>
 

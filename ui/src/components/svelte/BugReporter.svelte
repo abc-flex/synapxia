@@ -34,6 +34,7 @@
   };
 
   let open = $state(false);
+  let showFab = $state(false);
   let capturing = $state(false);
   let submitting = $state(false);
 
@@ -281,6 +282,18 @@
   }
 
   onMount(() => {
+    // The FAB itself stays hidden until the user has visited /support at
+    // least once this session — visiting it "activates" the bubble for the
+    // rest of the tab session (sessionStorage clears on tab/browser close).
+    // The /support page's own "Report a bug" button opens the panel
+    // directly regardless (see the {#if open} block below), so bug
+    // reporting is never actually blocked — only the floating shortcut is.
+    const SESSION_KEY = "bug_report_fab_activated";
+    if (window.location.pathname === "/support") {
+      sessionStorage.setItem(SESSION_KEY, "1");
+    }
+    showFab = sessionStorage.getItem(SESSION_KEY) === "1";
+
     document.querySelectorAll<HTMLElement>("[data-bug-report-open]").forEach((el) => {
       el.addEventListener("click", openPanel);
     });
@@ -452,15 +465,17 @@
       </div>
     {/if}
 
-    <button
-      type="button"
-      class="flex h-14 w-14 items-center justify-center rounded-full bg-amber-500 text-2xl text-white shadow-lg transition hover:bg-amber-600"
-      onclick={openPanel}
-      title={t("bug_report.fab_title", "Report a bug")}
-      aria-label={t("bug_report.fab_title", "Report a bug")}
-    >
-      🐞
-    </button>
+    {#if showFab}
+      <button
+        type="button"
+        class="flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-2xl text-white shadow-lg transition hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-400"
+        onclick={openPanel}
+        title={t("bug_report.fab_title", "Report a bug")}
+        aria-label={t("bug_report.fab_title", "Report a bug")}
+      >
+        🐞
+      </button>
+    {/if}
   </div>
 {/if}
 

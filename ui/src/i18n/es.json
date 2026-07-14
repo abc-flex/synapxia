@@ -122,7 +122,8 @@
     "map": "Mapa de Procesos",
     "specifications": "Especificacion",
     "review_requests": "Solicitudes de Revisión",
-    "modifications": "Mis Modificaciones"
+    "modifications": "Mis Modificaciones",
+    "support": "Soporte"
   },
   "crud_modal": {
     "add": "Agregar",
@@ -587,6 +588,16 @@
     "status_pwd_mismatch": "Las contraseñas no coinciden.",
     "status_pwd_updated": "Contraseña actualizada.",
     "status_pwd_error": "No se pudo cambiar la contraseña."
+  },
+  "support_page": {
+    "title": "Soporte",
+    "contact_heading": "Contáctanos",
+    "contact_body": "¿Tienes una pregunta o necesitas ayuda? Escríbele directamente a nuestro equipo de soporte por correo — normalmente respondemos dentro de un día hábil.",
+    "contact_cta": "Enviar correo a soporte",
+    "contact_subject": "Solicitud de soporte de SynapxIA",
+    "report_heading": "Reportar un error",
+    "report_body": "¿Encontraste algo que no funciona? Captura una pantalla, marca exactamente dónde está el problema y describe qué pasó — nosotros nos encargamos del resto.",
+    "report_cta": "Reportar un error"
   },
   "login_page": {
     "title": "Inicia Sesión",

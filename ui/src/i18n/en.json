@@ -122,7 +122,8 @@
     "map": "Process Map",
     "specifications": "Specification",
     "review_requests": "Review Requests",
-    "modifications": "My Modifications"
+    "modifications": "My Modifications",
+    "support": "Support"
   },
   "crud_modal": {
     "add": "Add",
@@ -587,6 +588,16 @@
     "status_pwd_mismatch": "Passwords do not match.",
     "status_pwd_updated": "Password updated.",
     "status_pwd_error": "Could not change password."
+  },
+  "support_page": {
+    "title": "Support",
+    "contact_heading": "Contact us",
+    "contact_body": "Have a question or need a hand? Reach our support team directly by email — we usually reply within one business day.",
+    "contact_cta": "Email support",
+    "contact_subject": "SynapxIA support request",
+    "report_heading": "Report a bug",
+    "report_body": "Found something broken? Capture a screenshot, mark exactly where the issue is, and describe what happened — we'll take it from there.",
+    "report_cta": "Report a bug"
   },
   "login_page": {
     "title": "Sign In",

@@ -16,9 +16,12 @@ interface Props {
 
 const {
   placeholder = "header.search_placeholder",
-  // Visible on every breakpoint: flexes to fill the bar's middle on phones,
-  // keeps the fixed desktop width from lg up.
-  className = "min-w-0 flex-1 lg:flex-none lg:min-w-[380px]",
+  // Below `sm` the island renders an icon-only trigger (SearchPalette.svelte
+  // collapses to a button + floating overlay there), so this host stays
+  // icon-sized (`shrink-0`) instead of reserving a wide, mostly-empty flex
+  // slot. From `sm` it flexes to fill the bar's middle; from `lg` it keeps
+  // the fixed desktop width.
+  className = "shrink-0 sm:min-w-0 sm:flex-1 lg:flex-none lg:min-w-[380px]",
 } = Astro.props as Props;
 ---
 

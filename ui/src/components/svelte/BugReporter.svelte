@@ -20,6 +20,10 @@
   const MAX_ATTACHMENTS = 3;
   const SCREENSHOT_MAX_WIDTH = 1280;
   const ATTACHMENT_MAX_WIDTH = 1280;
+  // Same literal key auth.ts's clearToken() clears on logout — kept as a
+  // duplicated literal rather than a shared import, matching how clearToken
+  // already clears 'nav_cache' by literal key without importing navigation.ts.
+  const SESSION_KEY = "bug_report_fab_activated";
 
   let langTick = $state(0); // bump on language switch → re-localize labels
   const t = (key: string, fallback: string): string => {
@@ -282,20 +286,21 @@
   }
 
   onMount(() => {
-    // The FAB itself stays hidden until the user has visited /support at
-    // least once this session — visiting it "activates" the bubble for the
-    // rest of the tab session (sessionStorage clears on tab/browser close).
-    // The /support page's own "Report a bug" button opens the panel
-    // directly regardless (see the {#if open} block below), so bug
+    // The FAB itself stays hidden until the user explicitly clicks the
+    // /support page's "Report a bug" button — that click "activates" the
+    // bubble for the rest of the tab session (sessionStorage clears on
+    // logout — see auth.ts clearToken — and on tab/browser close). Just
+    // visiting /support is NOT enough; the panel there always opens
+    // regardless of activation (see the {#if open} block below), so bug
     // reporting is never actually blocked — only the floating shortcut is.
-    const SESSION_KEY = "bug_report_fab_activated";
-    if (window.location.pathname === "/support") {
-      sessionStorage.setItem(SESSION_KEY, "1");
-    }
     showFab = sessionStorage.getItem(SESSION_KEY) === "1";
 
     document.querySelectorAll<HTMLElement>("[data-bug-report-open]").forEach((el) => {
-      el.addEventListener("click", openPanel);
+      el.addEventListener("click", () => {
+        sessionStorage.setItem(SESSION_KEY, "1");
+        showFab = true;
+        openPanel();
+      });
     });
     const onLang = () => (langTick += 1);
     window.addEventListener("languageChanged", onLang);

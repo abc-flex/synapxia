@@ -484,7 +484,7 @@ class VersionRequest(SQLModel):
     characterization set (feature → value): omitted or blank features are not
     carried to the new version; ``None`` means "core-only save — copy the
     current version's characterizations forward unchanged"."""
-    change_type: str = Field(description="major | minor | patch")
+    change_type: str = Field(default="patch", description="major | minor | patch")
     name: Optional[str] = Field(default=None, max_length=100, description="Asset name")
     description: Optional[str] = Field(
         default=None, max_length=500, description="Asset description")

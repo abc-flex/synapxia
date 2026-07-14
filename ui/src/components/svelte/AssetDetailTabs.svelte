@@ -46,8 +46,12 @@
   import { getBusinessUnitsSelect } from "@/lib/business_units";
   import { getProjectsSelect } from "@/lib/projects";
   import { translate } from "@/utils/i18nClient";
+  import Foro from "@/components/svelte/Foro.svelte";
 
-  type TabName = "chars" | "related" | "permissions";
+  // Editable tabs first, then the read-only view tabs (Discussion/History/
+  // Versions) surfaced from the gallery detail modal — view, not edit.
+  type TabName = "chars" | "related" | "permissions" | "discussion" | "history" | "versions";
+  const READONLY_TABS: TabName[] = ["discussion", "history", "versions"];
   interface TabCounts {
     chars: number;
     related: number;
@@ -83,12 +87,14 @@
     assetId = null,
     onError,
     onCountsChange,
+    onTabChange,
   }: {
     idPrefix: string;
     mode?: "modal" | "inline";
     assetId?: number | null;
     onError?: (msg: string) => void;
     onCountsChange?: (counts: TabCounts) => void;
+    onTabChange?: (name: TabName) => void;
   } = $props();
 
   const reportError = (m: string) => (onError ? onError(m) : console.error(m));
@@ -177,6 +183,12 @@
   $effect(() => {
     onCountsChange?.(countsObj);
   });
+  // Notify the parent (the .astro footer) which tab is active so it can show
+  // the version picker + "Save new version" for chars only, and "Save
+  // related"/"Save permissions" (no version bump) for the other two tabs.
+  $effect(() => {
+    onTabChange?.(activeTab);
+  });
   export function counts(): TabCounts {
     return {
       chars: loadedSpecs.length,
@@ -193,23 +205,32 @@
   export function activateTab(name: TabName): void {
     activeTab = name;
   }
-  const tabOrder: TabName[] = ["chars", "related", "permissions"];
+  // The read-only view tabs only make sense for an existing asset — hidden in
+  // create mode. Keyboard nav walks the currently-visible set.
+  const tabOrder = $derived<TabName[]>(
+    editingAssetId != null
+      ? ["chars", "related", "permissions", "discussion", "history", "versions"]
+      : ["chars", "related", "permissions"],
+  );
   const tabClass = (name: TabName): string =>
     "whitespace-nowrap border-b-2 px-1 pb-3 " +
     (activeTab === name
       ? "border-indigo-600 text-indigo-600 dark:text-indigo-400"
       : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200");
 
-  function onTabKeydown(e: KeyboardEvent, idx: number): void {
+  function onTabKeydown(e: KeyboardEvent): void {
+    const order = tabOrder;
+    const idx = order.indexOf(activeTab);
+    if (idx < 0) return;
     let next = -1;
-    if (e.key === "ArrowRight") next = (idx + 1) % tabOrder.length;
-    else if (e.key === "ArrowLeft") next = (idx - 1 + tabOrder.length) % tabOrder.length;
+    if (e.key === "ArrowRight") next = (idx + 1) % order.length;
+    else if (e.key === "ArrowLeft") next = (idx - 1 + order.length) % order.length;
     else if (e.key === "Home") next = 0;
-    else if (e.key === "End") next = tabOrder.length - 1;
+    else if (e.key === "End") next = order.length - 1;
     if (next >= 0) {
       e.preventDefault();
-      activeTab = tabOrder[next];
-      rootEl?.querySelector<HTMLButtonElement>(`[data-tab="${tabOrder[next]}"]`)?.focus();
+      activeTab = order[next];
+      rootEl?.querySelector<HTMLButtonElement>(`[data-tab="${order[next]}"]`)?.focus();
     }
   }
 
@@ -503,10 +524,15 @@
     return snapshot;
   }
 
-  export async function flush(id: number, opts?: { skipChars?: boolean }): Promise<void> {
-    // 1. Characterizations — skipped when a version save already snapshotted
-    //    them server-side (relations/permissions are not versioned and always
-    //    flush here).
+  export async function flush(
+    id: number,
+    opts?: { skipChars?: boolean; skipRelations?: boolean; skipPermissions?: boolean },
+  ): Promise<void> {
+    // Each slice is independently skippable so the modal can save one tab at a
+    // time: chars save = version bump (chars snapshotted server-side, so
+    // skipChars here); a "Save related" / "Save permissions" flush touches only
+    // its own slice and never versions.
+    // 1. Characterizations.
     if (!opts?.skipChars) {
       for (const spec of loadedSpecs) {
         const featureCode = spec.feature;
@@ -533,77 +559,88 @@
     }
 
     // 2. Relations (deletes first → re-add hits 409 → reactivate)
-    const stagedTargets = new Set(stagedRelations.map((r) => r.target));
-    for (const [target] of initialRelByTarget) {
-      if (!stagedTargets.has(target)) {
-        try {
-          await deleteAssetRelation(id, target);
-        } catch {
-          /* already gone */
+    if (!opts?.skipRelations) {
+      const stagedTargets = new Set(stagedRelations.map((r) => r.target));
+      for (const [target] of initialRelByTarget) {
+        if (!stagedTargets.has(target)) {
+          try {
+            await deleteAssetRelation(id, target);
+          } catch {
+            /* already gone */
+          }
         }
       }
-    }
-    for (const rel of stagedRelations) {
-      const initial = initialRelByTarget.get(rel.target);
-      if (!initial) {
-        try {
-          await createAssetRelation({ source: id, target: rel.target, type: rel.type, rationale: rel.rationale || undefined });
-        } catch {
-          await updateAssetRelation(id, rel.target, { type: rel.type, rationale: rel.rationale || null, is_active: true });
+      for (const rel of stagedRelations) {
+        const initial = initialRelByTarget.get(rel.target);
+        if (!initial) {
+          try {
+            await createAssetRelation({ source: id, target: rel.target, type: rel.type, rationale: rel.rationale || undefined });
+          } catch {
+            await updateAssetRelation(id, rel.target, { type: rel.type, rationale: rel.rationale || null, is_active: true });
+          }
+        } else if (initial.type !== rel.type || (initial.rationale ?? "") !== rel.rationale) {
+          await updateAssetRelation(id, rel.target, { type: rel.type, rationale: rel.rationale || null });
         }
-      } else if (initial.type !== rel.type || (initial.rationale ?? "") !== rel.rationale) {
-        await updateAssetRelation(id, rel.target, { type: rel.type, rationale: rel.rationale || null });
       }
     }
 
     // 3. Permissions (surrogate-id keyed)
-    const stagedIds = new Set(stagedPermissions.filter((p) => p.id != null).map((p) => p.id));
-    for (const [pid] of initialPermById) {
-      if (!stagedIds.has(pid)) {
-        try {
-          await deleteAssetPermission(pid);
-        } catch {
-          /* already gone */
+    if (!opts?.skipPermissions) {
+      const stagedIds = new Set(stagedPermissions.filter((p) => p.id != null).map((p) => p.id));
+      for (const [pid] of initialPermById) {
+        if (!stagedIds.has(pid)) {
+          try {
+            await deleteAssetPermission(pid);
+          } catch {
+            /* already gone */
+          }
         }
       }
-    }
-    for (const p of stagedPermissions) {
-      if (p.id == null) {
-        try {
-          const created = await createAssetPermission({
-            asset: id,
-            target_type: p.targetType,
-            target_code: p.targetCode,
-            access_level: p.access,
-          });
-          p.id = created.id;
-        } catch (err) {
-          if (!isConflict(err)) throw err; // 409 = identical active grant already exists → skip
-        }
-      } else {
-        const init = initialPermById.get(p.id);
-        if (init && (init.target_type !== p.targetType || init.target_code !== p.targetCode || init.access_level !== p.access)) {
-          await updateAssetPermission(p.id, { target_type: p.targetType, target_code: p.targetCode, access_level: p.access });
+      for (const p of stagedPermissions) {
+        if (p.id == null) {
+          try {
+            const created = await createAssetPermission({
+              asset: id,
+              target_type: p.targetType,
+              target_code: p.targetCode,
+              access_level: p.access,
+            });
+            p.id = created.id;
+          } catch (err) {
+            if (!isConflict(err)) throw err; // 409 = identical active grant already exists → skip
+          }
+        } else {
+          const init = initialPermById.get(p.id);
+          if (init && (init.target_type !== p.targetType || init.target_code !== p.targetCode || init.access_level !== p.access)) {
+            await updateAssetPermission(p.id, { target_type: p.targetType, target_code: p.targetCode, access_level: p.access });
+          }
         }
       }
     }
 
-    // Re-seed initial maps from persisted state so a second flush (no reload)
-    // diffs against the new baseline.
-    const charSeed: [string, any][] = [];
-    for (const s of loadedSpecs) {
-      const v = (charValues[s.feature] ?? "").trim();
-      if (v) charSeed.push([s.feature, { feature: s.feature, value: v }]);
+    // Re-seed the initial maps of the slices we actually persisted so a second
+    // flush (no reload) diffs against the new baseline. Skipped slices keep
+    // their old baseline (they weren't written this call).
+    if (!opts?.skipChars) {
+      const charSeed: [string, any][] = [];
+      for (const s of loadedSpecs) {
+        const v = (charValues[s.feature] ?? "").trim();
+        if (v) charSeed.push([s.feature, { feature: s.feature, value: v }]);
+      }
+      initialCharByFeature = new Map(charSeed);
     }
-    initialCharByFeature = new Map(charSeed);
-    initialRelByTarget = new Map(
-      stagedRelations.map((r) => [r.target, { target: r.target, type: r.type, rationale: r.rationale }]),
-    );
-    initialPermById = new Map(
-      stagedPermissions
-        .filter((p) => p.id != null)
-        .map((p) => [p.id as number, { target_type: p.targetType, target_code: p.targetCode, access_level: p.access }]),
-    );
+    if (!opts?.skipRelations) {
+      initialRelByTarget = new Map(
+        stagedRelations.map((r) => [r.target, { target: r.target, type: r.type, rationale: r.rationale }]),
+      );
+    }
+    if (!opts?.skipPermissions) {
+      initialPermById = new Map(
+        stagedPermissions
+          .filter((p) => p.id != null)
+          .map((p) => [p.id as number, { target_type: p.targetType, target_code: p.targetCode, access_level: p.access }]),
+      );
+    }
   }
 
   export function reset(): void {
@@ -674,9 +711,9 @@
         tabindex={activeTab === "chars" ? 0 : -1}
         class={tabClass("chars")}
         onclick={() => (activeTab = "chars")}
-        onkeydown={(e) => onTabKeydown(e, 0)}
+        onkeydown={(e) => onTabKeydown(e)}
       >
-        <span>{t("asset_detail_modal.characterizations_section", "Characterizations")}</span>
+        <span>{t("asset_detail_modal.characterizations_section", "Characterization")}</span>
         {#if loadedSpecs.length > 0}
           <span class="ml-1 rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-300">{loadedSpecs.length}</span>
         {/if}
@@ -689,7 +726,7 @@
         tabindex={activeTab === "related" ? 0 : -1}
         class={tabClass("related")}
         onclick={() => (activeTab = "related")}
-        onkeydown={(e) => onTabKeydown(e, 1)}
+        onkeydown={(e) => onTabKeydown(e)}
       >
         <span>{t("asset_detail_modal.tab_related", "Related Assets")}</span>
         {#if stagedRelations.length > 0}
@@ -704,13 +741,53 @@
         tabindex={activeTab === "permissions" ? 0 : -1}
         class={tabClass("permissions")}
         onclick={() => (activeTab = "permissions")}
-        onkeydown={(e) => onTabKeydown(e, 2)}
+        onkeydown={(e) => onTabKeydown(e)}
       >
         <span>{t("asset_detail_modal.tab_permissions", "Permissions")}</span>
         {#if stagedPermissions.length > 0}
           <span class="ml-1 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">{stagedPermissions.length}</span>
         {/if}
       </button>
+      <!-- Read-only view tabs (Discussion / History / Versions) — only for an
+           existing asset (nothing to view while creating). View, not edit. -->
+      {#if editingAssetId != null}
+        <button
+          type="button"
+          role="tab"
+          data-tab="discussion"
+          aria-selected={activeTab === "discussion"}
+          tabindex={activeTab === "discussion" ? 0 : -1}
+          class={tabClass("discussion")}
+          onclick={() => (activeTab = "discussion")}
+          onkeydown={(e) => onTabKeydown(e)}
+        >
+          <span>{t("asset_detail_modal.tab_discussion", "Discussion")}</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          data-tab="history"
+          aria-selected={activeTab === "history"}
+          tabindex={activeTab === "history" ? 0 : -1}
+          class={tabClass("history")}
+          onclick={() => (activeTab = "history")}
+          onkeydown={(e) => onTabKeydown(e)}
+        >
+          <span>{t("asset_detail_modal.tab_history", "History")}</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          data-tab="versions"
+          aria-selected={activeTab === "versions"}
+          tabindex={activeTab === "versions" ? 0 : -1}
+          class={tabClass("versions")}
+          onclick={() => (activeTab = "versions")}
+          onkeydown={(e) => onTabKeydown(e)}
+        >
+          <span>{t("asset_detail_modal.tab_versions", "Versions")}</span>
+        </button>
+      {/if}
     </div>
   </div>
 
@@ -865,6 +942,30 @@
           {/each}
         </ul>
       {/if}
+    </section>
+  </div>
+
+  <!-- Discussion panel (read-only) — the Foro island self-loads the opened
+       asset's thread off the same [data-modal-open] trigger. -->
+  <div data-tabpanel="discussion" role="tabpanel" class="pt-4" class:hidden={activeTab !== "discussion"}>
+    <Foro modalId={idPrefix} />
+  </div>
+
+  <!-- History panel (read-only) — hydrated by mountHistory (lib/history.ts),
+       wired from AssetDetailModal.astro; shell ids scoped by idPrefix. -->
+  <div data-tabpanel="history" role="tabpanel" class="pt-4" class:hidden={activeTab !== "history"}>
+    <section id={`${idPrefix}-history`}>
+      <p data-history-status class="hidden text-sm text-gray-400 dark:text-gray-500"></p>
+      <div data-history-list></div>
+    </section>
+  </div>
+
+  <!-- Versions panel (read-only) — hydrated by mountVersions (lib/versions.ts),
+       wired from AssetDetailModal.astro with the all-category section set. -->
+  <div data-tabpanel="versions" role="tabpanel" class="pt-4" class:hidden={activeTab !== "versions"}>
+    <section id={`${idPrefix}-versions`}>
+      <p data-versions-status class="hidden text-sm text-gray-400 dark:text-gray-500"></p>
+      <div data-versions-list class="space-y-2"></div>
     </section>
   </div>
 </div>

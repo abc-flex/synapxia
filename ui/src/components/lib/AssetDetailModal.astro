@@ -114,7 +114,7 @@ const {
     </div>
 
     {/* ============== Body (scrollable) ============== */}
-    <div class="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+    <div class="flex-1 overflow-y-auto px-6 pb-5 space-y-6">
       <input type="hidden" name="id" id={`${modalId}-id`} />
 
       {/* ============== Core fields ============== */}
@@ -249,37 +249,41 @@ const {
         >
           What kind of change is this?
         </legend>
-        <div class="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 p-1 dark:border-gray-700 dark:bg-gray-800">
-          {[
-            { value: "patch", key: "asset_detail_modal.change_type_patch", label: "Patch", checked: true },
-            { value: "minor", key: "asset_detail_modal.change_type_minor", label: "Minor", checked: false },
-            { value: "major", key: "asset_detail_modal.change_type_major", label: "Major", checked: false },
-          ].map((ct) => (
-            <label class="cursor-pointer">
-              <input
-                type="radio"
-                name="change_type"
-                value={ct.value}
-                checked={ct.checked}
-                class="peer sr-only"
-              />
-              <span
-                class="inline-block rounded-full px-3 py-1 text-xs font-semibold text-gray-500 transition-colors peer-checked:bg-indigo-600 peer-checked:text-white dark:text-gray-400"
-                data-i18n={ct.key}
-              >{ct.label}</span>
-            </label>
-          ))}
-        </div>
-        {/* Live preview: previous version → the label this save will create,
-            with the digit that bumps highlighted. Recomputed on pill change. */}
-        <div
-          id={`${modalId}-version-preview`}
-          class="mt-2 flex items-center gap-2 font-mono text-sm"
-          aria-live="polite"
-        >
-          <span data-prev class="text-gray-400 line-through decoration-gray-300 dark:text-gray-500 dark:decoration-gray-600"></span>
-          <span aria-hidden="true" class="text-indigo-500 font-bold">→</span>
-          <span data-next class="font-semibold text-gray-800 dark:text-gray-100"></span>
+        {/* Pills + live preview share one row so the footer stays 2 rows tall
+            (legend on top). The preview shows previous → the label this save
+            will create, with the bumping digit highlighted (recomputed on pill
+            change). */}
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 p-1 dark:border-gray-700 dark:bg-gray-800">
+            {[
+              { value: "patch", key: "asset_detail_modal.change_type_patch", label: "Patch", checked: true },
+              { value: "minor", key: "asset_detail_modal.change_type_minor", label: "Minor", checked: false },
+              { value: "major", key: "asset_detail_modal.change_type_major", label: "Major", checked: false },
+            ].map((ct) => (
+              <label class="cursor-pointer">
+                <input
+                  type="radio"
+                  name="change_type"
+                  value={ct.value}
+                  checked={ct.checked}
+                  class="peer sr-only"
+                />
+                <span
+                  class="inline-block rounded-full px-3 py-1 text-xs font-semibold text-gray-500 transition-colors peer-checked:bg-indigo-600 peer-checked:text-white dark:text-gray-400"
+                  data-i18n={ct.key}
+                >{ct.label}</span>
+              </label>
+            ))}
+          </div>
+          <div
+            id={`${modalId}-version-preview`}
+            class="flex items-center gap-2 font-mono text-sm"
+            aria-live="polite"
+          >
+            <span data-prev class="text-gray-400 line-through decoration-gray-300 dark:text-gray-500 dark:decoration-gray-600"></span>
+            <span aria-hidden="true" class="text-indigo-500 font-bold">→</span>
+            <span data-next class="font-semibold text-gray-800 dark:text-gray-100"></span>
+          </div>
         </div>
       </fieldset>
       <button
@@ -315,6 +319,9 @@ const {
   import { getUser } from "@/lib/auth";
   import { mount } from "svelte";
   import AssetDetailTabs from "@/components/svelte/AssetDetailTabs.svelte";
+  import { mountHistory } from "@/lib/history";
+  import { mountVersions } from "@/lib/versions";
+  import { ALL_DETAIL_SECTIONS } from "@/lib/assetSections";
 
   const modalId = "asset-detail-modal";
 
@@ -409,14 +416,64 @@ const {
     // flush/reset/…), so the orchestration below is unchanged from the vanilla
     // widget it replaces.
     const tabsRoot = document.getElementById(`${modalId}-detail-tabs`) as HTMLElement;
+    // Which detail tab is active — drives the tab-aware footer (below). Only
+    // the Characterizations tab versions; Related/Permissions save in place;
+    // Discussion/History/Versions are read-only (no Save button).
+    type DetailTab = "chars" | "related" | "permissions" | "discussion" | "history" | "versions";
+    const READONLY_TABS: DetailTab[] = ["discussion", "history", "versions"];
+    let activeDetailTab: DetailTab = "chars";
     const tabs = mount(AssetDetailTabs, {
       target: tabsRoot,
       props: {
         idPrefix: modalId,
         mode: "modal",
         onError: (m: string) => showStatus(m, "error"),
+        onTabChange: (name: DetailTab) => {
+          activeDetailTab = name;
+          // Repaint the footer only while editing an existing asset with the
+          // tabs visible; create mode + core-only edit keep their own footer.
+          if (editingAssetId != null && editSection !== "core") {
+            paintFooterForTab(name);
+          }
+        },
       },
     });
+
+    // Footer is tab-aware in edit mode: the change-type picker + version
+    // preview + "Save new version" belong to the Characterizations tab (the
+    // only versioned slice); Related/Permissions hide them and relabel the
+    // save button, saving just that slice in place; Discussion/History/Versions
+    // are read-only — the Save button is hidden entirely (Cancel/close only).
+    function paintFooterForTab(tab: DetailTab) {
+      if (READONLY_TABS.includes(tab)) {
+        changeTypeFieldset?.classList.add("hidden");
+        submitBtn.classList.add("hidden");
+        return;
+      }
+      submitBtn.classList.remove("hidden");
+      if (tab === "chars") {
+        changeTypeFieldset?.classList.remove("hidden");
+        submitBtn.setAttribute("data-i18n", "asset_detail_modal.save_new_version");
+        submitBtn.textContent = tr("asset_detail_modal.save_new_version", "Save new version");
+        renderVersionPreview();
+      } else {
+        changeTypeFieldset?.classList.add("hidden");
+        const key =
+          tab === "related"
+            ? "asset_detail_modal.save_related"
+            : "asset_detail_modal.save_permissions";
+        const fallback = tab === "related" ? "Save related assets" : "Save permissions";
+        submitBtn.setAttribute("data-i18n", key);
+        submitBtn.textContent = tr(key, fallback);
+      }
+    }
+
+    // Read-only view tabs (Discussion/History/Versions) reuse the same
+    // controllers the gallery detail modal uses. They self-hook the modal's
+    // open trigger (which carries data-asset-id), so one call each suffices;
+    // Discussion self-mounts via the nested Foro island in AssetDetailTabs.
+    mountHistory({ modalId });
+    mountVersions({ modalId, sections: ALL_DETAIL_SECTIONS });
 
     // ── Section mode ──────────────────────────────────────────────────────
     // "" = full (core + tabs, used for create); "core" = only the core fields
@@ -482,6 +539,9 @@ const {
       tabs.reset();
       versionBadge?.classList.add("hidden");
       changeTypeFieldset?.classList.add("hidden");
+      activeDetailTab = "chars";
+      // A read-only tab may have hidden the Save button on the previous open.
+      submitBtn.classList.remove("hidden");
       // Create mode saves plainly; edit mode re-labels to "Save new version".
       submitBtn.setAttribute("data-i18n", "common.save");
       submitBtn.textContent = tr("common.save", "Save");
@@ -513,14 +573,12 @@ const {
             : "Edit Asset";
       titleEl.setAttribute("data-i18n", titleKey);
       titleEl.textContent = tr(titleKey, titleFallback);
-      // Versioning is scoped to the CHARACTERIZATION (detail) edits — only
-      // when that section is being saved do we surface the change-type picker
-      // and the "Save new version" button. Core-only edits save in place.
+      // Versioning is scoped to the Characterizations tab: the modal always
+      // opens on that tab, so paint its footer (change-type picker + "Save new
+      // version"). Switching to Related/Permissions repaints via onTabChange.
+      // Core-only edits keep the plain in-place save.
       if (section !== "core") {
-        changeTypeFieldset?.classList.remove("hidden");
-        submitBtn.setAttribute("data-i18n", "asset_detail_modal.save_new_version");
-        submitBtn.textContent = tr("asset_detail_modal.save_new_version", "Save new version");
-        renderVersionPreview(); // paint immediately (1.0.0 until the asset loads)
+        paintFooterForTab("chars");
       }
       dialog.showModal();
 
@@ -640,18 +698,26 @@ const {
             await updateAsset(assetId, corePayload);
           }
           if (editSection !== "core") {
-            const changeType = (new FormData(form).get("change_type") || "patch") as ChangeType;
-            const saved = await createAssetVersion(assetId, {
-              change_type: changeType,
-              values: tabs.charSnapshot(),
-            });
-            // Relations/permissions are not versioned — flush them as before
-            // (minus the characterizations the version call already wrote).
-            await tabs.flush(assetId, { skipChars: true });
-            savedMsg = tr(
-              "asset_detail_modal.version_saved",
-              "Asset saved as new version.",
-            ).replace("{version}", saved.current_version ?? "");
+            // Only the Characterizations tab versions; Related/Permissions save
+            // their own slice in place (no version bump). The modal reloads
+            // after each save, so one tab is saved at a time either way.
+            if (activeDetailTab === "chars") {
+              const changeType = (new FormData(form).get("change_type") || "patch") as ChangeType;
+              const saved = await createAssetVersion(assetId, {
+                change_type: changeType,
+                values: tabs.charSnapshot(),
+              });
+              savedMsg = tr(
+                "asset_detail_modal.version_saved",
+                "Asset saved as new version.",
+              ).replace("{version}", saved.current_version ?? "");
+            } else if (activeDetailTab === "related") {
+              await tabs.flush(assetId, { skipChars: true, skipPermissions: true });
+              savedMsg = tr("asset_detail_modal.related_saved", "Related assets saved.");
+            } else {
+              await tabs.flush(assetId, { skipChars: true, skipRelations: true });
+              savedMsg = tr("asset_detail_modal.permissions_saved", "Permissions saved.");
+            }
           }
         } else {
           // Create mode is unversioned — the new asset starts at 1.0.0.

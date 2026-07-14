@@ -1,0 +1,28 @@
+---
+/**
+ * VersionsTimeline — the asset "versions" section (HU-LI09, read side) embedded
+ * inside the reusable CatalogDetailModal. Presentational shell only: a list
+ * container that the `mountVersions` controller (lib/versions.ts) hydrates on
+ * open with a newest-first version list (label + date + who/change-type), where
+ * each row expands to that version's characterization snapshot.
+ *
+ * Read-only and backed by the version-history endpoints
+ * (`/api/assets/{id}/versions` + `…/{label}/characterizations`) — no new table.
+ *
+ * Ids are scoped by `modalId` so every catalog (prompts/agents/mcps) gets its
+ * own section; the controller queries within `#${modalId}-versions`.
+ */
+export interface Props {
+  /** The detail dialog id, e.g. "mcp-view-modal". */
+  modalId: string;
+}
+const { modalId } = Astro.props as Props;
+---
+
+{/* Lives alone in the modal's "Versions" tab, which already labels it — so no
+    in-section heading here. The modal body owns the scroll. */}
+<section id={`${modalId}-versions`}>
+  <p data-versions-status class="hidden text-sm text-gray-400 dark:text-gray-500"></p>
+
+  <div data-versions-list></div>
+</section>

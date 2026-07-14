@@ -21,12 +21,13 @@ loser gets a 409 via IntegrityError.
 import logging
 import re
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
-from .models import Action, Asset, Characterization, VersionRequest
+from .models import Action, Asset, AssetVersion, Characterization, VersionRequest
 from ...admin.internal.models import User
 from ...taxo.internal.models import Category
 
@@ -160,3 +161,90 @@ def create_version(
         asset_id, old_label, new_label, data.change_type, user.id,
     )
     return asset
+
+
+# Parses the change type out of a VERSIONING action's `detail`, which
+# create_version writes as "<old> -> <new> (<change_type>)".
+_DETAIL_CHANGE_TYPE = re.compile(r"\(([^)]+)\)\s*$")
+
+
+def list_versions(session: Session, asset_id: int) -> List[AssetVersion]:
+    """The asset's version history, newest-first by creation date (read side).
+
+    The label + its date come from a DISTINCT/GROUP BY over the asset's active
+    characterizations (``MIN(created_at)`` per ``version_label``); each row is
+    then enriched from the matching VERSIONING action (``content == label``) for
+    the change type + actor — the initial ``1.0.0`` has no versioning action, so
+    those stay ``None``. Returns ``[]`` for a missing asset (the route 404s).
+    """
+    asset = session.get(Asset, asset_id)
+    if not asset or asset.is_active is False:
+        return []
+
+    # DISTINCT query: one row per version_label with its first-seen timestamp.
+    rows = session.exec(
+        select(
+            Characterization.version_label,
+            func.min(Characterization.created_at),
+        )
+        .where(
+            Characterization.asset == asset_id,
+            Characterization.is_active == True,  # noqa: E712
+        )
+        .group_by(Characterization.version_label)
+    ).all()
+
+    # Enrich from the VERSIONING actions (one per bump; keyed by new label in
+    # `content`). Resolve actor usernames in one batched lookup — no N+1.
+    actions = session.exec(
+        select(Action).where(
+            Action.asset == asset_id,
+            Action.type == TYPE_VERSIONING,
+            Action.is_active == True,  # noqa: E712
+        )
+    ).all()
+    user_ids = {a.user_id for a in actions if a.user_id is not None}
+    names: dict = {}
+    if user_ids:
+        for u in session.exec(select(User).where(User.id.in_(user_ids))).all():
+            names[u.id] = u.username
+    meta_by_label: dict = {}
+    for a in actions:
+        if not a.content:
+            continue
+        m = _DETAIL_CHANGE_TYPE.search(a.detail or "")
+        meta_by_label[a.content] = (
+            m.group(1) if m else None,
+            names.get(a.user_id),
+        )
+
+    current = (asset.current_version or DEFAULT_LABEL)
+    out: List[AssetVersion] = []
+    for label, created_at in rows:
+        change_type, actor = meta_by_label.get(label, (None, None))
+        out.append(AssetVersion(
+            version_label=label,
+            created_at=created_at,
+            is_current=(label == current),
+            change_type=change_type,
+            actor=actor,
+        ))
+    # Newest first by the version's creation date (the user's "based on the
+    # version date"); ties broken by label so the order is deterministic.
+    out.sort(key=lambda v: (v.created_at, v.version_label), reverse=True)
+    return out
+
+
+def get_version_characterizations(
+    session: Session, asset_id: int, version_label: str,
+) -> List[Characterization]:
+    """The active characterization rows for one specific version of an asset —
+    the snapshot the UI renders when a version row is expanded. Empty list for
+    an unknown label (a valid "no rows" answer)."""
+    return session.exec(
+        select(Characterization).where(
+            Characterization.asset == asset_id,
+            Characterization.version_label == version_label,
+            Characterization.is_active == True,  # noqa: E712
+        )
+    ).all()

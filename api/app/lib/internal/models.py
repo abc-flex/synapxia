@@ -500,6 +500,22 @@ class VersionRequest(SQLModel):
         description="Full desired characterization set (feature → value); None copies the current version forward")
 
 
+class AssetVersion(SQLModel):
+    """One entry in an asset's version history (HU-LI09, read side). Derived —
+    not a table: the label + its creation date come from a DISTINCT/GROUP BY
+    over the asset's ``characterizations`` (``MIN(created_at)`` per
+    ``version_label``), enriched from the matching VERSIONING action for the
+    actor + change type (absent for the initial ``1.0.0``, which has no
+    versioning action). ``is_current`` marks the asset's live ``current_version``."""
+    version_label: str = Field(description="Semver label, e.g. 1.1.0")
+    created_at: datetime = Field(description="When this version was first snapshotted")
+    is_current: bool = Field(description="True for the asset's current_version")
+    change_type: Optional[str] = Field(
+        default=None, description="major | minor | patch (from the VERSIONING action; None for the initial version)")
+    actor: Optional[str] = Field(
+        default=None, description="Username who created this version (None for the initial version)")
+
+
 class ModifyRequest(SQLModel):
     """Request body for the proposer resubmitting an asset after a reviewer
     requested changes (HU-Modify). Edits the asset + its characterizations and

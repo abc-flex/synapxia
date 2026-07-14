@@ -53,6 +53,8 @@ from .collab.routes import roles as roles_router
 
 from .inits.routes import criterias as criterias_router
 
+from .support.routes import bug_reports as bug_reports_router
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -170,6 +172,10 @@ app = FastAPI(
         {
             "name": "criterias",
             "description": "Initiative evaluation criteria management operations",
+        },
+        {
+            "name": "support",
+            "description": "Bug report submission and review",
         },
     ],
 )
@@ -351,6 +357,9 @@ app.include_router(metrics_router.router)
 
 # GenAI Initiatives module
 app.include_router(criterias_router.router)
+
+# Support module
+app.include_router(bug_reports_router.router)
 
 # TODO: Add routers for other modules when implemented
 # - genai (Generative AI)

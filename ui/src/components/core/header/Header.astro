@@ -69,15 +69,19 @@ import SearchBar from "./SearchBar.astro";
 
     <SearchBar />
 
-    {/* Spacer pushes the controls to the right edge — only needed from lg up,
-        where SearchBar switches to a fixed width instead of flexing. */}
-    <div class="hidden flex-1 lg:block"></div>
+    {/* Spacer pushes the controls to the right edge whenever SearchBar itself
+        isn't flexing to fill the row: below `sm` (icon-only trigger) and from
+        `lg` up (fixed desktop width). Between `sm` and `lg`, SearchBar is
+        `flex-1` and does the pushing itself, so the spacer stays hidden there. */}
+    <div class="flex-1 sm:hidden lg:block"></div>
 
     <div class="flex shrink-0 items-center gap-1.5 sm:gap-2">
-      {/* Theme + language live in the header on tablet/desktop; on phones the bar
-          stays clean (bell + account only), matching the mockup. */}
-      <span class="hidden sm:flex"><ThemeSwitcher /></span>
-      <span class="hidden sm:flex"><LanguageSwitcher /></span>
+      {/* Theme + language live in the header only from `lg` (desktop) — below
+          that, the search bar + brand name already crowd the row (390-1024px
+          had the toggle overlapping the language pills), so these move into
+          the account menu's own mobile/tablet preferences section instead. */}
+      <span class="hidden lg:flex"><ThemeSwitcher /></span>
+      <span class="hidden lg:flex"><LanguageSwitcher /></span>
       <NotificationMenu />
 
       <AccountMenu
@@ -93,8 +97,7 @@ import SearchBar from "./SearchBar.astro";
         ]}
         menuItems={[
           { label: "account_menu.edit_profile", href: "/profile" },
-          { label: "account_menu.account_settings" },
-          { label: "account_menu.support" },
+          { label: "account_menu.support", href: "/support" },
         ]}
       />
     </div>

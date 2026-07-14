@@ -983,3 +983,27 @@ export interface CriteriaUpdate {
   list?: string;
   is_active?: boolean;
 }
+
+// Bug report (Support module): user-submitted report with an optional
+// (annotated) screenshot + extra attachments, all as base64 data-URLs.
+export interface BugReport {
+  id: number;
+  user_id: number;
+  description: string;
+  page_url?: string | null;
+  user_agent?: string | null;
+  screenshot?: string | null;
+  attachments?: string[] | null;
+  status: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface BugReportCreate {
+  description: string;
+  page_url?: string;
+  user_agent?: string;
+  screenshot?: string;
+  attachments?: string[];
+}

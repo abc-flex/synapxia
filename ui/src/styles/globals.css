@@ -345,6 +345,40 @@
     z-index: 30;
   }
 
+  /* Mobile floating search overlay: below `sm` the header search input
+     collapses to an icon (SearchPalette.svelte); tapping it adds this
+     modifier class to the whole `.search-palette` wrapper, turning it into a
+     fixed card pinned below the sticky header — same anchor point as
+     `.notification-dropdown`'s mobile pattern above. Its own `.search-dropdown`
+     child then renders as a plain continuation of that same card (no nested
+     double border) instead of its usual floating panel. */
+  @media (max-width: 639px) {
+    .search-palette.search-palette-overlay {
+      position: fixed;
+      left: 0.75rem;
+      right: 0.75rem;
+      top: 4.25rem;
+      z-index: 40;
+      border-radius: 1rem;
+      border: 1px solid rgb(229 231 235);
+      background-color: #fff;
+      padding: 0.75rem;
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+    .dark .search-palette.search-palette-overlay {
+      border-color: rgb(31 41 55);
+      background-color: rgb(17 24 39);
+    }
+    .search-palette-overlay .search-dropdown {
+      position: static;
+      margin-top: 0.75rem;
+      box-shadow: none;
+      border: none;
+      padding: 0;
+      background: transparent;
+    }
+  }
+
   .search-section-label {
     @apply mb-1 px-2 pt-1 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500;
   }

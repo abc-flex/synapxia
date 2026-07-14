@@ -87,6 +87,10 @@ export function clearToken(): void {
     localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
     localStorage.removeItem(USER_STORAGE_KEY);
     localStorage.removeItem('nav_cache');
+    // Bug-report FAB activation (see BugReporter.svelte) — a fresh login
+    // should start with the floating button hidden again, not carry over
+    // the previous session's "visited /support and clicked report" state.
+    sessionStorage.removeItem('bug_report_fab_activated');
   }
 }
 

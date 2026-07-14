@@ -1,0 +1,97 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Breadcrumb from "../components/core/Breadcrumb.astro";
+
+const supportEmail = import.meta.env.PUBLIC_SUPPORT_EMAIL || "soporte@synapxia.local";
+---
+
+<BaseLayout>
+  <div class="mx-auto w-full max-w-full md:p-0">
+    <Breadcrumb
+      pageName="Support"
+      pageTitle="Support"
+      homeLink="/"
+      pageNameKey="menu_options.support"
+      pageTitleKey="support_page.title"
+    />
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      {/* Contact section */}
+      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <div class="mb-4 flex items-center gap-3">
+          <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
+            <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.5 5.5A1 1 0 013.5 4.5h13a1 1 0 011 1v9a1 1 0 01-1 1h-13a1 1 0 01-1-1v-9z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 5.5l7 6 7-6" />
+            </svg>
+          </span>
+          <h2 class="text-lg font-bold text-gray-900 dark:text-white" data-i18n="support_page.contact_heading">
+            Contact us
+          </h2>
+        </div>
+        <p class="mb-6 text-sm text-gray-600 dark:text-gray-400" data-i18n="support_page.contact_body">
+          Have a question or need a hand? Reach our support team directly by email — we
+          usually reply within one business day.
+        </p>
+        <a
+          id="support-email-cta"
+          href={`mailto:${supportEmail}`}
+          class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+        >
+          <span data-i18n="support_page.contact_cta">Email support</span>
+        </a>
+        <p id="support-email-display" class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+          {supportEmail}
+        </p>
+      </div>
+
+      {/* Report-a-bug section */}
+      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <div class="mb-4 flex items-center gap-3">
+          <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300">
+            <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10 6v4l2.5 2.5M17 10a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </span>
+          <h2 class="text-lg font-bold text-gray-900 dark:text-white" data-i18n="support_page.report_heading">
+            Report a bug
+          </h2>
+        </div>
+        <p class="mb-6 text-sm text-gray-600 dark:text-gray-400" data-i18n="support_page.report_body">
+          Found something broken? Capture a screenshot, mark exactly where the issue is,
+          and describe what happened — we'll take it from there.
+        </p>
+        <button
+          type="button"
+          id="support-report-bug-btn"
+          data-bug-report-open
+          class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+        >
+          <span data-i18n="support_page.report_cta">Report a bug</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    import { loadClientTranslations } from "@/utils/i18nClient";
+
+    loadClientTranslations();
+
+    // The mailto: subject is translated client-side (server-rendered href has none),
+    // since the subject text itself is i18n-driven and Astro can't read the runtime
+    // locale at build time.
+    const cta = document.getElementById("support-email-cta") as HTMLAnchorElement | null;
+    if (cta) {
+      const subjectKey = "support_page.contact_subject";
+      const lang = localStorage.getItem("lang") || "en";
+      const w = window as any;
+      const subject = typeof w.t === "function" ? w.t(subjectKey, lang) : null;
+      if (subject) {
+        const url = new URL(cta.href);
+        url.searchParams.set("subject", subject);
+        cta.href = url.toString();
+      }
+    }
+  </script>
+</BaseLayout>

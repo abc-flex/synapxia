@@ -84,8 +84,10 @@ const initials = name
       <span id="account-email" class="mt-1 block text-xs text-gray-500 dark:text-gray-400">{email}</span>
     </div>
 
-    {/* Mobile-only preferences — on desktop these live in the header. */}
-    <div class="sm:hidden mb-2 space-y-1 border-b border-gray-200 pb-3 dark:border-gray-800">
+    {/* Mobile/tablet-only preferences — from `lg` these live in the header
+        instead (mirrors Header.astro's `hidden lg:flex` on ThemeSwitcher/
+        LanguageSwitcher). */}
+    <div class="lg:hidden mb-2 space-y-1 border-b border-gray-200 pb-3 dark:border-gray-800">
       {/* Theme */}
       <div class="flex items-center justify-between gap-3 px-3 py-1.5">
         <span class="text-sm font-medium text-gray-700 dark:text-gray-300" data-i18n="account_menu.theme">

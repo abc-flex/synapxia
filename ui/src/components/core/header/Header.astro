@@ -76,10 +76,12 @@ import SearchBar from "./SearchBar.astro";
     <div class="flex-1 sm:hidden lg:block"></div>
 
     <div class="flex shrink-0 items-center gap-1.5 sm:gap-2">
-      {/* Theme + language live in the header on tablet/desktop; on phones the bar
-          stays clean (bell + account only), matching the mockup. */}
-      <span class="hidden sm:flex"><ThemeSwitcher /></span>
-      <span class="hidden sm:flex"><LanguageSwitcher /></span>
+      {/* Theme + language live in the header only from `lg` (desktop) — below
+          that, the search bar + brand name already crowd the row (390-1024px
+          had the toggle overlapping the language pills), so these move into
+          the account menu's own mobile/tablet preferences section instead. */}
+      <span class="hidden lg:flex"><ThemeSwitcher /></span>
+      <span class="hidden lg:flex"><LanguageSwitcher /></span>
       <NotificationMenu />
 
       <AccountMenu

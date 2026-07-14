@@ -717,6 +717,28 @@
     "next": "Next",
     "confirm": "Confirm"
   },
+  "bug_report": {
+    "fab_title": "Report a bug",
+    "panel_title": "Report a bug",
+    "capture_cta": "Capture a screenshot",
+    "retake": "Retake",
+    "tool_pen": "Draw",
+    "tool_rect": "Rectangle",
+    "undo": "Undo",
+    "clear": "Clear",
+    "attach_images": "Attach images",
+    "remove_attachment": "Remove",
+    "description_label": "What went wrong?",
+    "description_placeholder": "Describe the bug — what did you expect, what happened instead?",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "submitting": "Submitting…",
+    "description_required": "Please describe the bug.",
+    "too_many_attachments": "You can attach up to 3 images.",
+    "capture_error": "Could not capture a screenshot — you can still submit without one.",
+    "submitted": "Thanks — your report was submitted.",
+    "submit_error": "Could not submit the report."
+  },
   "signup": {
     "title": "Create an account",
     "subtitle": "Sign up to get started",

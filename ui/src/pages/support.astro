@@ -86,7 +86,7 @@ const supportEmail = import.meta.env.PUBLIC_SUPPORT_EMAIL || "soporte@synapxia.l
       const subjectKey = "support_page.contact_subject";
       const lang = localStorage.getItem("lang") || "en";
       const w = window as any;
-      const subject = typeof w.t === "function" ? w.t(lang, subjectKey) : null;
+      const subject = typeof w.t === "function" ? w.t(subjectKey, lang) : null;
       if (subject) {
         const url = new URL(cta.href);
         url.searchParams.set("subject", subject);

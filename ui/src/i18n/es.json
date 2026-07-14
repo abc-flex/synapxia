@@ -717,6 +717,28 @@
     "next": "Siguiente",
     "confirm": "Confirmar"
   },
+  "bug_report": {
+    "fab_title": "Reportar un error",
+    "panel_title": "Reportar un error",
+    "capture_cta": "Capturar una pantalla",
+    "retake": "Volver a capturar",
+    "tool_pen": "Dibujar",
+    "tool_rect": "Rectángulo",
+    "undo": "Deshacer",
+    "clear": "Limpiar",
+    "attach_images": "Adjuntar imágenes",
+    "remove_attachment": "Quitar",
+    "description_label": "¿Qué salió mal?",
+    "description_placeholder": "Describe el error — ¿qué esperabas y qué pasó en su lugar?",
+    "cancel": "Cancelar",
+    "submit": "Enviar",
+    "submitting": "Enviando…",
+    "description_required": "Por favor describe el error.",
+    "too_many_attachments": "Puedes adjuntar hasta 3 imágenes.",
+    "capture_error": "No se pudo capturar la pantalla — aún puedes enviar el reporte sin ella.",
+    "submitted": "Gracias — tu reporte fue enviado.",
+    "submit_error": "No se pudo enviar el reporte."
+  },
   "signup": {
     "title": "Crear una cuenta",
     "subtitle": "Regístrate para comenzar",

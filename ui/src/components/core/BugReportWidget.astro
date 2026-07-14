@@ -1,0 +1,18 @@
+---
+/**
+ * BugReportWidget — thin host for the BugReporter Svelte island (floating
+ * "report a bug" FAB). Rendered once in BaseLayout so it appears on every
+ * authenticated page. `display: contents` keeps the wrapper out of the
+ * document flow — the island itself is `position: fixed`.
+ */
+---
+
+<div id="bug-report-root" data-bug-report-root style="display: contents"></div>
+
+<script>
+  import { mount } from "svelte";
+  import BugReporter from "@/components/svelte/BugReporter.svelte";
+
+  const target = document.getElementById("bug-report-root");
+  if (target) mount(BugReporter, { target });
+</script>

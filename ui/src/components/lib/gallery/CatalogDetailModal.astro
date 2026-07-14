@@ -16,6 +16,7 @@ import Related from "@/components/lib/gallery/Related.astro";
 import Foro from "@/components/lib/gallery/Foro.astro";
 import HistoryTimeline from "@/components/lib/gallery/HistoryTimeline.astro";
 import VersionsTimeline from "@/components/lib/gallery/VersionsTimeline.astro";
+import PermissionsList from "@/components/lib/gallery/PermissionsList.astro";
 
 export interface Props {
   /** Dialog id, e.g. "prompt-view-modal". */
@@ -166,6 +167,15 @@ const {
           class="dt-detail-tab whitespace-nowrap border-b-2 border-transparent px-1 pb-3 pt-3 text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
           data-i18n="catalog_detail.tab_versions"
         >Versions</button>
+        <button
+          type="button"
+          role="tab"
+          data-detail-tab="permissions"
+          aria-selected="false"
+          tabindex="-1"
+          class="dt-detail-tab whitespace-nowrap border-b-2 border-transparent px-1 pb-3 pt-3 text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          data-i18n="catalog_detail.tab_permissions"
+        >Permissions</button>
       </div>
     </div>
 
@@ -186,6 +196,9 @@ const {
       </div>
       <div data-detail-panel="versions" class="hidden">
         <VersionsTimeline modalId={modalId} />
+      </div>
+      <div data-detail-panel="permissions" class="hidden">
+        <PermissionsList modalId={modalId} />
       </div>
     </div>
 

@@ -102,11 +102,11 @@
     "dimensions": "Dimensiones",
     "metrics": "Métricas",
     "dashboard": "Panel de Métricas",
-    "assets": "Repositorio de Activos",
+    "assets": "Gestión de Activos",
     "characterizations": "Caracterización de Activos",
     "prompts": "Galería de Prompts",
     "mcps": "Directorio de MCPs",
-    "agents": "Índice de Agentes",
+    "agents": "Repositorio de Agentes",
     "flows": "Flujos Agénticos",
     "skills": "Catálogo de Habilidades",
     "assistants": "Asistentes",
@@ -491,6 +491,9 @@
     "error_load": "No se pudo cargar el activo.",
     "error_save": "No se pudo guardar el activo.",
     "tab_details": "Detalles",
+    "tab_discussion": "Discusión",
+    "tab_history": "Historial",
+    "tab_versions": "Versiones",
     "tab_related": "Activos relacionados",
     "related_target": "Activo destino",
     "related_type": "Tipo de relación",
@@ -1017,7 +1020,14 @@
     "tab_related": "Relacionados",
     "tab_discussion": "Discusión",
     "tab_history": "Historial",
-    "tab_versions": "Versiones"
+    "tab_versions": "Versiones",
+    "tab_permissions": "Permisos"
+  },
+  "permissions_view": {
+    "loading": "Cargando permisos…",
+    "empty": "No hay permisos definidos para este activo.",
+    "error": "No se pudieron cargar los permisos.",
+    "public": "Público"
   },
   "versions": {
     "loading": "Cargando versiones…",

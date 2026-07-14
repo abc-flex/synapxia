@@ -102,11 +102,11 @@
     "dimensions": "Dimensions",
     "metrics": "Metrics",
     "dashboard": "Assignment Dashboard",
-    "assets": "Asset Repository",
+    "assets": "Assets Management",
     "characterizations": "Asset Characterization",
     "prompts": "Prompt Gallery",
     "mcps": "MCP Directory",
-    "agents": "Agent Index",
+    "agents": "Agents repository",
     "flows": "Agentic Flows",
     "skills": "Skill Catalog",
     "assistants": "Assistants",
@@ -469,7 +469,7 @@
     "title_edit_detail": "Edit details",
     "subtitle": "Core fields plus the characterizations required by the chosen category.",
     "core_section": "Core",
-    "characterizations_section": "Characterizations",
+    "characterizations_section": "Characterization",
     "characterizations_empty": "Select a category to load its required features.",
     "choose_category": "— choose category —",
     "choose_status": "— choose status —",
@@ -491,6 +491,9 @@
     "error_load": "Could not load asset.",
     "error_save": "Could not save asset.",
     "tab_details": "Details",
+    "tab_discussion": "Discussion",
+    "tab_history": "History",
+    "tab_versions": "Versions",
     "tab_related": "Related Assets",
     "related_target": "Target asset",
     "related_type": "Relation type",
@@ -1017,7 +1020,14 @@
     "tab_related": "Related",
     "tab_discussion": "Discussion",
     "tab_history": "History",
-    "tab_versions": "Versions"
+    "tab_versions": "Versions",
+    "tab_permissions": "Permissions"
+  },
+  "permissions_view": {
+    "loading": "Loading permissions…",
+    "empty": "No permissions defined for this asset.",
+    "error": "Could not load the permissions.",
+    "public": "Public"
   },
   "versions": {
     "loading": "Loading versions…",

@@ -55,7 +55,7 @@ INSERT INTO options (module, code, name, description, sort_order, type, path, ic
 
 -- ===== Module: ASSET LIBRARY =====
 INSERT INTO options (module, code, name, description, sort_order, type, path, icon) VALUES
-    ('LIB','ASSETS','Asset Repository',
+    ('LIB','ASSETS','Assets Management',
      'Inventory of digital assets linked to owners, initiatives and processes.',
      10,'FORM','/lib/assets','archive-box'),
     ('LIB','PROMPTS','Prompt Gallery',
@@ -64,7 +64,7 @@ INSERT INTO options (module, code, name, description, sort_order, type, path, ic
     ('LIB','MCPS','MCP Directory',
      'Curated directory of tools compatible with Model Context Protocol.',
      30,'FORM','/lib/mcps','server-stack'),
-    ('LIB','AGENTS','Agent Index',
+    ('LIB','AGENTS','Agents repository',
      'Index of AI agents with higher autonomy.',
      40,'FORM','/lib/agents','cpu-chip'),
     ('LIB','FLOWS','Agentic Flows',

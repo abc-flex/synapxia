@@ -16,6 +16,7 @@ import { isFavorite, setFavorite } from "@/lib/favorites";
 import { getVoteTally, setVote, getWorkflowStage, type VoteValue } from "@/lib/actions";
 import { mountRelated } from "@/lib/related";
 import { mountHistory } from "@/lib/history";
+import { mountVersions } from "@/lib/versions";
 import { styleVoteButton } from "@/lib/catalogGallery";
 import { getUser } from "@/lib/auth";
 import { statusTone } from "@/lib/datatable";
@@ -54,6 +55,118 @@ function parseList(raw: unknown): string[] {
     .split(/[,\n]/)
     .map((t) => t.trim().replace(/^['"]|['"]$/g, "").trim())
     .filter(Boolean);
+}
+
+/** Module-level i18n lookup (the detail controller's inner `tr` is scoped to
+ * mountCatalogDetail; the shared renderer below and other consumers use this). */
+function trGlobal(key: string, fallback: string): string {
+  try {
+    const lang = (typeof localStorage !== "undefined" && localStorage.getItem("lang")) || "en";
+    const w = window as any;
+    if (typeof w.t === "function") return w.t(key, lang) || fallback;
+  } catch {
+    /* non-fatal */
+  }
+  return fallback;
+}
+
+function labelEl(text: string): HTMLElement {
+  const h = document.createElement("h4");
+  h.className = "mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400";
+  h.textContent = text;
+  return h;
+}
+
+/** Build one section's DOM node from its raw value (inline meta / prose block /
+ * copyable code / tool chips). Pure + XSS-safe (all text via textContent). */
+function renderSection(sec: DetailSection, value: string): HTMLElement | null {
+  const v = (value ?? "").trim();
+  if (!v && sec.type !== "tools") return null;
+  const label = trGlobal(sec.labelKey, sec.labelKey);
+
+  if (sec.type === "inline") {
+    const row = document.createElement("div");
+    row.className = "flex flex-wrap items-baseline gap-2 text-sm";
+    const l = document.createElement("span");
+    l.className = "font-medium text-gray-500 dark:text-gray-400";
+    l.textContent = `${label}:`;
+    const val = document.createElement("span");
+    val.className = "text-gray-900 dark:text-gray-100";
+    val.textContent = v;
+    row.append(l, val);
+    return row;
+  }
+
+  if (sec.type === "tools") {
+    const items = parseList(v);
+    if (items.length === 0) return null;
+    const wrap = document.createElement("div");
+    wrap.appendChild(labelEl(label));
+    const chips = document.createElement("div");
+    chips.className = "flex flex-wrap gap-1.5";
+    for (const t of items) {
+      const chip = document.createElement("span");
+      chip.className =
+        "inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300";
+      chip.textContent = t;
+      chips.appendChild(chip);
+    }
+    wrap.appendChild(chips);
+    return wrap;
+  }
+
+  if (sec.type === "code") {
+    const wrap = document.createElement("div");
+    const head = document.createElement("div");
+    head.className = "mb-2 flex items-center justify-between gap-2";
+    head.appendChild(labelEl(label));
+    const copyBtn = document.createElement("button");
+    copyBtn.type = "button";
+    copyBtn.dataset.action = "copy";
+    copyBtn.dataset.copy = v;
+    copyBtn.dataset.copyOk = trGlobal(sec.copyOkKey ?? "catalog_detail.copied", "Copied");
+    copyBtn.className =
+      "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800";
+    copyBtn.textContent = trGlobal("catalog_detail.copy", "Copy");
+    head.appendChild(copyBtn);
+    wrap.appendChild(head);
+    const pre = document.createElement("pre");
+    pre.className =
+      "max-h-80 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-gray-50 p-3 font-mono text-xs text-gray-800 dark:bg-gray-800 dark:text-gray-200";
+    pre.textContent = v;
+    wrap.appendChild(pre);
+    return wrap;
+  }
+
+  // block
+  const wrap = document.createElement("div");
+  wrap.appendChild(labelEl(label));
+  const p = document.createElement("p");
+  p.className = "whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300";
+  p.textContent = v;
+  wrap.appendChild(p);
+  return wrap;
+}
+
+/** Render a configured section list into `container` from a feature→char map
+ * (the same rendering the Detail tab uses). Reused by the Versions tab to show
+ * a historical version's snapshot identically. `description` feeds any section
+ * with `field: "description"`. */
+export function renderCharacterizationSections(
+  container: HTMLElement,
+  sections: DetailSection[],
+  byFeature: Record<string, { value?: string; detail?: string } | undefined>,
+  description = "",
+): void {
+  container.innerHTML = "";
+  for (const sec of sections) {
+    const raw =
+      sec.field === "description"
+        ? description
+        : ((byFeature[sec.feature ?? ""]?.[sec.column ?? "value"] as string) ?? "");
+    const el = renderSection(sec, raw);
+    if (el) container.appendChild(el);
+  }
 }
 
 export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
@@ -106,6 +219,7 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
   // Foro.astro and hooks the same trigger on its own — no wiring needed here.
   mountRelated({ modalId });
   mountHistory({ modalId });
+  mountVersions({ modalId, sections });
 
   const nameEl = document.getElementById(`${modalId}-name`) as HTMLElement | null;
   const statusPill = document.getElementById(`${modalId}-status-pill`) as HTMLElement | null;
@@ -256,83 +370,6 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
   voteUp?.addEventListener("click", () => castVote("POSITIVE"));
   voteDown?.addEventListener("click", () => castVote("NEGATIVE"));
 
-  // ── Section renderers ──────────────────────────────────────────────────────
-  function labelEl(text: string): HTMLElement {
-    const h = document.createElement("h4");
-    h.className = "mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400";
-    h.textContent = text;
-    return h;
-  }
-
-  function renderSection(sec: DetailSection, value: string): HTMLElement | null {
-    const v = (value ?? "").trim();
-    if (!v && sec.type !== "tools") return null;
-    const label = tr(sec.labelKey, sec.labelKey);
-
-    if (sec.type === "inline") {
-      const row = document.createElement("div");
-      row.className = "flex flex-wrap items-baseline gap-2 text-sm";
-      const l = document.createElement("span");
-      l.className = "font-medium text-gray-500 dark:text-gray-400";
-      l.textContent = `${label}:`;
-      const val = document.createElement("span");
-      val.className = "text-gray-900 dark:text-gray-100";
-      val.textContent = v;
-      row.append(l, val);
-      return row;
-    }
-
-    if (sec.type === "tools") {
-      const items = parseList(v);
-      if (items.length === 0) return null;
-      const wrap = document.createElement("div");
-      wrap.appendChild(labelEl(label));
-      const chips = document.createElement("div");
-      chips.className = "flex flex-wrap gap-1.5";
-      for (const t of items) {
-        const chip = document.createElement("span");
-        chip.className =
-          "inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300";
-        chip.textContent = t;
-        chips.appendChild(chip);
-      }
-      wrap.appendChild(chips);
-      return wrap;
-    }
-
-    if (sec.type === "code") {
-      const wrap = document.createElement("div");
-      const head = document.createElement("div");
-      head.className = "mb-2 flex items-center justify-between gap-2";
-      head.appendChild(labelEl(label));
-      const copyBtn = document.createElement("button");
-      copyBtn.type = "button";
-      copyBtn.dataset.action = "copy";
-      copyBtn.dataset.copy = v;
-      copyBtn.dataset.copyOk = tr(sec.copyOkKey ?? "catalog_detail.copied", "Copied");
-      copyBtn.className =
-        "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800";
-      copyBtn.textContent = tr("catalog_detail.copy", "Copy");
-      head.appendChild(copyBtn);
-      wrap.appendChild(head);
-      const pre = document.createElement("pre");
-      pre.className =
-        "max-h-80 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-gray-50 p-3 font-mono text-xs text-gray-800 dark:bg-gray-800 dark:text-gray-200";
-      pre.textContent = v;
-      wrap.appendChild(pre);
-      return wrap;
-    }
-
-    // block
-    const wrap = document.createElement("div");
-    wrap.appendChild(labelEl(label));
-    const p = document.createElement("p");
-    p.className = "whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300";
-    p.textContent = v;
-    wrap.appendChild(p);
-    return wrap;
-  }
-
   async function open(assetId: number) {
     const seq = ++openSeq;
     currentId = assetId;
@@ -431,14 +468,8 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
       }
 
       if (sectionsEl) {
-        for (const sec of sections) {
-          const raw =
-            sec.field === "description"
-              ? (asset.description ?? "")
-              : ((byFeature[sec.feature ?? ""]?.[sec.column ?? "value"] as string) ?? "");
-          const el = renderSection(sec, raw);
-          if (el) sectionsEl.appendChild(el);
-        }
+        renderCharacterizationSections(
+          sectionsEl, sections, byFeature, asset.description ?? "");
       }
     } catch {
       if (nameEl) nameEl.textContent = tr("catalog_detail.error_load", "Could not load.");

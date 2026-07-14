@@ -980,7 +980,19 @@
     "tab_detail": "Detalles",
     "tab_related": "Relacionados",
     "tab_discussion": "Discusión",
-    "tab_history": "Historial"
+    "tab_history": "Historial",
+    "tab_versions": "Versiones"
+  },
+  "versions": {
+    "loading": "Cargando versiones…",
+    "empty": "Aún no hay versiones.",
+    "empty_snapshot": "Sin detalles para esta versión.",
+    "error": "No se pudieron cargar las versiones.",
+    "current": "Actual",
+    "created_by": "por",
+    "change_type_major": "Mayor",
+    "change_type_minor": "Menor",
+    "change_type_patch": "Parche"
   },
   "agent_modal": {
     "title_create": "Nuevo agente",

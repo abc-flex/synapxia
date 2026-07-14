@@ -980,7 +980,19 @@
     "tab_detail": "Details",
     "tab_related": "Related",
     "tab_discussion": "Discussion",
-    "tab_history": "History"
+    "tab_history": "History",
+    "tab_versions": "Versions"
+  },
+  "versions": {
+    "loading": "Loading versions…",
+    "empty": "No versions yet.",
+    "empty_snapshot": "No details for this version.",
+    "error": "Could not load the versions.",
+    "current": "Current",
+    "created_by": "by",
+    "change_type_major": "Major",
+    "change_type_minor": "Minor",
+    "change_type_patch": "Patch"
   },
   "agent_modal": {
     "title_create": "New Agent",

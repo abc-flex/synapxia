@@ -665,6 +665,18 @@ export interface AssetVersionRequest {
   values?: Record<string, string>;
 }
 
+// One entry in an asset's version history (read side; GET /api/assets/{id}/versions).
+// Derived from the characterizations' created_at grouped by version_label,
+// enriched from the VERSIONING action for `change_type`/`actor` (null for the
+// initial 1.0.0). Newest-first by `created_at`.
+export interface AssetVersion {
+  version_label: string;
+  created_at: string;
+  is_current: boolean;
+  change_type?: ChangeType | null;
+  actor?: string | null;
+}
+
 // A selectable reviewer for the propose form ({value: id, label: name}).
 export interface ReviewerOption {
   value: number;

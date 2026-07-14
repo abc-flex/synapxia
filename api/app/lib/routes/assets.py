@@ -10,6 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from ..internal.models import (
     Asset, AssetCreate, AssetUpdate, AssetPermission, AssetWithAccessLevels,
     ProposeRequest, ReviewerOption, ReviewRequest, ModifyRequest, VersionRequest,
+    AssetVersion, Characterization,
 )
 from ..internal import propose_service
 from ..internal import review_service
@@ -345,6 +346,51 @@ def create_version(
         if "not found" in str(exc).lower():
             raise HTTPException(status_code=404, detail=str(exc))
         raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.get("/{asset_id}/versions", response_model=List[AssetVersion])
+def list_versions(
+    asset_id: int, session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
+) -> List[AssetVersion]:
+    """
+    The asset's version history (HU-LI09, read side), newest-first by creation
+    date. Each entry: `version_label`, `created_at` (the version's first
+    characterization snapshot), `is_current`, and — for bumped versions — the
+    `change_type` + `actor` from the VERSIONING action (null for the initial
+    1.0.0). A browse-surface read: module read privilege only, no per-asset
+    MANAGE guard (same access as viewing the current snapshot).
+
+    - **asset_id**: Unique asset id (404 if it doesn't exist / is inactive)
+    """
+    asset = session.get(Asset, asset_id)
+    if not asset or not asset.is_active:
+        raise HTTPException(status_code=404, detail="Asset not found")
+    return version_service.list_versions(session, asset_id)
+
+
+@router.get(
+    "/{asset_id}/versions/{version_label}/characterizations",
+    response_model=List[Characterization],
+)
+def get_version_characterizations(
+    asset_id: int, version_label: str, session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
+) -> List[Characterization]:
+    """
+    The characterization snapshot of one specific version of an asset — what the
+    Versions tab renders when a version row is expanded. Same browse-surface read
+    gate as the version list. Returns `[]` for an unknown label (a valid "no
+    rows" answer, not a 404).
+
+    - **asset_id**: Unique asset id (404 if it doesn't exist / is inactive)
+    - **version_label**: The semver label, e.g. `1.1.0`
+    """
+    asset = session.get(Asset, asset_id)
+    if not asset or not asset.is_active:
+        raise HTTPException(status_code=404, detail="Asset not found")
+    return version_service.get_version_characterizations(
+        session, asset_id, version_label)
 
 
 @router.get("/{asset_id}", response_model=Asset)

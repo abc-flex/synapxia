@@ -169,6 +169,20 @@ def test_create_version_successive_bumps_chain(session):
     assert session.get(Asset, asset.id).current_version == "2.0.0"
 
 
+def test_version_request_defaults_to_patch(session):
+    # Omitting change_type must default to a patch bump (1.0.0 -> 1.0.1).
+    assert VersionRequest().change_type == "patch"
+    _mk_category(session)
+    reviewer = _mk_user(session, 7, "rev")
+    asset = _propose(session, reviewer)
+    assert asset.current_version == "1.0.0"
+
+    updated = svc.create_version(
+        session, _superuser(), asset.id, VersionRequest(values=None),
+    )
+    assert updated.current_version == "1.0.1"
+
+
 def test_create_version_guards(session):
     _mk_category(session)
     reviewer = _mk_user(session, 7, "rev")

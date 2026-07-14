@@ -948,7 +948,7 @@
   <!-- Discussion panel (read-only) — the Foro island self-loads the opened
        asset's thread off the same [data-modal-open] trigger. -->
   <div data-tabpanel="discussion" role="tabpanel" class="pt-4" class:hidden={activeTab !== "discussion"}>
-    <Foro modalId={idPrefix} />
+    <Foro modalId={idPrefix} readonly />
   </div>
 
   <!-- History panel (read-only) — hydrated by mountHistory (lib/history.ts),

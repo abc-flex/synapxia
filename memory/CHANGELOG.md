@@ -20,6 +20,14 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-07-14 19:52 — fix(ui): asset-management Discussion tab is view-only
+
+- **The Discussion tab on the editable `/lib/assets` modal is now read-only.** Per the tab-behavior matrix / user direction, Asset Management should let a user *view* the discussion but not comment, ask, answer, or delete — those stay on the gallery (Explore) surface. `Foro.svelte` gained a `readonly` prop (default `false`); when set it hides the bottom composer (Comment/Question toggle + textarea + Post), the per-question Answer affordance, and the per-item Delete links, while the thread (comments/questions/threaded answers) renders unchanged. `AssetDetailTabs.svelte`'s Discussion panel now renders `<Foro modalId={idPrefix} readonly />`; the gallery's `Foro.astro` mount is untouched, so the Explore modal's discussion stays fully interactive.
+- Verified: `bun run build` + `npx tsc --noEmit` clean (only pre-existing `advancedTable.ts`); Playwright smoke — edit modal Discussion shows the thread with no composer/Post/Answer/Delete, gallery Discussion still has the composer + Post.
+- Files affected: `ui/src/components/svelte/Foro.svelte`, `ui/src/components/svelte/AssetDetailTabs.svelte`
+
+---
+
 ## 2026-07-14 16:58 — fix(ui): per-tab save in the editable asset detail modal — only Characterizations versions
 
 - **The `/lib/assets` "Edit details" modal footer is now tab-aware.** Previously the change-type picker (Patch/Minor/Major) + `v1.0.0 → v1.0.1` preview + "Save new version" button showed on every tab, so editing just a relation or a permission still bumped the asset's version and re-snapshotted the characterizations — wrong, since only the characterization set is versioned (HU-LI09). Now: **Characterizations** keeps the version UI + "Save new version" (bumps the version); **Related Assets** and **Permissions** hide the picker + preview, relabel the button "Save related" / "Save permissions", and persist only their own slice with no version bump.

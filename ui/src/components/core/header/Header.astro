@@ -69,9 +69,11 @@ import SearchBar from "./SearchBar.astro";
 
     <SearchBar />
 
-    {/* Spacer pushes the controls to the right edge — only needed from lg up,
-        where SearchBar switches to a fixed width instead of flexing. */}
-    <div class="hidden flex-1 lg:block"></div>
+    {/* Spacer pushes the controls to the right edge whenever SearchBar itself
+        isn't flexing to fill the row: below `sm` (icon-only trigger) and from
+        `lg` up (fixed desktop width). Between `sm` and `lg`, SearchBar is
+        `flex-1` and does the pushing itself, so the spacer stays hidden there. */}
+    <div class="flex-1 sm:hidden lg:block"></div>
 
     <div class="flex shrink-0 items-center gap-1.5 sm:gap-2">
       {/* Theme + language live in the header on tablet/desktop; on phones the bar

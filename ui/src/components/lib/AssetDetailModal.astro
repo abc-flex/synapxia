@@ -462,7 +462,7 @@ const {
           tab === "related"
             ? "asset_detail_modal.save_related"
             : "asset_detail_modal.save_permissions";
-        const fallback = tab === "related" ? "Save related" : "Save permissions";
+        const fallback = tab === "related" ? "Save related assets" : "Save permissions";
         submitBtn.setAttribute("data-i18n", key);
         submitBtn.textContent = tr(key, fallback);
       }

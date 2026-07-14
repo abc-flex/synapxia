@@ -17,7 +17,6 @@ import { getVoteTally, setVote, getWorkflowStage, type VoteValue } from "@/lib/a
 import { mountRelated } from "@/lib/related";
 import { mountHistory } from "@/lib/history";
 import { mountVersions } from "@/lib/versions";
-import { mountPermissions } from "@/lib/assetPermissionsView";
 import { styleVoteButton } from "@/lib/catalogGallery";
 import { getUser } from "@/lib/auth";
 import { statusTone } from "@/lib/datatable";
@@ -221,7 +220,6 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
   mountRelated({ modalId });
   mountHistory({ modalId });
   mountVersions({ modalId, sections });
-  mountPermissions({ modalId });
 
   const nameEl = document.getElementById(`${modalId}-name`) as HTMLElement | null;
   const statusPill = document.getElementById(`${modalId}-status-pill`) as HTMLElement | null;

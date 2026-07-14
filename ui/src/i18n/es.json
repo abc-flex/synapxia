@@ -478,7 +478,7 @@
     "saved": "Activo guardado.",
     "version_saved": "Activo guardado como versión {version}.",
     "save_new_version": "Guardar nueva versión",
-    "save_related": "Guardar relaciones",
+    "save_related": "Guardar activos relacionados",
     "save_permissions": "Guardar permisos",
     "related_saved": "Activos relacionados guardados.",
     "permissions_saved": "Permisos guardados.",
@@ -1020,14 +1020,7 @@
     "tab_related": "Relacionados",
     "tab_discussion": "Discusión",
     "tab_history": "Historial",
-    "tab_versions": "Versiones",
-    "tab_permissions": "Permisos"
-  },
-  "permissions_view": {
-    "loading": "Cargando permisos…",
-    "empty": "No hay permisos definidos para este activo.",
-    "error": "No se pudieron cargar los permisos.",
-    "public": "Público"
+    "tab_versions": "Versiones"
   },
   "versions": {
     "loading": "Cargando versiones…",

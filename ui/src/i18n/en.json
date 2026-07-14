@@ -478,7 +478,7 @@
     "saved": "Asset saved.",
     "version_saved": "Asset saved as version {version}.",
     "save_new_version": "Save new version",
-    "save_related": "Save related",
+    "save_related": "Save related assets",
     "save_permissions": "Save permissions",
     "related_saved": "Related assets saved.",
     "permissions_saved": "Permissions saved.",
@@ -1020,14 +1020,7 @@
     "tab_related": "Related",
     "tab_discussion": "Discussion",
     "tab_history": "History",
-    "tab_versions": "Versions",
-    "tab_permissions": "Permissions"
-  },
-  "permissions_view": {
-    "loading": "Loading permissions…",
-    "empty": "No permissions defined for this asset.",
-    "error": "Could not load the permissions.",
-    "public": "Public"
+    "tab_versions": "Versions"
   },
   "versions": {
     "loading": "Loading versions…",

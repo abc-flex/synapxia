@@ -1,0 +1,163 @@
+name: Deploy
+
+# Runs every db/sql migration against the matching Neon database on each
+# push to `develop` (dev Neon) or `production` (prod Neon). Idempotent: a
+# `_migrations` tracking table records which files have been applied, so
+# pushes that don't add new SQL files are no-ops. New numbered files
+# (db/sql/13-…, 14-…, etc.) get picked up automatically on the next push.
+#
+# Vercel deploys both branches automatically via its GitHub integration;
+# this workflow only handles the DB side.
+#
+# Required GitHub Actions secrets (repo Settings → Secrets and variables):
+#   NEON_URL_DEVELOP     — non-pooling URL of the dev Neon DB
+#   NEON_URL_PRODUCTION  — non-pooling URL of the prod Neon DB
+# Use the *non-pooling* URL (DB_POSTGRES_URL_NON_POOLING in Vercel) — the
+# pooled connection breaks DDL statements like CREATE TYPE.
+
+on:
+  push:
+    branches: [develop, production]
+  # Manual trigger from the Actions UI for destructive operations.
+  # GitHub → Actions → Deploy → "Run workflow" button.
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Which Neon DB to target"
+        required: true
+        type: choice
+        default: develop
+        options: [develop, production]
+      reset_db:
+        description: "DROP every table + clear migration tracking, then re-apply everything"
+        required: true
+        type: boolean
+        default: false
+      confirm:
+        description: 'Type RESET to confirm a destructive reset (ignored if reset_db is false)'
+        required: false
+        type: string
+        default: ""
+
+jobs:
+  migrate:
+    name: Migrate Neon DB
+    runs-on: ubuntu-latest
+    # One run at a time per target so two pushes (or push + dispatch) can't
+    # race the same DB. Same-group later runs cancel earlier in-flight ones.
+    concurrency:
+      group: neon-migrate-${{ github.event.inputs.target || github.ref_name }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve target Neon URL
+        run: |
+          # workflow_dispatch picks the target from the input; push picks it
+          # from the branch ref (develop → dev DB, production → prod DB).
+          if [ -n "${{ github.event.inputs.target }}" ]; then
+            target="${{ github.event.inputs.target }}"
+          elif [ "${{ github.ref }}" = "refs/heads/develop" ]; then
+            target="develop"
+          else
+            target="production"
+          fi
+          echo "TARGET=$target" >> "$GITHUB_ENV"
+          if [ "$target" = "develop" ]; then
+            echo "::add-mask::${{ secrets.NEON_URL_DEVELOP }}"
+            echo "NEON_URL=${{ secrets.NEON_URL_DEVELOP }}" >> "$GITHUB_ENV"
+          else
+            echo "::add-mask::${{ secrets.NEON_URL_PRODUCTION }}"
+            echo "NEON_URL=${{ secrets.NEON_URL_PRODUCTION }}" >> "$GITHUB_ENV"
+          fi
+          echo "Target: $target"
+
+      - name: Validate reset confirmation
+        if: ${{ github.event.inputs.reset_db == 'true' }}
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "RESET" ]; then
+            echo "❌ reset_db=true requires confirm=RESET (got: '${{ github.event.inputs.confirm }}')."
+            echo "   Re-run the workflow and type RESET in the Confirm field."
+            exit 1
+          fi
+          if [ "${TARGET}" = "production" ]; then
+            echo "⚠️  About to RESET the PRODUCTION Neon database."
+            echo "    All app data + all _migrations rows will be dropped."
+          else
+            echo "⚠️  About to RESET the ${TARGET} Neon database."
+          fi
+
+      - name: Install psql
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+
+      - name: Reset (drop everything)
+        if: ${{ github.event.inputs.reset_db == 'true' }}
+        env:
+          PGOPTIONS: "-c statement_timeout=120000"
+        run: |
+          set -euo pipefail
+          echo "🔥 Dropping schema public CASCADE on ${TARGET} Neon ..."
+          # One shot: nukes every table, index, sequence, type, and function
+          # in the public schema — including `_migrations` and anything added
+          # in the future without anyone having to update drop.sql. CASCADE
+          # auto-resolves FK dependencies that broke the table-by-table
+          # script.
+          psql "$NEON_URL" -v ON_ERROR_STOP=1 -q -c \
+            "DROP SCHEMA IF EXISTS public CASCADE;
+             CREATE SCHEMA public;
+             GRANT ALL ON SCHEMA public TO PUBLIC;"
+          echo "✓ Reset complete. Migration loop will reapply every db/sql file below."
+
+      - name: Apply unapplied migrations
+        env:
+          # Per-statement timeout so a runaway DDL can't hang the job.
+          PGOPTIONS: "-c statement_timeout=120000"
+        run: |
+          set -euo pipefail
+
+          # Tracking table: one row per applied file. Created on the first
+          # run; subsequent runs reuse it.
+          psql "$NEON_URL" -v ON_ERROR_STOP=1 -q -c \
+            "CREATE TABLE IF NOT EXISTS _migrations (
+               filename   TEXT PRIMARY KEY,
+               applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+             );"
+
+          applied=0
+          skipped=0
+          # Flat numbered layout (11-…, 12-…, …, 62-…). The [0-9] guard
+          # excludes db/sql/manual/ helpers (drop.sql, delete.sql) which
+          # must never run in CI. Lexical order matches Compose init.
+          for f in db/sql/[0-9]*.sql; do
+            name="$(basename "$f")"
+            already="$(psql "$NEON_URL" -tAc \
+              "SELECT 1 FROM _migrations WHERE filename = '${name}'")"
+            if [ "$already" = "1" ]; then
+              echo "  ⏭  $name (already applied)"
+              skipped=$((skipped + 1))
+              continue
+            fi
+            echo "  ▶  $name"
+            # -1 wraps the file in a single transaction so partial failures
+            # don't leave the schema half-applied (and don't record the row
+            # below — the next run retries cleanly).
+            psql "$NEON_URL" -v ON_ERROR_STOP=1 -q -1 -f "$f"
+            psql "$NEON_URL" -v ON_ERROR_STOP=1 -q -c \
+              "INSERT INTO _migrations(filename) VALUES ('${name}');"
+            applied=$((applied + 1))
+          done
+
+          echo ""
+          echo "✓ Migration complete: ${applied} applied, ${skipped} skipped."
+
+      - name: Verify schema
+        run: |
+          count="$(psql "$NEON_URL" -v ON_ERROR_STOP=1 -tAc \
+            "SELECT count(*) FROM users WHERE is_superuser;")"
+          if [ "${count:-0}" -lt 1 ]; then
+            echo "❌ Expected at least one superuser row in users; got: $count"
+            exit 1
+          fi
+          echo "✓ users table populated (${count} superuser row(s))"

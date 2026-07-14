@@ -1,0 +1,271 @@
+"""
+Centralized Database Dependencies
+
+This module provides a single source of truth for database connections
+and session management across the entire application.
+
+All modules should import from here instead of maintaining duplicate
+dependencies.py files.
+"""
+
+import logging
+from contextlib import contextmanager
+from typing import AsyncGenerator
+from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
+
+import psycopg2
+from sqlmodel import create_engine, Session
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
+from fastapi import HTTPException
+from sqlalchemy.exc import SQLAlchemyError
+
+from app.core.config import settings
+
+logger = logging.getLogger(__name__)
+
+# ==================== Database Configuration ====================
+# All DB env resolution lives in `app.core.config.Settings`. The names below
+# are kept as module-level constants so existing imports across the app
+# (per-domain `internal/dependencies.py` shims, health.py, etc.) continue
+# to work without changes.
+
+DATABASE_URL = settings.database_url
+DB_CONFIG = settings.database_components   # for psycopg2.connect(**kw)
+IS_MANAGED_POSTGRES = settings.is_managed_postgres
+
+# Log the resolved DB host without leaking credentials.
+_safe_url = DATABASE_URL.split("@")[-1] if "@" in DATABASE_URL else DATABASE_URL
+logger.info(f"📊 Database host: {_safe_url}")
+
+# Warn early if neither URL nor user/password are usable (purely decomposed
+# branch is missing required fields).
+if not (DB_CONFIG.get("user") and DB_CONFIG.get("password")):
+    logger.error(
+        "❌ Missing database credentials. Set DATABASE_URL (or POSTGRES_URL "
+        "as alias), OR DB_USER + DB_PASSWORD alongside the other DB_* vars."
+    )
+
+# Pool configuration optimized for deployment context:
+# - Managed Postgres (Vercel/Neon/etc): smaller pools due to strict connection limits.
+# - Local Docker: larger pools for dev comfort.
+POOL_CONFIG = {
+    "pool_size": 5 if IS_MANAGED_POSTGRES else 10,
+    "max_overflow": 10 if IS_MANAGED_POSTGRES else 20,
+    "pool_recycle": 3600 if IS_MANAGED_POSTGRES else 7200,  # Neon idle timeout = 30min
+    "pool_pre_ping": True,
+}
+
+# SQL echo only in dev.
+echo_sql = settings.app_env == "development"
+
+try:
+    engine = create_engine(DATABASE_URL, echo=echo_sql, **POOL_CONFIG)
+    logger.info("✅ SQLAlchemy engine created successfully")
+except Exception as e:
+    logger.error(f"❌ Failed to create engine: {e}")
+    raise
+
+# ==================== Async Engine (Phase 2: fastapi-users) ====================
+# fastapi-users requires async sessions. Create a parallel async engine pointing
+# to the same database as the sync engine. Both engines share the same tables.
+
+# Build the async URL from the (normalized) sync URL. asyncpg does not understand the
+# libpq-only query params Neon/Vercel append (`sslmode`, `channel_binding`), so strip them;
+# TLS is enabled via connect_args below for managed Postgres.
+_sync_parts = urlsplit(DATABASE_URL)
+_async_query = urlencode([
+    (k, v)
+    for k, v in parse_qsl(_sync_parts.query, keep_blank_values=True)
+    if k not in ("sslmode", "channel_binding")
+])
+async_database_url = urlunsplit((
+    "postgresql+asyncpg",
+    _sync_parts.netloc,
+    _sync_parts.path,
+    _async_query,
+    _sync_parts.fragment,
+))
+
+# asyncpg connect args. Note: `statement_cache_size` is a valid asyncpg kwarg, but
+# `prepared_statement_cache_size` is NOT — passing it raises TypeError on connect.
+_async_connect_args = {
+    "statement_cache_size": 0,  # CRITICAL: disable for transaction-mode poolers (Neon, Supabase)
+    "server_settings": {
+        "application_name": "synapxia-api",
+        "jit": "off",  # Serverless: disable JIT for consistency
+    },
+}
+if IS_MANAGED_POSTGRES:
+    # Neon/managed Postgres require TLS; asyncpg negotiates it from this flag.
+    _async_connect_args["ssl"] = True
+
+try:
+    async_engine = create_async_engine(
+        async_database_url,
+        echo=echo_sql,
+        **POOL_CONFIG,
+        connect_args=_async_connect_args,
+    )
+    logger.info("✅ Async SQLAlchemy engine created for fastapi-users")
+except Exception as e:
+    logger.error(f"❌ Failed to create async engine: {e}")
+    raise
+
+# Create async session factory
+async_session_maker = sessionmaker(
+    async_engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+    autoflush=False,
+)
+
+
+# ==================== Database Connection Functions ====================
+
+@contextmanager
+def get_db_connection():
+    """
+    Context manager for direct PostgreSQL connection via psycopg2.
+
+    Useful for operations that require direct psycopg2 access.
+
+    Usage:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM users")
+            results = cursor.fetchall()
+
+    Yields:
+        psycopg2 connection object
+
+    Raises:
+        psycopg2.Error: Database connection errors
+    """
+    conn = psycopg2.connect(**DB_CONFIG)
+    try:
+        yield conn
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def get_db_session():
+    """
+    FastAPI dependency for obtaining SQLModel session (synchronous).
+
+    Automatically handles:
+    - Commit on success
+    - Rollback on error
+    - Session closure
+
+    This is the preferred method for FastAPI route dependencies
+    as it integrates with FastAPI's dependency injection system.
+
+    Usage in routes:
+        @app.get("/endpoint")
+        def my_endpoint(session: Session = Depends(get_db_session)):
+            # Your code here
+            pass
+
+    Yields:
+        SQLModel Session object
+
+    Raises:
+        HTTPException: 500 error if database error occurs
+    """
+    try:
+        session = Session(engine)
+    except Exception as e:
+        error_msg = str(e)
+        logger.error(f"❌ Failed to create database session: {error_msg}")
+
+        # Check for common connection issues
+        if "could not connect" in error_msg.lower():
+            detail = f"Cannot connect to database at {DB_CONFIG['host']}:{DB_CONFIG['port']}"
+        elif "authentication failed" in error_msg.lower():
+            detail = "Database authentication failed - check DB_USER and DB_PASSWORD"
+        elif "database" in error_msg.lower() and "does not exist" in error_msg.lower():
+            detail = f"Database '{DB_CONFIG['database']}' does not exist"
+        else:
+            detail = f"Database connection failed: {error_msg}"
+
+        raise HTTPException(status_code=503, detail=detail)
+
+    try:
+        yield session
+        session.commit()
+    except SQLAlchemyError as e:
+        session.rollback()
+        error_msg = str(e)
+        logger.error(f"❌ Database error during query: {error_msg}")
+        raise HTTPException(
+            status_code=500,
+            detail="Database error occurred"
+        )
+    except Exception as e:
+        session.rollback()
+        logger.error(f"❌ Unexpected error: {e}")
+        raise
+    finally:
+        session.close()
+
+
+async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
+    """
+    FastAPI async dependency for obtaining AsyncSession (Phase 2: fastapi-users).
+
+    Used by fastapi-users and other async routes. Both get_db_session (sync)
+    and get_async_session (async) point to the same database, allowing
+    gradual async migration.
+
+    Automatically handles:
+    - Commit on success
+    - Rollback on error
+    - Session closure
+
+    Usage in async routes:
+        @app.get("/async-endpoint")
+        async def my_async_endpoint(session: AsyncSession = Depends(get_async_session)):
+            # Your code here
+            pass
+
+    Yields:
+        AsyncSession object
+
+    Raises:
+        HTTPException: 500 error if database error occurs
+    """
+    async with async_session_maker() as session:
+        try:
+            yield session
+            await session.commit()
+        except SQLAlchemyError as e:
+            await session.rollback()
+            error_msg = str(e)
+            logger.error(f"❌ Async database error: {error_msg}")
+            raise HTTPException(
+                status_code=500,
+                detail="Database error occurred"
+            )
+        except Exception as e:
+            await session.rollback()
+            logger.error(f"❌ Unexpected async error: {e}")
+            raise
+        finally:
+            await session.close()
+
+
+__all__ = [
+    "get_db_session",
+    "get_async_session",
+    "get_db_connection",
+    "engine",
+    "async_engine",
+    "DATABASE_URL",
+    "DB_CONFIG",
+    "IS_MANAGED_POSTGRES",
+]

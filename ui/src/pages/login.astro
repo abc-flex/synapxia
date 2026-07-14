@@ -1,0 +1,370 @@
+---
+import ClientTranslations from "@/components/ClientTranslations.astro";
+import LanguageSwitcher from "@/components/core/header/LanguageSwitcher.astro";
+import "../styles/globals.css";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {/* Apply the saved theme before first paint to avoid a light-theme flash. */}
+    <script is:inline>
+      (function () {
+        try {
+          var t = localStorage.getItem("theme");
+          if (t !== "dark" && t !== "light") {
+            t = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+          }
+          document.documentElement.classList.toggle("dark", t === "dark");
+        } catch (e) {}
+      })();
+    </script>
+    <title>Sign In — Synapxia</title>
+  </head>
+  <body
+    class="bg-gradient-to-br from-slate-50 to-indigo-50 dark:from-gray-900 dark:to-gray-950 min-h-screen flex items-center justify-center p-4"
+  >
+    <ClientTranslations />
+
+    <!-- Language Switcher -->
+    <div class="fixed top-6 right-6 z-50">
+      <LanguageSwitcher />
+    </div>
+
+    <!-- Loading overlay -->
+    <div
+      id="loading-spinner"
+      class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+    >
+      <div class="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+    </div>
+
+    <div class="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden">
+
+      <!-- Card header -->
+      <div class="bg-gradient-to-br from-indigo-600 to-purple-700 px-8 py-10 sm:px-10 sm:py-12 text-center text-white">
+        <div class="w-16 h-16 mx-auto mb-5 bg-white/10 rounded-2xl flex items-center justify-center text-3xl font-bold select-none">
+          IA
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-bold mb-1">Synapxia</h1>
+        <p class="text-sm text-white/75" data-i18n="login_page.welcome_back">Welcome back</p>
+      </div>
+
+      <!-- Card body -->
+      <div class="px-6 sm:px-8 py-8 sm:py-10">
+
+        <!-- Error banner -->
+        <div
+          id="error-message"
+          class="hidden mb-5 p-3 bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 rounded-lg text-sm flex items-start gap-2"
+          role="alert"
+          aria-live="polite"
+        >
+          <svg class="w-4 h-4 mt-0.5 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+          </svg>
+          <span id="error-text"></span>
+        </div>
+
+        <form id="login-form" class="space-y-5" novalidate>
+
+          <!-- Username field -->
+          <div>
+            <label
+              for="username"
+              class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5"
+              data-i18n="login_page.username_label"
+            >Username or Email</label>
+            <input
+              id="username"
+              type="text"
+              name="username"
+              autocomplete="username"
+              placeholder="you@company.com"
+              data-i18n-placeholder="login_page.username_placeholder"
+              required
+              class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white dark:bg-gray-800 bg-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition placeholder:text-gray-400"
+            />
+          </div>
+
+          <!-- Password field with show/hide toggle -->
+          <div>
+            <label
+              for="password"
+              class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5"
+              data-i18n="login_page.password"
+            >Password</label>
+            <div class="relative">
+              <input
+                id="password"
+                type="password"
+                name="password"
+                autocomplete="current-password"
+                placeholder="••••••••"
+                required
+                class="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white dark:bg-gray-800 bg-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition placeholder:text-gray-400"
+              />
+              <!-- Toggle button -->
+              <button
+                type="button"
+                id="toggle-password"
+                aria-label="Show password"
+                data-i18n-aria-label="login_page.password_toggle_show"
+                class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition focus:outline-none"
+              >
+                <!-- Eye icon (password hidden) -->
+                <svg id="icon-eye" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+                <!-- Eye-off icon (password visible) -->
+                <svg id="icon-eye-off" class="w-5 h-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Remember me + Forgot password -->
+          <div class="flex items-center justify-between text-sm">
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                id="remember"
+                name="remember"
+                class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 dark:bg-gray-800"
+              />
+              <span class="text-gray-600 dark:text-gray-400 font-medium" data-i18n="login_page.remember_me">Remember me</span>
+            </label>
+            <a
+              href="#"
+              class="text-indigo-600 dark:text-indigo-400 font-medium hover:underline"
+              data-i18n="login_page.forgot_password"
+            >Forgot password?</a>
+          </div>
+
+          <!-- Submit button -->
+          <button
+            id="submit-btn"
+            type="submit"
+            class="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-lg transition active:scale-95 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none flex items-center justify-center gap-2"
+          >
+            <svg id="btn-spinner" class="hidden w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+            </svg>
+            <span id="btn-label" data-i18n="login_page.sign_in">Sign In</span>
+          </button>
+        </form>
+
+        <!-- Divider -->
+        <div class="flex items-center gap-3 my-6">
+          <div class="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
+          <span class="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wide" data-i18n="login_page.or">or</span>
+          <div class="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
+        </div>
+
+        <!-- Social buttons (disabled — not yet implemented) -->
+        <div class="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            disabled
+            title="Sign in with Google (coming soon)"
+            data-i18n-title="login_page.provider_google_title"
+            class="flex items-center justify-center gap-2 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-500 dark:text-gray-500 cursor-not-allowed opacity-60 select-none"
+          >
+            <img src="/images/google.png" alt="Google" width="18" height="18" class="object-contain" />
+            Google
+          </button>
+          <button
+            type="button"
+            disabled
+            title="Sign in with Microsoft (coming soon)"
+            data-i18n-title="login_page.provider_microsoft_title"
+            class="flex items-center justify-center gap-2 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-500 dark:text-gray-500 cursor-not-allowed opacity-60 select-none"
+          >
+            <img src="/images/microsoft.png" alt="Microsoft" width="18" height="18" class="object-contain" />
+            Microsoft
+          </button>
+        </div>
+
+        <!-- Sign up link -->
+        <p class="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+          <span data-i18n="login_page.no_account">Don't have an account?</span>
+          <a
+            href="/signup"
+            class="ml-1 text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
+            data-i18n="login_page.sign_up"
+          >Sign up</a>
+        </p>
+      </div>
+    </div>
+
+    <script>
+      import { login } from "@/lib/auth";
+
+      const loginForm    = document.getElementById("login-form") as HTMLFormElement;
+      const errorBanner  = document.getElementById("error-message") as HTMLDivElement;
+      const errorText    = document.getElementById("error-text") as HTMLSpanElement;
+      const loadingSpinner = document.getElementById("loading-spinner") as HTMLDivElement;
+      const submitBtn    = document.getElementById("submit-btn") as HTMLButtonElement;
+      const btnLabel     = document.getElementById("btn-label") as HTMLSpanElement;
+      const btnSpinner   = document.getElementById("btn-spinner") as SVGElement;
+      const usernameInput = document.getElementById("username") as HTMLInputElement;
+      const passwordInput = document.getElementById("password") as HTMLInputElement;
+      const toggleBtn    = document.getElementById("toggle-password") as HTMLButtonElement;
+      const iconEye      = document.getElementById("icon-eye") as SVGElement;
+      const iconEyeOff   = document.getElementById("icon-eye-off") as SVGElement;
+
+      let isSubmitting = false;
+      let failedAttempts = 0;
+      const MAX_ATTEMPTS = 5;
+      const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes in milliseconds
+
+      // ── i18n helper ─────────────────────────────────────────────────────────
+      // Reads `window.t` exposed by ClientTranslations.astro. Falls back to the
+      // provided English default if translations haven't loaded yet (e.g. very
+      // early errors before the runtime script has executed).
+      const tr = (key: string, fallback: string): string => {
+        try {
+          const lang = localStorage.getItem("lang") || "en";
+          const w = window as any;
+          if (typeof w.t === "function") return w.t(key, lang) || fallback;
+        } catch { /* non-fatal */ }
+        return fallback;
+      };
+
+      // ── Initialize rate limiting from localStorage ──────────────────────────
+      function checkRateLimit() {
+        const lockoutTime = localStorage.getItem("login_lockout_until");
+        if (!lockoutTime) return false;
+
+        const lockoutUntil = parseInt(lockoutTime, 10);
+        const now = Date.now();
+
+        if (now < lockoutUntil) {
+          showError(tr("login_page.error_too_many_attempts", "Too many login attempts. Please try again in a few minutes."));
+          submitBtn.disabled = true;
+          return true;
+        } else {
+          // Lockout expired, reset
+          localStorage.removeItem("login_lockout_until");
+          failedAttempts = 0;
+          submitBtn.disabled = false;
+          return false;
+        }
+      }
+
+      // ── Password visibility toggle ──────────────────────────────────────────
+      toggleBtn?.addEventListener("click", () => {
+        const isHidden = passwordInput.type === "password";
+        passwordInput.type = isHidden ? "text" : "password";
+        iconEye.classList.toggle("hidden", isHidden);
+        iconEyeOff.classList.toggle("hidden", !isHidden);
+        // Update both the data-i18n key (so future language switches re-translate)
+        // AND the current aria-label so screen readers see the change immediately.
+        const ariaKey = isHidden ? "login_page.password_toggle_hide" : "login_page.password_toggle_show";
+        const ariaFallback = isHidden ? "Hide password" : "Show password";
+        toggleBtn.setAttribute("data-i18n-aria-label", ariaKey);
+        toggleBtn.setAttribute("aria-label", tr(ariaKey, ariaFallback));
+      });
+
+      // ── Clear error on input ────────────────────────────────────────────────
+      usernameInput?.addEventListener("input", hideError);
+      passwordInput?.addEventListener("input", hideError);
+
+      // ── Form submit ─────────────────────────────────────────────────────────
+      loginForm?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (isSubmitting || checkRateLimit()) return;
+
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value;
+
+        // Client-side validation
+        if (!username || !password) {
+          showError(tr("login_page.credentials_required", "Username and password are required."));
+          (username ? passwordInput : usernameInput).focus();
+          return;
+        }
+
+        setLoading(true);
+        hideError();
+
+        try {
+          await login({ username, password });
+          // Clear form on successful login
+          loginForm.reset();
+          failedAttempts = 0;
+          localStorage.removeItem("login_failed_attempts");
+          // Redirect to the app's main surface (AI Library).
+          window.location.href = "/lib/assets";
+        } catch (error) {
+          setLoading(false);
+          failedAttempts++;
+          localStorage.setItem("login_failed_attempts", String(failedAttempts));
+
+          // Parse error message
+          let errorMsg = tr("login_page.error_unknown", "Login failed. Please try again.");
+          if (error instanceof Error) {
+            const msg = error.message.toLowerCase();
+
+            // Specific error handling
+            if (msg.includes("incorrect username") || msg.includes("incorrect password") || msg.includes("unauthorized")) {
+              errorMsg = tr("login_page.error_invalid_credentials", "Invalid username or password.");
+              usernameInput.focus();
+            } else if (msg.includes("user") && msg.includes("disabled")) {
+              errorMsg = tr("login_page.error_account_disabled", "This account has been deactivated. Please contact support.");
+            } else if (msg.includes("network") || msg.includes("connection")) {
+              errorMsg = tr("login_page.error_network", "Network error. Please check your connection and try again.");
+            } else {
+              errorMsg = error.message;
+            }
+          }
+
+          // Rate limiting: lock after MAX_ATTEMPTS
+          if (failedAttempts >= MAX_ATTEMPTS) {
+            const lockoutUntil = Date.now() + LOCKOUT_DURATION;
+            localStorage.setItem("login_lockout_until", String(lockoutUntil));
+            submitBtn.disabled = true;
+            errorMsg += " " + tr("login_page.error_locked_out", "You have been locked out for 15 minutes due to too many failed attempts.");
+          }
+
+          showError(errorMsg);
+        }
+      });
+
+      // ── Helpers ─────────────────────────────────────────────────────────────
+      function setLoading(loading: boolean) {
+        isSubmitting = loading;
+        submitBtn.disabled = loading;
+        usernameInput.disabled = loading;
+        passwordInput.disabled = loading;
+        toggleBtn.disabled = loading;
+        loadingSpinner.classList.toggle("hidden", !loading);
+        btnSpinner.classList.toggle("hidden", !loading);
+        btnLabel.textContent = loading
+          ? tr("login_page.signing_in", "Signing in…")
+          : tr("login_page.sign_in", "Sign In");
+      }
+
+      function showError(msg: string) {
+        errorText.textContent = msg;
+        errorBanner.classList.remove("hidden");
+        errorBanner.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        // Announce error to screen readers
+        errorBanner.setAttribute("role", "alert");
+      }
+
+      function hideError() {
+        errorBanner.classList.add("hidden");
+        errorText.textContent = "";
+      }
+
+      // ── Check rate limit on page load ───────────────────────────────────────
+      checkRateLimit();
+    </script>
+  </body>
+</html>

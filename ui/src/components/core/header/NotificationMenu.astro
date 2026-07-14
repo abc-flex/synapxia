@@ -1,0 +1,20 @@
+---
+/**
+ * NotificationMenu — header bell (HU-LI11). Thin host for the `NotificationBell`
+ * Svelte island: the interactive bell/dropdown/list is compiled by the raw
+ * Svelte Vite plugin and **mounted manually** via `mount()` (see
+ * astro.config.mjs — we don't use the @astrojs/svelte island mechanism). The
+ * mount wrapper uses `display:contents` so the `<details>` stays a direct flex
+ * child of the header actions (no layout shift).
+ */
+---
+
+<div id="notification-bell-root" style="display: contents"></div>
+
+<script>
+  import { mount } from "svelte";
+  import NotificationBell from "@/components/svelte/NotificationBell.svelte";
+
+  const target = document.getElementById("notification-bell-root");
+  if (target) mount(NotificationBell, { target });
+</script>

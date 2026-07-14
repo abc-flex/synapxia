@@ -1,0 +1,127 @@
+"""
+Application configuration using pydantic-settings (Phase 2).
+
+Centralizes environment variable management for JWT, mail, and other services.
+Constitution IV: all env vars are explicit and documented here.
+"""
+import logging
+import os
+from typing import Optional
+from urllib.parse import urlsplit
+
+from pydantic import computed_field
+from pydantic_settings import BaseSettings
+
+logger = logging.getLogger(__name__)
+
+DEFAULT_DEV_SECRET = "your-secret-key-change-in-production"
+
+
+class Settings(BaseSettings):
+    """Application settings from environment variables."""
+
+    # ==================== JWT Configuration ====================
+    jwt_secret: str = os.getenv("SECRET_KEY", DEFAULT_DEV_SECRET)
+    jwt_lifetime_seconds: int = int(os.getenv("JWT_LIFETIME_SECONDS", "3600"))  # 60 min
+    jwt_refresh_lifetime_seconds: int = int(
+        os.getenv("JWT_REFRESH_LIFETIME_SECONDS", str(14 * 24 * 3600))  # 14 days
+    )
+    jwt_algorithm: str = "HS256"
+
+    # ==================== Cookie Configuration ====================
+    # When the UI lives on a different subdomain than the API, set
+    # COOKIE_DOMAIN=".synapxia.com" so the browser sends the auth_token
+    # cookie to both. In dev (same-origin via Vite proxy) leave it unset.
+    cookie_domain: Optional[str] = os.getenv("COOKIE_DOMAIN") or None
+
+    # ==================== SMTP Configuration (Multi-profile) ====================
+    # When smtp_hostname is unset/empty, mail is disabled and send operations log instead
+    smtp_hostname: Optional[str] = os.getenv("SMTP_HOSTNAME")
+    smtp_port: int = int(os.getenv("SMTP_PORT", "587"))
+    smtp_username: Optional[str] = os.getenv("SMTP_USERNAME")
+    smtp_password: Optional[str] = os.getenv("SMTP_PASSWORD")
+    smtp_use_tls: bool = os.getenv("SMTP_USE_TLS", "true").lower() in ("true", "1")
+    smtp_use_ssl: bool = os.getenv("SMTP_USE_SSL", "false").lower() in ("true", "1")
+
+    # Default profile: generic system emails
+    smtp_from_email: str = os.getenv("SMTP_FROM_EMAIL", "noreply@synapxia.local")
+    smtp_from_name: str = os.getenv("SMTP_FROM_NAME", "SynapxIA")
+
+    # Ops profile: operations/admin emails (e.g., password reset requests)
+    ops_email: str = os.getenv("OPS_EMAIL", "ops@synapxia.local")
+    ops_email_name: str = os.getenv("OPS_EMAIL_NAME", "SynapxIA Operations")
+
+    # Bookings profile: transactional/booking emails
+    bookings_email: str = os.getenv("BOOKINGS_EMAIL", "bookings@synapxia.local")
+    bookings_email_name: str = os.getenv("BOOKINGS_EMAIL_NAME", "SynapxIA Bookings")
+
+    # ==================== Database Configuration ====================
+    # Two input shapes are supported; the URL form wins when both are present:
+    #   1. DATABASE_URL  — canonical 12-factor / SQLAlchemy name.
+    #   2. POSTGRES_URL  — accepted alias (Neon/Vercel auto-injects this).
+    #   3. Decomposed:    DB_HOST / DB_PORT / DB_USER / DB_PASSWORD / DB_SCHEMA.
+    # `database_url`, `database_components`, and `is_managed_postgres` below
+    # expose the resolved values; everything else in the app reads them
+    # instead of touching os.getenv directly.
+    database_url_env: Optional[str] = (
+        os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL")
+    )
+    db_host: str = os.getenv("DB_HOST", "db")
+    db_port: int = int(os.getenv("DB_PORT", "5432"))
+    # NOTE: `db_schema` is the Postgres DATABASE name (historical naming),
+    # not a SQL schema/namespace. Kept for back-compat with existing env files.
+    db_schema: str = os.getenv("DB_SCHEMA", "synapxia")
+    db_user: Optional[str] = os.getenv("DB_USER")
+    db_password: Optional[str] = os.getenv("DB_PASSWORD")
+
+    @computed_field
+    @property
+    def database_url(self) -> str:
+        """Final SQLAlchemy URL. Normalized to the `postgresql://` scheme."""
+        raw = self.database_url_env or (
+            f"postgresql://{self.db_user}:{self.db_password}"
+            f"@{self.db_host}:{self.db_port}/{self.db_schema}"
+        )
+        if raw.startswith("postgres://"):
+            raw = "postgresql://" + raw[len("postgres://"):]
+        return raw
+
+    @computed_field
+    @property
+    def database_components(self) -> dict:
+        """Decomposed view of `database_url`, suitable for psycopg2.connect(**kw)."""
+        p = urlsplit(self.database_url)
+        return {
+            "host": p.hostname or self.db_host,
+            "port": p.port or self.db_port,
+            "user": p.username or self.db_user,
+            "password": p.password or self.db_password,
+            "database": (p.path or "").lstrip("/") or self.db_schema,
+        }
+
+    @computed_field
+    @property
+    def is_managed_postgres(self) -> bool:
+        """True when the resolved host looks like a managed provider (Neon/Supabase/etc).
+        Drives pool sizing + SSL params; URL-based so it doesn't depend on which env
+        var name happened to be set."""
+        host = (self.database_components.get("host") or "").lower()
+        return any(s in host for s in ("neon.tech", "supabase", "vercel-storage", "rds.amazonaws"))
+
+    # ==================== Application ====================
+    app_env: str = os.getenv("APP_ENV", "development")
+    log_level: str = os.getenv("LOG_LEVEL", "INFO")
+
+    class Config:
+        env_file = ".env"
+        case_sensitive = False
+
+
+# Global settings instance
+settings = Settings()
+
+# Warn once at startup if the default dev secret is still in use.
+if settings.jwt_secret == DEFAULT_DEV_SECRET:
+    logger.warning(
+        "⚠️  Using default SECRET_KEY. Set SECRET_KEY environment variable in production!"
+    )

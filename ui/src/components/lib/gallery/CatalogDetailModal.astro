@@ -1,0 +1,201 @@
+---
+/**
+ * CatalogDetailModal — reusable, read-only "big card" view for a LIB curated
+ * catalog. Opened by a whole-card click (the card carries `data-detail-modal`),
+ * it shows the asset's full description + its rich characterization content
+ * (prompt template, MCP tools/config, agent instructions, …) at full size —
+ * the parts that are clamped to one or two lines on the card.
+ *
+ * The shell here is presentational only: it exposes a header (icon slot + name +
+ * status pill + favorite), a scrollable body (description block + a `-sections`
+ * container the controller fills) and a footer (Close / Edit / Delete). The
+ * per-catalog wrapper (e.g. PromptDetailModal) supplies the icon + accent and
+ * calls `mountCatalogDetail` to hydrate it and wire Edit/Delete/Copy/favorite.
+ */
+import Related from "@/components/lib/gallery/Related.astro";
+import Foro from "@/components/lib/gallery/Foro.astro";
+import HistoryTimeline from "@/components/lib/gallery/HistoryTimeline.astro";
+import VersionsTimeline from "@/components/lib/gallery/VersionsTimeline.astro";
+
+export interface Props {
+  /** Dialog id, e.g. "prompt-view-modal". */
+  modalId: string;
+  /** Tailwind text-color class for the favorite star + section accents. */
+  accentClass?: string;
+  /** Status options (value→label) so the controller can resolve the header pill. */
+  statuses?: { value: string; label: string }[];
+}
+
+const {
+  modalId,
+  accentClass = "text-indigo-600 dark:text-indigo-300",
+  statuses = [],
+} = Astro.props as Props;
+---
+
+<dialog
+  id={modalId}
+  class="w-[min(920px,95vw)] max-w-none rounded-2xl bg-white p-0 text-gray-900 backdrop:bg-black/60 backdrop:backdrop-blur-sm dark:bg-gray-900 dark:text-gray-100"
+>
+  {/* Fixed height so switching tabs doesn't resize/re-center the dialog — only
+      the inner panel scrolls. */}
+  <div class="flex h-[min(760px,88vh)] flex-col">
+    {/* Header — wraps on mobile: the title+pills group shares its row with
+        the close button (order-1/order-2), while votes+favorite drop to
+        their own full-width line below via basis-full. From sm up this
+        collapses back to the original single row (name left, votes+favorite
+        +close right, in that order). */}
+    <div class="flex flex-wrap items-start gap-3 border-b border-gray-200 px-6 py-4 sm:flex-nowrap sm:gap-4 dark:border-gray-800">
+      <div class="order-1 flex min-w-0 flex-1 items-center gap-3">
+        <slot name="icon" />
+        <div class="min-w-0">
+          <h3 id={`${modalId}-name`} class="text-lg font-bold text-gray-900 line-clamp-2 sm:truncate dark:text-white">—</h3>
+          <div class="mt-1 flex flex-wrap items-center gap-1">
+            <span id={`${modalId}-status-pill`} class="hidden w-fit items-center rounded-full px-2.5 py-0.5 text-xs font-medium"></span>
+            <span id={`${modalId}-version-pill`} class="hidden w-fit items-center rounded-full bg-gray-100 px-2.5 py-0.5 font-mono text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300"></span>
+            <span id={`${modalId}-stage-pill`} class="hidden w-fit items-center rounded-full border border-gray-300 px-2.5 py-0.5 text-xs font-medium text-gray-600 dark:border-gray-600 dark:text-gray-300"></span>
+          </div>
+        </div>
+      </div>
+      <button
+        type="button"
+        data-modal-close={modalId}
+        class="order-2 shrink-0 rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 sm:order-3 dark:hover:bg-gray-800"
+        aria-label="Close"
+        data-i18n-aria-label="common.close"
+      >
+        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+        </svg>
+      </button>
+      <div class="order-3 flex basis-full shrink-0 items-center gap-1 sm:order-2 sm:basis-auto">
+        {/* Vote bar (HU-LI05) — sits beside the favorite; hydrated + unhidden by mountCatalogDetail. */}
+        <div id={`${modalId}-vote`} class="mr-1 hidden items-center gap-0.5">
+          <button
+            type="button"
+            id={`${modalId}-vote-up`}
+            aria-pressed="false"
+            title="Helpful"
+            aria-label="Helpful"
+            data-i18n-title="gallery.vote_up"
+            data-i18n-aria-label="gallery.vote_up"
+            class="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+          >
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M7.493 18.5c-.425 0-.82-.236-.974-.632A7.48 7.48 0 016 15.125c0-1.75.599-3.358 1.602-4.634.151-.192.373-.309.6-.397.473-.183.89-.514 1.212-.924a9.042 9.042 0 012.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 00.322-1.672V2.75a.75.75 0 01.75-.75 2.25 2.25 0 012.25 2.25c0 1.152-.26 2.243-.722 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 01-2.649 7.521c-.388.482-.987.729-1.605.729H14.23c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 00-1.423-.23h-.777ZM2.331 10.727a11.969 11.969 0 00-.831 4.398 12 12 0 00.52 3.507c.26.85 1.084 1.368 1.973 1.368H4.9c.445 0 .72-.498.523-.898a8.963 8.963 0 01-.924-3.977c0-1.708.476-3.305 1.302-4.666.245-.403-.028-.959-.5-.959H4.25c-.832 0-1.612.453-1.918 1.227Z" />
+            </svg>
+          </button>
+          <span id={`${modalId}-vote-up-count`} class="min-w-[1rem] text-center text-sm font-semibold text-gray-700 dark:text-gray-200">0</span>
+          <button
+            type="button"
+            id={`${modalId}-vote-down`}
+            aria-pressed="false"
+            title="Not helpful"
+            aria-label="Not helpful"
+            data-i18n-title="gallery.vote_down"
+            data-i18n-aria-label="gallery.vote_down"
+            class="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+          >
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+              <g transform="rotate(180 12 12)">
+                <path d="M7.493 18.5c-.425 0-.82-.236-.974-.632A7.48 7.48 0 016 15.125c0-1.75.599-3.358 1.602-4.634.151-.192.373-.309.6-.397.473-.183.89-.514 1.212-.924a9.042 9.042 0 012.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 00.322-1.672V2.75a.75.75 0 01.75-.75 2.25 2.25 0 012.25 2.25c0 1.152-.26 2.243-.722 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 01-2.649 7.521c-.388.482-.987.729-1.605.729H14.23c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 00-1.423-.23h-.777ZM2.331 10.727a11.969 11.969 0 00-.831 4.398 12 12 0 00.52 3.507c.26.85 1.084 1.368 1.973 1.368H4.9c.445 0 .72-.498.523-.898a8.963 8.963 0 01-.924-3.977c0-1.708.476-3.305 1.302-4.666.245-.403-.028-.959-.5-.959H4.25c-.832 0-1.612.453-1.918 1.227Z" />
+              </g>
+            </svg>
+          </button>
+          <span id={`${modalId}-vote-down-count`} class="min-w-[1rem] text-center text-sm font-semibold text-gray-700 dark:text-gray-200">0</span>
+        </div>
+        <button
+          type="button"
+          id={`${modalId}-fav`}
+          aria-pressed="false"
+          title="Add to favorites"
+          data-i18n-title="gallery.favorite_add"
+          class={`rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ${accentClass}`}
+        >
+          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.3 4.02a1 1 0 00.95.69h4.22c.97 0 1.37 1.24.59 1.81l-3.42 2.48a1 1 0 00-.36 1.12l1.3 4.02c.3.92-.75 1.69-1.54 1.12l-3.41-2.48a1 1 0 00-1.18 0l-3.41 2.48c-.78.57-1.84-.2-1.54-1.12l1.3-4.02a1 1 0 00-.36-1.12L2 9.45c-.78-.57-.38-1.81.6-1.81h4.21a1 1 0 00.95-.69l1.3-4.02z" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    {/* Tabs — Details / Related / Discussion / History (wired by mountCatalogDetail). */}
+    <div class="border-b border-gray-200 px-6 dark:border-gray-800">
+      <div role="tablist" aria-label="Asset detail sections" class="-mb-px flex flex-nowrap gap-4 overflow-x-auto no-scrollbar text-sm font-medium sm:gap-6">
+        <button
+          type="button"
+          role="tab"
+          data-detail-tab="detail"
+          aria-selected="true"
+          class="dt-detail-tab whitespace-nowrap border-b-2 border-indigo-600 px-1 pb-3 pt-3 text-indigo-600 dark:text-indigo-400"
+          data-i18n="catalog_detail.tab_detail"
+        >Details</button>
+        <button
+          type="button"
+          role="tab"
+          data-detail-tab="related"
+          aria-selected="false"
+          tabindex="-1"
+          class="dt-detail-tab whitespace-nowrap border-b-2 border-transparent px-1 pb-3 pt-3 text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          data-i18n="catalog_detail.tab_related"
+        >Related</button>
+        <button
+          type="button"
+          role="tab"
+          data-detail-tab="discussion"
+          aria-selected="false"
+          tabindex="-1"
+          class="dt-detail-tab whitespace-nowrap border-b-2 border-transparent px-1 pb-3 pt-3 text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          data-i18n="catalog_detail.tab_discussion"
+        >Discussion</button>
+        <button
+          type="button"
+          role="tab"
+          data-detail-tab="history"
+          aria-selected="false"
+          tabindex="-1"
+          class="dt-detail-tab whitespace-nowrap border-b-2 border-transparent px-1 pb-3 pt-3 text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          data-i18n="catalog_detail.tab_history"
+        >History</button>
+        <button
+          type="button"
+          role="tab"
+          data-detail-tab="versions"
+          aria-selected="false"
+          tabindex="-1"
+          class="dt-detail-tab whitespace-nowrap border-b-2 border-transparent px-1 pb-3 pt-3 text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          data-i18n="catalog_detail.tab_versions"
+        >Versions</button>
+      </div>
+    </div>
+
+    {/* Body (scrollable) — one panel per tab. */}
+    <div class="flex-1 overflow-y-auto px-6 py-5">
+      <div data-detail-panel="detail" class="space-y-6">
+        <p id={`${modalId}-desc`} class="hidden whitespace-pre-wrap text-sm text-gray-600 dark:text-gray-300"></p>
+        <div id={`${modalId}-sections`} class="space-y-6"></div>
+      </div>
+      <div data-detail-panel="related" class="hidden">
+        <Related modalId={modalId} />
+      </div>
+      <div data-detail-panel="discussion" class="hidden">
+        <Foro modalId={modalId} />
+      </div>
+      <div data-detail-panel="history" class="hidden">
+        <HistoryTimeline modalId={modalId} />
+      </div>
+      <div data-detail-panel="versions" class="hidden">
+        <VersionsTimeline modalId={modalId} />
+      </div>
+    </div>
+
+    {/* Footer — read-only catalog view: Close only (Edit/Delete live on the
+        Assets repo page, the single edit/remove surface). */}
+    <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-800">
+      <button type="button" data-modal-close={modalId} class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800" data-i18n="common.close">Close</button>
+    </div>
+  </div>
+  {/* Status options consumed by the controller (mountCatalogDetail) to resolve
+      the header pill label without a second round-trip. */}
+  <script type="application/json" id={`${modalId}-statuses`} set:html={JSON.stringify(statuses)}></script>
+</dialog>

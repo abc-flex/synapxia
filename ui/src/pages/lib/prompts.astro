@@ -1,0 +1,193 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import Toast from "../../components/Toast.astro";
+import CardGallery from "../../components/lib/gallery/CardGallery.astro";
+import PromptCard from "../../components/lib/PromptCard.astro";
+import PromptDetailModal from "../../components/lib/PromptDetailModal.astro";
+import { getAssetsbyCategory } from "@/lib/assets";
+import { getCharacterizations } from "@/lib/characterizations";
+import { getListItemsbyList } from "@/lib/list_items";
+import { getCurrentUser } from "@/lib/auth";
+import { getFavoritesByUser } from "@/lib/favorites";
+import { getActions, summarizeVotes } from "@/lib/actions";
+import { summarizeDiscussionCounts } from "@/lib/foro";
+import { getLocale } from "@/utils/getLocale";
+import { formatRelative } from "@/lib/datatable";
+
+const CATEGORY = "PROMPTS";
+const locale = getLocale(Astro);
+
+// ── Prompts (assets in the PROMPTS category) ───────────────────────────────
+let prompts: any[] = [];
+let errorMessage: string | null = null;
+try {
+  prompts = await getAssetsbyCategory(CATEGORY);
+} catch (error) {
+  console.error("Failed to fetch prompts:", error);
+  errorMessage = error instanceof Error ? error.message : "Failed to fetch prompts from API";
+  prompts = [];
+}
+
+// ── Characterizations → map<assetId, {feature: value}> for the card chips ──
+// One bounded fetch + client-side group (a dedicated /by-asset endpoint is a
+// future optimization if catalogs grow large).
+// Stores both columns per feature: `value` (short summary) + `detail` (rich
+// payload). Cards/chips pick whichever the feature uses (see the seed).
+type CharCols = { value: string; detail: string };
+let charsByAsset = new Map<number, Record<string, CharCols>>();
+try {
+  const chars = await getCharacterizations(0, 1000);
+  for (const c of chars) {
+    const aid = Number(c.asset);
+    const bag = charsByAsset.get(aid) ?? {};
+    bag[c.feature] = { value: c.value ?? "", detail: c.detail ?? "" };
+    charsByAsset.set(aid, bag);
+  }
+} catch {
+  charsByAsset = new Map();
+}
+
+// ── Current user's favorites (SSR) → pre-fill the card stars ───────────────
+let favIds = new Set<number>();
+let myUserId: number | null = null;
+try {
+  const me = await getCurrentUser();
+  myUserId = Number(me.id);
+  const favs = await getFavoritesByUser(myUserId);
+  favIds = new Set(favs.map((f) => Number(f.asset)));
+} catch {
+  favIds = new Set();
+}
+
+// ── Vote tallies (SSR) → pre-fill each card's score + the user's own vote ──
+// One bounded fetch, grouped client-side (mirrors the characterizations fetch);
+// a dedicated bulk vote endpoint is a future optimization.
+let votesByAsset: Map<number, { score: number; positive: number; negative: number; myVote: string | null }> = new Map();
+let discussByAsset = new Map<number, number>();
+try {
+  const allActions = await getActions(0, 1000);
+  votesByAsset = summarizeVotes(allActions, myUserId ?? undefined);
+  discussByAsset = summarizeDiscussionCounts(allActions);
+} catch {
+  votesByAsset = new Map();
+  discussByAsset = new Map();
+}
+
+// ── Status list (ASSET_STATUS) for labels + the status filter ──────────────
+let status: any[] = [];
+try {
+  status = await getListItemsbyList("ASSET_STATUS");
+} catch {
+  status = [];
+}
+const statuses = status.map((s) => ({ value: s.value, label: s.label }));
+
+// Resolve a status code to its label, tolerating legacy rows that stored the
+// bare code without the list_items `N-` sort-prefix (mirrors assets.astro).
+const resolveStatusLabel = (raw: string): string => {
+  if (!raw) return "";
+  const direct = status.find((s) => s.value === raw);
+  if (direct) return direct.label;
+  const stripped = status.find((s) => s.value.replace(/^\d+-/, "") === raw);
+  return stripped?.label ?? raw;
+};
+
+// Galleries are published-only browse surfaces: hide anything not PUBLISHED
+// (tolerant of the legacy `N-` ordinal prefix on the status code).
+const isPublished = (raw: unknown): boolean =>
+  String(raw ?? "").replace(/^\d+-/, "").toUpperCase() === "PUBLISHED";
+
+// ── Flatten rows for the cards ─────────────────────────────────────────────
+const rows = prompts.filter((item) => isPublished(item.status)).map((item) => {
+  const chars = charsByAsset.get(Number(item.id)) ?? {};
+  const tags = Array.isArray(item.tags) ? item.tags : [];
+  return {
+    id: item.id,
+    name: item.name,
+    description: item.description ?? "",
+    subtitle: formatRelative(item.updated_at ?? item.created_at, locale),
+    subtitleTs: item.updated_at ?? item.created_at,
+    statusValue: item.status,
+    statusLabel: resolveStatusLabel(item.status),
+    favorite: favIds.has(item.id) ? "yes" : "no",
+    votePositive: votesByAsset.get(Number(item.id))?.positive ?? 0,
+    voteNegative: votesByAsset.get(Number(item.id))?.negative ?? 0,
+    myVote: votesByAsset.get(Number(item.id))?.myVote ?? "",
+    discussCount: discussByAsset.get(Number(item.id)) ?? 0,
+    model: chars.SUGGESTED_MODEL?.value,
+    platform: chars.PLATFORM?.value,
+    temperature: chars.SUGGESTED_TEMPERATURE?.value,
+    tags,
+    version: item.current_version ?? "1.0.0",
+    searchText: [item.name, item.description, tags.join(" ")].filter(Boolean).join(" "),
+  };
+});
+---
+
+<BaseLayout>
+  {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
+
+  <div class="mx-auto w-full max-w-full">
+    <Breadcrumb
+      moduleName="AI Library"
+      pageName="Prompt Gallery"
+      pageTitle="Prompt Gallery"
+      homeLink="/"
+      moduleNameKey="modules.LIB"
+      pageNameKey="menu_options.prompts"
+      pageTitleKey="menu_options.prompts"
+    />
+
+    {/* Read-only "big card" view (opened by a whole-card click) */}
+    <PromptDetailModal modalId="prompt-view-modal" statuses={statuses} />
+
+    <CardGallery
+      galleryId="prompts-gallery"
+      emptyKey="prompt_modal.empty"
+      statuses={[]}
+      proposeHref={`/lib/propose?category=${CATEGORY}`}
+    >
+      {rows.map((r) => (
+        <PromptCard
+          id={r.id}
+          name={r.name}
+          subtitle={r.subtitle}
+          subtitleTs={r.subtitleTs}
+          description={r.description}
+          statusLabel={r.statusLabel}
+          statusValue={r.statusValue}
+          favorite={r.favorite}
+          searchText={r.searchText}
+          editModalId="prompt-detail-modal"
+          model={r.model}
+          platform={r.platform}
+          temperature={r.temperature}
+          tags={r.tags}
+          votable={true}
+          votePositive={r.votePositive}
+          voteNegative={r.voteNegative}
+          myVote={r.myVote}
+          discussCount={r.discussCount}
+          version={r.version}
+        />
+      ))}
+    </CardGallery>
+  </div>
+
+  <script>
+    // Bundled module (Astro resolves @/ + TS and dedupes it). We deliberately
+    // avoid the inline `<script type="module">` + `/src/...` import pattern,
+    // which 404s in the production build (see memory/CHANGELOG.md 2026-06-15).
+    import { initCardGallery } from "@/lib/catalogGallery";
+    import { loadClientTranslations } from "@/utils/i18nClient";
+    import { installGlobalToast } from "@/lib/toast";
+
+    initCardGallery({ galleryId: "prompts-gallery", pageSize: 12 });
+    loadClientTranslations();
+
+    // Top-layer toast: renders above the native <dialog> detail modal (a plain
+    // body-appended toast loses to the modal's browser top layer).
+    installGlobalToast();
+  </script>
+</BaseLayout>

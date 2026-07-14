@@ -1,0 +1,41 @@
+---
+/**
+ * SearchBar — thin host for the `SearchPalette` Svelte island (searches the
+ * sidebar's modules/options, ranked client-side; see lib/searchIndex.ts). Same
+ * manual-mount pattern as NotificationMenu.astro → NotificationBell.svelte.
+ */
+import { t } from "@/i18n";
+import { getLocale } from "@/utils/getLocale";
+
+const locale = getLocale(Astro);
+
+interface Props {
+  placeholder?: string;
+  className?: string;
+}
+
+const {
+  placeholder = "header.search_placeholder",
+  // Below `sm` the island renders an icon-only trigger (SearchPalette.svelte
+  // collapses to a button + floating overlay there), so this host stays
+  // icon-sized (`shrink-0`) instead of reserving a wide, mostly-empty flex
+  // slot. From `sm` it flexes to fill the bar's middle; from `lg` it keeps
+  // the fixed desktop width.
+  className = "shrink-0 sm:min-w-0 sm:flex-1 lg:flex-none lg:min-w-[380px]",
+} = Astro.props as Props;
+---
+
+<div id="header-search-root" class={className} data-placeholder={t(locale, placeholder)}></div>
+
+<script>
+  import { mount } from "svelte";
+  import SearchPalette from "@/components/svelte/SearchPalette.svelte";
+
+  const target = document.getElementById("header-search-root");
+  if (target) {
+    mount(SearchPalette, {
+      target,
+      props: { placeholder: target.dataset.placeholder || "Search or type command..." },
+    });
+  }
+</script>

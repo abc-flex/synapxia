@@ -1,0 +1,531 @@
+---
+/**
+ * Propose an asset (HU-Propose) — the review-workflow entry point. POSTs to
+ * `/api/assets/propose`, which atomically creates the asset (PROPOSED), its
+ * characterizations (from the category's specs), the PROPOSAL + REVIEW actions,
+ * and MANAGE permissions — generating the reviewer's notification.
+ *
+ * UX: a type-branded hero (gradient + icon matching that type's gallery card)
+ * over a two-tab form (Details / Characterization). Built on the shared UI
+ * primitives in `components/ui/` (Tabs, FormField, Button) + `lib/formClasses`
+ * (input/label classes, `setFieldInvalid`) + `lib/tabs` (`initTabs`).
+ *
+ * Reached from a gallery's "Propose" button with `?category=<CODE>`: the type is
+ * then locked and the hero/heading/characterization brand to it. Direct visit
+ * (no `?category=`) → editable type select; the hero + Characterization tab
+ * appear once a type is chosen. All inputs stay DOM-mounted (tabs only show/
+ * hide) so the submit handler collects them via FormData + querySelectorAll.
+ */
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import Toast from "../../components/Toast.astro";
+import Tabs from "../../components/ui/Tabs.astro";
+import FormField from "../../components/ui/FormField.astro";
+import Button from "../../components/ui/Button.astro";
+import { inputClass } from "@/lib/formClasses";
+
+const PROPOSE_TABS = [
+  { key: "details", labelKey: "propose.tab_details" },
+  { key: "characterization", labelKey: "propose.tab_characterization", hidden: true },
+];
+---
+
+<BaseLayout>
+  <div class="mx-auto w-full max-w-3xl">
+    <Breadcrumb
+      moduleName="AI Library"
+      pageName="Propose"
+      pageTitle="Propose an asset"
+      homeLink="/"
+      moduleNameKey="modules.LIB"
+      pageNameKey="menu_options.propose"
+      pageTitleKey="propose.title"
+    />
+
+    <form
+      id="propose-form"
+      class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
+    >
+      <!-- Type-branded hero (gradient + icon re-themed client-side by category). -->
+      <div id="propose-hero" class="flex items-start gap-4 bg-gradient-to-br from-indigo-500 to-indigo-600 px-6 py-5 text-white">
+        <span id="propose-hero-icon" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/20 text-white">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+          </svg>
+        </span>
+        <div class="min-w-0">
+          <h1 id="propose-hero-title" class="text-lg font-semibold" data-i18n="propose.title">Propose an asset</h1>
+          <p class="mt-0.5 text-sm text-white/85" data-i18n="propose.subtitle">
+            Submit a new asset for review. A reviewer will be notified to approve, request changes, or reject it.
+          </p>
+        </div>
+      </div>
+
+      <Tabs tabs={PROPOSE_TABS} ariaLabel="Propose sections" />
+
+      <div class="px-6 py-5">
+        <!-- Details panel -->
+        <div data-tab-panel="details" class="space-y-5">
+          <FormField controlId="propose-name" labelKey="propose.name"
+            errorId="propose-name-error" errorKey="propose.name_required">
+            <input id="propose-name" name="name" type="text" maxlength="100" class={inputClass}
+              data-i18n-placeholder="propose.name_placeholder" placeholder="Asset name" />
+          </FormField>
+
+          <FormField controlId="propose-description" labelKey="propose.description">
+            <textarea id="propose-description" name="description" rows="2" maxlength="500" class={inputClass}
+              data-i18n-placeholder="propose.description_placeholder" placeholder="Short description"></textarea>
+          </FormField>
+
+          <div class="grid gap-5 sm:grid-cols-2">
+            <FormField controlId="propose-category" labelKey="propose.category"
+              errorId="propose-category-error" errorKey="propose.category_required">
+              <!-- Editable selector — used only on a direct visit (no ?category=). -->
+              <select id="propose-category" name="category" class={inputClass}>
+                <option value="" data-i18n="propose.category_placeholder">Select a category…</option>
+              </select>
+              <!-- Locked display — shown when the type comes from the originating gallery. -->
+              <input id="propose-category-locked" type="text" readonly
+                class={`${inputClass} hidden cursor-not-allowed bg-gray-100 dark:bg-gray-800`} />
+            </FormField>
+
+            <FormField controlId="propose-reviewer" labelKey="propose.reviewer">
+              <select id="propose-reviewer" name="reviewer_id" class={inputClass}>
+                <option value="" data-i18n="propose.reviewer_auto">Auto-assign</option>
+              </select>
+            </FormField>
+          </div>
+
+          <FormField controlId="propose-tags" labelKey="propose.tags">
+            <input id="propose-tags" name="tags" type="text" class={inputClass}
+              data-i18n-placeholder="propose.tags_placeholder" placeholder="comma, separated, tags" />
+          </FormField>
+
+          <FormField controlId="propose-detail" labelKey="propose.detail">
+            <textarea id="propose-detail" name="detail" rows="4" class={inputClass}
+              data-i18n-placeholder="propose.detail_placeholder" placeholder="Additional detail (optional)"></textarea>
+          </FormField>
+        </div>
+
+        <!-- Characterization panel -->
+        <div data-tab-panel="characterization" class="hidden">
+          <p class="mb-4 text-xs text-gray-500 dark:text-gray-400" data-i18n="propose.characterization_hint">
+            Describe the asset against this type's features. Defaults are prefilled; adjust as needed.
+          </p>
+          <div id="propose-characterization-fields" class="grid gap-5 sm:grid-cols-2"></div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-800">
+        <Button id="propose-submit" type="submit" variant="primary" labelKey="propose.submit" />
+      </div>
+    </form>
+  </div>
+
+  <Toast message="" variant="info" open={false} />
+
+  <script>
+    // Bundled module (Astro resolves @/ + TS). We avoid inline type="module" +
+    // /src imports (those 404 in the Vercel build — see memory/CHANGELOG.md).
+    import { getCategories } from "@/lib/categories";
+    import { getReviewers, proposeAsset } from "@/lib/propose";
+    import { buildCharFieldDefs } from "@/lib/charFields";
+    import { loadClientTranslations, translate } from "@/utils/i18nClient";
+    import { installGlobalToast, showToast } from "@/lib/toast";
+    import { initTabs } from "@/lib/tabs";
+    import { inputClass, labelClass, setFieldInvalid } from "@/lib/formClasses";
+
+    loadClientTranslations();
+    installGlobalToast();
+
+    const SUBMIT_BASE =
+      "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition disabled:opacity-60";
+    const HERO_BASE = "flex items-start gap-4 bg-gradient-to-br px-6 py-5 text-white";
+
+    // Per-type branding — icons + colors copied from the gallery cards so
+    // "Propose a Prompt/MCP/Agent" matches PromptCard / McpCard / AgentCard.
+    const ICON_PROMPT =
+      `<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 10h8M8 14h5M21 12a8 8 0 0 1-8 8H7l-4 3v-5a8 8 0 1 1 18-6z" stroke-linecap="round" stroke-linejoin="round" /></svg>`;
+    const ICON_MCP =
+      `<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="6" rx="1.5" /><rect x="3" y="14" width="18" height="6" rx="1.5" /><path d="M7 7h.01M7 17h.01" stroke-linecap="round" /></svg>`;
+    const ICON_AGENT =
+      `<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="6" y="6" width="12" height="12" rx="2" /><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3" stroke-linecap="round" /></svg>`;
+    const ICON_DEFAULT =
+      `<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14" stroke-linecap="round" /></svg>`;
+
+    type Theme = { grad: string; icon: string; submit: string };
+    const THEME_DEFAULT: Theme = {
+      grad: "from-indigo-500 to-indigo-600", icon: ICON_DEFAULT,
+      submit: "bg-indigo-600 hover:bg-indigo-700",
+    };
+    const THEMES: Record<string, Theme> = {
+      PROMPTS: { grad: "from-indigo-500 to-indigo-600", icon: ICON_PROMPT, submit: "bg-indigo-600 hover:bg-indigo-700" },
+      MCPS: { grad: "from-emerald-500 to-emerald-600", icon: ICON_MCP, submit: "bg-emerald-600 hover:bg-emerald-700" },
+      AGENTS: { grad: "from-violet-500 to-indigo-500", icon: ICON_AGENT, submit: "bg-violet-600 hover:bg-violet-700" },
+    };
+
+    const TITLE_KEYS: Record<string, string> = {
+      PROMPTS: "propose.title_prompts",
+      MCPS: "propose.title_mcps",
+      AGENTS: "propose.title_agents",
+    };
+    const REVIEWER_ROLES = ["ADMINISTRATOR", "ADMINISTRATIVE", "REVIEWER"];
+
+    const tr = (key: string, fallback: string): string => {
+      try {
+        const v = translate(key);
+        if (v && v !== key) return v;
+      } catch {
+        /* non-fatal */
+      }
+      return fallback;
+    };
+
+    const form = document.getElementById("propose-form") as HTMLFormElement | null;
+    const nameInput = document.getElementById("propose-name") as HTMLInputElement | null;
+    const catSel = document.getElementById("propose-category") as HTMLSelectElement | null;
+    const catLocked = document.getElementById("propose-category-locked") as HTMLInputElement | null;
+    const revSel = document.getElementById("propose-reviewer") as HTMLSelectElement | null;
+    const submitBtn = document.getElementById("propose-submit") as HTMLButtonElement | null;
+    const hero = document.getElementById("propose-hero") as HTMLElement | null;
+    const heroIcon = document.getElementById("propose-hero-icon") as HTMLElement | null;
+    const heroTitle = document.getElementById("propose-hero-title") as HTMLElement | null;
+    const charTab = document.getElementById("tab-characterization") as HTMLButtonElement | null;
+    const charFields = document.getElementById("propose-characterization-fields") as HTMLElement | null;
+    const nameErr = document.getElementById("propose-name-error") as HTMLElement | null;
+    const catErr = document.getElementById("propose-category-error") as HTMLElement | null;
+
+    let lockedCategory: string | null = null;
+    let theme: Theme = THEME_DEFAULT;
+    // Feature codes that are `required` for the current category (from the
+    // specifications table) — the Characterization step must fill these.
+    const requiredFeatures = new Set<string>();
+
+    // Shared tab toggler; keep the stepped submit label in sync with the tab.
+    const tabs = initTabs(document, {
+      onActivate: () => updateSubmitLabel(),
+    });
+
+    // The category has a Characterization step ⇔ its tab button is visible
+    // (set by setCharTabVisible once specs load).
+    const hasCharStep = () => charTab != null && !charTab.classList.contains("hidden");
+    const onDetails = () => tabs.current() !== "characterization";
+
+    // Two-step button: "Caracterizar" on Details when a char step exists (it just
+    // advances to the Characterization tab); "Proponer para revisión" otherwise.
+    function updateSubmitLabel() {
+      if (!submitBtn) return;
+      const step1 = hasCharStep() && onDetails();
+      const key = step1 ? "propose.characterize" : "propose.submit";
+      submitBtn.setAttribute("data-i18n", key);
+      submitBtn.textContent = tr(key, step1 ? "Characterize" : "Propose for review");
+    }
+
+    function setCharTabVisible(visible: boolean) {
+      if (!charTab) return;
+      charTab.classList.toggle("hidden", !visible);
+      if (!visible && charTab.getAttribute("aria-selected") === "true") tabs.activate("details");
+      updateSubmitLabel();
+    }
+
+    /* ---- branding --------------------------------------------------------- */
+    function applyTheme(category: string) {
+      theme = THEMES[(category || "").toUpperCase()] || THEME_DEFAULT;
+      if (hero) hero.className = `${HERO_BASE} ${theme.grad}`;
+      if (heroIcon) heroIcon.innerHTML = theme.icon;
+      if (submitBtn) submitBtn.className = `${SUBMIT_BASE} ${theme.submit}`;
+    }
+
+    function applyTitle(category: string) {
+      if (!heroTitle) return;
+      const key = TITLE_KEYS[(category || "").toUpperCase()] || "propose.title";
+      heroTitle.setAttribute("data-i18n", key); // keep correct across language switches
+      heroTitle.textContent = tr(key, heroTitle.textContent || "Propose an asset");
+    }
+
+    function lockCategory(category: string, label: string) {
+      lockedCategory = category;
+      if (catSel) {
+        catSel.value = category;
+        catSel.disabled = true;
+        catSel.classList.add("hidden");
+      }
+      if (catLocked) {
+        catLocked.value = label;
+        catLocked.classList.remove("hidden");
+      }
+    }
+
+    // Everything that must react to the chosen type, in one place.
+    function syncType(category: string) {
+      applyTitle(category);
+      applyTheme(category);
+      void fillCharacterization(category);
+    }
+
+    /* ---- characterization ------------------------------------------------- */
+    async function fillCharacterization(category: string) {
+      if (!charFields || !category) {
+        setCharTabVisible(false);
+        return;
+      }
+      try {
+        // Ordered by the spec's sort_order; carries control type (select for
+        // list-backed features / textarea for rich / input), required flag,
+        // FEAT_TYPE badge and description — one source of truth (charFields.ts).
+        const defs = await buildCharFieldDefs(category);
+        charFields.innerHTML = "";
+        requiredFeatures.clear();
+        if (!defs.length) {
+          setCharTabVisible(false);
+          return;
+        }
+        for (const def of defs) {
+          const code = def.feature;
+          const cell = document.createElement("div");
+          if (def.control === "textarea") cell.className = "sm:col-span-2";
+
+          // Label row: name + required star on the left, FEAT_TYPE badge right.
+          // The feature name lives in its own [data-i18n] span so a language
+          // switch (loadClientTranslations sets textContent) doesn't wipe the
+          // required `*` marker, which sits beside it as a sibling.
+          const labelRow = document.createElement("div");
+          labelRow.className = "flex flex-wrap items-baseline justify-between gap-x-2";
+          const label = document.createElement("label");
+          label.className = labelClass;
+          label.htmlFor = `char-${code}`;
+          const labelText = document.createElement("span");
+          labelText.setAttribute("data-i18n", `feature.${code}`);
+          labelText.textContent = tr(`feature.${code}`, def.name);
+          label.appendChild(labelText);
+          if (def.required) {
+            requiredFeatures.add(code);
+            const star = document.createElement("span");
+            star.className = "ml-0.5 text-red-500";
+            star.setAttribute("aria-hidden", "true");
+            star.textContent = "*";
+            label.appendChild(star);
+          }
+          labelRow.appendChild(label);
+          if (def.type) {
+            const badge = document.createElement("span");
+            badge.className = "shrink-0 text-[10px] uppercase tracking-wide text-gray-400";
+            badge.textContent = def.type;
+            labelRow.appendChild(badge);
+          }
+          cell.appendChild(labelRow);
+          if (def.description) {
+            const desc = document.createElement("p");
+            desc.className = "mb-1 text-xs text-gray-500 dark:text-gray-400 break-words";
+            desc.textContent = def.description;
+            cell.appendChild(desc);
+          }
+
+          let field: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+          if (def.control === "select") {
+            const select = document.createElement("select");
+            const blank = document.createElement("option");
+            blank.value = "";
+            blank.textContent = "—";
+            select.appendChild(blank);
+            for (const opt of def.options) {
+              const option = document.createElement("option");
+              option.value = opt.value;
+              option.textContent = opt.label;
+              select.appendChild(option);
+            }
+            field = select;
+          } else if (def.control === "textarea") {
+            const ta = document.createElement("textarea");
+            ta.rows = code === "EXAMPLE_OUTPUT" || code === "OVERVIEW" ? 3 : 5;
+            field = ta;
+          } else {
+            const input = document.createElement("input");
+            input.type = "text";
+            field = input;
+          }
+          field.id = `char-${code}`;
+          field.name = code;
+          field.className = inputClass;
+          field.setAttribute("data-characterization", "1");
+          if (def.required) field.setAttribute("data-required", "1");
+          if (def.defaultValue) field.value = def.defaultValue;
+          // Clear the invalid highlight as soon as the user edits a required field.
+          const clear = () => setFieldInvalid(field, null, false);
+          field.addEventListener("input", clear);
+          field.addEventListener("change", clear);
+          cell.appendChild(field);
+
+          charFields.appendChild(cell);
+        }
+        setCharTabVisible(true);
+        loadClientTranslations(); // patch the new [data-i18n] labels
+      } catch (err) {
+        // Don't silently drop the whole Characterization step. A specs-endpoint
+        // failure (e.g. a 500 because the DB is missing the `required` column
+        // before a rebuild) otherwise just makes the tab vanish with no clue —
+        // surface it so it's diagnosable. (An empty spec list returns above and
+        // stays silent — that's a legit "no characterization" category.)
+        console.error("Failed to load specifications for", category, err);
+        showToast(
+          tr("propose.characterization_load_error", "Could not load the characterization fields. Try again."),
+          "error",
+        );
+        setCharTabVisible(false);
+      }
+    }
+
+    /* ---- reviewers -------------------------------------------------------- */
+    function reviewerRole(profile: string, isSuper: boolean): string {
+      if (REVIEWER_ROLES.includes(profile)) return tr(`reviewer_role.${profile}`, profile);
+      if (isSuper) return tr("reviewer_role.SUPERUSER", "Superuser");
+      return tr(`reviewer_role.${profile}`, profile);
+    }
+
+    async function fillReviewers() {
+      if (!revSel) return;
+      try {
+        const revs = await getReviewers();
+        for (const r of revs) {
+          const o = document.createElement("option");
+          o.value = String(r.value);
+          o.textContent = `${r.label} — ${reviewerRole(r.profile, r.is_superuser)}`;
+          revSel.appendChild(o);
+        }
+      } catch {
+        /* auto-assign stays the only option */
+      }
+    }
+
+    /* ---- init ------------------------------------------------------------- */
+    async function init() {
+      const pre = new URLSearchParams(location.search).get("category");
+      let cats: { code: string; name: string }[] = [];
+      try {
+        cats = await getCategories(0, 1000);
+      } catch {
+        /* leave the placeholder; submit will validate */
+      }
+      if (catSel) {
+        for (const c of cats) {
+          const o = document.createElement("option");
+          o.value = c.code;
+          o.textContent = c.name;
+          catSel.appendChild(o);
+        }
+      }
+
+      const match = pre
+        ? cats.find((c) => c.code.toUpperCase() === pre.toUpperCase())
+        : undefined;
+
+      if (match) {
+        lockCategory(match.code, match.name);
+        syncType(match.code);
+      } else if (catSel) {
+        catSel.addEventListener("change", () => syncType(catSel.value));
+      }
+    }
+
+    // Clear a field's invalid state as soon as the user fixes it.
+    nameInput?.addEventListener("input", () => setFieldInvalid(nameInput, nameErr, false));
+    catSel?.addEventListener("change", () => setFieldInvalid(catSel, catErr, false));
+
+    void init();
+    void fillReviewers();
+
+    form?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const fd = new FormData(form);
+      const name = String(fd.get("name") || "").trim();
+      const category = lockedCategory || String(fd.get("category") || "");
+      const catControl = lockedCategory ? catLocked : catSel;
+      const nameBad = !name;
+      const catBad = !category;
+      // Mark the offending inputs inline (red border + message).
+      setFieldInvalid(nameInput, nameErr, nameBad);
+      setFieldInvalid(catControl, catErr, catBad);
+      if (nameBad || catBad) {
+        tabs.activate("details");
+        (nameBad ? nameInput : catControl)?.focus();
+        showToast(tr("propose.required", "Name and category are required"), "error");
+        return;
+      }
+
+      // Step 1 → "Caracterizar": advance to the Characterization step (no post).
+      if (hasCharStep() && onDetails()) {
+        tabs.activate("characterization");
+        updateSubmitLabel();
+        return;
+      }
+
+      // Step 2 → "Proponer": the specifications table marks some features
+      // `required` (e.g. AGENTS.INSTRUCTIONS); block until each is filled.
+      // Optional features (e.g. AGENTS.TOOLS) may stay blank — defaults apply.
+      if (hasCharStep()) {
+        let firstBad: HTMLElement | null = null;
+        charFields
+          ?.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("[data-required]")
+          .forEach((el) => {
+            const bad = !(el.value || "").trim();
+            setFieldInvalid(el, null, bad);
+            if (bad && !firstBad) firstBad = el;
+          });
+        if (firstBad) {
+          tabs.activate("characterization");
+          (firstBad as HTMLElement).focus();
+          showToast(
+            tr("propose.characterization_required", "Please fill the required characterization fields."),
+            "error",
+          );
+          return;
+        }
+      }
+
+      // Collect the per-feature characterization values (non-empty only).
+      const values: Record<string, string> = {};
+      charFields
+        ?.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("[data-characterization]")
+        .forEach((el) => {
+          const v = (el.value || "").trim();
+          if (v) values[el.name] = v;
+        });
+
+      const tagsRaw = String(fd.get("tags") || "").trim();
+      const reviewerRaw = String(fd.get("reviewer_id") || "");
+      const payload = {
+        name,
+        category,
+        description: String(fd.get("description") || "").trim() || undefined,
+        detail: String(fd.get("detail") || "").trim() || undefined,
+        tags: tagsRaw ? tagsRaw.split(",").map((t) => t.trim()).filter(Boolean) : undefined,
+        reviewer_id: reviewerRaw ? Number(reviewerRaw) : undefined,
+        values: Object.keys(values).length ? values : undefined,
+      };
+
+      if (submitBtn) submitBtn.disabled = true;
+      try {
+        await proposeAsset(payload);
+        // Came from a gallery's Propose CTA → return to that gallery with a flag;
+        // the gallery shows the "proposed" toast on load (see catalogGallery.ts).
+        if (lockedCategory) {
+          window.location.href = "/lib/" + lockedCategory.toLowerCase() + "?proposed=1";
+          return;
+        }
+        // Direct visit (no locked category) → confirm + reset the form in place.
+        showToast(tr("propose.success", "Asset proposed for review"), "success");
+        form.reset();
+        tabs.activate("details");
+        setCharTabVisible(false);
+      } catch (err) {
+        showToast(
+          err instanceof Error ? err.message : tr("propose.error", "Could not propose the asset"),
+          "error",
+        );
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    });
+  </script>
+</BaseLayout>

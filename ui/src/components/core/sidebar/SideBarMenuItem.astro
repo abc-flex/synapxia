@@ -1,0 +1,125 @@
+---
+import { NavModule, NavOption } from "../../types/nav";
+
+interface Props {
+  module: NavModule;
+  options?: NavOption[];
+  currentPath?: string;
+  currentModuleName?: string;
+}
+
+const { module, options = [], currentPath = "", currentModuleName = "" } = Astro.props as Props;
+const hasChildren = options.length > 0;
+const isModuleActive = module.code.toLowerCase() === currentModuleName.toLowerCase();
+
+const icons = import.meta.glob("/src/images/icons/*.svg", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+}) as Record<string, string>;
+
+function getIcon(icon: string) {
+  if (icon.startsWith("/src/")) return icons[icon] ?? "";
+  return icons[`/src/images/icons/${icon}.svg`] ?? "";
+}
+
+// Parent-module icons prefer the solid variant (`${name}-solid.svg`) for
+// visual weight. Falls back to the outline icon if no solid variant exists.
+function getModuleIcon(icon: string) {
+  return getIcon(`${icon}-solid`) || getIcon(icon);
+}
+
+const iconSvg = getModuleIcon(module.icon);
+const chevronIcon = getIcon("chevron-down");
+---
+
+{
+  hasChildren ? (
+    <details
+      class="menu-item-container group"
+      aria-label={`${module.name} menu`}
+      open={isModuleActive}
+      data-menu-item
+    >
+      <summary class={`menu-item group list-none cursor-pointer select-none ${isModuleActive ? 'menu-item-active' : 'menu-item-inactive'}`}>
+        <span class="menu-item-icon-tile">
+          <span class="w-6 h-6 inline-block">
+            <Fragment set:html={iconSvg} />
+          </span>
+        </span>
+
+        <span class="menu-item-text" data-i18n={`modules.${module.code}`}>
+          {module.name}
+        </span>
+
+        <span class="menu-item-arrow stroke-current w-5 h-5 inline-block">
+          <Fragment set:html={chevronIcon} />
+        </span>
+      </summary>
+
+      <div class="overflow-hidden transform translate">
+        <ul class="flex flex-col gap-1.5 mt-2 menu-dropdown pl-2.5">
+          {options.map((option) => {
+            const optIconSvg = option.icon ? getIcon(option.icon) : "";
+            return (
+              <li>
+                <a
+                  href={option.path || "#"}
+                  class={`menu-dropdown-item group ${option.path === currentPath ? 'menu-dropdown-item-active' : 'menu-dropdown-item-inactive'}`}
+                >
+                  {optIconSvg ? (
+                    <span class="w-5 h-5 inline-block text-current shrink-0">
+                      <Fragment set:html={optIconSvg} />
+                    </span>
+                  ) : (
+                    <span class="w-1.5 h-1.5 inline-block bg-current rounded-full shrink-0" />
+                  )}
+                  <span data-i18n={`menu_options.${option.code.toLowerCase()}`}>
+                    {option.name}
+                  </span>
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </details>
+  ) : (
+    <a
+      href={module.path || "#"}
+      class={`menu-item group ${isModuleActive ? 'menu-item-active' : 'menu-item-inactive'}`}
+      role="button"
+    >
+      <span class="menu-item-icon-tile">
+        <span class="w-4 h-4 inline-block">
+          <Fragment set:html={iconSvg} />
+        </span>
+      </span>
+      <span class="menu-item-text" data-i18n={`modules.${module.code}`}>
+        {module.name}
+      </span>
+    </a>
+  )
+}
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const menuItems = document.querySelectorAll('[data-menu-item]');
+    
+    menuItems.forEach((menu) => {
+      menu.addEventListener('toggle', (event) => {
+        if (event.target.open) {
+          // Cerrar todos los demás menus hermanos
+          const parentContainer = event.target.closest('[data-sidebar-menu], .sidebar, nav') || event.target.parentElement;
+          const allMenus = parentContainer?.querySelectorAll('[data-menu-item]') || document.querySelectorAll('[data-menu-item]');
+          
+          allMenus.forEach((otherMenu) => {
+            if (otherMenu !== event.target && otherMenu.open) {
+              otherMenu.open = false;
+            }
+          });
+        }
+      });
+    });
+  });
+</script>

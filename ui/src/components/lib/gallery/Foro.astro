@@ -1,0 +1,34 @@
+---
+/**
+ * Foro — the asset discussion section (HU-LI06) embedded inside the reusable
+ * CatalogDetailModal. Thin host for the `Foro` Svelte island: the interactive
+ * feed + composers are compiled by the raw Svelte Vite plugin and **mounted
+ * manually** via `mount()` (see astro.config.mjs — we don't use the
+ * @astrojs/svelte island mechanism).
+ *
+ * The island self-hooks the same `[data-modal-open="${modalId}"]` open trigger
+ * the detail controller listens for, so it loads the opened asset's discussion
+ * on demand — no per-instance wiring from mountCatalogDetail. Comments/questions/
+ * answers are stored as `actions` rows (type COMMENT/QUESTION/ANSWER) — no new
+ * table.
+ */
+export interface Props {
+  /** The detail dialog id, e.g. "mcp-view-modal". */
+  modalId: string;
+}
+const { modalId } = Astro.props as Props;
+---
+
+<div id={`${modalId}-foro`} data-foro-root data-modal-id={modalId}></div>
+
+<script>
+  import { mount } from "svelte";
+  import Foro from "@/components/svelte/Foro.svelte";
+
+  // One page can host more than one detail modal (one per catalog), so mount an
+  // island for every foro root, passing its scoped modalId.
+  document.querySelectorAll<HTMLElement>("[data-foro-root]").forEach((el) => {
+    const modalId = el.dataset.modalId;
+    if (modalId) mount(Foro, { target: el, props: { modalId } });
+  });
+</script>

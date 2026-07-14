@@ -1,0 +1,236 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import DataTable from "../../components/table/DataTable.astro";
+import CrudModal from "../../components/forms/CrudModal.astro";
+import Toast from "../../components/Toast.astro";
+import { getProjects } from "@/lib/projects";
+import { getTeamsSelect } from "@/lib/teams";
+import { getListItemsbyList } from "@/lib/list_items";
+
+// Fetch projects from API
+let projects: any[] = [];
+let errorMessage: string | null = null;
+try {
+  const apiProjects = await getProjects();
+  projects = apiProjects;
+} catch (error) {
+  console.error("Failed to fetch projects:", error);
+  errorMessage =
+    error instanceof Error ? error.message : "Failed to fetch projects from API";
+  projects = [];
+}
+
+// Fetch teams for filter dropdown and form select
+let teams: any[] = [];
+try {
+  const apiTeams = await getTeamsSelect();
+  teams = apiTeams;
+} catch (error) {
+  console.error('Failed to fetch teams:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch teams from API';
+  // Fallback to empty array to still render the page
+  teams = [];
+}
+
+// Fetch project status list items for status select
+let projectStatuses: any[] = [];
+try {
+  projectStatuses = await getListItemsbyList("PROJECT_STATUS");
+} catch (error) {
+  console.error("Failed to fetch project statuses:", error);
+  projectStatuses = [];
+}
+
+const columns = [
+  { key: "code", label: "project_modal.code", visible: false },
+  { key: "name", label: "project_modal.name", as: "title", subtitleKey: "code", subtitleFormat: "text" },
+  { key: "team", label: "project_modal.team", visible: false },
+  { key: "team_name", label: "project_modal.team" },
+  { key: "status_label", label: "project_modal.status", as: "status" },
+  { key: "start_date", label: "project_modal.start_date", as: "date" },
+  { key: "end_date", label: "project_modal.end_date", as: "date" },
+];
+
+const data = projects.map((item) => ({
+  id: item.code,
+  code: item.code,
+  name: item.name,
+  team: item.team,
+  status: item.status,
+  team_name: teams.find((t) => String(t.value) === String(item.team))?.label || item.team,
+  status_label: projectStatuses.find((s) => String(s.value) === String(item.status))?.label || item.status,
+  start_date: item.start_date ? new Date(item.start_date).toISOString().split('T')[0] : null,
+  end_date: item.end_date ? new Date(item.end_date).toISOString().split('T')[0] : null,
+  description: item.description,
+  repo_url: item.repo_url,
+  detail: item.detail,
+}));
+
+const formFields = [
+  { key: "code", label: "project_modal.code", pk: true, required: true, placeholder: "e.g. BE-001" },
+  { key: "name", label: "project_modal.name", required: true, placeholder: "e.g. Backend Auth Refactor" },
+  { key: "status", label: "project_modal.status", type: "select" as const, options: projectStatuses, required: true, filterLang: true },
+  { key: "team", label: "project_modal.team", type: "select" as const, options: teams, required: false },
+  {
+    key: "description",
+    label: "project_modal.description",
+    type: "textarea" as const,
+    required: false,
+    placeholder: "",
+  },
+  { key: "repo_url", label: "project_modal.repo_url", type: "text" as const, required: false, placeholder: "https://github.com/org/repo" },
+  { key: "start_date", label: "project_modal.start_date", type: "text" as const, required: false, placeholder: "YYYY-MM-DD" },
+  { key: "end_date", label: "project_modal.end_date", type: "text" as const, required: false, placeholder: "YYYY-MM-DD" },
+  {
+    key: "detail",
+    label: "project_modal.detail",
+    type: "textarea" as const,
+    required: false,
+    placeholder: "",
+  },
+];
+const fieldKeys = formFields.map((f) => f.key);
+---
+
+<BaseLayout>
+  {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
+
+  <div class="mx-auto w-full max-w-full md:p-0">
+    <Breadcrumb
+      moduleName="Collaboration"
+      pageName="Projects"
+      pageTitle="Projects"
+      homeLink="/"
+      moduleNameKey="modules.COLLAB"
+      pageNameKey="menu_options.projects"
+      pageTitleKey="menu_options.projects"
+    />
+
+    <CrudModal
+      mode="create"
+      modalId="project-create-modal"
+      entityName="Project"
+      fields={formFields}
+      showTrigger={false}
+    />
+    <CrudModal
+      mode="edit"
+      modalId="project-edit-modal"
+      entityName="Project"
+      fields={formFields}
+      showTrigger={false}
+    />
+    <CrudModal
+      mode="delete"
+      modalId="project-delete-modal"
+      entityName="Project"
+      fields={formFields}
+      showTrigger={false}
+    />
+
+    <div
+      id="projects-data"
+      data-rows={encodeURIComponent(JSON.stringify(data))}
+      data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
+      class="hidden"
+      aria-hidden="true"
+    >
+    </div>
+
+    <script>
+      import { initCrudPage } from "@/lib/crudClient";
+      import {
+        createProject,
+        updateProject,
+        deleteProject,
+      } from "@/lib/projects";
+
+      initCrudPage({
+        dataId: "projects-data",
+        editModalId: "project-edit-modal",
+        deleteModalId: "project-delete-modal",
+      });
+
+      function showToast(message, variant = "info") {
+        const toast = document.createElement("div");
+        toast.className = `fixed top-4 right-4 z-50 max-w-md p-4 rounded-lg border shadow-lg transition-all duration-300 ${
+          variant === "error"
+            ? "bg-red-50 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+            : "bg-green-50 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+        }`;
+        toast.innerHTML = `
+          <div class="flex items-start gap-3">
+            <div class="flex-1 text-sm font-medium">${message}</div>
+            <button type="button" class="text-gray-400 hover:text-gray-600" onclick="this.parentElement.parentElement.remove()">✕</button>
+          </div>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          toast.style.transform = "translateX(100%)";
+          setTimeout(() => toast.remove(), 300);
+        }, 5000);
+      }
+
+      document.addEventListener("crud-submit", async (e) => {
+        const { mode, data } = e.detail;
+        try {
+          if (mode === "create") {
+            await createProject({
+              code: data.code,
+              name: data.name,
+              status: data.status,
+              team: data.team || undefined,
+              description: data.description || undefined,
+              repo_url: data.repo_url || undefined,
+              start_date: data.start_date || undefined,
+              end_date: data.end_date || undefined,
+              detail: data.detail || undefined,
+            });
+            showToast("Project created successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          } else if (mode === "edit") {
+            await updateProject(data.id, {
+              name: data.name,
+              status: data.status,
+              team: data.team || undefined,
+              description: data.description || undefined,
+              repo_url: data.repo_url || undefined,
+              start_date: data.start_date || undefined,
+              end_date: data.end_date || undefined,
+              detail: data.detail || undefined,
+            });
+            showToast("Project updated successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          } else if (mode === "delete") {
+            await deleteProject(data.id);
+            showToast("Project deleted successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          }
+        } catch (error) {
+          console.error("CRUD operation failed:", error);
+          const msg = error?.message || "";
+          if (error?.status === 409 || msg.includes("409") || msg.includes("already exists")) {
+            showToast(`Project code '${data.code}' already exists`, "error");
+          } else {
+            showToast(msg || "An error occurred", "error");
+          }
+        }
+      });
+    </script>
+
+    <div class="space-y-5 sm:space-y-6">
+      <div class="border-0 p-0">
+        <DataTable
+          columns={columns}
+          data={data}
+          tableId="projects"
+          i18Item="project"
+          columnFilter="team"
+          filterOptions={teams}
+        />
+      </div>
+    </div>
+  </div>
+</BaseLayout>

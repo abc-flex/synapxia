@@ -1,0 +1,51 @@
+---
+/**
+ * FormCard — generic titled card wrapper.
+ *
+ * i18n: callers should prefer `titleKey` / `descriptionKey` (i18n dot-paths)
+ * over the raw `title` / `description` strings; the latter remain as
+ * fallbacks for components that haven't been migrated yet. When a key is
+ * provided we render it via `data-i18n` so the runtime patch translates it.
+ */
+interface Props {
+  title?: string;
+  titleKey?: string;
+  description?: string;
+  descriptionKey?: string;
+  id?: string;
+  class?: string;
+}
+
+const {
+  title = "",
+  titleKey,
+  description = "",
+  descriptionKey,
+  id,
+  class: extraClasses = "",
+} = Astro.props as Props;
+---
+<section
+  id={id}
+  class={`rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 ${extraClasses}`}
+>
+  <div class="px-5 py-4 sm:px-6 sm:py-5">
+    <h3
+      class="text-base font-semibold text-gray-900 dark:text-white"
+      data-i18n={titleKey}
+    >
+      {title}
+    </h3>
+    {(description || descriptionKey) && (
+      <p
+        class="mt-1 text-sm text-gray-500 dark:text-gray-400"
+        data-i18n={descriptionKey}
+      >
+        {description}
+      </p>
+    )}
+  </div>
+  <div class="space-y-6 border-t border-gray-100 p-5 sm:p-6 dark:border-gray-800">
+    <slot />
+  </div>
+</section>

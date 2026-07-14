@@ -1,0 +1,760 @@
+---
+/**
+ * AssetDetailModal — wider create/edit modal for the Asset Repository.
+ *
+ * Renders the asset's core fields on top, then dynamically appends
+ * one input per Feature defined by the chosen category's specifications.
+ *
+ * USAGE (from a page):
+ *   <AssetDetailModal modalId="asset-detail-modal" />
+ *
+ *   <button data-modal-open="asset-detail-modal"
+ *           data-asset-mode="create">+ New asset</button>
+ *
+ *   <button data-modal-open="asset-detail-modal"
+ *           data-asset-mode="edit"
+ *           data-asset-id="42">Edit</button>
+ *
+ *   The page should listen for the `asset-detail-saved` window event
+ *   (or just reload). The modal does its own toasting + reload.
+ */
+interface Props {
+  modalId?: string;
+  categories?: { value: string; label: string }[];
+  statuses?: { value: string; label: string }[];
+}
+
+const {
+  modalId = "asset-detail-modal",
+  categories = [],
+  statuses = [],
+} = Astro.props as Props;
+---
+
+<dialog
+  id={modalId}
+  class="rounded-2xl p-0 w-[min(900px,95vw)] max-w-none bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 backdrop:bg-black/60 backdrop:backdrop-blur-sm"
+>
+  {/* Fixed height so switching the Characterizations / Related / Permissions
+      tabs doesn't resize/re-center the dialog — only the body scrolls. */}
+  <form id={`${modalId}-form`} class="flex flex-col h-[min(760px,90vh)]">
+    {/* ============== Header ============== */}
+    <div class="flex items-start justify-between gap-4 px-6 py-4 border-b border-gray-200 dark:border-gray-800">
+      <div>
+        <h3
+          id={`${modalId}-title`}
+          class="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white"
+        >
+          <span
+            id={`${modalId}-title-text`}
+            data-i18n="asset_detail_modal.title_create"
+          >New Asset</span>
+          {/* Current version badge — filled + shown only in edit mode. */}
+          <span
+            id={`${modalId}-version`}
+            class="hidden rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300"
+            title="Current version"
+            data-i18n-title="asset_detail_modal.current_version"
+          ></span>
+        </h3>
+        <p
+          id={`${modalId}-subtitle`}
+          class="mt-0.5 text-xs text-gray-500 dark:text-gray-400"
+          data-i18n="asset_detail_modal.subtitle"
+        >
+          Core fields + the characterizations required by the chosen category.
+        </p>
+      </div>
+      <div class="flex items-center gap-1">
+        <button
+          type="button"
+          id={`${modalId}-fav`}
+          aria-pressed="false"
+          title="Add to favorites"
+          data-i18n-title="asset_detail_modal.favorite_add"
+          class="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        >
+          <svg
+            class="w-5 h-5"
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+          >
+            <path
+              d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.3 4.02a1 1 0 00.95.69h4.22c.97 0 1.37 1.24.59 1.81l-3.42 2.48a1 1 0 00-.36 1.12l1.3 4.02c.3.92-.75 1.69-1.54 1.12l-3.41-2.48a1 1 0 00-1.18 0l-3.41 2.48c-.78.57-1.84-.2-1.54-1.12l1.3-4.02a1 1 0 00-.36-1.12L2 9.45c-.78-.57-.38-1.81.6-1.81h4.21a1 1 0 00.95-.69l1.3-4.02z"
+            />
+          </svg>
+        </button>
+        <button
+          type="button"
+          data-modal-close={modalId}
+          class="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+          aria-label="Close"
+          data-i18n-aria-label="common.close"
+        >
+          <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+            <path
+              fill-rule="evenodd"
+              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    {/* ============== Status banner ============== */}
+    <div
+      id={`${modalId}-status`}
+      class="hidden mx-6 mt-4 rounded-lg p-3 text-sm"
+      role="status"
+      aria-live="polite"
+    >
+    </div>
+
+    {/* ============== Body (scrollable) ============== */}
+    <div class="flex-1 overflow-y-auto px-6 pb-5 space-y-6">
+      <input type="hidden" name="id" id={`${modalId}-id`} />
+
+      {/* ============== Core fields ============== */}
+      {/* Visible in "full" + "core" section modes; hidden in "detail" mode
+          (the master-detail button edits only the tabs below). */}
+      <section id={`${modalId}-core-section`}>
+        <h4
+          class="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500"
+          data-i18n="asset_detail_modal.core_section"
+        >
+          Core
+        </h4>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div class="md:col-span-2">
+            <label
+              for={`${modalId}-name`}
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              data-i18n="asset_modal.name"
+            >Name *</label>
+            <input
+              id={`${modalId}-name`}
+              name="name"
+              type="text"
+              required
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            />
+          </div>
+
+          <div>
+            <label
+              for={`${modalId}-category`}
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              data-i18n="asset_modal.category"
+            >Category *</label>
+            <select
+              id={`${modalId}-category`}
+              name="category"
+              required
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            >
+              <option value="" data-i18n="asset_detail_modal.choose_category">— choose —</option>
+              {categories.map((c) => (
+                <option value={c.value}>{c.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label
+              for={`${modalId}-status`}
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              data-i18n="asset_modal.status"
+            >Status *</label>
+            <select
+              id={`${modalId}-status-select`}
+              name="status"
+              required
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            >
+              <option value="" data-i18n="asset_detail_modal.choose_status">— choose —</option>
+              {statuses.map((s) => (
+                <option value={s.value}>{s.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div class="md:col-span-2">
+            <label
+              for={`${modalId}-description`}
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              data-i18n="asset_modal.description"
+            >Description</label>
+            <textarea
+              id={`${modalId}-description`}
+              name="description"
+              rows={2}
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            ></textarea>
+          </div>
+
+          <div>
+            <label
+              for={`${modalId}-reference`}
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              data-i18n="asset_modal.reference"
+            >Reference</label>
+            <input
+              id={`${modalId}-reference`}
+              name="reference"
+              type="text"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            />
+          </div>
+
+          <div>
+            <label
+              for={`${modalId}-tags`}
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              data-i18n="asset_modal.tags"
+            >Tags</label>
+            <input
+              id={`${modalId}-tags`}
+              name="tags"
+              type="text"
+              placeholder="tag1, tag2, tag3"
+              data-i18n-placeholder="asset_detail_modal.tags_placeholder"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ============== Collections tabs (bottom) ============== */}
+      {/* Core fields above are always visible; the editable detail collections
+          (Characterizations, Related Assets, Permissions) are the
+          `AssetDetailTabs` Svelte island, mount()ed into this container by the
+          script below (which drives it via the returned controller methods). */}
+      <div id={`${modalId}-detail-tabs`}></div>
+    </div>
+
+    {/* ============== Footer ============== */}
+    <div
+      class="flex flex-wrap items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-800"
+    >
+      {/* Change-type picker (HU-LI09) — edit mode only: saving an existing
+          asset creates a NEW VERSION, and the chosen kind of change decides
+          which digit of the semver label bumps. Hidden in create mode. */}
+      <fieldset id={`${modalId}-change-type`} class="hidden mr-auto">
+        <legend
+          class="mb-1 text-xs font-medium text-gray-500 dark:text-gray-400"
+          data-i18n="asset_detail_modal.change_type_label"
+        >
+          What kind of change is this?
+        </legend>
+        {/* Pills + live preview share one row so the footer stays 2 rows tall
+            (legend on top). The preview shows previous → the label this save
+            will create, with the bumping digit highlighted (recomputed on pill
+            change). */}
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 p-1 dark:border-gray-700 dark:bg-gray-800">
+            {[
+              { value: "patch", key: "asset_detail_modal.change_type_patch", label: "Patch", checked: true },
+              { value: "minor", key: "asset_detail_modal.change_type_minor", label: "Minor", checked: false },
+              { value: "major", key: "asset_detail_modal.change_type_major", label: "Major", checked: false },
+            ].map((ct) => (
+              <label class="cursor-pointer">
+                <input
+                  type="radio"
+                  name="change_type"
+                  value={ct.value}
+                  checked={ct.checked}
+                  class="peer sr-only"
+                />
+                <span
+                  class="inline-block rounded-full px-3 py-1 text-xs font-semibold text-gray-500 transition-colors peer-checked:bg-indigo-600 peer-checked:text-white dark:text-gray-400"
+                  data-i18n={ct.key}
+                >{ct.label}</span>
+              </label>
+            ))}
+          </div>
+          <div
+            id={`${modalId}-version-preview`}
+            class="flex items-center gap-2 font-mono text-sm"
+            aria-live="polite"
+          >
+            <span data-prev class="text-gray-400 line-through decoration-gray-300 dark:text-gray-500 dark:decoration-gray-600"></span>
+            <span aria-hidden="true" class="text-indigo-500 font-bold">→</span>
+            <span data-next class="font-semibold text-gray-800 dark:text-gray-100"></span>
+          </div>
+        </div>
+      </fieldset>
+      <button
+        type="button"
+        data-modal-close={modalId}
+        class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+        data-i18n="common.cancel"
+      >
+        Cancel
+      </button>
+      <button
+        id={`${modalId}-submit`}
+        type="submit"
+        class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+        data-i18n="common.save"
+      >
+        Save
+      </button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+  /* ============================================================
+     AssetDetailModal — runtime orchestration.
+     Bound to the dialog with id="asset-detail-modal" emitted by this
+     component. We use the literal id (not define:vars) so the script can
+     be statically hoisted by Astro/Vite.
+     ============================================================ */
+  import { createAsset, createAssetVersion, updateAsset, getAsset, bumpVersionLabel } from "@/lib/assets";
+  import type { ChangeType } from "@/types/api";
+  import { isFavorite, setFavorite } from "@/lib/favorites";
+  import { getUser } from "@/lib/auth";
+  import { mount } from "svelte";
+  import AssetDetailTabs from "@/components/svelte/AssetDetailTabs.svelte";
+  import { mountHistory } from "@/lib/history";
+  import { mountVersions } from "@/lib/versions";
+  import { ALL_DETAIL_SECTIONS } from "@/lib/assetSections";
+
+  const modalId = "asset-detail-modal";
+
+  (() => {
+    const dialog = document.getElementById(modalId) as HTMLDialogElement | null;
+    if (!dialog) return;
+    const form = document.getElementById(`${modalId}-form`) as HTMLFormElement;
+    const idField = document.getElementById(`${modalId}-id`) as HTMLInputElement;
+    const nameField = document.getElementById(`${modalId}-name`) as HTMLInputElement;
+    const categorySel = document.getElementById(`${modalId}-category`) as HTMLSelectElement;
+    const statusSel = document.getElementById(`${modalId}-status-select`) as HTMLSelectElement;
+    const descField = document.getElementById(`${modalId}-description`) as HTMLTextAreaElement;
+    const refField = document.getElementById(`${modalId}-reference`) as HTMLInputElement;
+    const tagsField = document.getElementById(`${modalId}-tags`) as HTMLInputElement;
+    const titleEl = document.getElementById(`${modalId}-title-text`) as HTMLElement;
+    const versionBadge = document.getElementById(`${modalId}-version`) as HTMLElement;
+    const changeTypeFieldset = document.getElementById(`${modalId}-change-type`) as HTMLFieldSetElement;
+    const statusBanner = document.getElementById(`${modalId}-status`) as HTMLElement;
+    const submitBtn = document.getElementById(`${modalId}-submit`) as HTMLButtonElement;
+    const favBtn = document.getElementById(`${modalId}-fav`) as HTMLButtonElement;
+    const favSvg = favBtn?.querySelector("svg") as SVGElement;
+
+    // ── Small helpers ──────────────────────────────────────────────────────
+    const tr = (key: string, fallback: string): string => {
+      try {
+        const lang = localStorage.getItem("lang") || "en";
+        const w = window as any;
+        if (typeof w.t === "function") return w.t(key, lang) || fallback;
+      } catch { /* non-fatal */ }
+      return fallback;
+    };
+
+    const showStatus = (msg, kind) => {
+      if (!statusBanner) return;
+      statusBanner.textContent = msg;
+      statusBanner.className =
+        "mx-6 mt-4 rounded-lg p-3 text-sm " +
+        (kind === "ok"
+          ? "bg-green-50 text-green-800 border border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700"
+          : "bg-red-50 text-red-800 border border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700");
+      statusBanner.classList.remove("hidden");
+    };
+    const clearStatus = () => statusBanner?.classList.add("hidden");
+
+    let editingAssetId: number | null = null;
+    // The loaded asset's version label — drives the "old → new" preview.
+    let currentVersionLabel = "1.0.0";
+    // Favorite state. Edit mode toggles immediately (a per-user preference
+    // orthogonal to the draft); create mode stages the bit until the id exists.
+    let favoriteOn = false;
+
+    // ── Version preview ("v1.2.0 → v1.3.0", bumping digit highlighted) ─────
+    const versionPreview = document.getElementById(`${modalId}-version-preview`) as HTMLElement;
+    const HIGHLIGHT_CLASSES = [
+      "font-bold", "text-indigo-600", "dark:text-indigo-400",
+      "bg-indigo-50", "dark:bg-indigo-500/20", "rounded", "px-1",
+    ];
+    const DIGIT_INDEX: Record<ChangeType, number> = { major: 0, minor: 1, patch: 2 };
+
+    function selectedChangeType(): ChangeType {
+      const checked = form.querySelector<HTMLInputElement>('input[name="change_type"]:checked');
+      return (checked?.value as ChangeType) || "patch";
+    }
+
+    function renderVersionPreview() {
+      if (!versionPreview) return;
+      const prevEl = versionPreview.querySelector("[data-prev]") as HTMLElement;
+      const nextEl = versionPreview.querySelector("[data-next]") as HTMLElement;
+      if (!prevEl || !nextEl) return;
+      const changeType = selectedChangeType();
+      const nextLabel = bumpVersionLabel(currentVersionLabel, changeType);
+      prevEl.textContent = `v${currentVersionLabel}`;
+      // Rebuild the new label digit-by-digit so the bumping one stands out.
+      nextEl.replaceChildren(document.createTextNode("v"));
+      nextLabel.split(".").forEach((digit, i) => {
+        if (i > 0) nextEl.appendChild(document.createTextNode("."));
+        const span = document.createElement("span");
+        span.textContent = digit;
+        if (i === DIGIT_INDEX[changeType]) span.classList.add(...HIGHLIGHT_CLASSES);
+        nextEl.appendChild(span);
+      });
+    }
+
+    // The pills live in the always-rendered footer — bind once.
+    form.querySelectorAll<HTMLInputElement>('input[name="change_type"]').forEach((radio) => {
+      radio.addEventListener("change", renderVersionPreview);
+    });
+
+    // ── Shared editable detail tabs (chars / related / permissions) ─────────
+    // The tabs are the `AssetDetailTabs` Svelte island; mount() returns the
+    // component's exported controller methods (loadOptions/loadChars/hydrate/
+    // flush/reset/…), so the orchestration below is unchanged from the vanilla
+    // widget it replaces.
+    const tabsRoot = document.getElementById(`${modalId}-detail-tabs`) as HTMLElement;
+    // Which detail tab is active — drives the tab-aware footer (below). Only
+    // the Characterizations tab versions; Related/Permissions save in place;
+    // Discussion/History/Versions are read-only (no Save button).
+    type DetailTab = "chars" | "related" | "permissions" | "discussion" | "history" | "versions";
+    const READONLY_TABS: DetailTab[] = ["discussion", "history", "versions"];
+    let activeDetailTab: DetailTab = "chars";
+    const tabs = mount(AssetDetailTabs, {
+      target: tabsRoot,
+      props: {
+        idPrefix: modalId,
+        mode: "modal",
+        onError: (m: string) => showStatus(m, "error"),
+        onTabChange: (name: DetailTab) => {
+          activeDetailTab = name;
+          // Repaint the footer only while editing an existing asset with the
+          // tabs visible; create mode + core-only edit keep their own footer.
+          if (editingAssetId != null && editSection !== "core") {
+            paintFooterForTab(name);
+          }
+        },
+      },
+    });
+
+    // Footer is tab-aware in edit mode: the change-type picker + version
+    // preview + "Save new version" belong to the Characterizations tab (the
+    // only versioned slice); Related/Permissions hide them and relabel the
+    // save button, saving just that slice in place; Discussion/History/Versions
+    // are read-only — the Save button is hidden entirely (Cancel/close only).
+    function paintFooterForTab(tab: DetailTab) {
+      if (READONLY_TABS.includes(tab)) {
+        changeTypeFieldset?.classList.add("hidden");
+        submitBtn.classList.add("hidden");
+        return;
+      }
+      submitBtn.classList.remove("hidden");
+      if (tab === "chars") {
+        changeTypeFieldset?.classList.remove("hidden");
+        submitBtn.setAttribute("data-i18n", "asset_detail_modal.save_new_version");
+        submitBtn.textContent = tr("asset_detail_modal.save_new_version", "Save new version");
+        renderVersionPreview();
+      } else {
+        changeTypeFieldset?.classList.add("hidden");
+        const key =
+          tab === "related"
+            ? "asset_detail_modal.save_related"
+            : "asset_detail_modal.save_permissions";
+        const fallback = tab === "related" ? "Save related assets" : "Save permissions";
+        submitBtn.setAttribute("data-i18n", key);
+        submitBtn.textContent = tr(key, fallback);
+      }
+    }
+
+    // Read-only view tabs (Discussion/History/Versions) reuse the same
+    // controllers the gallery detail modal uses. They self-hook the modal's
+    // open trigger (which carries data-asset-id), so one call each suffices;
+    // Discussion self-mounts via the nested Foro island in AssetDetailTabs.
+    mountHistory({ modalId });
+    mountVersions({ modalId, sections: ALL_DETAIL_SECTIONS });
+
+    // ── Section mode ──────────────────────────────────────────────────────
+    // "" = full (core + tabs, used for create); "core" = only the core fields
+    // (the pencil); "detail" = only the Characterizations/Related/Permissions
+    // tabs (the master-detail button). The split lets each button edit just its
+    // slice, persisting only that slice on save.
+    const coreSection = document.getElementById(`${modalId}-core-section`) as HTMLElement;
+    const coreInputs = [nameField, categorySel, statusSel];
+    let editSection: "" | "core" | "detail" = "";
+
+    function applySection(section: "" | "core" | "detail") {
+      editSection = section;
+      const showCore = section !== "detail";
+      const showTabs = section !== "core";
+      if (coreSection) coreSection.classList.toggle("hidden", !showCore);
+      if (tabsRoot) tabsRoot.classList.toggle("hidden", !showTabs);
+      // Hidden required core inputs would block form submit, so relax them in
+      // detail mode (core is already saved; detail mode only flushes tabs).
+      for (const f of coreInputs) if (f) f.required = showCore;
+    }
+
+    // ── Favorite star ───────────────────────────────────────────────────────
+    function paintFavorite() {
+      if (!favBtn || !favSvg) return;
+      favBtn.setAttribute("aria-pressed", String(favoriteOn));
+      favSvg.setAttribute("fill", favoriteOn ? "currentColor" : "none");
+      favBtn.classList.toggle("text-yellow-400", favoriteOn);
+      favBtn.classList.toggle("text-gray-400", !favoriteOn);
+      const key = favoriteOn ? "asset_detail_modal.favorite_remove" : "asset_detail_modal.favorite_add";
+      favBtn.setAttribute("data-i18n-title", key);
+      favBtn.title = tr(key, favoriteOn ? "Remove from favorites" : "Add to favorites");
+    }
+
+    favBtn?.addEventListener("click", async () => {
+      const user = getUser() as any;
+      if (!user?.id && user?.id !== 0) return;
+
+      if (!editingAssetId) {
+        favoriteOn = !favoriteOn;
+        paintFavorite();
+        return;
+      }
+      const next = !favoriteOn;
+      favoriteOn = next;
+      paintFavorite();
+      try {
+        await setFavorite(Number(user.id), editingAssetId, next);
+      } catch {
+        favoriteOn = !next; // revert
+        paintFavorite();
+        showStatus(tr("asset_detail_modal.error_favorite", "Could not update favorite."), "error");
+      }
+    });
+
+    // ── Reset / open / close ──────────────────────────────────────────────
+    function resetForm() {
+      form.reset(); // also re-checks the default "patch" change-type radio
+      idField.value = "";
+      editingAssetId = null;
+      currentVersionLabel = "1.0.0";
+      favoriteOn = false;
+      paintFavorite();
+      tabs.reset();
+      versionBadge?.classList.add("hidden");
+      changeTypeFieldset?.classList.add("hidden");
+      activeDetailTab = "chars";
+      // A read-only tab may have hidden the Save button on the previous open.
+      submitBtn.classList.remove("hidden");
+      // Create mode saves plainly; edit mode re-labels to "Save new version".
+      submitBtn.setAttribute("data-i18n", "common.save");
+      submitBtn.textContent = tr("common.save", "Save");
+      clearStatus();
+    }
+
+    async function openCreate() {
+      resetForm();
+      applySection(""); // create always edits the full asset (core + tabs)
+      titleEl.setAttribute("data-i18n", "asset_detail_modal.title_create");
+      titleEl.textContent = tr("asset_detail_modal.title_create", "New Asset");
+      dialog.showModal();
+      tabs.loadOptions(); // non-blocking; composer dropdowns fill as data arrives
+    }
+
+    async function openEdit(assetId: number | string, section: "" | "core" | "detail" = "") {
+      resetForm();
+      applySection(section);
+      editingAssetId = Number(assetId);
+      const titleKey =
+        section === "core"
+          ? "asset_detail_modal.title_edit_core"
+          : section === "detail"
+            ? "asset_detail_modal.title_edit_detail"
+            : "asset_detail_modal.title_edit";
+      const titleFallback =
+        section === "core" ? "Edit core fields"
+          : section === "detail" ? "Edit details"
+            : "Edit Asset";
+      titleEl.setAttribute("data-i18n", titleKey);
+      titleEl.textContent = tr(titleKey, titleFallback);
+      // Versioning is scoped to the Characterizations tab: the modal always
+      // opens on that tab, so paint its footer (change-type picker + "Save new
+      // version"). Switching to Related/Permissions repaints via onTabChange.
+      // Core-only edits keep the plain in-place save.
+      if (section !== "core") {
+        paintFooterForTab("chars");
+      }
+      dialog.showModal();
+
+      const user = getUser() as any;
+      if (user?.id || user?.id === 0) {
+        isFavorite(Number(user.id), editingAssetId).then((on) => {
+          favoriteOn = on;
+          paintFavorite();
+        });
+      }
+
+      try {
+        const asset = await getAsset(editingAssetId);
+        idField.value = String(asset.id ?? "");
+        nameField.value = asset.name ?? "";
+        descField.value = asset.description ?? "";
+        refField.value = asset.reference ?? "";
+        // Tolerate legacy/seeded rows that stored the bare status code
+        // (e.g. `IN_USE`) without the list_items `N-` sort-prefix.
+        const resolveStatusValue = (raw: string): string => {
+          if (!raw) return "";
+          if ([...statusSel.options].some((o) => o.value === raw)) return raw;
+          const opt = [...statusSel.options].find(
+            (o) => o.value.replace(/^\d+-/, "") === raw,
+          );
+          return opt?.value ?? raw;
+        };
+        statusSel.value = resolveStatusValue(asset.status ?? "");
+        tagsField.value = Array.isArray(asset.tags)
+          ? asset.tags.join(", ")
+          : (asset.tags ?? "");
+        categorySel.value = asset.category ?? "";
+        currentVersionLabel = asset.current_version ?? "1.0.0";
+        if (versionBadge) {
+          versionBadge.textContent = `v${currentVersionLabel}`;
+          versionBadge.classList.remove("hidden");
+        }
+        renderVersionPreview();
+
+        // Load + seed all three detail tabs (chars/relations/permissions).
+        await tabs.hydrate(editingAssetId, asset.category ?? "");
+      } catch (e) {
+        showStatus(
+          e instanceof Error ? e.message : tr("asset_detail_modal.error_load", "Could not load asset."),
+          "error",
+        );
+      }
+    }
+
+    function closeModal() {
+      dialog.close();
+      resetForm();
+    }
+
+    // ── Wire global "data-modal-open" / "data-modal-close" buttons ────────
+    document.addEventListener("click", (e) => {
+      const target = e.target.closest?.(`[data-modal-open="${modalId}"]`);
+      if (target) {
+        e.preventDefault();
+        const mode = target.dataset.assetMode || "create";
+        const assetId = target.dataset.assetId;
+        // "core" (pencil) | "detail" (master-detail) | "" (full). Edit only.
+        const section = (target.dataset.assetSection as "" | "core" | "detail") || "";
+        if (mode === "edit" && assetId) openEdit(assetId, section);
+        else openCreate();
+      }
+      const closer = e.target.closest?.(`[data-modal-close="${modalId}"]`);
+      if (closer) {
+        e.preventDefault();
+        closeModal();
+      }
+    });
+
+    // Close on ESC (native) leaves the form populated; reset on subsequent open.
+    dialog.addEventListener("cancel", (e) => {
+      e.preventDefault();
+      closeModal();
+    });
+
+    // ── Category change → reload the dynamic characterization fields ───────
+    categorySel.addEventListener("change", () => {
+      tabs.loadChars(categorySel.value);
+    });
+
+    // ── Submit ────────────────────────────────────────────────────────────
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      submitBtn.disabled = true;
+      clearStatus();
+
+      const corePayload = {
+        name: nameField.value.trim(),
+        description: descField.value.trim() || undefined,
+        category: categorySel.value || undefined,
+        reference: refField.value.trim() || undefined,
+        status: statusSel.value,
+        tags: tagsField.value
+          ? tagsField.value.split(",").map((t) => t.trim()).filter(Boolean)
+          : undefined,
+        is_active: true,
+      };
+
+      try {
+        let assetId: number;
+        let savedMsg = tr("asset_detail_modal.saved", "Asset saved.");
+        if (editingAssetId) {
+          // What gets VERSIONED is the characterization set (HU-LI09): saving
+          // the detail section creates a new version — one transactional call
+          // bumps `current_version` by the picked change type and snapshots
+          // the characterizations under the new label. Core fields are NOT
+          // versioned: they save in place via plain PUT. Sections:
+          //   "core"   → in-place update only, no version;
+          //   "detail" → characterization snapshot as a new version;
+          //   ""       → core in place + characterizations versioned.
+          assetId = editingAssetId;
+          if (editSection !== "detail") {
+            await updateAsset(assetId, corePayload);
+          }
+          if (editSection !== "core") {
+            // Only the Characterizations tab versions; Related/Permissions save
+            // their own slice in place (no version bump). The modal reloads
+            // after each save, so one tab is saved at a time either way.
+            if (activeDetailTab === "chars") {
+              const changeType = (new FormData(form).get("change_type") || "patch") as ChangeType;
+              const saved = await createAssetVersion(assetId, {
+                change_type: changeType,
+                values: tabs.charSnapshot(),
+              });
+              savedMsg = tr(
+                "asset_detail_modal.version_saved",
+                "Asset saved as new version.",
+              ).replace("{version}", saved.current_version ?? "");
+            } else if (activeDetailTab === "related") {
+              await tabs.flush(assetId, { skipChars: true, skipPermissions: true });
+              savedMsg = tr("asset_detail_modal.related_saved", "Related assets saved.");
+            } else {
+              await tabs.flush(assetId, { skipChars: true, skipRelations: true });
+              savedMsg = tr("asset_detail_modal.permissions_saved", "Permissions saved.");
+            }
+          }
+        } else {
+          // Create mode is unversioned — the new asset starts at 1.0.0.
+          const saved = await createAsset(corePayload);
+          assetId = Number(saved.id);
+          if (editSection !== "core") await tabs.flush(assetId);
+        }
+
+        // 3. Favorite (create mode only — edit mode toggles immediately).
+        if (!editingAssetId && favoriteOn) {
+          const user = getUser() as any;
+          if (user?.id || user?.id === 0) {
+            try {
+              await setFavorite(Number(user.id), assetId, true);
+            } catch { /* non-fatal — asset itself saved fine */ }
+          }
+        }
+
+        showStatus(savedMsg, "ok");
+        setTimeout(() => {
+          closeModal();
+          window.location.reload();
+        }, 400);
+      } catch (err) {
+        showStatus(
+          err instanceof Error ? err.message : tr("asset_detail_modal.error_save", "Could not save asset."),
+          "error",
+        );
+        submitBtn.disabled = false;
+      }
+    });
+  })();
+</script>
+
+<style is:global>
+  /* Keep the dialog free of native UA padding when we manage it ourselves. */
+  #asset-detail-modal::backdrop {
+    background: rgba(0, 0, 0, 0.6);
+  }
+</style>

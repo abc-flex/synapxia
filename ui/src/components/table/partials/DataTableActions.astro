@@ -1,0 +1,107 @@
+---
+import editSvg from "@/images/icons/edit.svg?raw";
+import deleteSvg from "@/images/icons/delete.svg?raw";
+import listSvg from "@/images/icons/list-bullet.svg?raw";
+
+interface Props {
+  row: Record<string, any>;
+  i18Item: string;
+  mdItem?: string | null;
+  detailPage?: string | null;
+  detailExpand?: boolean;
+  favoriteAction?: boolean;
+  favoriteKey?: string;
+  /** Per-row gating (HU-LI08): name of a boolean row field; when set and the
+   * row's value isn't true, the mutation buttons (edit/delete/detail-expand)
+   * are not rendered. Unset (default) = today's unconditional buttons. */
+  manageKey?: string | null;
+}
+const {
+  row,
+  i18Item,
+  mdItem = null,
+  detailPage = null,
+  detailExpand = false,
+  favoriteAction = false,
+  favoriteKey = "favorite",
+  manageKey = null,
+} = Astro.props as Props;
+
+const canManage = !manageKey || row[manageKey] === true;
+---
+<td class="actions-cell px-2 py-1 text-right space-x-0">
+  <div class="actions-wrapper">
+    {detailPage && (
+      <a
+        href={detailPage + "?" + i18Item + "=" + row.id}
+        class="detail-btn action-btn"
+        data-i18n-title={`${mdItem}_modal.many_title`}
+        title=""
+      >
+        <span class="w-5 h-5 inline-block">
+          <Fragment set:html={listSvg} />
+        </span>
+      </a>
+      <span class="dot">•</span>
+    )}
+    {detailExpand && canManage && (
+      <button
+        class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded detail-expand-btn"
+        data-id={row.id}
+        data-action="detail"
+        data-i18n-title="asset_table.detail_expand"
+        title=""
+      >
+        <span class="w-5 h-5 inline-block">
+          <Fragment set:html={listSvg} />
+        </span>
+      </button>
+    )}
+    {favoriteAction && (
+      <button
+        class="p-1 hover:bg-yellow-50 dark:hover:bg-gray-800 rounded favorite-btn"
+        data-id={row.id}
+        data-action="favorite"
+        data-fav={row[favoriteKey] === "yes" ? "1" : "0"}
+        aria-pressed={row[favoriteKey] === "yes" ? "true" : "false"}
+        data-i18n-title="asset_table.favorite"
+        title=""
+      >
+        <span class={`w-5 h-5 inline-block ${row[favoriteKey] === "yes" ? "text-yellow-400" : "text-gray-400"}`}>
+          <svg viewBox="0 0 20 20" fill={row[favoriteKey] === "yes" ? "currentColor" : "none"} stroke="currentColor" stroke-width="1.5">
+            <path d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.3 4.02a1 1 0 00.95.69h4.22c.97 0 1.37 1.24.59 1.81l-3.42 2.48a1 1 0 00-.36 1.12l1.3 4.02c.3.92-.75 1.69-1.54 1.12l-3.41-2.48a1 1 0 00-1.18 0l-3.41 2.48c-.78.57-1.84-.2-1.54-1.12l1.3-4.02a1 1 0 00-.36-1.12L2 9.45c-.78-.57-.38-1.81.6-1.81h4.21a1 1 0 00.95-.69l1.3-4.02z" />
+          </svg>
+        </span>
+      </button>
+    )}
+    {(detailExpand || favoriteAction) && canManage && <span class="dot">•</span>}
+    {canManage && (
+      <button
+        class="p-1 hover:bg-blue-100 rounded edit-btn"
+        data-id={row.id}
+        data-action="edit"
+        data-modal-open={`${i18Item}-edit-modal`}
+        data-i18n-title={`${i18Item}_modal.edit`}
+        title=""
+      >
+        <span class="w-5 h-5 inline-block">
+          <Fragment set:html={editSvg} />
+        </span>
+      </button>
+    )}
+    {canManage && (
+      <button
+        class="p-1 hover:bg-red-100 rounded delete-btn"
+        data-id={row.id}
+        data-action="delete"
+        data-modal-open={`${i18Item}-delete-modal`}
+        data-i18n-title={`${i18Item}_modal.delete`}
+        title=""
+      >
+        <span class="w-5 h-5 inline-block">
+          <Fragment set:html={deleteSvg} />
+        </span>
+      </button>
+    )}
+  </div>
+</td>

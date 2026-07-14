@@ -1,0 +1,78 @@
+---
+/**
+ * McpFormModal — the MCP Directory's custom create/edit modal. Uses the reusable
+ * CatalogFormModal scaffold and supplies the 5 MCP feature inputs as first-class
+ * fields. Category is fixed to MCPS by `mountCatalogModal`.
+ *
+ * Each feature input's `name` MUST equal its feature code. The MODE select is
+ * fed by the EXECUTION_MODE list; options use the label as value to match the
+ * seeded/spec data ("Remote"/"Local").
+ */
+import CatalogFormModal from "@/components/lib/gallery/CatalogFormModal.astro";
+
+export interface Props {
+  modalId?: string;
+  statuses?: { value: string; label: string }[];
+  modes?: { value: string; label: string }[];
+}
+
+const { modalId = "mcp-detail-modal", statuses = [], modes = [] } = Astro.props as Props;
+
+const inputClass =
+  "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white";
+const labelClass = "mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300";
+---
+
+<CatalogFormModal
+  modalId={modalId}
+  statuses={statuses}
+  titleCreateKey="mcp_modal.title_create"
+  subtitleKey="mcp_modal.subtitle"
+  detailsSectionKey="mcp_modal.details_section"
+>
+  <div>
+    <label class={labelClass} data-i18n="mcp_modal.mode">Mode</label>
+    <select name="MODE" class={inputClass}>
+      <option value="" data-i18n="asset_detail_modal.choose_status">— choose —</option>
+      {modes.map((m) => <option value={m.value}>{m.label}</option>)}
+    </select>
+  </div>
+  <div>
+    <label class={labelClass} data-i18n="mcp_modal.overview">Overview</label>
+    <input name="OVERVIEW" type="text" class={inputClass} />
+  </div>
+  <div class="md:col-span-2">
+    <label class={labelClass} data-i18n="mcp_modal.tools">Tools</label>
+    <textarea name="TOOLS" rows={2} placeholder="tool1, tool2, tool3" data-i18n-placeholder="mcp_modal.tools_help" class={inputClass}></textarea>
+  </div>
+  <div class="md:col-span-2">
+    <label class={labelClass} data-i18n="mcp_modal.content">Content</label>
+    <textarea name="CONTENT" rows={6} class={`${inputClass} font-mono`}></textarea>
+  </div>
+  <div class="md:col-span-2">
+    <label class={labelClass} data-i18n="mcp_modal.server_config">Server configuration (JSON)</label>
+    <textarea name="SERVER_CONFIG" rows={6} class={`${inputClass} font-mono`}></textarea>
+  </div>
+</CatalogFormModal>
+
+<script>
+  import { mountCatalogModal } from "@/lib/catalogModal";
+
+  mountCatalogModal({
+    modalId: "mcp-detail-modal",
+    category: "MCPS",
+    features: [
+      "MODE",
+      "OVERVIEW",
+      // Rich payloads live in the characterization `detail` column (seed convention).
+      { name: "CONTENT", column: "detail" },
+      { name: "TOOLS", column: "detail" },
+      { name: "SERVER_CONFIG", column: "detail" },
+    ],
+    titleCreateKey: "mcp_modal.title_create",
+    titleEditKey: "mcp_modal.title_edit",
+    savedKey: "mcp_modal.saved",
+    errorSaveKey: "mcp_modal.error_save",
+    errorLoadKey: "mcp_modal.error_load",
+  });
+</script>

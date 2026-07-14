@@ -1,0 +1,17 @@
+{
+  "ignoreCommand": "exit 0",
+  "git": {
+    "deploymentEnabled": false
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "has": [{ "type": "host", "value": "synapxia.vercel.app" }],
+      "destination": "https://api-synapxia.vercel.app/api/$1"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "https://dev-api-synapxia.vercel.app/api/$1"
+    }
+  ]
+}

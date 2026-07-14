@@ -1,0 +1,8 @@
+node_modules
+.bun
+.bun/
+.bunrc
+dist
+.astro
+.env
+.vercel/output

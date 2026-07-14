@@ -1,0 +1,66 @@
+---
+import FormCard from "./FormCard.astro";
+---
+<FormCard title="Toggle switch input" titleKey="forms_demo.toggles">
+  <div class="space-y-6">
+    <div class="flex flex-wrap items-center gap-6 sm:gap-8">
+      <label class="flex cursor-pointer items-center gap-3 text-sm font-medium text-gray-700 select-none dark:text-gray-300">
+        <input type="checkbox" class="peer sr-only" />
+        <span class="relative block h-6 w-11 rounded-full bg-gray-200 transition peer-checked:bg-indigo-600 dark:bg-white/10">
+          <span
+            class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition peer-checked:translate-x-full"
+          ></span>
+        </span>
+        Default
+      </label>
+
+      <label class="flex cursor-pointer items-center gap-3 text-sm font-medium text-gray-700 select-none dark:text-gray-300">
+        <input type="checkbox" class="peer sr-only" defaultChecked />
+        <span class="relative block h-6 w-11 rounded-full bg-indigo-600 transition peer-checked:bg-indigo-600 dark:bg-indigo-500">
+          <span
+            class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition peer-checked:translate-x-full"
+          ></span>
+        </span>
+        Checked
+      </label>
+
+      <label class="flex cursor-not-allowed items-center gap-3 text-sm font-medium text-gray-400 select-none">
+        <input type="checkbox" class="sr-only" disabled />
+        <span class="relative block h-6 w-11 rounded-full bg-gray-100 dark:bg-gray-800">
+          <span class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-gray-50"></span>
+        </span>
+        Disabled
+      </label>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-6 sm:gap-8">
+      <label class="flex cursor-pointer items-center gap-3 text-sm font-medium text-gray-700 select-none dark:text-gray-300">
+        <input type="checkbox" class="peer sr-only" />
+        <span class="relative block h-6 w-11 rounded-full bg-gray-700 transition peer-checked:bg-gray-700 dark:bg-white/10">
+          <span
+            class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition peer-checked:translate-x-full"
+          ></span>
+        </span>
+        Default
+      </label>
+
+      <label class="flex cursor-pointer items-center gap-3 text-sm font-medium text-gray-700 select-none dark:text-gray-300">
+        <input type="checkbox" class="peer sr-only" defaultChecked />
+        <span class="relative block h-6 w-11 rounded-full bg-gray-700 transition peer-checked:bg-gray-700 dark:bg-white/10">
+          <span
+            class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition peer-checked:translate-x-full"
+          ></span>
+        </span>
+        Checked
+      </label>
+
+      <label class="flex cursor-not-allowed items-center gap-3 text-sm font-medium text-gray-400 select-none">
+        <input type="checkbox" class="sr-only" disabled />
+        <span class="relative block h-6 w-11 rounded-full bg-gray-100 dark:bg-gray-800">
+          <span class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-gray-50"></span>
+        </span>
+        Disabled
+      </label>
+    </div>
+  </div>
+</FormCard>

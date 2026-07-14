@@ -1,0 +1,358 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import DataTable from "../../components/table/DataTable.astro";
+import CrudModal from "../../components/forms/CrudModal.astro";
+import Toast from "../../components/Toast.astro";
+import AssetDetailModal from "../../components/lib/AssetDetailModal.astro";
+import { getAssetsWithAccess } from "@/lib/assets";
+import { getCategoriesSelect } from "@/lib/categories";
+import { getListItemsbyList } from "@/lib/list_items";
+import { getCurrentUser } from "@/lib/auth";
+import { getFavoritesByUser } from "@/lib/favorites";
+
+// ── Fetch data for the list view ──────────────────────────────────────────
+let assets: any[] = [];
+let errorMessage: string | null = null;
+
+try {
+  assets = await getAssetsWithAccess();
+} catch (error) {
+  console.error("Failed to fetch assets:", error);
+  errorMessage =
+    error instanceof Error ? error.message : "Failed to fetch assets from API";
+  assets = [];
+}
+
+// Current user's favorites (SSR) → pre-fill the row stars + "my favorites"
+// filter. Non-fatal: on any error the stars just render empty.
+let favIds = new Set<number>();
+try {
+  const me = await getCurrentUser();
+  const favs = await getFavoritesByUser(Number(me.id));
+  favIds = new Set(favs.map((f) => Number(f.asset)));
+} catch {
+  favIds = new Set();
+}
+
+// Status list (ASSET_STATUS) for the in-row label + status filter dropdown
+let status: any[] = [];
+try {
+  status = await getListItemsbyList("ASSET_STATUS");
+} catch {
+  status = [];
+}
+
+// Categories for the in-row label + category filter dropdown + AssetDetailModal
+let categories: any[] = [];
+try {
+  categories = await getCategoriesSelect();
+} catch (error) {
+  console.error("Failed to fetch categories:", error);
+  categories = [];
+}
+
+// Resolve a status code to its display label. Tolerates legacy/seeded rows
+// that stored the bare code (e.g. `IN_USE`) without the `N-` sort-prefix
+// that `list_items.value` carries (e.g. `6-IN_USE`). Canonical lookup runs
+// first; the prefix-stripped fallback is the safety net so the column
+// never shows the raw code when a label is available.
+const resolveStatusLabel = (raw: string): string => {
+  if (!raw) return "";
+  const direct = status.find((s) => s.value === raw);
+  if (direct) return direct.label;
+  const stripped = status.find((s) => s.value.replace(/^\d+-/, "") === raw);
+  return stripped?.label ?? raw;
+};
+
+// Columns shown in the table
+const columns = [
+  { key: "name", label: "asset_modal.name", as: "title", subtitleKey: "updated_at", subtitleFormat: "relative" },
+  { key: "category", label: "asset_modal.category", visible: false },
+  { key: "category_name", label: "asset_modal.category" },
+  { key: "current_version", label: "asset_modal.version" },
+  { key: "status", label: "asset_modal.status", visible: false },
+  { key: "status_name", label: "asset_modal.status", as: "status" },
+  { key: "tags_display", label: "asset_modal.tags", as: "tags" },
+];
+
+// Flatten rows for the table; keep raw category/status as hidden columns so
+// the dropdown filters can match them by value.
+const data = assets.map((item) => ({
+  id: item.id,
+  name: item.name,
+  description: item.description,
+  category: item.category,
+  category_name:
+    categories.find((c) => String(c.value) === String(item.category))?.label ||
+    item.category ||
+    "",
+  reference: item.reference,
+  status: item.status,
+  status_name: resolveStatusLabel(item.status),
+  current_version: item.current_version ?? "1.0.0",
+  // Per-row action gating (HU-LI08): only MANAGE holders get edit/delete/
+  // detail buttons (VIEW rows render read-only; backend enforces regardless).
+  can_manage: item.my_access === "MANAGE",
+  tags: item.tags,
+  tags_display: Array.isArray(item.tags) ? item.tags.join(", ") : item.tags || "",
+  detail: item.detail,
+  is_active: item.is_active,
+  created_at: item.created_at,
+  updated_at: item.updated_at,
+  // "yes"/"no" string so the columnFilter3 equality check works.
+  favorite: favIds.has(item.id) ? "yes" : "no",
+  // Comma-separated access tokens (kept for export/back-compat).
+  access: [...(item.access_levels ?? []), item.is_public ? "PUBLIC" : ""]
+    .filter(Boolean)
+    .join(","),
+  // Comma-separated scope-types by which the current user is granted access
+  // (USER/ROLE/TEAM/UNIT/PROJECT/PUBLIC) — drives the privileges/permisos filter
+  // via membership matching (columnFilter4).
+  permissions: (item.permission_scopes ?? []).join(","),
+}));
+
+// Delete-only fields for the small confirmation CrudModal
+const deleteFields = [
+  { key: "name", label: "asset_modal.name", pk: true, disabled: true },
+];
+const fieldKeys = deleteFields.map((f) => f.key);
+---
+
+<BaseLayout>
+  {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
+
+  <div class="mx-auto w-full max-w-full md:p-0">
+    <Breadcrumb
+      moduleName="AI Library"
+      pageName="Assets"
+      pageTitle="Assets"
+      homeLink="/"
+      moduleNameKey="modules.LIB"
+      pageNameKey="menu_options.assets"
+      pageTitleKey="menu_options.assets"
+    />
+
+    {/* Wide create/edit modal — the main piece of UI here */}
+    <AssetDetailModal
+      modalId="asset-detail-modal"
+      categories={categories}
+      statuses={status.map((s) => ({ value: s.value, label: s.label }))}
+    />
+
+    {/* Slim delete confirmation (reuses existing CrudModal) */}
+    <CrudModal
+      mode="delete"
+      modalId="asset-delete-modal"
+      entityName="Asset"
+      fields={deleteFields}
+      showTrigger={false}
+    />
+
+    <div
+      id="assets-data"
+      data-rows={encodeURIComponent(JSON.stringify(data))}
+      data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
+      class="hidden"
+      aria-hidden="true"
+    >
+    </div>
+
+    <script>
+      // Inline module so we can import crudClient from /public/ (Astro's
+      // hoisted bundler forbids importing /public/* files).
+      import { initCrudPage } from "@/lib/crudClient";
+      import { deleteAsset } from "@/lib/assets";
+      import { setFavorite } from "@/lib/favorites";
+      import { getUser } from "@/lib/auth";
+
+      // CrudClient drives the delete modal's prefill flow. The table rows
+      // are now SSR-rendered (auth cookie → middleware → ALS → apiGet), so
+      // no client-side hydration is needed.
+      initCrudPage({
+        dataId: "assets-data",
+        editModalId: "asset-edit-modal", // shim — DataTable still emits this id
+        deleteModalId: "asset-delete-modal",
+      });
+
+      const escapeHtml = (s) =>
+        String(s ?? "")
+          .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+
+      // ── Per-row favorite star toggle ──────────────────────────────────────
+      const paintStar = (btn, on) => {
+        btn.setAttribute("data-fav", on ? "1" : "0");
+        btn.setAttribute("aria-pressed", on ? "true" : "false");
+        const span = btn.querySelector("span");
+        const svg = btn.querySelector("svg");
+        span?.classList.toggle("text-yellow-400", on);
+        span?.classList.toggle("text-gray-400", !on);
+        svg?.setAttribute("fill", on ? "currentColor" : "none");
+      };
+
+      document.addEventListener(
+        "click",
+        async (e) => {
+          const favBtn = e.target.closest?.('[data-action="favorite"]');
+          if (favBtn) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            const user = getUser();
+            if (!user || (user.id === undefined || user.id === null)) {
+              showToast("Sign in to manage favorites", "error");
+              return;
+            }
+            const id = Number(favBtn.getAttribute("data-id"));
+            const wasOn = favBtn.getAttribute("data-fav") === "1";
+            const next = !wasOn;
+            paintStar(favBtn, next); // optimistic
+            try {
+              await setFavorite(Number(user.id), id, next);
+            } catch (err) {
+              paintStar(favBtn, wasOn); // revert
+              showToast(err instanceof Error ? err.message : "Could not update favorite", "error");
+            }
+            return;
+          }
+
+          const detailBtn = e.target.closest?.('[data-action="detail"]');
+          if (detailBtn) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            // Open the wide AssetDetailModal on its detail tabs
+            // (Characterizations / Related / Permissions) instead of expanding
+            // an inline row below the table row.
+            const id = detailBtn.getAttribute("data-id");
+            const synthetic = document.createElement("button");
+            synthetic.style.display = "none";
+            synthetic.setAttribute("data-modal-open", "asset-detail-modal");
+            synthetic.setAttribute("data-asset-mode", "edit");
+            if (id) synthetic.setAttribute("data-asset-id", id);
+            synthetic.setAttribute("data-asset-section", "detail");
+            document.body.appendChild(synthetic);
+            synthetic.click();
+            synthetic.remove();
+          }
+        },
+        true /* capture so we beat advancedTable's bubble delegation */,
+      );
+
+      // Toast helper
+      function showToast(message, variant = "info") {
+        const toast = document.createElement("div");
+        toast.className = `fixed top-4 right-4 z-50 max-w-md p-4 rounded-lg border shadow-lg transition-all duration-300 ${
+          variant === "error"
+            ? "bg-red-50 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+            : "bg-green-50 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+        }`;
+        toast.innerHTML = `
+          <div class="flex items-start gap-3">
+            <div class="flex-1 text-sm font-medium">${message}</div>
+            <button type="button" class="text-gray-400 hover:text-gray-600" onclick="this.parentElement.parentElement.remove()">✕</button>
+          </div>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          toast.style.transform = "translateX(100%)";
+          setTimeout(() => toast.remove(), 300);
+        }, 5000);
+      }
+
+      // ── Bridge: DataTable's "asset-create-modal" / "asset-edit-modal"
+      // buttons → AssetDetailModal. We intercept the DataTable's
+      // data-modal-open clicks BEFORE the default modal-open handler runs
+      // and reroute them to our wider modal.
+      document.addEventListener(
+        "click",
+        (e) => {
+          const create = e.target.closest?.('[data-modal-open="asset-create-modal"]');
+          const edit = e.target.closest?.('[data-modal-open="asset-edit-modal"]');
+          const proxy = create || edit;
+          if (!proxy) return;
+          // Stop the default modal opener (it would try to open a dialog
+          // that no longer exists with those ids).
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          // Synthesize a click on the AssetDetailModal trigger.
+          const synthetic = document.createElement("button");
+          synthetic.style.display = "none";
+          synthetic.setAttribute("data-modal-open", "asset-detail-modal");
+          synthetic.setAttribute(
+            "data-asset-mode",
+            create ? "create" : "edit",
+          );
+          if (edit) {
+            const id = edit.getAttribute("data-id");
+            if (id) synthetic.setAttribute("data-asset-id", id);
+            // The pencil edits only the core fields; the row's master-detail
+            // (list) button edits only the Characterizations/Related/Permissions
+            // tabs (the inline expand below).
+            synthetic.setAttribute("data-asset-section", "core");
+          }
+          document.body.appendChild(synthetic);
+          synthetic.click();
+          synthetic.remove();
+        },
+        true /* capture phase so we run before crudClient.js */,
+      );
+
+      // ── Delete handler stays on the standard CrudModal pattern.
+      document.addEventListener("crud-submit", async (e) => {
+        const { mode, data } = e.detail;
+        if (mode !== "delete") return; // create/edit handled by AssetDetailModal
+        try {
+          await deleteAsset(Number(data.id));
+          showToast("Asset deleted successfully!");
+          setTimeout(() => window.location.reload(), 800);
+        } catch (error) {
+          console.error("Delete failed:", error);
+          showToast(
+            error instanceof Error ? error.message : "An error occurred",
+            "error",
+          );
+        }
+      });
+    </script>
+
+    <div class="space-y-5 sm:space-y-6">
+      <div class="border-0 p-0">
+        <DataTable
+          columns={columns}
+          data={data}
+          tableId="assets"
+          i18Item="asset"
+          {/* Category + Status filters live as funnels in their column headers */}
+          columnFilter="category"
+          filterOptions={categories}
+          filterHeaderColumn="category_name"
+          columnFilter2="status"
+          filterOptions2={status.map((s) => ({ value: s.value, label: s.label }))}
+          filter2HeaderColumn="status_name"
+          {/* Favorites → toolbar toggle */}
+          columnFilter3="favorite"
+          filter3AsToggle={true}
+          filterOptions3={[
+            { value: "yes", label: "My favorites", i18n: "asset_table.fav_filter_mine" },
+          ]}
+          {/* Privileges/Permisos → toolbar dropdown over the user's permission scopes */}
+          columnFilter4="permissions"
+          filter4AllLabel="asset_table.perm_filter_all"
+          filterOptions4={[
+            { value: "USER", label: "Shared with me", i18n: "asset_table.perm_filter_user" },
+            { value: "ROLE", label: "My role", i18n: "asset_table.perm_filter_role" },
+            { value: "TEAM", label: "My team", i18n: "asset_table.perm_filter_team" },
+            { value: "UNIT", label: "My unit", i18n: "asset_table.perm_filter_unit" },
+            { value: "PROJECT", label: "My projects", i18n: "asset_table.perm_filter_project" },
+            { value: "PUBLIC", label: "Public", i18n: "asset_table.perm_filter_public" },
+          ]}
+          favoriteAction={true}
+          favoriteKey="favorite"
+          detailExpand={true}
+          manageKey="can_manage"
+        />
+      </div>
+    </div>
+  </div>
+</BaseLayout>

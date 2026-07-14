@@ -1,0 +1,40 @@
+---
+/**
+ * Review (HU-Review) — the reviewer opens an assigned PROPOSED asset from the
+ * header bell (`/lib/review?action={id}`), reviews its details +
+ * characterizations, leaves feedback, and Approves / Rejects / Requests changes.
+ *
+ * The interactive card is `ReviewAction.svelte`, compiled by the raw Svelte Vite
+ * plugin and **mounted manually** via Svelte 5's `mount()` from a bundled
+ * `<script>` (not the @astrojs/svelte island mechanism — see astro.config.mjs).
+ * Reuses the existing services (getAction / getAsset / getCharacterizationsByAsset
+ * / markNotified) + the new `reviewAsset` decision service.
+ */
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+---
+
+<BaseLayout>
+  <div class="mx-auto w-full max-w-2xl">
+    <Breadcrumb
+      moduleName="AI Library"
+      pageName="Review"
+      pageTitle="Review"
+      homeLink="/"
+      moduleNameKey="modules.LIB"
+      pageNameKey="review.title"
+      pageTitleKey="review.title"
+    />
+
+    <div id="review-root"></div>
+  </div>
+
+  <script>
+    // Mount the Svelte component manually (bundled @/ script, no island codegen).
+    import { mount } from "svelte";
+    import ReviewAction from "@/components/svelte/ReviewAction.svelte";
+
+    const target = document.getElementById("review-root");
+    if (target) mount(ReviewAction, { target });
+  </script>
+</BaseLayout>

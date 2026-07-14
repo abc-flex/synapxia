@@ -1,0 +1,218 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import DataTable from "../../components/table/DataTable.astro";
+import CrudModal from "../../components/forms/CrudModal.astro";
+import Toast from "../../components/Toast.astro";
+import { getLists } from "@/lib/lists";
+import { getModulesSelect } from "@/lib/modules";
+import { getListItemsbyList } from "@/lib/list_items";
+
+// Fetch lists from API
+let lists: any[] = [];
+let errorMessage: string | null = null;
+try {
+  const apiLists = await getLists();
+  lists = apiLists;
+} catch (error) {
+  console.error('Failed to fetch lists:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch lists from API';
+  // Fallback to empty array to still render the page
+  lists = [];
+}
+
+// Fetch modules for filter dropdown and form select
+let modules: any[] = [];
+try {
+  const apiModules = await getModulesSelect();
+  modules = apiModules;
+} catch (error) {
+  console.error('Failed to fetch modules:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch modules from API';
+  // Fallback to empty array to still render the page
+  modules = [];
+}
+
+// Fetch items_list from API for select field
+let types: any[] = [];
+types = await getListItemsbyList('LIST_TYPE');
+
+
+const columns = [
+  { key: "code", label: "list_modal.code", visible: false },
+  { key: "name", label: "list_modal.name", as: "title", subtitleKey: "code", subtitleFormat: "text" },
+  { key: "type", label: "list_modal.type", visible: false },
+  { key: "type_label", label: "list_modal.type", visible: true },
+  { key: "module", label: "list_modal.module", visible: false },
+  { key: "module_name", label: "list_modal.module" },
+];
+const data = lists.map((item) => ({
+  id: item.code,
+  module: item.module,
+  module_name: modules.find((m) => String(m.value) === String(item.module))?.label || item.module,
+  code: item.code,
+  name: item.name,
+  type: item.type,  //references List_items where list='LIST_TYPE'
+  type_label: types.find((t) => String(t.value) === String(item.type))?.label || item.type,
+  description: item.description,
+  is_active: item.is_active,
+  created_at: item.created_at,
+  updated_at: item.updated_at,
+}));
+const formFields= [
+  { key: "code", label: "list_modal.code", pk: true, required: true, placeholder: "e.g. STATUS" },
+  { key: "name", label: "list_modal.name", required: true, placeholder: "e.g. List statuses for..." },
+  { key: "type", label: "list_modal.type", type: "select" as const, options: types, required: true, filterLang: true },
+  { key: "module", label: "list_modal.module", type: "select" as const, options: modules, required: false },
+  {
+    key: "description",
+    label: "list_modal.description",
+    type: "textarea" as const,
+    placeholder: "Optional details of list",
+  },
+];
+const fieldKeys = formFields.map((f) => f.key);
+---
+
+<BaseLayout>
+  {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
+  
+  <div class="mx-auto w-full max-w-full md:p-0">
+    <Breadcrumb
+      moduleName="Administration"
+      pageName="Lists"
+      pageTitle="Lists"
+      homeLink="/"
+      moduleNameKey="modules.ADMIN"
+      pageNameKey="menu_options.lists"
+      pageTitleKey="menu_options.lists"
+    />
+
+    <CrudModal
+      mode="create"
+      modalId="list-create-modal"
+      entityName="List"
+      fields={formFields}
+      showTrigger={false}
+    />
+    <CrudModal
+      mode="edit"
+      modalId="list-edit-modal"
+      entityName="List"
+      fields={formFields}
+      showTrigger={false}
+    />
+    <CrudModal
+      mode="delete"
+      modalId="list-delete-modal"
+      entityName="List"
+      fields={formFields}
+      showTrigger={false}
+    />
+
+    <div
+      id="lists-data"
+      data-rows={encodeURIComponent(JSON.stringify(data))}
+      data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
+      class="hidden"
+      aria-hidden="true"
+    >
+    </div>
+
+    <script>
+      import { initCrudPage } from "@/lib/crudClient";
+      import {
+        createList,
+        updateList,
+        deleteList,
+      } from "@/lib/lists";
+
+      initCrudPage({
+        dataId: "lists-data",
+        editModalId: "list-edit-modal",
+        deleteModalId: "list-delete-modal",
+      });
+
+      // Helper function to show toast notifications
+      function showToast(message, variant = "info") {
+        const toast = document.createElement("div");
+        toast.className = `fixed top-4 right-4 z-50 max-w-md p-4 rounded-lg border shadow-lg transition-all duration-300 ${
+          variant === "error"
+            ? "bg-red-50 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+            : "bg-green-50 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+        }`;
+        toast.innerHTML = `
+          <div class="flex items-start gap-3">
+            <div class="flex-1 text-sm font-medium">${message}</div>
+            <button type="button" class="text-gray-400 hover:text-gray-600" onclick="this.parentElement.parentElement.remove()">✕</button>
+          </div>
+        `;
+        document.body.appendChild(toast);
+
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          toast.style.transform = "translateX(100%)";
+          setTimeout(() => toast.remove(), 300);
+        }, 5000);
+      }
+
+      // Handle CRUD form submissions
+      document.addEventListener("crud-submit", async (e) => {
+        const { modalId, mode, data } = e.detail;
+
+        try {
+          if (mode === "create") {
+            // Create new list
+            await createList({
+              module: data.module,
+              code: data.code,
+              name: data.name,
+              type: data.type,
+              description: data.description,
+              is_active: data.is_active !== false,
+            });
+
+            showToast("List created successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          } else if (mode === "edit") {
+            // Update existing list
+            await updateList(data.id, {
+              name: data.name,
+              type: data.type,
+              description: data.description,
+              is_active: data.is_active !== false,
+            });
+
+            showToast("List updated successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          } else if (mode === "delete") {
+            // Delete list
+            await deleteList(data.id);
+
+            showToast("List deleted successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          }
+        } catch (error) {
+          console.error("CRUD operation failed:", error);
+          showToast(error.message || "An error occurred", "error");
+        }
+      });
+    </script>
+
+    <div class="space-y-5 sm:space-y-6">
+      <div class="border-0 p-0">
+        <DataTable
+          columns={columns}
+          data={data}
+          tableId="lists"
+          i18Item="list"
+          columnFilter="module"
+          filterOptions={modules}
+          detailPage="/admin/list_items"
+          mdItem="list_item"
+        />
+      </div>
+    </div>
+  </div>
+</BaseLayout>

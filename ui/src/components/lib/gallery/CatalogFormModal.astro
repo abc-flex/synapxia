@@ -1,0 +1,132 @@
+---
+/**
+ * CatalogFormModal — reusable create/edit modal scaffold for a LIB curated
+ * catalog. Renders the dialog chrome (header + favorite star + status banner +
+ * footer) and the asset core fields shared by every catalog
+ * (name / status / description / reference / tags). The category is fixed per
+ * catalog (passed to `mountCatalogModal`, not edited here), so there is NO
+ * category selector.
+ *
+ * Catalog-specific feature inputs go in the default <slot>; their `name`
+ * attribute MUST equal the feature code. A per-catalog wrapper component (e.g.
+ * PromptFormModal) supplies those fields and calls `mountCatalogModal` to wire
+ * behavior.
+ */
+export interface Props {
+  modalId: string;
+  statuses?: { value: string; label: string }[];
+  titleCreateKey?: string;
+  subtitleKey?: string;
+  detailsSectionKey?: string;
+  /** Hide the default "Details" heading so the catalog can render its own
+      grouped sub-sections inside the feature-fields slot. */
+  hideDetailsHeading?: boolean;
+}
+
+const {
+  modalId,
+  statuses = [],
+  titleCreateKey = "prompt_modal.title_create",
+  subtitleKey = "prompt_modal.subtitle",
+  detailsSectionKey = "prompt_modal.details_section",
+  hideDetailsHeading = false,
+} = Astro.props as Props;
+---
+
+<dialog
+  id={modalId}
+  class="w-[min(820px,95vw)] max-w-none rounded-2xl bg-white p-0 text-gray-900 backdrop:bg-black/60 backdrop:backdrop-blur-sm dark:bg-gray-900 dark:text-gray-100"
+>
+  <form id={`${modalId}-form`} class="flex max-h-[90vh] flex-col">
+    {/* Header */}
+    <div class="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-4 dark:border-gray-800">
+      <div>
+        <h3 id={`${modalId}-title`} class="text-lg font-bold text-gray-900 dark:text-white" data-i18n={titleCreateKey}>
+          New
+        </h3>
+        <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400" data-i18n={subtitleKey}>
+          Core fields + reusable settings.
+        </p>
+      </div>
+      <div class="flex items-center gap-1">
+        <button
+          type="button"
+          id={`${modalId}-fav`}
+          aria-pressed="false"
+          title="Add to favorites"
+          data-i18n-title="gallery.favorite_add"
+          class="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+        >
+          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.3 4.02a1 1 0 00.95.69h4.22c.97 0 1.37 1.24.59 1.81l-3.42 2.48a1 1 0 00-.36 1.12l1.3 4.02c.3.92-.75 1.69-1.54 1.12l-3.41-2.48a1 1 0 00-1.18 0l-3.41 2.48c-.78.57-1.84-.2-1.54-1.12l1.3-4.02a1 1 0 00-.36-1.12L2 9.45c-.78-.57-.38-1.81.6-1.81h4.21a1 1 0 00.95-.69l1.3-4.02z" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          data-modal-close={modalId}
+          class="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+          aria-label="Close"
+          data-i18n-aria-label="common.close"
+        >
+          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    {/* Status banner */}
+    <div id={`${modalId}-status`} class="mx-6 mt-4 hidden rounded-lg p-3 text-sm" role="status" aria-live="polite"></div>
+
+    {/* Body */}
+    <div class="flex-1 space-y-6 overflow-y-auto px-6 py-5">
+      <input type="hidden" name="id" id={`${modalId}-id`} />
+
+      {/* Core (hidden in "detail" section mode) */}
+      <section id={`${modalId}-core-section`}>
+        <h4 class="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500" data-i18n="asset_detail_modal.core_section">Core</h4>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div class="md:col-span-2">
+            <label for={`${modalId}-name`} class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300" data-i18n="asset_modal.name">Name *</label>
+            <input id={`${modalId}-name`} name="name" type="text" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white" />
+          </div>
+          <div>
+            <label for={`${modalId}-status-select`} class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300" data-i18n="asset_modal.status">Status *</label>
+            <select id={`${modalId}-status-select`} name="status" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white">
+              <option value="" data-i18n="asset_detail_modal.choose_status">— choose —</option>
+              {statuses.map((s) => <option value={s.value}>{s.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label for={`${modalId}-reference`} class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300" data-i18n="asset_modal.reference">Reference</label>
+            <input id={`${modalId}-reference`} name="reference" type="text" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white" />
+          </div>
+          <div class="md:col-span-2">
+            <label for={`${modalId}-description`} class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300" data-i18n="asset_modal.description">Description</label>
+            <textarea id={`${modalId}-description`} name="description" rows={2} class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white"></textarea>
+          </div>
+          <div class="md:col-span-2">
+            <label for={`${modalId}-tags`} class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300" data-i18n="asset_modal.tags">Tags</label>
+            <input id={`${modalId}-tags`} name="tags" type="text" placeholder="tag1, tag2, tag3" data-i18n-placeholder="asset_detail_modal.tags_placeholder" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white" />
+          </div>
+        </div>
+      </section>
+
+      {/* Catalog-specific feature fields (hidden in "core" section mode) */}
+      <section id={`${modalId}-detail-section`}>
+        {!hideDetailsHeading && (
+          <h4 class="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500" data-i18n={detailsSectionKey}>Details</h4>
+        )}
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <slot />
+        </div>
+      </section>
+    </div>
+
+    {/* Footer */}
+    <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-800">
+      <button type="button" data-modal-close={modalId} class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800" data-i18n="common.cancel">Cancel</button>
+      <button id={`${modalId}-submit`} type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50" data-i18n="common.save">Save</button>
+    </div>
+  </form>
+</dialog>

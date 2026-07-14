@@ -1,0 +1,218 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components//core/Breadcrumb.astro";
+import DataTable from "../../components/table/DataTable.astro";
+import CrudModal from "../../components/forms/CrudModal.astro";
+import Toast from "../../components/Toast.astro";
+import { getOptions } from "@/lib/options";
+import { getModulesSelect } from "@/lib/modules";
+
+// Fetch options from API
+let options: any[] = [];
+let errorMessage: string | null = null;
+try {
+  const apiOptions = await getOptions();
+  options = apiOptions;
+} catch (error) {
+  console.error("Failed to fetch options:", error);
+  errorMessage =
+    error instanceof Error ? error.message : "Failed to fetch options from API";
+  // Fallback to empty array to still render the page
+  options = [];
+}
+
+// Fetch modules for filter dropdown and form select
+let modules: any[] = [];
+try {
+  const apiModules = await getModulesSelect();
+  modules = apiModules;
+} catch (error) {
+  console.error("Failed to fetch modules:", error);
+  errorMessage =
+    error instanceof Error ? error.message : "Failed to fetch modules from API";
+  // Fallback to empty array to still render the page
+  modules = [];
+}
+
+const columns = [
+  { key: "sort_order", label: "option_modal.sort_order" },
+  { key: "code", label: "option_modal.code", visible: false },
+  { key: "name", label: "option_modal.name", as: "title", subtitleKey: "code", subtitleFormat: "text" },
+  { key: "path", label: "option_modal.path" },
+  { key: "module", label: "option_modal.module", visible: false },
+  { key: "module_name", label: "option_modal.module" },
+];
+const data = options.map((option) => ({
+  id: `${option.module}:${option.code}`,
+  module: option.module,
+  code: option.code,
+  name: option.name,
+  path: option.path,
+  sort_order: option.sort_order,
+  icon: option.icon,
+  module_name: modules.find((m) => m.value === option.module)?.label || option.module,
+}));
+
+const formFields = [
+  {
+    key: "module",
+    label: "option_modal.module",
+    type: "select" as const,
+    options: modules,
+    pk: true,
+    required: true,
+  },
+  { key: "code", label: "option_modal.code", pk: true, required: true, placeholder: "e.g. business_units" },
+  { key: "name", label: "option_modal.name", required: true, placeholder: "e.g. Business Units" },
+  { key: "path", label: "option_modal.path", required: true, placeholder: "/admin/business_units" },
+  { key: "icon", label: "option_modal.icon", required: false, placeholder: "Heroicon path" },
+  { key: "sort_order", label: "option_modal.sort_order", required: true, type: "number" as const, placeholder: "10" },
+];
+const fieldKeys = formFields.map((f) => f.key);
+---
+
+<BaseLayout>
+  {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
+
+  <div class="mx-auto w-full max-w-full md:p-0">
+    <Breadcrumb
+      moduleName="Administration"
+      pageName="Options"
+      pageTitle="Options"
+      homeLink="/"
+      moduleNameKey="modules.ADMIN"
+      pageNameKey="menu_options.options"
+      pageTitleKey="menu_options.options"
+    />
+
+    <CrudModal
+      mode="create"
+      modalId="option-create-modal"
+      entityName="Option"
+      fields={formFields}
+      showTrigger={false}
+    />
+    <CrudModal
+      mode="edit"
+      modalId="option-edit-modal"
+      entityName="Option"
+      fields={formFields}
+      showTrigger={false}
+    />
+    <CrudModal
+      mode="delete"
+      modalId="option-delete-modal"
+      entityName="Option"
+      fields={formFields}
+      showTrigger={false}
+    />
+
+    <div
+      id="options-data"
+      data-rows={encodeURIComponent(JSON.stringify(data))}
+      data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
+      class="hidden"
+      aria-hidden="true"
+    >
+    </div>
+
+    <script>
+      import { initCrudPage } from "@/lib/crudClient";
+      import {
+        createOption,
+        updateOption,
+        deleteOption,
+      } from "@/lib/options";
+
+      initCrudPage({
+        dataId: "options-data",
+        editModalId: "option-edit-modal",
+        deleteModalId: "option-delete-modal",
+      });
+
+      // Helper function to show toast notifications
+      function showToast(message, variant = "info") {
+        const toast = document.createElement("div");
+        toast.className = `fixed top-4 right-4 z-50 max-w-md p-4 rounded-lg border shadow-lg transition-all duration-300 ${
+          variant === "error"
+            ? "bg-red-50 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+            : "bg-green-50 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+        }`;
+        toast.innerHTML = `
+          <div class="flex items-start gap-3">
+            <div class="flex-1 text-sm font-medium">${message}</div>
+            <button type="button" class="text-gray-400 hover:text-gray-600" onclick="this.parentElement.parentElement.remove()">✕</button>
+          </div>
+        `;
+        document.body.appendChild(toast);
+
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          toast.style.transform = "translateX(100%)";
+          setTimeout(() => toast.remove(), 300);
+        }, 5000);
+      }
+
+      // Handle CRUD form submissions
+      document.addEventListener("crud-submit", async (e) => {
+        const { modalId, mode, data } = e.detail;
+
+        try {
+          if (mode === "create") {
+            // Create new option
+            await createOption({
+              module: data.module,
+              code: data.code,
+              name: data.name,
+              path: data.path,
+              type: "menu", // Default type
+              sort_order: data.sort_order ? Number(data.sort_order) : 0,
+            });
+
+            showToast("Option created successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          } else if (mode === "edit") {
+            // Extract module and code from the composite ID (format: "module:code")
+            const [module, code] = data.id.split(":");
+
+            // Update existing option
+            await updateOption(module, code, {
+              name: data.name,
+              path: data.path,
+              sort_order: data.sort_order ? Number(data.sort_order) : 0,
+            });
+
+            showToast("Option updated successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          } else if (mode === "delete") {
+            // Extract module and code from the composite ID
+            const [module, code] = data.id.split(":");
+
+            // Delete option
+            await deleteOption(module, code);
+
+            showToast("Option deleted successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          }
+        } catch (error) {
+          console.error("CRUD operation failed:", error);
+          showToast(error.message || "An error occurred", "error");
+        }
+      });
+    </script>
+
+    <div class="space-y-5 sm:space-y-6">
+      <div class="border-0 p-0">
+        <DataTable
+          columns={columns}
+          data={data}
+          tableId="options"
+          i18Item="option"
+          columnFilter="module"
+          filterOptions={modules}
+        />
+      </div>
+    </div>
+  </div>
+</BaseLayout>

@@ -1,0 +1,257 @@
+import logging
+from typing import List
+from datetime import datetime
+
+from fastapi import APIRouter, HTTPException, Depends
+from sqlmodel import Session, select
+from sqlalchemy.exc import IntegrityError
+
+from sqlalchemy import and_, func
+
+from ..internal.models import Characterization, CharacterizationCreate, CharacterizationUpdate, Asset
+from ..internal import permissions_service
+from ...taxo.internal.models import Feature, Specification
+from ..internal.dependencies import get_db_session
+from ...auth.routes import current_active_user
+from ...internal.permissions import require_privilege
+from ...admin.internal.models import User
+
+logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/api/characterizations", tags=["characterizations"])
+
+
+def _ensure_manage(session: Session, user: User, asset_id: int) -> None:
+    """Per-asset write guard (HU-LI08): MANAGE grant or superuser required."""
+    try:
+        permissions_service.require_asset_manage(session, user, asset_id)
+    except permissions_service.AssetAccessForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
+
+
+def _current_label(session: Session, asset_id) -> str:
+    """The asset's current version label — the only generation the (asset,
+    feature)-keyed CRUD below may read or touch (prior labels are history,
+    HU-LI09)."""
+    asset = session.get(Asset, asset_id)
+    return (asset.current_version or "1.0.0") if asset else "1.0.0"
+
+
+@router.get("/", response_model=List[Characterization])
+def get_all(
+    skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("LIB", "CHARACTERIZATIONS", can_edit=False))
+) -> List[Characterization]:
+    """
+    List all characterizations with pagination.
+
+    Within each asset, rows follow the category's configured feature order
+    (``specifications.sort_order``, feature code as tiebreaker; features without
+    a spec row go last) — so every consumer renders characterizations in the
+    configured display order.
+
+    Only the asset's CURRENT version's rows are listed (HU-LI09): prior
+    ``version_label`` generations stay stored as history but are not returned.
+
+    - **skip**: Number of records to skip (default: 0)
+    - **limit**: Maximum number of records to return (default: 100)
+    """
+    characterizations = session.exec(
+        select(Characterization)
+        .join(Asset, Characterization.asset == Asset.id, isouter=True)
+        .join(Specification, and_(
+            Specification.category == Asset.category,
+            Specification.feature == Characterization.feature,
+        ), isouter=True)
+        .where(Characterization.is_active == True)
+        # coalesce keeps NULL current_version assets on their default label.
+        .where(Characterization.version_label ==
+               func.coalesce(Asset.current_version, "1.0.0"))
+        .offset(skip).limit(limit)
+        # coalesce keeps NULL sort_order (no spec row) deterministic and last on
+        # both Postgres and the SQLite test DB, which order NULLs differently.
+        .order_by(Characterization.asset,
+                  func.coalesce(Specification.sort_order, 1000000),
+                  Characterization.feature)
+    ).all()
+    return characterizations
+
+
+@router.get("/{code}/{feature_code}", response_model=Characterization)
+def get(
+    code: str, feature_code: str, session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("LIB", "CHARACTERIZATIONS", can_edit=False))
+) -> Characterization:
+    """
+    Get a characterization by its asset and feature.
+
+    - **code**: Asset code
+    - **feature_code**: Feature code
+    """
+    characterization = session.exec(
+        select(Characterization).where(
+            Characterization.asset == code,
+            Characterization.feature == feature_code,
+            Characterization.version_label == _current_label(session, code),
+        )
+    ).first()
+    if not characterization:
+        raise HTTPException(status_code=404, detail="Characterization not found")
+    elif not characterization.is_active:
+        raise HTTPException(status_code=400, detail=f"Characterization with asset '{code}' and feature '{feature_code}' is inactive")
+    return characterization
+
+
+@router.post("/", response_model=Characterization, status_code=201)
+def create(
+    characterization: CharacterizationCreate, session: Session = Depends(get_db_session),
+    current: User = Depends(require_privilege("LIB", "CHARACTERIZATIONS", can_edit=True))
+) -> Characterization:
+    """
+    Create a new characterization.
+
+    - **asset**: Asset code (required)
+    - **feature**: Feature code (required)
+    - **value**: Characterization value (required)
+    - **details**: Additional details (optional)
+    - **is_active**: Active/inactive status (default: True)
+    """
+    # Validate that the asset exists
+    asset = session.get(Asset, characterization.asset)
+    if not asset:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Asset with code '{characterization.asset}' does not exist"
+        )
+
+    _ensure_manage(session, current, characterization.asset)
+
+    # Validate that the feature exists
+    feature = session.get(
+        Feature, characterization.feature)
+    if not feature:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Feature with code '{characterization.feature}' does not exist"
+        )
+
+    # New rows always land on the asset's CURRENT version (clients cannot
+    # write historical labels — CharacterizationCreate has no version field).
+    version_label = asset.current_version or "1.0.0"
+
+    # Validate that the characterization doesn't already exist
+    existing_char = session.exec(
+        select(Characterization).where(
+            Characterization.asset == characterization.asset,
+            Characterization.feature == characterization.feature,
+            Characterization.version_label == version_label,
+        )
+    ).first()
+    if existing_char:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Characterization with asset '{characterization.asset}' and feature '{characterization.feature}' already exists"
+        )
+
+    try:
+        db_char = Characterization.model_validate(characterization)
+        db_char.version_label = version_label
+        session.add(db_char)
+        session.commit()
+        session.refresh(db_char)
+        logger.info(
+            f"Characterization created: {characterization.asset}/{characterization.feature}")
+        return db_char
+    except IntegrityError as e:
+        session.rollback()
+        logger.error(
+            f"Integrity error creating characterization {characterization.asset}/{characterization.feature}: {e}")
+        raise HTTPException(
+            status_code=409,
+            detail=f"Characterization with asset '{characterization.asset}' and feature '{characterization.feature}' already exists"
+        )
+
+
+@router.put("/{code}/{feature_code}", response_model=Characterization)
+def update(
+    code: str,
+    feature_code: str,
+    characterization_update: CharacterizationUpdate,
+    session: Session = Depends(get_db_session),
+    current: User = Depends(require_privilege("LIB", "CHARACTERIZATIONS", can_edit=True)),
+) -> Characterization:
+    """
+    Update an existing characterization. Requires MANAGE on the asset.
+
+    - **code**: Asset code
+    - **feature_code**: Feature code
+    - Only provided fields are updated (current version's row only)
+    """
+    characterization = session.exec(
+        select(Characterization).where(
+            Characterization.asset == code,
+            Characterization.feature == feature_code,
+            Characterization.version_label == _current_label(session, code),
+        )
+    ).first()
+    if not characterization:
+        raise HTTPException(
+            status_code=404, detail="Characterization not found")
+    _ensure_manage(session, current, characterization.asset)
+
+    update_data = characterization_update.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(characterization, key, value)
+
+    # Update timestamp
+    characterization.updated_at = datetime.utcnow()
+
+    session.add(characterization)
+    session.commit()
+    session.refresh(characterization)
+    logger.info(
+        f"Characterization updated: {code}/{feature_code}")
+    return characterization
+
+
+@router.delete("/{code}/{feature_code}", response_model=Characterization, status_code=200)
+def delete(
+    code: str, feature_code: str, session: Session = Depends(get_db_session),
+    current: User = Depends(require_privilege("LIB", "CHARACTERIZATIONS", can_edit=True))
+) -> Characterization:
+    """
+    Delete a characterization (logical delete). Requires MANAGE on the asset.
+
+    Performs a logical delete by setting is_active=False instead of deleting the record.
+
+    - **code**: Asset code
+    - **feature_code**: Feature code
+    """
+    characterization = session.exec(
+        select(Characterization).where(
+            Characterization.asset == code,
+            Characterization.feature == feature_code,
+            Characterization.version_label == _current_label(session, code),
+        )
+    ).first()
+    if not characterization:
+        raise HTTPException(
+            status_code=404, detail="Characterization not found")
+    _ensure_manage(session, current, characterization.asset)
+
+    # Check if already inactive
+    if not characterization.is_active:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Characterization with asset '{code}' and feature '{feature_code}' is already inactive"
+        )
+
+    # Logical delete: update is_active to False
+    characterization.is_active = False
+    characterization.updated_at = datetime.utcnow()
+
+    session.add(characterization)
+    session.commit()
+    session.refresh(characterization)
+    logger.info(
+        f"Characterization deactivated (logical delete): {code}/{feature_code}")
+    return characterization

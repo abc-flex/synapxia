@@ -1,0 +1,294 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import DataTable from "../../components/table/DataTable.astro";
+import CrudModal from "../../components/forms/CrudModal.astro";
+import Toast from "../../components/Toast.astro";
+import { getPrivileges } from "@/lib/privileges";
+import { getProfilesSelect } from "@/lib/profiles";
+import { getModulesSelect } from "@/lib/modules";
+import { getOptions } from "@/lib/options";
+
+
+// Fetch privileges from API
+let privileges: any[] = [];
+let errorMessage: string | null = null;
+
+try {
+  const apiLists = await getPrivileges();
+  privileges = apiLists;
+} catch (error) {
+  console.error('Failed to fetch privileges:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch privileges from API';
+  // Fallback to empty array to still render the page
+  privileges = [];
+}
+
+// Fetch profiles from API for select field
+let profiles: any[] = [];
+try {
+  const apiProfiles = await getProfilesSelect();
+  profiles = apiProfiles;
+} catch (error) {
+  console.error('Failed to fetch profiles:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch profiles from API';
+  // Fallback to empty array to still render the page
+  profiles = [];
+}
+
+// Fetch modules from API for select field
+let modules: any[] = [];
+try {
+  const apiModules = await getModulesSelect();
+  modules = apiModules;
+} catch (error) {
+  console.error('Failed to fetch modules:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch modules from API';
+  // Fallback to empty array to still render the page
+  modules = [];
+}
+
+// Fetch the full options so we can (a) resolve readable names per (module, code)
+// and (b) build a per-module map that drives the dependent Option select in the
+// modal — picking a Module rebuilds the Option list with only that module's options.
+let allOptions: any[] = [];
+try {
+  allOptions = await getOptions(undefined, 0, 1000);
+} catch (error) {
+  console.error('Failed to fetch options:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch options from API';
+  // Fallback to empty array to still render the page
+  allOptions = [];
+}
+
+// Map each module code -> its select options ({ value: option code, label: name }).
+const optionsByModule: Record<string, { value: string; label: string }[]> = {};
+for (const o of allOptions) {
+  (optionsByModule[o.module] ??= []).push({ value: o.code, label: o.name });
+}
+
+// Resolve an option's readable name by composite (module, code) since option
+// codes are only unique within a module.
+const optionName = (module: any, code: any) =>
+  allOptions.find(
+    (o) => String(o.module) === String(module) && String(o.code) === String(code)
+  )?.name || code;
+
+const columns = [
+  { key: "profile", label: "privilege_modal.profile", visible: false },
+  { key: "profile_name", label: "privilege_modal.profile", as: "title", subtitleKey: "module_name", subtitleFormat: "text" },
+  { key: "module", label: "privilege_modal.module", visible: false },
+  { key: "module_name", label: "privilege_modal.module", visible: false },
+  { key: "option", label: "privilege_modal.option", visible: false },
+  { key: "option_name", label: "privilege_modal.option" },
+  { key: "can_edit", label: "privilege_modal.can_edit", as: "boolean" },
+];
+const data = privileges.map((item) => ({
+  id: `${item.profile}::${item.module}::${item.option}`,
+  profile: item.profile,
+  profile_name: profiles.find((r) => String(r.value) === String(item.profile))?.label || item.profile,
+  module: item.module,
+  module_name: modules.find((m) => String(m.value) === String(item.module))?.label || item.module,
+  option: item.option,
+  option_name: optionName(item.module, item.option),
+  can_edit: item.can_edit,
+  is_active: item.is_active,
+  created_at: item.created_at,
+  updated_at: item.updated_at,
+}));
+const formFields = [
+  { key: "profile", label: "privilege_modal.profile", type: "select" as const, options: profiles, pk: true, required: true },
+  { key: "module", label: "privilege_modal.module", type: "select" as const, options: modules, pk: true, required: true },
+  { key: "option", label: "privilege_modal.option", type: "select" as const, options: [], pk: true, required: true },
+  { key: "can_edit", label: "privilege_modal.can_edit", type: "checkbox" as const },
+];
+const fieldKeys = ["id", ...formFields.map((f) => f.key)];
+---
+
+<BaseLayout>
+  {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
+
+  <div class="mx-auto w-full max-w-full md:p-0">
+    <!-- Breadcrumb Start -->
+    <Breadcrumb
+      moduleName="Administration"
+      pageName="Privileges"
+      pageTitle="Privileges"
+      homeLink="/"
+      moduleNameKey="modules.ADMIN"
+      masterKey="menu_options.profiles"
+      pageNameKey="menu_options.privileges"
+      pageTitleKey="menu_options.privileges"
+    />
+    <!-- Breadcrumb End -->
+
+    <CrudModal
+      mode="create"
+      modalId="privilege-create-modal"
+      entityName="Privilege"
+      fields={formFields}
+      showTrigger={false}
+    />
+    <CrudModal
+      mode="edit"
+      modalId="privilege-edit-modal"
+      entityName="Privilege"
+      fields={formFields}
+      showTrigger={false}
+    />
+    <CrudModal
+      mode="delete"
+      modalId="privilege-delete-modal"
+      entityName="Privilege"
+      fields={formFields}
+      showTrigger={false}
+    />
+
+    <div
+      id="privileges-data"
+      data-rows={encodeURIComponent(JSON.stringify(data))}
+      data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
+      data-options-by-module={encodeURIComponent(JSON.stringify(optionsByModule))}
+      class="hidden"
+      aria-hidden="true"
+    >
+    </div>
+
+    <script>
+      import { initCrudPage } from "@/lib/crudClient";
+      import {
+        createPrivilege,
+        updatePrivilege,
+        deletePrivilege,
+      } from "@/lib/privileges";
+
+      initCrudPage({
+        dataId: "privileges-data",
+        editModalId: "privilege-edit-modal",
+        deleteModalId: "privilege-delete-modal",
+      });
+
+      // --- Dependent Option options driven by the selected Module ---
+      // Selecting a Module rebuilds the Option <select> with only that module's
+      // options. The map is seeded server-side ({ moduleCode: [{value,label}] }).
+      const privilegesData = document.getElementById("privileges-data");
+      let optionsByModule = {};
+      try {
+        optionsByModule = JSON.parse(
+          decodeURIComponent(privilegesData?.dataset.optionsByModule || "%7B%7D")
+        );
+      } catch (err) {
+        console.error("Failed to decode options-by-module map", err);
+      }
+
+      function refreshOptionOptions(modal) {
+        if (!modal) return;
+        const moduleSelect = modal.querySelector('select[name="module"]');
+        const optionSelect = modal.querySelector('select[name="option"]');
+        if (!moduleSelect || !optionSelect) return;
+
+        const previous = optionSelect.value;
+        // Preserve the translated empty placeholder, drop the rest.
+        const placeholder =
+          optionSelect.querySelector('option[value=""]')?.cloneNode(true);
+        optionSelect.innerHTML = "";
+        if (placeholder) optionSelect.appendChild(placeholder);
+
+        for (const item of optionsByModule[moduleSelect.value] || []) {
+          const opt = document.createElement("option");
+          opt.value = item.value;
+          opt.textContent = item.label || item.value;
+          if (item.value === previous) opt.selected = true;
+          optionSelect.appendChild(opt);
+        }
+      }
+
+      ["privilege-create-modal", "privilege-edit-modal"].forEach((id) => {
+        const modal = document.getElementById(id);
+        const moduleSelect = modal?.querySelector('select[name="module"]');
+        // Fires on user change (create) and on the programmatic change dispatched
+        // by crudClient's edit prefill, where module is set before option.
+        moduleSelect?.addEventListener("change", () => refreshOptionOptions(modal));
+      });
+
+      // Populate the create modal's Option list for its initial Module value
+      // (the edit modal is populated by the prefill change event above).
+      refreshOptionOptions(document.getElementById("privilege-create-modal"));
+
+      // Helper function to show toast notifications
+      function showToast(message, variant = "info") {
+        const toast = document.createElement("div");
+        toast.className = `fixed top-4 right-4 z-50 max-w-md p-4 rounded-lg border shadow-lg transition-all duration-300 ${
+          variant === "error"
+            ? "bg-red-50 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+            : "bg-green-50 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+        }`;
+        toast.innerHTML = `
+          <div class="flex items-start gap-3">
+            <div class="flex-1 text-sm font-medium">${message}</div>
+            <button type="button" class="text-gray-400 hover:text-gray-600" onclick="this.parentElement.parentElement.remove()">✕</button>
+          </div>
+        `;
+        document.body.appendChild(toast);
+
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          toast.style.transform = "translateX(100%)";
+          setTimeout(() => toast.remove(), 300);
+        }, 5000);
+      }
+
+      // Handle CRUD form submissions
+      document.addEventListener("crud-submit", async (e) => {
+        const { modalId, mode, data } = e.detail;
+
+        try {
+          // Parse composite ID: "profile::module::option"
+          const [profile, module, option] = data.id.split("::");
+          if (mode === "create") {
+            // Create new privilege
+            await createPrivilege({
+              profile: data.profile,
+              module: data.module,
+              option: data.option,
+              can_edit: data.can_edit || false,
+            });
+            showToast("Privilege created successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          } else if (mode === "edit") {
+            // Update existing privilege
+            await updatePrivilege(profile, module, option, {
+              can_edit: data.can_edit || false,
+              is_active: data.is_active !== false,
+            });
+            showToast("Privilege updated successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          } else if (mode === "delete") {
+            await deletePrivilege(profile, module, option);
+            showToast("Privilege deleted successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          }
+        } catch (error) {
+          console.error("CRUD operation failed:", error);
+          showToast(error instanceof Error ? error.message : "An error occurred", "error");
+        }
+      });
+    </script>
+
+    <div class="space-y-5 sm:space-y-6">
+      <div class="border-0 p-0">
+        <DataTable
+          columns={columns}
+          data={data}
+          tableId="privileges"
+          i18Item="privilege"
+          columnFilter="profile"
+          filterOptions={profiles}
+          masterPage="/admin/profiles"
+          mdItem="profile"
+        />
+      </div>
+    </div>
+  </div>
+</BaseLayout>

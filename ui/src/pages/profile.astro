@@ -1,0 +1,315 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Breadcrumb from "../components/core/Breadcrumb.astro";
+---
+
+<BaseLayout>
+  <div class="mx-auto w-full max-w-full md:p-0">
+    <Breadcrumb
+      pageName="Profile"
+      pageTitle="Profile"
+      homeLink="/"
+      pageNameKey="menu_options.profile"
+      pageTitleKey="menu_options.profile"
+    />
+
+    <div class="space-y-6">
+      {/* Inline status banner */}
+      <div
+        id="profile-status"
+        class="hidden rounded-lg p-3 text-sm"
+        role="status"
+        aria-live="polite"
+      >
+      </div>
+
+      {/* Profile Header Card */}
+      <div
+        class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+      >
+        <div class="flex items-center gap-4">
+          <div
+            id="profile-avatar"
+            class="h-24 w-24 flex-shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-3xl font-bold text-white select-none"
+          >
+            ?
+          </div>
+          <div>
+            <h1
+              id="header-name"
+              class="text-2xl font-bold text-gray-900 dark:text-white"
+            >
+              —
+            </h1>
+            <p
+              id="header-profile"
+              class="text-sm text-gray-600 dark:text-gray-400"
+            >
+              —
+            </p>
+            <p
+              id="header-unit"
+              class="text-sm text-gray-500 dark:text-gray-500"
+            >
+              —
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Personal Information Section */}
+      <div
+        class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+      >
+        <div class="mb-6 flex items-center justify-between">
+          <h2
+            class="text-lg font-bold text-gray-900 dark:text-white"
+            data-i18n="profile_page.personal_information"
+          >
+            Personal information
+          </h2>
+          <button
+            id="edit-personal-btn"
+            type="button"
+            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+            data-i18n="profile_page.edit"
+          >
+            Edit
+          </button>
+        </div>
+
+        {/* Display View */}
+        <div id="view-mode" class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <div>
+            <label class="block text-sm font-medium text-gray-600 dark:text-gray-400" data-i18n="profile_page.first_name">First name</label>
+            <p id="view-first_name" class="mt-2 text-gray-900 dark:text-white">—</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 dark:text-gray-400" data-i18n="profile_page.last_name">Last name</label>
+            <p id="view-last_name" class="mt-2 text-gray-900 dark:text-white">—</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 dark:text-gray-400" data-i18n="profile_page.email_address">Email</label>
+            <p id="view-email" class="mt-2 text-gray-900 dark:text-white">—</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 dark:text-gray-400" data-i18n="profile_page.username">Username</label>
+            <p id="view-username" class="mt-2 text-gray-900 dark:text-white">—</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 dark:text-gray-400" data-i18n="profile_page.profile">Profile</label>
+            <p id="view-profile" class="mt-2 text-gray-900 dark:text-white">—</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 dark:text-gray-400" data-i18n="profile_page.unit">Business unit</label>
+            <p id="view-unit" class="mt-2 text-gray-900 dark:text-white">—</p>
+          </div>
+        </div>
+
+        {/* Edit View */}
+        <form id="edit-form" class="hidden space-y-6">
+          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div>
+              <label for="first_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300" data-i18n="profile_page.first_name">First name *</label>
+              <input id="first_name" name="first_name" type="text" required class="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white/90" />
+            </div>
+            <div>
+              <label for="last_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300" data-i18n="profile_page.last_name">Last name *</label>
+              <input id="last_name" name="last_name" type="text" required class="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white/90" />
+            </div>
+            <div>
+              <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300" data-i18n="profile_page.email_address">Email *</label>
+              <input id="email" name="email" type="email" required class="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white/90" />
+            </div>
+            <div>
+              <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-300" data-i18n="profile_page.username">Username *</label>
+              <input id="username" name="username" type="text" required class="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white/90" />
+            </div>
+          </div>
+
+          <p class="text-xs text-gray-500 dark:text-gray-400" data-i18n="profile_page.profile_unit_readonly_hint">
+            Your profile and business unit are managed by administrators.
+          </p>
+
+          <div class="flex items-center justify-end gap-3 border-t border-gray-100 pt-6 dark:border-gray-800">
+            <button type="button" id="cancel-edit-btn" class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5" data-i18n="profile_page.cancel">Cancel</button>
+            <button type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:bg-indigo-500 dark:hover:bg-indigo-400 dark:focus:ring-indigo-800" data-i18n="profile_page.save_changes">Save changes</button>
+          </div>
+        </form>
+      </div>
+
+      {/* Change Password Section */}
+      <div
+        class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+      >
+        <h2
+          class="mb-6 text-lg font-bold text-gray-900 dark:text-white"
+          data-i18n="profile_page.change_password"
+        >
+          Change password
+        </h2>
+        <form id="password-form" class="space-y-4 max-w-md">
+          <div>
+            <label for="new_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300" data-i18n="profile_page.new_password">New password *</label>
+            <input id="new_password" name="new_password" type="password" required class="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white/90" />
+          </div>
+          <div>
+            <label for="confirm_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300" data-i18n="profile_page.confirm_password">Confirm new password *</label>
+            <input id="confirm_password" name="confirm_password" type="password" required class="mt-2 h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white/90" />
+          </div>
+          <button type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700" data-i18n="profile_page.update_password">Update password</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    import { changePassword, getCurrentUser, updateMyProfile } from "@/lib/auth";
+
+    type UiUser = {
+      first_name?: string;
+      last_name?: string;
+      email?: string;
+      username?: string;
+      profile?: string;
+      unit?: string;
+    };
+
+    function $<T extends HTMLElement = HTMLElement>(id: string): T | null {
+      return document.getElementById(id) as T | null;
+    }
+    function setText(id: string, value: string | undefined | null) {
+      const el = $(id);
+      if (el) el.textContent = value && value.length ? value : "—";
+    }
+    function setVal(id: string, value: string | undefined | null) {
+      const el = $<HTMLInputElement>(id);
+      if (el) el.value = value ?? "";
+    }
+
+    function renderUser(u: UiUser) {
+      const fullName =
+        `${u.first_name ?? ""} ${u.last_name ?? ""}`.trim() ||
+        u.username ||
+        "—";
+      setText("header-name", fullName);
+      setText("header-profile", u.profile);
+      setText("header-unit", u.unit);
+
+      const avatar = $("profile-avatar");
+      if (avatar) {
+        const initials =
+          ((u.first_name?.[0] ?? "") + (u.last_name?.[0] ?? "")).toUpperCase() ||
+          (u.username?.[0]?.toUpperCase() ?? "?");
+        avatar.textContent = initials;
+      }
+
+      setText("view-first_name", u.first_name);
+      setText("view-last_name", u.last_name);
+      setText("view-email", u.email);
+      setText("view-username", u.username);
+      setText("view-profile", u.profile);
+      setText("view-unit", u.unit);
+
+      setVal("first_name", u.first_name);
+      setVal("last_name", u.last_name);
+      setVal("email", u.email);
+      setVal("username", u.username);
+    }
+
+    function showStatus(message: string, kind: "ok" | "error") {
+      const banner = $("profile-status");
+      if (!banner) return;
+      banner.textContent = message;
+      banner.className =
+        "rounded-lg p-3 text-sm " +
+        (kind === "ok"
+          ? "bg-green-50 text-green-800 border border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700"
+          : "bg-red-50 text-red-800 border border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700");
+    }
+
+    // i18n helper — looks up via window.t exposed by ClientTranslations.astro.
+    const tr = (key: string, fallback: string): string => {
+      try {
+        const lang = localStorage.getItem("lang") || "en";
+        const w = window as any;
+        if (typeof w.t === "function") return w.t(key, lang) || fallback;
+      } catch { /* non-fatal */ }
+      return fallback;
+    };
+
+    // 1) Hydrate real user via GET /me
+    (async () => {
+      try {
+        const user = (await getCurrentUser()) as unknown as UiUser;
+        renderUser(user);
+      } catch (e) {
+        showStatus(
+          e instanceof Error ? e.message : tr("profile_page.status_load_error", "Could not load your profile."),
+          "error",
+        );
+      }
+    })();
+
+    // 2) Toggle edit mode
+    const viewMode = $("view-mode");
+    const editForm = $("edit-form");
+    $("edit-personal-btn")?.addEventListener("click", () => {
+      viewMode?.classList.add("hidden");
+      editForm?.classList.remove("hidden");
+    });
+    $("cancel-edit-btn")?.addEventListener("click", () => {
+      viewMode?.classList.remove("hidden");
+      editForm?.classList.add("hidden");
+    });
+
+    // 3) Save edits — PATCH /api/auth/me
+    editForm?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const payload = {
+        first_name: $<HTMLInputElement>("first_name")?.value ?? "",
+        last_name: $<HTMLInputElement>("last_name")?.value ?? "",
+        email: $<HTMLInputElement>("email")?.value ?? "",
+        username: $<HTMLInputElement>("username")?.value ?? "",
+      };
+      try {
+        const updated = (await updateMyProfile(payload)) as unknown as UiUser;
+        renderUser(updated);
+        viewMode?.classList.remove("hidden");
+        editForm?.classList.add("hidden");
+        showStatus(tr("profile_page.status_updated", "Profile updated."), "ok");
+      } catch (err) {
+        showStatus(
+          err instanceof Error ? err.message : tr("profile_page.status_save_error", "Could not save your profile."),
+          "error",
+        );
+      }
+    });
+
+    // 4) Change password — PATCH /api/auth/me with {password}
+    const pwdForm = $("password-form");
+    pwdForm?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const newPwd = $<HTMLInputElement>("new_password")?.value ?? "";
+      const confirm = $<HTMLInputElement>("confirm_password")?.value ?? "";
+      if (newPwd.length < 8) {
+        showStatus(tr("profile_page.status_pwd_min_length", "Password must be at least 8 characters."), "error");
+        return;
+      }
+      if (newPwd !== confirm) {
+        showStatus(tr("profile_page.status_pwd_mismatch", "Passwords do not match."), "error");
+        return;
+      }
+      try {
+        await changePassword({ old_password: "", new_password: newPwd });
+        (pwdForm as HTMLFormElement).reset();
+        showStatus(tr("profile_page.status_pwd_updated", "Password updated."), "ok");
+      } catch (err) {
+        showStatus(
+          err instanceof Error ? err.message : tr("profile_page.status_pwd_error", "Could not change password."),
+          "error",
+        );
+      }
+    });
+  </script>
+</BaseLayout>

@@ -18,15 +18,15 @@ docker-compose up --build
 ```
 
 Esto levantará:
-- **PostgreSQL** en puerto 5432
-- **FastAPI** en puerto 8000
+- **PostgreSQL** en el puerto 5433 del host (el contenedor escucha en 5432)
+- **FastAPI** en puerto 8001
 
 ### 2. Acceder a la API
 
-- **API Root**: http://localhost:8000
-- **Documentación Swagger**: http://localhost:8000/docs
-- **Documentación ReDoc**: http://localhost:8000/redoc
-- **Health Check**: http://localhost:8000/health
+- **API Root**: http://localhost:8001
+- **Documentación Swagger**: http://localhost:8001/docs
+- **Documentación ReDoc**: http://localhost:8001/redoc
+- **Health Check**: http://localhost:8001/health
 
 ## Endpoints
 
@@ -170,7 +170,8 @@ DB_HOST=db              # Host de PostgreSQL
 DB_NAME=sinapxia        # Nombre de la base de datos
 DB_USER=postgres        # Usuario de PostgreSQL
 DB_PASSWORD=postgres    # Contraseña de PostgreSQL
-DB_PORT=5432            # Puerto de PostgreSQL
+DB_PORT=5432            # Puerto interno del contenedor (API + PgAdmin usan db:5432)
+DB_HOST_PORT=5433       # Puerto publicado en el host (localhost:5433) para evitar choques con un 5432 local
 ```
 
 ## Comandos Útiles
@@ -221,29 +222,29 @@ docker-compose exec db psql -U postgres -d sinapxia
 
 Puedes probar la API usando:
 
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
+- **Swagger UI**: http://localhost:8001/docs
+- **ReDoc**: http://localhost:8001/redoc
 - **cURL**:
 
 ```bash
 # Crear rol
-curl -X POST http://localhost:8000/api/roles \
+curl -X POST http://localhost:8001/api/roles \
   -H "Content-Type: application/json" \
   -d '{"nombre": "Rol Test", "descripcion": "Descripción"}'
 
 # Obtener todos los roles
-curl http://localhost:8000/api/roles
+curl http://localhost:8001/api/roles
 
 # Obtener rol específico
-curl http://localhost:8000/api/roles/1
+curl http://localhost:8001/api/roles/1
 
 # Actualizar rol
-curl -X PUT http://localhost:8000/api/roles/1 \
+curl -X PUT http://localhost:8001/api/roles/1 \
   -H "Content-Type: application/json" \
   -d '{"nombre": "Rol Actualizado"}'
 
 # Eliminar rol
-curl -X DELETE http://localhost:8000/api/roles/1
+curl -X DELETE http://localhost:8001/api/roles/1
 ```
 
 ## Notas

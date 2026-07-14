@@ -1,0 +1,56 @@
+---
+// The toolbar column-filter panel. Renders the configured filter slots that are
+// NOT placed in a column header (`headerColumn` unset). A slot flagged `asToggle`
+// renders as a switch (checkbox) whose "on" value is its first option's value;
+// the rest render as <select>s. Both keep the canonical `id` + `data-column-key`
+// so advancedTable.ts binds them identically wherever they live.
+import type { FilterConfig } from "@/types/datatable";
+import FavoritesPill from "@/components/lib/FavoritesPill.astro";
+
+interface Props {
+  tableId: string;
+  hasData: boolean;
+  filters?: FilterConfig[];
+}
+const { tableId, hasData, filters = [] } = Astro.props as Props;
+
+// Only the toolbar-placed, configured slots render here.
+const toolbarFilters = filters.filter((f) => f.key && !f.headerColumn);
+const onValue = (f: FilterConfig): string => f.options[0]?.value || f.options[0]?.code || "yes";
+const toggleLabel = (f: FilterConfig): string =>
+  f.options[0]?.i18n || f.allLabel || `${f.key}_modal.filter_title`;
+---
+<div id={`${tableId}-filters`} class="hidden w-full space-y-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:gap-3 sm:space-y-0">
+{
+  hasData && toolbarFilters.map((f) => (
+    f.asToggle ? (
+      <div class="flex-1 basis-[45%] sm:flex-none sm:basis-auto">
+        <FavoritesPill
+          id={f.id}
+          columnKey={f.key}
+          onValue={onValue(f)}
+          labelKey={toggleLabel(f)}
+          class="w-full justify-center sm:w-auto sm:justify-start"
+        />
+      </div>
+    ) : (
+      <div class="relative flex-1 basis-[45%] sm:flex-none sm:basis-auto">
+        <select
+          id={f.id}
+          data-column-key={f.key}
+          class="w-full sm:w-auto sm:min-w-[10rem] rounded-lg border border-gray-300 bg-white px-3 py-2 sm:py-1.5 text-sm text-gray-800
+              focus:border-indigo-500 focus:ring-indigo-500
+              dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:focus:border-indigo-400"
+        >
+          <option value="" data-i18n={f.allLabel || `${f.key}_modal.filter_title`}></option>
+          {f.options.map((opt) => (
+            <option value={opt.value || opt.code} data-i18n={opt.i18n} selected={(opt.value || opt.code) === f.defaultValue}>
+              {opt.label || opt.name}
+            </option>
+          ))}
+        </select>
+      </div>
+    )
+  ))
+}
+</div>

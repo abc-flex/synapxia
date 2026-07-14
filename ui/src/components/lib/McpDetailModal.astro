@@ -1,0 +1,40 @@
+---
+/**
+ * McpDetailModal — the MCP Directory's read-only "big card" view. Wraps the
+ * reusable CatalogDetailModal and configures the MCP-specific sections: the Mode
+ * chip, the full tool list, the content notes, and the server configuration JSON
+ * (with Copy) — shown at full size instead of the card's clamped previews.
+ */
+import CatalogDetailModal from "@/components/lib/gallery/CatalogDetailModal.astro";
+
+export interface Props {
+  modalId?: string;
+  statuses?: { value: string; label: string }[];
+}
+
+const { modalId = "mcp-view-modal", statuses = [] } = Astro.props as Props;
+---
+
+<CatalogDetailModal modalId={modalId} statuses={statuses} accentClass="text-emerald-500">
+  <span slot="icon" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300">
+    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+      <rect x="3" y="4" width="18" height="6" rx="1.5" /><rect x="3" y="14" width="18" height="6" rx="1.5" />
+      <path d="M7 7h.01M7 17h.01" stroke-linecap="round" />
+    </svg>
+  </span>
+</CatalogDetailModal>
+
+<script>
+  import { mountCatalogDetail } from "@/lib/catalogDetail";
+
+  mountCatalogDetail({
+    modalId: "mcp-view-modal",
+    editModalId: "mcp-detail-modal",
+    sections: [
+      { type: "inline", labelKey: "mcp_modal.mode", feature: "MODE" },
+      { type: "tools", labelKey: "mcp_modal.tools", feature: "TOOLS", column: "detail" },
+      { type: "block", labelKey: "mcp_modal.content", feature: "CONTENT", column: "detail" },
+      { type: "code", labelKey: "mcp_modal.server_config", feature: "SERVER_CONFIG", column: "detail", copyOkKey: "mcp_card.copied" },
+    ],
+  });
+</script>

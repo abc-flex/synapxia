@@ -1,0 +1,60 @@
+---
+import checkSvg from "@/images/icons/check.svg?raw";
+import { t } from "@/i18n";
+import { statusTone, formatDate, formatRelative, renderSubtitle } from "@/lib/datatable";
+import type { ColumnConfig } from "@/types/datatable";
+
+interface Props {
+  col: ColumnConfig;
+  row: Record<string, any>;
+  locale: string;
+}
+const { col, row, locale } = Astro.props as Props;
+---
+<td class="px-2 py-1" data-label={t(locale, col.label)} data-col={col.as ?? "text"}>
+  {col.as === "title" ? (
+    <>
+      <span class="dt-title">
+        {row[col.key]}
+        {col.titleSecondaryKey && row[col.titleSecondaryKey] && (
+          <span class="dt-title-secondary">{row[col.titleSecondaryKey]}</span>
+        )}
+      </span>
+      {col.subtitleKey && renderSubtitle(col, row, locale) && (
+        <span class="dt-subtitle">{renderSubtitle(col, row, locale)}</span>
+      )}
+    </>
+  ) : col.as === "status" && row[col.key] ? (
+    <span class={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusTone(row[col.key])}`}>
+      {row[col.key]}
+    </span>
+  ) : col.as === "tags" ? (
+    <span class="flex flex-wrap gap-1.5">
+      {String(row[col.key] ?? "")
+        .split(",")
+        .map((tg) => tg.trim())
+        .filter(Boolean)
+        .map((tag) => (
+          <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+            {tag}
+          </span>
+        ))}
+    </span>
+  ) : col.as === "date" ? (
+    col.dateFormat === "relative" ? formatRelative(row[col.key], locale) : formatDate(row[col.key], locale)
+  ) : col.as === "badge" && row[col.key] ? (
+    <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+      {row[col.key]}
+    </span>
+  ) : col.as === "boolean" || row[col.key] === true || row[col.key] === "true" ? (
+    row[col.key] === true || row[col.key] === "true" ? (
+      <span class="w-5 h-5 inline-block text-blue-600">
+        <Fragment set:html={checkSvg} />
+      </span>
+    ) : (
+      ""
+    )
+  ) : (
+    row[col.key]
+  )}
+</td>

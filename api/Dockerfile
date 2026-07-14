@@ -1,25 +1,33 @@
-FROM python:3.11-slim
+FROM python:3.14-slim
 
-WORKDIR /code
+ARG UV_VERSION=0.5.8
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
+# The installer requires curl (and certificates) to download the release archive
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates
 
-# Update pip
-RUN pip install --upgrade pip
+# Download the latest installer
+RUN curl -fsSL \
+  https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-installer.sh \
+  -o /uv-installer.sh \
+ && sh /uv-installer.sh
 
-# Copy resources
-COPY ./ /code
+# Run the installer then remove it
+RUN sh /uv-installer.sh && rm /uv-installer.sh
 
-# Install requirements
-RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
+# Ensure the installed binary is on the `PATH`
+ENV PATH="/root/.local/bin/:$PATH"
 
-# Expose port
-EXPOSE 80
+# Disable development dependencies
+ENV UV_NO_DEV=1
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8000/health')" || exit 1
+# Give slow/flaky Docker Desktop networks more room than uv's 30s default before
+# a single package download aborts the whole `uv sync` build
+ENV UV_HTTP_TIMEOUT=120
+
+# Copy the project over and install dependencies with uv
+WORKDIR /app
+COPY . /app
+
+# Sync the project into a new environment, asserting the lockfile is up to date
+RUN uv sync --frozen --no-cache
+

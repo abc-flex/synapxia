@@ -1,0 +1,108 @@
+---
+import leftSvg from "@/images/icons/chevron-left.svg?raw";
+import listSvg from "@/images/icons/list-bullet.svg?raw";
+import resetSvg from "@/images/icons/arrow-uturn-left.svg?raw";
+import DataTableFilters from "./DataTableFilters.astro";
+import DataTableSearchExport from "./DataTableSearchExport.astro";
+import type { FilterConfig } from "@/types/datatable";
+
+interface Props {
+  tableId: string;
+  i18Item: string;
+  mdItem?: string | null;
+  showAddButton?: boolean;
+  hasData: boolean;
+  masterPage?: string | null;
+  filters?: FilterConfig[];
+}
+const {
+  tableId,
+  i18Item,
+  mdItem = null,
+  showAddButton = true,
+  hasData,
+  masterPage = null,
+  filters = [],
+} = Astro.props as Props;
+
+// The first toolbar filter's key seeds the create modal's `data-filter-key`.
+const firstToolbarKey = filters.find((f) => f.key && !f.headerColumn)?.key ?? null;
+
+// How many column filters live in the toolbar — drives the mobile "Filtros"
+// button. Header-placed filters (funnels) are excluded.
+const filterCount = filters.filter((f) => f.key && !f.headerColumn).length;
+---
+<div
+  class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+>
+  <!-- Left -->
+  <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+    <div class="flex flex-wrap items-center gap-3">
+    {masterPage && (
+      <a
+        href={masterPage}
+        class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 sm:py-1.5 text-sm text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+        data-i18n-title={`${mdItem}_modal.many_title`}
+        title=""
+      >
+        <span class="w-5 h-5 inline-block">
+        <Fragment set:html={leftSvg} />
+      </span>
+      </a>
+    )}
+    {
+      showAddButton && (
+        <button
+          type="button"
+          class="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 sm:flex-none sm:py-1.5"
+          data-modal-open={`${i18Item}-create-modal`}
+          data-filter-key={firstToolbarKey}
+          data-i18n-title={`${i18Item}_modal.one_title`}
+          title=""
+        >
+          <span class="text-lg">+</span>
+          <span class="hidden sm:inline" data-i18n={`${i18Item}_modal.one_title`}>
+            {`${i18Item}_modal.one_title`}
+          </span>
+        </button>
+      )
+    }
+    <slot name="actions" />
+    </div>
+    {filterCount > 0 && hasData && (
+      <button
+        type="button"
+        data-filters-toggle={`${tableId}-filters`}
+        class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 sm:hidden dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+      >
+        <span class="w-4 h-4 inline-block">
+          <Fragment set:html={listSvg} />
+        </span>
+        <span data-i18n="data_table.filters">data_table.filters</span>
+        <span class="rounded-full bg-indigo-50 px-1.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">
+          {filterCount}
+        </span>
+      </button>
+    )}
+    <DataTableFilters tableId={tableId} hasData={hasData} filters={filters} />
+    {hasData && (
+      <button
+        id={`${tableId}-reset`}
+        type="button"
+        class="hidden inline-flex shrink-0 items-center gap-1 self-start sm:self-center rounded-md px-2 py-1 text-xs font-medium text-gray-500 transition hover:text-gray-700 hover:underline dark:text-gray-400 dark:hover:text-gray-200"
+        data-i18n-title="data_table.reset"
+        title=""
+      >
+        <span class="h-4 w-4 inline-block">
+          <Fragment set:html={resetSvg} />
+        </span>
+        <span data-i18n="data_table.reset">data_table.reset</span>
+      </button>
+    )}
+  </div>
+
+  <!-- Right: Search & Export -->
+  {hasData && (
+    <DataTableSearchExport tableId={tableId} />
+  )}
+</div>

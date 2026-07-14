@@ -1,0 +1,142 @@
+---
+import type { TreeNodeData } from './tree';
+
+interface Props {
+  node: TreeNodeData;
+  level?: number;
+}
+
+const { node, level = 0 } = Astro.props;
+const hasChildren = node.children.length > 0;
+const childrenId = `tree-children-${node.id}`;
+---
+
+<div class="tree-node" data-code={node.id} data-level={level}>
+  <div class="tree-item">
+    {hasChildren && (
+      <button
+        class="expand-btn"
+        data-toggle={childrenId}
+        aria-expanded="false"
+        aria-label={`Toggle ${node.label}`}
+      >
+        <svg class="icon-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </button>
+    )}
+    {!hasChildren && <span class="expand-placeholder"></span>}
+
+    <div class="node-content">
+      <span class="node-label font-medium text-slate-900">{node.label}</span>
+      {node.description && (
+        <span class="node-description text-sm text-slate-600">{node.description}</span>
+      )}
+    </div>
+  </div>
+
+  {hasChildren && (
+    <div id={childrenId} class="tree-children hidden" style={`margin-left: ${16 + (level * 8)}px`}>
+      {node.children.map(child => (
+        <Astro.self node={child} level={level + 1} />
+      ))}
+    </div>
+  )}
+</div>
+
+<style>
+  .tree-node {
+    user-select: none;
+  }
+
+  .tree-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 0;
+    min-height: 36px;
+  }
+
+  .expand-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: #64748b;
+    transition: transform 0.2s ease, color 0.2s ease;
+    border-radius: 4px;
+  }
+
+  .expand-btn:hover {
+    color: #334155;
+    background-color: #f1f5f9;
+  }
+
+  .expand-btn[aria-expanded="true"] {
+    transform: rotate(90deg);
+  }
+
+  .expand-placeholder {
+    width: 20px;
+    height: 20px;
+    display: block;
+  }
+
+  .icon-chevron {
+    display: block;
+  }
+
+  .node-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+  }
+
+  .node-label {
+    display: block;
+    color: #1e293b;
+  }
+
+  .node-description {
+    display: block;
+    color: #64748b;
+  }
+
+  .tree-children {
+    margin-top: 4px;
+    transition: all 0.2s ease;
+  }
+
+  .tree-children.hidden {
+    display: none;
+  }
+</style>
+
+<script>
+  // Expand/collapse functionality
+  document.querySelectorAll('.expand-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const childrenId = this.dataset.toggle;
+      const childrenElement = document.getElementById(childrenId);
+      if (!childrenElement) return;
+
+      const isExpanded = this.getAttribute('aria-expanded') === 'true';
+      
+      if (isExpanded) {
+        childrenElement.classList.add('hidden');
+        this.setAttribute('aria-expanded', 'false');
+      } else {
+        childrenElement.classList.remove('hidden');
+        this.setAttribute('aria-expanded', 'true');
+      }
+    });
+  });
+</script>

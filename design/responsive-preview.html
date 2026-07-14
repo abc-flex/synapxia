@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="es" class="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SynapxIA — Responsive UI Refresh (Preview)</title>
+  <!--
+    PRIVATE REVIEW ARTIFACT — NOT part of the deployed site.
+    Lives in /design (outside ui/public) so Astro/Vercel never ship it.
+    Open directly in a browser:  file:///…/synapxia/design/responsive-preview.html
+    Mirrors the Figma frames in the "Responsive UI Refresh" file and doubles
+    as the visual reference for the code implementation (see
+    docs/responsive-ui-implementation-plan.md).
+  -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Inter','system-ui','sans-serif'] } } } };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .device { box-shadow: 0 20px 50px -20px rgba(15,23,42,.35); }
+    .phone { width: 390px; }
+    /* --- The actual mobile card-view CSS proposed for DataTable (demo) --- */
+    .demo-table { width: 100%; font-size: 13px; }
+    .demo-table th { text-align:left; font-size:11px; letter-spacing:.03em; text-transform:uppercase; color:#64748b; padding:10px 8px; border-bottom:1px solid #e2e8f0; }
+    .demo-table td { padding:14px 8px; border-bottom:1px solid #e2e8f0; vertical-align:top; }
+  </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased">
+
+  <!-- ===== PAGE HEADER ===== -->
+  <header class="sticky top-0 z-50 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur">
+    <div class="mx-auto max-w-screen-2xl px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 rounded-lg bg-indigo-600 text-white grid place-items-center font-bold">IA</div>
+        <div>
+          <p class="text-base font-bold leading-tight">SynapxIA — Responsive UI Refresh</p>
+          <p class="text-xs text-slate-500">Design preview · refine current look + full mobile responsiveness</p>
+        </div>
+      </div>
+      <button onclick="document.documentElement.classList.toggle('dark')"
+        class="h-10 px-4 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800">
+        Toggle dark
+      </button>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-screen-2xl px-6 py-10 space-y-16">
+
+    <!-- ============ 1. DESKTOP APP SHELL + ASSET TABLE ============ -->
+    <section>
+      <h2 class="text-lg font-bold mb-1">1 · Desktop — App shell + Asset Repository</h2>
+      <p class="text-sm text-slate-500 mb-5">Refined sidebar (brand + tagline + active state), clean header, table card with toolbar, status/tag chips and pagination.</p>
+
+      <div class="device overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+        <div class="flex min-h-[760px]">
+          <!-- Sidebar -->
+          <aside class="w-[260px] shrink-0 border-r border-slate-200 dark:border-slate-800 px-4 py-6">
+            <a class="flex items-center gap-3 px-1 mb-7">
+              <div class="h-10 w-10 rounded-lg bg-indigo-600 text-white grid place-items-center font-bold">IA</div>
+              <div class="leading-tight">
+                <p class="text-lg font-semibold">SynapxIA</p>
+                <p class="text-[11px] font-medium text-slate-400">AI Governance</p>
+              </div>
+            </a>
+            <p class="px-3 mb-3 text-[11px] font-semibold tracking-wide text-slate-400">MENÚ</p>
+            <nav class="space-y-1 text-[15px]">
+              <a class="flex items-center gap-3 rounded-lg px-2 py-2.5 font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"><span class="h-8 w-8 rounded-lg bg-slate-200 dark:bg-slate-700"></span>Inicio</a>
+              <a class="flex items-center gap-3 rounded-lg px-2 py-2.5 font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"><span class="h-8 w-8 rounded-lg bg-slate-200 dark:bg-slate-700"></span>Administración</a>
+              <a class="flex items-center gap-3 rounded-lg px-2 py-2.5 font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"><span class="h-8 w-8 rounded-lg bg-slate-200 dark:bg-slate-700"></span>Taxonomía</a>
+              <a class="flex items-center gap-3 rounded-lg px-2 py-2.5 font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300"><span class="h-8 w-8 rounded-lg bg-indigo-600"></span>Repositorio de Activos</a>
+              <a class="flex items-center gap-3 rounded-lg px-2 py-2.5 font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"><span class="h-8 w-8 rounded-lg bg-slate-200 dark:bg-slate-700"></span>Colaboración</a>
+              <a class="flex items-center gap-3 rounded-lg px-2 py-2.5 font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"><span class="h-8 w-8 rounded-lg bg-slate-200 dark:bg-slate-700"></span>Insights</a>
+            </nav>
+          </aside>
+
+          <!-- Main -->
+          <div class="flex-1 flex flex-col bg-slate-50 dark:bg-slate-950">
+            <!-- Header -->
+            <header class="h-[72px] shrink-0 flex items-center justify-between px-6 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+              <div>
+                <p class="text-[11px] font-medium text-slate-400">Inicio / Biblioteca</p>
+                <h1 class="text-xl font-semibold">Repositorio de Activos</h1>
+              </div>
+              <div class="flex items-center gap-2">
+                <button class="h-9 w-9 grid place-items-center rounded-full border border-slate-200 dark:border-slate-700 text-slate-400">☾</button>
+                <div class="flex items-center rounded-full bg-slate-100 dark:bg-slate-800 p-0.5 text-xs font-medium">
+                  <span class="px-3 py-1.5 text-slate-500">EN</span>
+                  <span class="px-3 py-1.5 rounded-full bg-white dark:bg-slate-700 font-semibold">ES</span>
+                </div>
+                <button class="relative h-9 w-9 grid place-items-center rounded-full border border-slate-200 dark:border-slate-700 text-slate-400">🔔<span class="absolute top-1.5 right-2 h-2 w-2 rounded-full bg-indigo-600"></span></button>
+                <div class="h-8 w-8 rounded-full bg-indigo-50 text-indigo-700 grid place-items-center text-xs font-semibold">PA</div>
+              </div>
+            </header>
+
+            <!-- Content -->
+            <div class="p-6">
+              <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
+                <!-- Toolbar -->
+                <div class="flex flex-wrap items-center gap-3 mb-2">
+                  <button class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 h-10 text-sm font-semibold text-white hover:bg-indigo-700">+ Activo</button>
+                  <div class="h-10 inline-flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 px-3 text-sm text-slate-500">Todas las Categorías ▾</div>
+                  <div class="h-10 inline-flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 px-3 text-sm text-slate-500">Todos los Estados ▾</div>
+                  <div class="ml-auto flex items-center gap-3">
+                    <div class="h-10 w-64 inline-flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 px-3 text-sm text-slate-400">🔍 Buscar activos…</div>
+                    <button class="h-10 inline-flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 px-3 text-sm font-medium">⤓ Exportar</button>
+                  </div>
+                </div>
+                <!-- Table -->
+                <table class="demo-table dark:[&_th]:text-slate-400 dark:[&_td]:border-slate-800">
+                  <thead><tr><th>Nombre</th><th>Categoría</th><th>Estado</th><th>Etiquetas</th><th class="text-right">Acciones</th></tr></thead>
+                  <tbody id="dt-body"></tbody>
+                </table>
+                <!-- Pagination -->
+                <div class="flex flex-wrap items-center justify-between gap-4 pt-4">
+                  <p class="text-sm text-slate-500">Mostrando 1–6 de 24</p>
+                  <div class="flex items-center gap-2">
+                    <div class="h-9 px-3 inline-flex items-center rounded-lg border border-slate-200 dark:border-slate-700 text-sm">10 ▾</div>
+                    <button class="h-9 w-9 rounded-lg border border-slate-200 dark:border-slate-700">‹</button>
+                    <button class="h-9 w-9 rounded-lg bg-indigo-600 text-white text-sm font-semibold">1</button>
+                    <button class="h-9 w-9 rounded-lg border border-slate-200 dark:border-slate-700 text-sm">2</button>
+                    <button class="h-9 w-9 rounded-lg border border-slate-200 dark:border-slate-700 text-sm">3</button>
+                    <button class="h-9 w-9 rounded-lg border border-slate-200 dark:border-slate-700">›</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 2. MOBILE — CARDS + DRAWER ============ -->
+    <section>
+      <h2 class="text-lg font-bold mb-1">2 · Mobile — Card-view table &amp; slide-in drawer</h2>
+      <p class="text-sm text-slate-500 mb-5">Below <code>sm</code> each row collapses into a labeled card; the hamburger opens an off-canvas drawer over a dimmed backdrop.</p>
+
+      <div class="flex flex-wrap gap-8">
+        <!-- Phone A: card list -->
+        <div class="device phone rounded-[2rem] border-8 border-slate-900 dark:border-slate-700 overflow-hidden bg-slate-50 dark:bg-slate-950">
+          <div class="h-[64px] flex items-center justify-between px-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+            <button class="h-11 w-11 grid place-items-center rounded-lg border border-slate-200 dark:border-slate-700">
+              <span class="space-y-1"><span class="block h-0.5 w-5 bg-slate-700 dark:bg-slate-200"></span><span class="block h-0.5 w-5 bg-slate-700 dark:bg-slate-200"></span><span class="block h-0.5 w-5 bg-slate-700 dark:bg-slate-200"></span></span>
+            </button>
+            <div class="flex items-center gap-2"><div class="h-8 w-8 rounded-lg bg-indigo-600 text-white grid place-items-center text-xs font-bold">IA</div><span class="font-semibold">SynapxIA</span></div>
+            <div class="flex items-center gap-2">
+              <button class="relative h-9 w-9 grid place-items-center rounded-full border border-slate-200 dark:border-slate-700 text-slate-400 text-sm">🔔</button>
+              <div class="h-8 w-8 rounded-full bg-indigo-50 text-indigo-700 grid place-items-center text-xs font-semibold">PA</div>
+            </div>
+          </div>
+          <div class="p-4 space-y-3">
+            <div>
+              <h1 class="text-xl font-semibold">Repositorio de Activos</h1>
+              <p class="text-xs text-slate-500">24 activos · gobernanza de IA</p>
+            </div>
+            <button class="w-full h-11 rounded-lg bg-indigo-600 text-white text-sm font-semibold">+ Nuevo Activo</button>
+            <div class="w-full h-11 rounded-lg border border-slate-200 dark:border-slate-700 px-3 flex items-center text-sm text-slate-400">🔍 Buscar activos…</div>
+            <div class="flex gap-3">
+              <div class="flex-1 h-11 rounded-lg border border-slate-200 dark:border-slate-700 px-3 flex items-center text-sm">Filtros (2)</div>
+              <div class="h-11 rounded-lg border border-slate-200 dark:border-slate-700 px-4 flex items-center text-sm">⤓</div>
+            </div>
+            <!-- cards -->
+            <div id="card-list" class="space-y-3"></div>
+            <div class="flex items-center justify-center gap-2 pt-1">
+              <button class="h-11 w-11 rounded-lg border border-slate-200 dark:border-slate-700">‹</button>
+              <button class="h-11 w-11 rounded-lg bg-indigo-600 text-white font-semibold">1</button>
+              <button class="h-11 w-11 rounded-lg border border-slate-200 dark:border-slate-700">›</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Phone B: drawer open -->
+        <div class="device phone relative rounded-[2rem] border-8 border-slate-900 dark:border-slate-700 overflow-hidden bg-slate-50 h-[680px]">
+          <div class="h-[64px] flex items-center px-3 border-b border-slate-200 bg-white"><div class="h-9 w-9 rounded-lg bg-slate-100"></div></div>
+          <!-- backdrop -->
+          <div class="absolute inset-0 bg-slate-900/50"></div>
+          <!-- drawer -->
+          <aside class="absolute inset-y-0 left-0 w-[300px] max-w-[85%] bg-white px-4 py-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-6">
+              <div class="flex items-center gap-3"><div class="h-10 w-10 rounded-lg bg-indigo-600 text-white grid place-items-center font-bold">IA</div><div class="leading-tight"><p class="text-lg font-semibold">SynapxIA</p><p class="text-[11px] text-slate-400 font-medium">AI Governance</p></div></div>
+              <button class="h-8 w-8 rounded-full bg-slate-100 grid place-items-center text-slate-500">✕</button>
+            </div>
+            <p class="px-3 mb-3 text-[11px] font-semibold tracking-wide text-slate-400">MENÚ</p>
+            <nav class="space-y-1 text-[15px]">
+              <a class="flex items-center gap-3 rounded-lg px-2 py-2.5 font-medium text-slate-700"><span class="h-8 w-8 rounded-lg bg-slate-200"></span>Inicio</a>
+              <a class="flex items-center gap-3 rounded-lg px-2 py-2.5 font-medium text-slate-700"><span class="h-8 w-8 rounded-lg bg-slate-200"></span>Administración</a>
+              <a class="flex items-center gap-3 rounded-lg px-2 py-2.5 font-medium text-slate-700"><span class="h-8 w-8 rounded-lg bg-slate-200"></span>Taxonomía</a>
+              <a class="flex items-center gap-3 rounded-lg px-2 py-2.5 font-semibold bg-indigo-50 text-indigo-700"><span class="h-8 w-8 rounded-lg bg-indigo-600"></span>Repositorio de Activos</a>
+              <a class="flex items-center gap-3 rounded-lg px-2 py-2.5 font-medium text-slate-700"><span class="h-8 w-8 rounded-lg bg-slate-200"></span>Colaboración</a>
+            </nav>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 3. CRUD MODAL ============ -->
+    <section>
+      <h2 class="text-lg font-bold mb-1">3 · Create / Edit modal</h2>
+      <p class="text-sm text-slate-500 mb-5">Desktop: label + input in two columns. Mobile: labels stack above inputs, body scrolls, header/footer pinned.</p>
+      <div class="flex flex-wrap gap-8 items-start">
+        <!-- desktop modal -->
+        <div class="device rounded-2xl bg-slate-800 p-10 w-[760px] grid place-items-center">
+          <div class="w-[640px] rounded-2xl bg-white dark:bg-slate-900 overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800"><h3 class="font-semibold text-lg">Nuevo Activo</h3><button class="h-7 w-7 rounded-full bg-slate-100 dark:bg-slate-800 grid place-items-center text-slate-500">✕</button></div>
+            <div class="px-5 py-4 space-y-4">
+              <div class="flex items-start gap-4"><label class="w-32 pt-2.5 text-sm font-medium text-slate-700 dark:text-slate-300">Nombre</label><input class="flex-1 h-11 rounded-lg border border-slate-200 dark:border-slate-700 dark:bg-slate-950 px-3 text-sm" placeholder="Ej. GitHub MCP Server"></div>
+              <div class="flex items-start gap-4"><label class="w-32 pt-2.5 text-sm font-medium text-slate-700 dark:text-slate-300">Categoría</label><div class="flex-1 h-11 rounded-lg border border-slate-200 dark:border-slate-700 px-3 flex items-center justify-between text-sm text-slate-500">Model Context Protocol <span>▾</span></div></div>
+              <div class="flex items-start gap-4"><label class="w-32 pt-2.5 text-sm font-medium text-slate-700 dark:text-slate-300">Estado</label><div class="flex-1 h-11 rounded-lg border border-slate-200 dark:border-slate-700 px-3 flex items-center justify-between text-sm text-slate-500">6 · En uso <span>▾</span></div></div>
+              <div class="flex items-start gap-4"><label class="w-32 pt-2.5 text-sm font-medium text-slate-700 dark:text-slate-300">Etiquetas</label><input class="flex-1 h-11 rounded-lg border border-slate-200 dark:border-slate-700 dark:bg-slate-950 px-3 text-sm" placeholder="github, tools, devops"></div>
+              <div class="flex items-start gap-4"><label class="w-32 pt-2.5 text-sm font-medium text-slate-700 dark:text-slate-300">Descripción</label><textarea rows="3" class="flex-1 rounded-lg border border-slate-200 dark:border-slate-700 dark:bg-slate-950 px-3 py-2 text-sm" placeholder="Describe el activo…"></textarea></div>
+            </div>
+            <div class="flex items-center justify-end gap-3 px-5 py-3 border-t border-slate-100 dark:border-slate-800"><button class="h-10 px-4 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-300">Cancelar</button><button class="h-10 px-4 rounded-lg bg-indigo-600 text-white text-sm font-semibold">Guardar</button></div>
+          </div>
+        </div>
+        <!-- mobile modal -->
+        <div class="device phone rounded-[2rem] border-8 border-slate-900 overflow-hidden bg-slate-800 h-[680px] grid place-items-center p-3">
+          <div class="w-full max-h-full rounded-2xl bg-white flex flex-col overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100"><h3 class="font-semibold">Nuevo Activo</h3><button class="h-7 w-7 rounded-full bg-slate-100 grid place-items-center text-slate-500">✕</button></div>
+            <div class="px-5 py-4 space-y-4 overflow-y-auto">
+              <div><label class="block mb-1 text-sm font-medium text-slate-700">Nombre</label><input class="w-full h-11 rounded-lg border border-slate-200 px-3 text-sm" placeholder="Ej. GitHub MCP Server"></div>
+              <div><label class="block mb-1 text-sm font-medium text-slate-700">Categoría</label><div class="w-full h-11 rounded-lg border border-slate-200 px-3 flex items-center justify-between text-sm text-slate-500">Model Context Protocol <span>▾</span></div></div>
+              <div><label class="block mb-1 text-sm font-medium text-slate-700">Estado</label><div class="w-full h-11 rounded-lg border border-slate-200 px-3 flex items-center justify-between text-sm text-slate-500">6 · En uso <span>▾</span></div></div>
+              <div><label class="block mb-1 text-sm font-medium text-slate-700">Etiquetas</label><input class="w-full h-11 rounded-lg border border-slate-200 px-3 text-sm" placeholder="github, tools"></div>
+              <div><label class="block mb-1 text-sm font-medium text-slate-700">Descripción</label><textarea rows="3" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" placeholder="Describe el activo…"></textarea></div>
+            </div>
+            <div class="px-5 py-3 border-t border-slate-100 space-y-2"><button class="w-full h-11 rounded-lg bg-indigo-600 text-white text-sm font-semibold">Guardar</button><button class="w-full h-10 text-sm font-semibold text-slate-600">Cancelar</button></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 4. DASHBOARD ============ -->
+    <section>
+      <h2 class="text-lg font-bold mb-1">4 · Dashboard</h2>
+      <p class="text-sm text-slate-500 mb-5">KPI cards, activity chart and recent list — 4-up on desktop, 2×2 + stacked panels on mobile.</p>
+      <div class="flex flex-wrap gap-8 items-start">
+        <!-- desktop -->
+        <div class="device flex-1 min-w-[680px] rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-6 space-y-4">
+          <div class="grid grid-cols-4 gap-4">
+            <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4"><p class="text-sm text-slate-500">Activos totales</p><p class="text-3xl font-bold mt-1">248</p><span class="inline-block mt-2 text-[11px] font-medium text-indigo-700 bg-indigo-50 dark:bg-indigo-500/15 rounded-full px-2 py-0.5">+12 este mes</span></div>
+            <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4"><p class="text-sm text-slate-500">En uso</p><p class="text-3xl font-bold mt-1">96</p><span class="inline-block mt-2 text-[11px] font-medium text-green-700 bg-green-50 rounded-full px-2 py-0.5">39% del total</span></div>
+            <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4"><p class="text-sm text-slate-500">Equipos activos</p><p class="text-3xl font-bold mt-1">12</p><span class="inline-block mt-2 text-[11px] font-medium text-indigo-700 bg-indigo-50 dark:bg-indigo-500/15 rounded-full px-2 py-0.5">+2</span></div>
+            <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4"><p class="text-sm text-slate-500">Cumplimiento</p><p class="text-3xl font-bold mt-1">92%</p><span class="inline-block mt-2 text-[11px] font-medium text-green-700 bg-green-50 rounded-full px-2 py-0.5">objetivo 90%</span></div>
+          </div>
+          <div class="grid grid-cols-3 gap-4">
+            <div class="col-span-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
+              <p class="font-semibold">Actividad de activos</p><p class="text-xs text-slate-500 mb-4">Últimos 12 meses</p>
+              <div class="flex items-end gap-2 h-40" id="bars-d"></div>
+            </div>
+            <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
+              <p class="font-semibold mb-4">Actividad reciente</p>
+              <ul class="space-y-3 text-sm" id="recent-d"></ul>
+            </div>
+          </div>
+        </div>
+        <!-- mobile -->
+        <div class="device phone rounded-[2rem] border-8 border-slate-900 overflow-hidden bg-slate-50 h-[680px] overflow-y-auto">
+          <div class="h-[64px] flex items-center px-3 gap-3 border-b border-slate-200 bg-white"><div class="h-11 w-11 rounded-lg border border-slate-200 grid place-items-center">≡</div><span class="font-semibold">Panel de Control</span></div>
+          <div class="p-4 space-y-3">
+            <div class="grid grid-cols-2 gap-3">
+              <div class="rounded-2xl border border-slate-200 bg-white p-4"><p class="text-xs text-slate-500">Activos</p><p class="text-2xl font-bold mt-1">248</p></div>
+              <div class="rounded-2xl border border-slate-200 bg-white p-4"><p class="text-xs text-slate-500">En uso</p><p class="text-2xl font-bold mt-1">96</p></div>
+              <div class="rounded-2xl border border-slate-200 bg-white p-4"><p class="text-xs text-slate-500">Equipos</p><p class="text-2xl font-bold mt-1">12</p></div>
+              <div class="rounded-2xl border border-slate-200 bg-white p-4"><p class="text-xs text-slate-500">Cumplim.</p><p class="text-2xl font-bold mt-1">92%</p></div>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-4"><p class="font-semibold mb-3">Actividad de activos</p><div class="flex items-end gap-1.5 h-28" id="bars-m"></div></div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-4"><p class="font-semibold mb-3">Actividad reciente</p><ul class="space-y-3 text-sm" id="recent-m"></ul></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="mx-auto max-w-screen-2xl px-6 py-10 text-xs text-slate-400">
+    SynapxIA · private design preview · regenerate the Figma frames when the MCP quota resets.
+  </footer>
+
+  <script>
+    const rows = [
+      ["GitHub MCP Server","Model Context Protocol",["github","tools","devops"]],
+      ["Python Web Developer Agent","Agents",["python","fastapi"]],
+      ["Python Web Development Prompt","Prompt",["python","prompt"]],
+      ["Vector Search Retriever","RAG",["embeddings","search"]],
+      ["Claude Opus Eval Suite","Evaluation",["eval","quality"]],
+      ["Data Lineage Tracker","Governance",["audit","lineage"]],
+    ];
+    const chip = (t,cls) => `<span class="inline-block rounded-full px-2.5 py-0.5 text-[11px] font-medium ${cls}">${t}</span>`;
+    const tag = t => chip(t,"bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300");
+    const status = chip("6 · En uso","bg-green-50 text-green-700");
+    const actBtns = `<span class="inline-flex gap-1"><button class="h-8 w-8 rounded-lg bg-slate-100 dark:bg-slate-800">✎</button><button class="h-8 w-8 rounded-lg bg-slate-100 dark:bg-slate-800">⋯</button><button class="h-8 w-8 rounded-lg bg-red-50">🗑</button></span>`;
+    // desktop table
+    document.getElementById('dt-body').innerHTML = rows.map(r=>`
+      <tr>
+        <td><p class="font-semibold">${r[0]}</p><p class="text-xs text-slate-400">Actualizado hace 2 d</p></td>
+        <td class="text-slate-500">${r[1]}</td>
+        <td>${status}</td>
+        <td><span class="flex flex-wrap gap-1.5">${r[2].map(tag).join('')}</span></td>
+        <td class="text-right">${actBtns}</td>
+      </tr>`).join('');
+    // mobile cards
+    document.getElementById('card-list').innerHTML = rows.slice(0,3).map(r=>`
+      <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+        <p class="font-semibold">${r[0]}</p>
+        <p class="text-xs text-slate-500 mb-3">${r[1]}</p>
+        <div class="flex items-center justify-between py-1"><span class="text-[11px] font-semibold uppercase text-slate-400">Estado</span>${status}</div>
+        <div class="py-1"><span class="text-[11px] font-semibold uppercase text-slate-400">Etiquetas</span><div class="flex flex-wrap gap-1.5 mt-1">${r[2].map(tag).join('')}</div></div>
+        <div class="flex justify-end gap-1 border-t border-slate-100 dark:border-slate-800 mt-2 pt-2">${actBtns}</div>
+      </div>`).join('');
+    // charts
+    const bars = (id,hs,w)=>{document.getElementById(id).innerHTML = hs.map(h=>`<div class="flex-1 rounded-md bg-indigo-600" style="height:${h}%"></div>`).join('');};
+    bars('bars-d',[35,52,30,68,48,80,58,86,68,95,80,100]);
+    bars('bars-m',[40,62,35,80,55,95,70]);
+    const acts = [["PA creó GitHub MCP Server","hace 2 h"],["ML actualizó RAG Retriever","hace 5 h"],["JQ archivó Eval Suite v1","ayer"],["PA aprobó Data Lineage","ayer"]];
+    const actLi = a=>`<li class="flex items-start gap-3"><span class="h-8 w-8 shrink-0 rounded-full bg-indigo-50 dark:bg-indigo-500/15"></span><span><span class="block font-medium text-slate-700 dark:text-slate-200">${a[0]}</span><span class="block text-xs text-slate-400">${a[1]}</span></span></li>`;
+    document.getElementById('recent-d').innerHTML = acts.map(actLi).join('');
+    document.getElementById('recent-m').innerHTML = acts.slice(0,3).map(actLi).join('');
+  </script>
+</body>
+</html>

@@ -12,8 +12,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+./lib/
+./lib64/
 parts/
 sdist/
 var/
@@ -46,5 +46,7 @@ env/
 .env
 
 db/data/*
-data.js
+*/**/data.js
+*/**/data.json
+
 sample.jpg

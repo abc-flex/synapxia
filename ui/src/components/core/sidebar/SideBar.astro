@@ -1,0 +1,260 @@
+---
+import { t } from "@/i18n";
+import { getLocale } from "@/utils/getLocale";
+import { NavModule, NavOption } from "../../types/nav";
+import MenuItem from "./SideBarMenuItem.astro";
+
+const locale = getLocale(Astro);
+
+interface Props {
+  modules?: NavModule[];
+  options?: NavOption[];
+  brandTitle?: string;
+  currentPath?: string;
+  currentModuleName?: string;
+}
+
+const {
+  modules = [],
+  options = [],
+  brandTitle = "SynapxIA",
+  currentPath = "",
+  currentModuleName = "",
+} = Astro.props as Props;
+
+// Pre-bundle every icon SVG as a raw string at build time so the client-side
+// renderer below can inject them without a runtime fetch. Same glob shape as
+// SideBarMenuItem.astro.
+const iconModules = import.meta.glob("/src/images/icons/*.svg", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+}) as Record<string, string>;
+
+// Normalize the keys to short names ("users" → svg string).
+const iconMap: Record<string, string> = {};
+for (const [path, svg] of Object.entries(iconModules)) {
+  const name = path.replace("/src/images/icons/", "").replace(/\.svg$/, "");
+  iconMap[name] = svg;
+}
+---
+
+<aside
+  class="sidebar fixed left-0 top-0 z-[9999] flex h-screen w-[290px] max-w-[85vw] -translate-x-full flex-col overflow-y-hidden border-r border-gray-200 bg-white px-5 pt-8 pb-8 shadow-sm transition-transform duration-300 ease-linear dark:border-gray-800 dark:bg-black lg:static lg:h-auto lg:translate-x-0 lg:transition-none"
+>
+  <!-- SIDEBAR HEADER -->
+  <div class="sidebar-header pb-7">
+    <a
+      href="/"
+      class="flex items-center gap-3 rounded-lg p-1 -m-1 hover:bg-gray-100 dark:hover:bg-gray-800 transition focus:outline-none focus:ring-2 focus:ring-indigo-400"
+      aria-label="SynapxIA — Home"
+      data-i18n-aria-label="home_page.title"
+    >
+      <div
+        class="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600 text-white font-semibold"
+      >
+        IA
+      </div>
+      <div class="leading-tight">
+        <p class="text-2xl font-semibold text-gray-900 dark:text-white">
+          {brandTitle}
+        </p>
+      </div>
+    </a>
+  </div>
+  <!-- SIDEBAR HEADER -->
+
+  <div class="flex flex-col overflow-y-auto no-scrollbar">
+    <!-- SIDEBAR MENU -->
+    <nav>
+      <div>
+        <h3 class="mb-4 text-xs uppercase leading-[20px] text-gray-400">
+          <span class="menu-group-title" data-i18n="sidebar.menu_title">
+            {t(locale, "sidebar.menu_title")}
+          </span>
+        </h3>
+
+        <ul id="sidebar-primary-nav" class="flex flex-col gap-2 mb-6">
+          {modules.map((module) => (
+            <li>
+              <MenuItem
+                module={module}
+                options={options.filter((option) => option.module === module.code)}
+                currentPath={currentPath}
+                currentModuleName={currentModuleName}
+              />
+            </li>
+          ))}
+        </ul>
+      </div>
+    </nav>
+    <!-- SIDEBAR MENU -->
+  </div>
+
+  {/* Inline icon registry — read by the client-side renderer below. */}
+  <script type="application/json" id="sidebar-icon-map" set:html={JSON.stringify(iconMap)} />
+</aside>
+
+<script>
+  /* ============================================================
+     Client-side sidebar renderer.
+
+     Strategy: the SSR pass already filled `<ul id="sidebar-primary-nav">`
+     using props passed from `BaseLayout.astro` (the auth cookie is read
+     server-side by middleware, so the fetch succeeds). This script is the
+     fallback / cache-warmer:
+
+       1. If the SSR-rendered UL is empty (rare: BaseLayout's API call
+          failed), paint from the localStorage `nav_cache` for an instant
+          menu while the network round-trip happens.
+       2. Always run a background `getNavigationData()` to keep the cache
+          fresh; only re-render the DOM if the fetched data actually
+          differs from what's currently displayed.
+
+     Re-rendering is cheap: the menu has a handful of items.
+     ============================================================ */
+  import { getNavigationData, readNavCache, type NavigationData } from "@/lib/navigation";
+  import type { NavModule, NavOption } from "@/types/nav";
+  import { loadClientTranslations } from "@/utils/i18nClient";
+
+  type Icons = Record<string, string>;
+  const iconMapEl = document.getElementById("sidebar-icon-map");
+  let icons: Icons = {};
+  try {
+    icons = iconMapEl ? (JSON.parse(iconMapEl.textContent || "{}") as Icons) : {};
+  } catch {
+    icons = {};
+  }
+
+  const chevron = icons["chevron-down"] || "";
+
+  const primaryUl = document.getElementById("sidebar-primary-nav");
+  if (primaryUl) {
+    const currentPath = window.location.pathname;
+    const pathSegments = currentPath.split("/").filter(Boolean);
+    const currentModuleName = (pathSegments[0] || "").toLowerCase();
+
+    const escapeHtml = (s: string) =>
+      String(s ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+
+    // Parents prefer the solid variant for visual weight.
+    const moduleIcon = (name: string) => icons[`${name}-solid`] || icons[name] || "";
+
+    const buildItem = (module: NavModule, opts: NavOption[]) => {
+      const iconSvg = moduleIcon(module.icon);
+      const isActive = module.code.toLowerCase() === currentModuleName;
+      const hasChildren = opts.length > 0;
+      const moduleI18n = `modules.${module.code}`;
+
+      if (hasChildren) {
+        const items = opts
+          .map((o) => {
+            const active = o.path === currentPath;
+            const optI18n = `menu_options.${o.code.toLowerCase()}`;
+            // Use option icon when present, otherwise the original bullet dot.
+            const optIconSvg = o.icon ? (icons[o.icon] || "") : "";
+            const leading = optIconSvg
+              ? `<span class="w-5 h-5 inline-block text-current shrink-0">${optIconSvg}</span>`
+              : `<span class="w-1.5 h-1.5 inline-block bg-current rounded-full shrink-0"></span>`;
+            return `
+              <li>
+                <a href="${escapeHtml(o.path || "#")}"
+                   class="menu-dropdown-item group ${active ? "menu-dropdown-item-active" : "menu-dropdown-item-inactive"}">
+                  ${leading}
+                  <span data-i18n="${escapeHtml(optI18n)}">${escapeHtml(o.name)}</span>
+                </a>
+              </li>
+            `;
+          })
+          .join("");
+
+        return `
+          <li>
+            <details class="menu-item-container group" aria-label="${escapeHtml(module.name)} menu" ${isActive ? "open" : ""} data-menu-item>
+              <summary class="menu-item group list-none cursor-pointer select-none ${isActive ? "menu-item-active" : "menu-item-inactive"}">
+                <span class="menu-item-icon-tile">
+                  <span class="w-6 h-6 inline-block">${iconSvg}</span>
+                </span>
+                <span class="menu-item-text" data-i18n="${escapeHtml(moduleI18n)}">${escapeHtml(module.name)}</span>
+                <span class="menu-item-arrow stroke-current w-5 h-5 inline-block">${chevron}</span>
+              </summary>
+              <div class="overflow-hidden transform translate">
+                <ul class="flex flex-col gap-1.5 mt-2 menu-dropdown pl-2.5">${items}</ul>
+              </div>
+            </details>
+          </li>
+        `;
+      }
+
+      return `
+        <li>
+          <a href="${escapeHtml((module as any).path || "#")}"
+             class="menu-item group ${isActive ? "menu-item-active" : "menu-item-inactive"}"
+             role="button">
+            <span class="menu-item-icon-tile">
+              <span class="w-5 h-5 inline-block">${iconSvg}</span>
+            </span>
+            <span class="menu-item-text" data-i18n="${escapeHtml(moduleI18n)}">${escapeHtml(module.name)}</span>
+          </a>
+        </li>
+      `;
+    };
+
+    const render = (data: NavigationData) => {
+      const html = data.primaryNav
+        .map((module) =>
+          buildItem(
+            module,
+            data.itemsNav.filter((o) => o.module === module.code),
+          ),
+        )
+        .join("");
+      primaryUl.innerHTML = html;
+      // Re-apply i18n to the newly-inserted nodes — the global translator
+      // ran on DOMContentLoaded, but our rebuild happens after that.
+      try { loadClientTranslations(); } catch { /* non-fatal */ }
+      // Re-attach the "close siblings on open" handler that SideBarMenuItem
+      // installs — its own <script> already wired up server-side items, but
+      // our DOM-rebuilt items need the same wiring.
+      primaryUl.querySelectorAll("[data-menu-item]").forEach((menu) => {
+        const m = menu as HTMLDetailsElement;
+        m.addEventListener("toggle", (event) => {
+          const target = event.target as HTMLDetailsElement;
+          if (target.open) {
+            primaryUl.querySelectorAll("details[data-menu-item]").forEach((other) => {
+              if (other !== target && (other as HTMLDetailsElement).open) {
+                (other as HTMLDetailsElement).open = false;
+              }
+            });
+          }
+        });
+      });
+    };
+
+    // 1. If SSR didn't render any items (BaseLayout's API call failed),
+    //    paint from the localStorage cache so the user sees a menu now.
+    const ssrPainted = primaryUl.children.length > 0;
+    const cached = readNavCache();
+    if (!ssrPainted && cached) render(cached);
+
+    // 2. Background refresh — keep the cache current. Only re-render if
+    //    the fetched data actually differs from what's on screen, to avoid
+    //    a needless DOM rebuild on every page load.
+    getNavigationData()
+      .then((fresh) => {
+        if (!fresh.primaryNav.length && !fresh.itemsNav.length) return;
+        const baseline = ssrPainted ? cached : cached;
+        const baselineJson = JSON.stringify(baseline ?? {});
+        const freshJson = JSON.stringify(fresh);
+        if (baselineJson !== freshJson) render(fresh);
+      })
+      .catch(() => {
+        /* network errors are non-fatal — SSR / cache content stays displayed */
+      });
+  }
+</script>

@@ -1,0 +1,195 @@
+---
+import { buildTree, type TreeFieldKeys, type TreeNodeData } from './tree';
+
+interface Props {
+  /** Flat list of items of any model. */
+  items: Record<string, any>[];
+  /** Override the field names used to read id / parent / label / description. */
+  keys?: Partial<TreeFieldKeys>;
+  /** Chart height (CSS value). */
+  height?: string;
+  /** Layout direction: 'LR' horizontal (default) or 'TB' top-down org-chart. */
+  orient?: 'LR' | 'TB';
+  /** Render each node framed in a rounded rectangle (standard hierarchy look). */
+  boxed?: boolean;
+}
+
+const {
+  items,
+  keys = {},
+  height = '600px',
+  orient = 'LR',
+  boxed = false,
+} = Astro.props;
+
+const roots = buildTree(items, keys);
+
+// Map the normalized tree into the ECharts `tree` series format: { name, value, children }
+interface EChartsTreeNode {
+  name: string;
+  value?: string;
+  children?: EChartsTreeNode[];
+}
+
+function toEChartsNode(node: TreeNodeData): EChartsTreeNode {
+  return {
+    name: node.label,
+    value: node.description || '',
+    ...(node.children.length > 0 && {
+      children: node.children.map(toEChartsNode),
+    }),
+  };
+}
+
+const treeData = roots.map(toEChartsNode);
+const treeDataJson = JSON.stringify(treeData);
+---
+
+<div class="chart-container">
+  <div id="tree-chart" style={`width: 100%; height: ${height};`}></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+
+<script define:vars={{ treeDataJson, orient, boxed }}>
+  function initEChartsTree() {
+    if (typeof echarts === 'undefined') {
+      setTimeout(initEChartsTree, 300);
+      return;
+    }
+
+    const container = document.getElementById('tree-chart');
+    if (!container) return;
+
+    const data = JSON.parse(treeDataJson);
+
+    if (!data || data.length === 0) {
+      container.innerHTML =
+        '<div style="text-align: center; padding: 40px; color: #94a3b8;">No hay datos para visualizar</div>';
+      return;
+    }
+
+    const chart = echarts.init(container);
+
+    // Boxed = standard hierarchy look: every node framed in a rounded rectangle,
+    // text centered inside, orthogonal connector lines.
+    const boxedSeries = {
+      orient,
+      edgeShape: 'polyline',
+      edgeForkPosition: '50%',
+      roam: true,
+      symbol: 'rect',
+      symbolSize: [140, 48],
+      label: {
+        position: 'inside',
+        align: 'center',
+        verticalAlign: 'middle',
+        fontSize: 12,
+        fontWeight: 500,
+        color: '#1e293b',
+        width: 124,
+        overflow: 'break',
+        lineHeight: 15,
+      },
+      leaves: {
+        label: {
+          position: 'inside',
+          align: 'center',
+          verticalAlign: 'middle',
+        },
+      },
+      lineStyle: {
+        color: '#94a3b8',
+        width: 1.5,
+      },
+      itemStyle: {
+        color: '#eef2ff',
+        borderColor: '#4f46e5',
+        borderWidth: 1.5,
+      },
+    };
+
+    // Classic horizontal layout with dot-nodes and side labels.
+    const plainSeries = {
+      orient: 'LR',
+      symbolSize: 9,
+      label: {
+        position: 'left',
+        verticalAlign: 'middle',
+        align: 'right',
+        fontSize: 12,
+        color: '#1e293b',
+      },
+      leaves: {
+        label: {
+          position: 'right',
+          verticalAlign: 'middle',
+          align: 'left',
+        },
+      },
+      lineStyle: {
+        color: '#cbd5e1',
+        width: 1.5,
+      },
+      itemStyle: {
+        color: '#4f46e5',
+        borderColor: '#4f46e5',
+      },
+    };
+
+    const margins = boxed
+      ? { top: '4%', left: '4%', bottom: '4%', right: '4%' }
+      : { top: '2%', left: '7%', bottom: '2%', right: '20%' };
+
+    const option = {
+      tooltip: {
+        trigger: 'item',
+        triggerOn: 'mousemove',
+        formatter: (params) =>
+          params.data && params.data.value
+            ? `<strong>${params.name}</strong><br/>${params.data.value}`
+            : `<strong>${params.name}</strong>`,
+      },
+      series: [
+        {
+          type: 'tree',
+          data: data,
+          ...margins,
+          ...(boxed ? boxedSeries : plainSeries),
+          emphasis: {
+            focus: 'descendant',
+          },
+          expandAndCollapse: true,
+          initialTreeDepth: -1,
+          animationDuration: 550,
+          animationDurationUpdate: 750,
+        },
+      ],
+    };
+
+    chart.setOption(option);
+
+    window.addEventListener('resize', () => chart.resize());
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initEChartsTree);
+  } else {
+    initEChartsTree();
+  }
+</script>
+
+<style>
+  .chart-container {
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    padding: 0;
+    overflow: hidden;
+    font-family: Outfit, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  #category-tree {
+    border-radius: 12px;
+  }
+</style>

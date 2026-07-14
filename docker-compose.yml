@@ -1,31 +1,60 @@
+name: synapxia
+version: "3.9"
 services:
-  postgres:
+  db:
     container_name: synapxia-db
-    image: postgres:16
+    image: postgres:18
     environment:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_SCHEMA}
     ports:
-      - "5432:5432"
+      # host:container. Only the HOST side is remapped (default 5433) so this DB
+      # doesn't clash with a local Postgres or another project's container already
+      # holding host 5432. The CONTAINER port stays 5432 — the API and PgAdmin
+      # reach it in-network as `db:5432` (see DB_PORT, which is the internal port).
+      # Override the host port per-machine with DB_HOST_PORT in .env.
+      - ${DB_HOST_PORT:-5433}:5432
+    volumes:
+      # Mount SQL migration files for automatic execution on startup
+      - ./db/sql:/docker-entrypoint-initdb.d
+      # Persist database data (PostgreSQL 18+ uses /var/lib/postgresql, not /var/lib/postgresql/data)
+      # Volume renamed from synapxia-db-volume → synapxia-db-pg18 to force a fresh init
+      # on the PG18 upgrade — the old volume contained PG17 data at the /data subpath
+      # which conflicts with PG18's expected layout.
+      - synapxia-db-pg18:/var/lib/postgresql
     networks:
       - synapxia-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 30s
       timeout: 5s
       retries: 5
 
   pgadmin:
     container_name: synapxia-pgadmin
-    image: dpage/pgadmin4
+    image: dpage/pgadmin4:9.11
     ports:
-      - "8080:80"
+      # host:container. Only the HOST side is remapped (default 8081) so PgAdmin
+      # doesn't clash with another project already holding host 8080. The
+      # CONTAINER port stays 80. Override per-machine with PGADMIN_HOST_PORT.
+      - ${PGADMIN_HOST_PORT:-8081}:80
     environment:
       - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
       - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
+      - PGADMIN_CONFIG_SERVER_MODE=False
+      - PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED=False
+      - PGADMIN_CONFIG_ENHANCED_IAM_AUTHENTICATION=False
+      # Auto-load the SynapxIA DB server connection on every startup
+      - PGADMIN_REPLACE_SERVERS_ON_STARTUP=True
+    volumes:
+      # Pre-registered server (host, port, user) + passfile so the DB
+      # connection is one-click after login (no manual server registration).
+      - ./db/pgadmin/servers.json:/pgadmin4/servers.json:ro
+      - ./db/pgadmin/pgpass:/pgpass:ro
     depends_on:
-      - postgres
+      db:
+        condition: service_healthy
     networks:
       - synapxia-network
 
@@ -36,18 +65,69 @@ services:
       dockerfile: ./Dockerfile
     restart: unless-stopped
     depends_on:
-      postgres:
+      db:
         condition: service_healthy
     volumes:
-      - ./api:/code
-    working_dir: /code/app
+      - ./api:/app
+      # Keep the image's virtualenv (built in-container for the right arch) from
+      # being shadowed by the ./api:/app bind mount. Without this, a stale host
+      # ./api/.venv — e.g. one built for a different architecture — hides the
+      # image's venv and the API crashes on import
+      # (ModuleNotFoundError: No module named 'pydantic_core._pydantic_core').
+      - /app/.venv
+    working_dir: /app
     ports:
-      - 8000:80
+      # host:container. Only the HOST side is remapped (default 8001) so the API
+      # doesn't clash with another project already holding host 8000. The
+      # CONTAINER port stays 80. Override per-machine with API_HOST_PORT in .env.
+      - ${API_HOST_PORT:-8001}:80
     networks:
       - synapxia-network
     environment:
-      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_SCHEMA}
-    command: uvicorn main:app --reload --host 0.0.0.0 --port 80
+      # Dev uses the decomposed DB_* branch (host=db comes from the docker
+      # bridge). Prod (Vercel) sets DATABASE_URL or POSTGRES_URL instead.
+      # The unified resolver in app/core/config.py picks whichever is set.
+      - APP_ENV=development
+      - LOG_LEVEL=debug
+      - DB_HOST=${DB_HOST}
+      - DB_SCHEMA=${DB_SCHEMA}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_PORT=${DB_PORT}
+      - UV_APP=app.main:app
+      - CORS_ORIGINS=http://localhost:4321,http://localhost:8001,http://localhost:3000
+    # uvicorn directly (instead of `fastapi dev`) so we can pass
+    # --proxy-headers: when the UI's Vite proxy forwards a request, it
+    # sets X-Forwarded-Host: localhost:4321 (xfwd in astro.config.mjs).
+    # Without --proxy-headers, FastAPI builds its 307 trailing-slash
+    # Location header from the internal hostname (`http://synapxia-api:80/...`),
+    # which the browser can't resolve → "Failed to fetch" in client modals.
+    # --forwarded-allow-ips=* trusts every upstream IP since the API only
+    # exposes itself over the synapxia-network bridge.
+    command: uv run uvicorn app.main:app --host 0.0.0.0 --port 80 --reload --proxy-headers --forwarded-allow-ips "*"
+
+  ui:
+    container_name: synapxia-ui
+    build:
+      context: ./ui
+      target: development
+      dockerfile: ./Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - 4321:4321
+    networks:
+      - synapxia-network
+    volumes:
+      - ./ui:/app
+      - /app/node_modules
+    working_dir: /app
+    entrypoint: bun run dev
+
+volumes:
+  synapxia-db-pg18:
+    driver: local
 
 networks:
   synapxia-network:

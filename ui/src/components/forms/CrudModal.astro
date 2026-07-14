@@ -1,0 +1,491 @@
+---
+interface FieldOption {
+  label?: string;
+  value?: string;
+  code?: string;
+  name?: string;
+  lang?: string;
+}
+
+interface Field {
+  key: string;
+  label: string;
+  name?: string;
+  type?: "text" | "textarea" | "select" | "email" | "number" | "checkbox" | "calendar";
+  pk?: boolean;
+  required?: boolean;
+  disabled?: boolean;
+  placeholder?: string;
+  options?: FieldOption[];
+  // When true, options carry a `lang` and are filtered client-side to the
+  // user's language (localStorage["lang"]). Use for selects fed by
+  // getListItemsbyList(). Falls back to one other language if the current
+  // one has no options.
+  filterLang?: boolean;
+  // For type: "calendar" — include a time picker (renders datetime-local)
+  // instead of a date-only picker. Default false (date only).
+  withTime?: boolean;
+}
+
+// Normalize an arbitrary date/datetime string into the value format that
+// native <input type="date" | "datetime-local"> expects: "YYYY-MM-DD" or
+// "YYYY-MM-DDTHH:mm". ISO-ish strings are sliced (no timezone shift); other
+// parseable strings fall back to Date. Used by the calendar field type.
+function normalizeCalendarValue(raw: unknown, withTime?: boolean): string {
+  const s = (raw ?? "").toString().trim();
+  if (!s) return "";
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, withTime ? 16 : 10);
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return withTime ? `${date}T${pad(d.getHours())}:${pad(d.getMinutes())}` : date;
+}
+
+interface Props {
+  modalId?: string;
+  mode?: "create" | "edit" | "delete";
+  entityName?: string;
+  entityI18key?: string;
+  fields?: Field[];
+  initialValues?: Record<string, any>;
+  showTrigger?: boolean;
+  triggerLabel?: string;
+  actionLabel?: string;
+}
+
+const {
+  modalId = "crud-modal",
+  mode = "create",
+  entityName = "Item",
+  entityI18key = entityName.replace(/([a-z])([A-Z])/g, '$1_$2').toLowerCase(),
+  fields = [],
+  initialValues = {},
+  showTrigger = true,
+  triggerLabel,
+  actionLabel,
+} = Astro.props as Props;
+
+const isDelete = mode === "delete";
+const isEdit = mode === "edit";
+const isCreate = mode === "create";
+
+const titleKey = isCreate
+  ? `${entityI18key}_modal.add_new`
+  : isEdit
+    ? `${entityI18key}_modal.edit`
+    : `${entityI18key}_modal.delete`;
+const primaryActionKey =
+  actionLabel ||
+  (isCreate
+    ? "crud_modal.save"
+    : isEdit
+      ? "crud_modal.save_changes"
+      : `${entityI18key}_modal.delete`);
+const triggerTextKey =
+  triggerLabel ||
+  (isCreate
+    ? `${entityI18key}_modal.add_new`
+    : isEdit
+      ? `${entityI18key}_modal.edit`
+      : `${entityI18key}_modal.delete`);
+---
+
+{
+  showTrigger ? (
+    <div class="flex justify-end mb-4">
+      <button
+        type="button"
+        class={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-sm transition focus:outline-none focus:ring-2 ${isDelete ? "bg-red-600 hover:bg-red-700 focus:ring-red-200 dark:bg-red-500 dark:hover:bg-red-400 dark:focus:ring-red-800" : "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-200 dark:bg-indigo-500 dark:hover:bg-indigo-400 dark:focus:ring-indigo-800"}`}
+        data-modal-open={modalId}
+      >
+        <span class="text-lg leading-none">
+          {isDelete ? "✕" : isEdit ? "✎" : "+"}
+        </span>
+        <span data-i18n={triggerTextKey}>{triggerTextKey}</span>
+      </button>
+    </div>
+  ) : null
+}
+
+<dialog
+  id={modalId}
+  class="modal max-h-[calc(100dvh-2rem)] max-w-[calc(100vw-2rem)] rounded-2xl border border-gray-200 bg-white p-0 shadow-2xl backdrop:bg-black/40 dark:border-gray-800 dark:bg-gray-900"
+>
+  <form method="dialog" class="flex max-h-[calc(100dvh-2rem)] w-[680px] max-w-full flex-col space-y-0">
+    <div
+      class="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-gray-800"
+    >
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white" data-i18n={titleKey}>
+        {titleKey}
+      </h2>
+      <button
+        type="button"
+        class="p-1 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+        data-modal-close={modalId}
+        aria-label="crud_modal.close"
+        data-i18n-aria-label="crud_modal.close"
+      >
+        ✕
+      </button>
+    </div>
+
+    <div class="flex-1 space-y-4 overflow-y-auto px-5 py-4">
+      {/* Hidden field to store record ID for edit/delete operations */}
+      <input type="hidden" name="id" id={`${modalId}-id`} value="" />
+
+      {
+        isDelete ? (
+          <div
+            id="toast-danger"
+            class="flex w-full items-center rounded-lg bg-red-50 p-2 text-red-800 border border-red-200 dark:bg-gray-800 dark:text-red-400 dark:border-red-800"
+            role="alert"
+          >
+            <p class="text-sm text-gray-700 dark:text-gray-300">
+              <span data-i18n="crud_modal.delete_confirmation">crud_modal.delete_confirmation</span>{" "}
+              {entityName.toLowerCase()}?
+              <strong class="block">
+                {"* "}
+                <span data-i18n="crud_modal.delete_warning">crud_modal.delete_warning</span>
+              </strong>
+            </p>
+          </div>
+        ) : null
+      }
+      {
+        fields.map((field) => {
+          const value = (initialValues?.[field.key]?.toString() || "").trim();
+          const fieldIsDelete = mode === "delete";
+          const fieldIsEdit = mode === "edit";
+          // For PK fields in edit mode: use readonly for text, disabled for select/textarea
+          const fieldIsReadonly = fieldIsEdit && field.pk && (field.type !== "select" && field.type !== "textarea" && field.type !== "checkbox");
+          const fieldDisabled = fieldIsDelete || field.disabled || (fieldIsEdit && field.pk && !fieldIsReadonly);
+          const inputId = `${modalId}-${field.key}`;
+
+          if (field.type === "textarea") {
+            return (
+              <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-4" key={field.key}>
+                <div class="sm:w-32 sm:pt-2">
+                  <label
+                    for={inputId}
+                    class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {field.required && <span class="text-red-500">*</span>}
+                    <span data-i18n={field.label}>{field.label}</span>
+                    {fieldIsReadonly && <span class="ml-2 text-xs text-gray-500">(readonly)</span>}
+                  </label>
+                </div>
+                <div class="flex-1">
+                  <textarea
+                    id={inputId}
+                    name={field.key}
+                    rows={3}
+                    required={field.required}
+                    disabled={fieldDisabled}
+                    readonly={fieldIsReadonly}
+                    placeholder={field.placeholder}
+                    class={`w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white/90 dark:placeholder:text-white/30 ${fieldDisabled || fieldIsReadonly ? "opacity-60" : ""}`}
+                  >{value}</textarea>
+                </div>
+              </div>
+            );
+          }
+
+          if (field.type === "select") {
+            const selectLabel = (field.label || field.name || "").toLowerCase();
+            return (
+              <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-4" key={field.key}>
+                <div class="sm:w-32 sm:pt-2">
+                  <label
+                    for={inputId}
+                    class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {field.required && <span class="text-red-500">*</span>}
+                    <span data-i18n={field.label || field.name}>{field.label || field.name}</span>
+                    {fieldIsReadonly && <span class="ml-2 text-xs text-gray-500">(readonly)</span>}
+                  </label>
+                </div>
+                <div class="flex-1">
+                  <select
+                    id={inputId}
+                    name={field.key}
+                    required={field.required}
+                    disabled={fieldDisabled}
+                    readonly={fieldIsReadonly}
+                    data-filter-lang={field.filterLang ? "true" : undefined}
+                    class={`h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white/90 ${fieldDisabled || fieldIsReadonly ? "opacity-60" : ""}`}
+                  >
+                    <option value="" data-i18n={`crud_modal.select`} selected={!value}></option>
+                    {(field.options || []).map((opt) => (
+                      <option
+                        value={opt.value || opt.code}
+                        data-lang={opt.lang}
+                        selected={opt.value === value || opt.code === value}
+                      >
+                        {opt.label || opt.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            );
+          }
+
+          if (field.type === "checkbox") {
+            return (
+              <div class="flex items-center gap-3 sm:gap-4" key={field.key}>
+                <div class="hidden sm:block sm:w-32"></div>
+                <div class="flex items-center gap-2 flex-1">
+                  <input
+                    id={inputId}
+                    name={field.key}
+                    type="checkbox"
+                    checked={Boolean(value)}
+                    disabled={fieldDisabled}
+                    class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <label
+                    for={inputId}
+                    class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {field.required && <span class="text-red-500">*</span>}
+                    <span data-i18n={field.label}>{field.label}</span>
+                  </label>
+                </div>
+              </div>
+            );
+          }
+
+          if (field.type === "calendar") {
+            const calType = field.withTime ? "datetime-local" : "date";
+            const calValue = normalizeCalendarValue(value, field.withTime);
+            return (
+              <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-4" key={field.key}>
+                <div class="sm:w-32 sm:pt-2">
+                  <label
+                    for={inputId}
+                    class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {field.required && <span class="text-red-500">*</span>}
+                    <span data-i18n={field.label}>{field.label}</span>
+                    {fieldIsReadonly && <span class="ml-2 text-xs text-gray-500">(readonly)</span>}
+                  </label>
+                </div>
+                <div class="flex-1">
+                  <input
+                    id={inputId}
+                    name={field.key}
+                    type={calType}
+                    required={field.required}
+                    disabled={fieldDisabled}
+                    readonly={fieldIsReadonly}
+                    value={calValue}
+                    data-calendar={field.withTime ? "datetime" : "date"}
+                    class={`h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white/90 dark:[color-scheme:dark] ${fieldDisabled || fieldIsReadonly ? "opacity-60" : ""}`}
+                  />
+                </div>
+              </div>
+            );
+          }
+
+          const inputType = field.type || "text";
+          return (
+            <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-4" key={field.key}>
+              <div class="sm:w-32 sm:pt-2">
+                <label
+                  for={inputId}
+                  class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  {field.required && <span class="text-red-500">*</span>}
+                  <span data-i18n={field.label}>{field.label}</span>
+                  {fieldIsReadonly && <span class="ml-2 text-xs text-gray-500">(readonly)</span>}
+                </label>
+              </div>
+              <div class="flex-1">
+                <input
+                  id={inputId}
+                  name={field.key}
+                  type={inputType}
+                  required={field.required}
+                  disabled={fieldDisabled}
+                  readonly={fieldIsReadonly}
+                  value={value ?? ""}
+                  placeholder={field.placeholder}
+                  class={`h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-inner focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white/90 dark:placeholder:text-white/30 ${fieldDisabled || fieldIsReadonly ? "opacity-60" : ""}`}
+                />
+              </div>
+            </div>
+          );
+        })
+      }
+    </div>
+
+    <div
+      class="flex flex-wrap items-center justify-end gap-3 border-t border-gray-100 px-5 py-3 dark:border-gray-800"
+    >
+      <button
+        type="button"
+        class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+        data-modal-close={modalId}
+        data-i18n="crud_modal.cancel"
+      >
+        crud_modal.cancel
+      </button>
+      <button
+        type="submit"
+        class={`rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-sm transition focus:outline-none focus:ring-2 ${isDelete ? "bg-red-600 hover:bg-red-700 focus:ring-red-200 dark:bg-red-500 dark:hover:bg-red-400 dark:focus:ring-red-800" : "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-200 dark:bg-indigo-500 dark:hover:bg-indigo-400 dark:focus:ring-indigo-800"}`}
+        data-i18n={primaryActionKey}
+      >
+        {primaryActionKey}
+      </button>
+    </div>
+  </form>
+</dialog>
+
+<script define:vars={{ modalId, mode }}>
+  (() => {
+    if (typeof window === "undefined") return;
+
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+
+    // Filter language-aware selects (filterLang: true) to the user's language.
+    // localStorage["lang"] is only available client-side, so the server renders
+    // every language's options and we drop the ones that don't match here. If the
+    // current language has no options, fall back to the first other language.
+    const lang = localStorage.getItem("lang") || "en";
+    modal.querySelectorAll('select[data-filter-lang="true"]').forEach((select) => {
+      const options = Array.from(select.querySelectorAll("option[data-lang]"));
+      if (options.length === 0) return;
+
+      const available = new Set(options.map((o) => o.dataset.lang));
+      let targetLang = lang;
+      if (!available.has(targetLang)) {
+        targetLang = options.find((o) => o.dataset.lang !== lang)?.dataset.lang || lang;
+      }
+
+      options.forEach((o) => {
+        if (o.dataset.lang !== targetLang) o.remove();
+      });
+    });
+
+    const open = () => {
+      if (!modal.open) {
+        // Reset form fields in create mode
+        if (mode === "create") {
+          const form = modal.querySelector("form");
+          if (form) {
+            form.reset();
+            const idInput = form.querySelector('[name="id"]');
+            if (idInput) {
+              idInput.value = "";
+            }
+          }
+        }
+        modal.showModal();
+      }
+    };
+
+    const close = () => {
+      if (modal.open) modal.close();
+    };
+
+    // ✅ DELEGACIÓN GLOBAL (CLAVE)
+    document.addEventListener("click", (event) => {
+      const openBtn = event.target.closest(`[data-modal-open="${modalId}"]`);
+      const closeBtn = event.target.closest(`[data-modal-close="${modalId}"]`);
+
+      if (openBtn) {
+        event.preventDefault();
+        open();
+        
+        // Preselect filter value for create mode
+        if (mode === "create") {
+          const filterKey = openBtn.dataset.filterKey;
+          if (filterKey) {
+            // Use requestAnimationFrame to ensure DOM is ready
+            requestAnimationFrame(() => {
+              const filterSelect = document.querySelector(`select[data-column-key="${filterKey}"]`);
+              if (filterSelect && filterSelect.value) {
+                const modalInput = modal.querySelector(`[name="${filterKey}"]`);
+                if (modalInput) {
+                  modalInput.value = filterSelect.value;
+                  modalInput.dispatchEvent(new Event("change", { bubbles: true }));
+                }
+              }
+            });
+          }
+        }
+      }
+
+      if (closeBtn) {
+        event.preventDefault();
+        close();
+      }
+    });
+
+    modal.addEventListener("click", (event) => {
+      const rect = modal.getBoundingClientRect();
+      const isInDialog =
+        rect.top <= event.clientY &&
+        event.clientY <= rect.top + rect.height &&
+        rect.left <= event.clientX &&
+        event.clientX <= rect.left + rect.width;
+
+      if (!isInDialog) close();
+    });
+
+    modal.addEventListener("cancel", (e) => {
+      e.preventDefault();
+      close();
+    });
+
+    // ✅ Form submission handler
+    const form = modal.querySelector("form");
+    if (form) {
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        // Extract form data
+        const formData = new FormData(form);
+        const data = {};
+
+        for (const [key, value] of formData.entries()) {
+          const input = form.querySelector(`[name="${key}"]`);
+          if (input && input.type === "checkbox") {
+            data[key] = input.checked;
+          } else if (input && input.type === "number") {
+            data[key] = value ? Number(value) : null;
+          } else {
+            // If field is not required and value is empty, set to null
+            const isRequired = input?.hasAttribute("required");
+            if (!isRequired && !value) {
+              data[key] = null;
+            } else {
+              data[key] = value;
+            }
+          }
+        }
+
+        // Store the original ID if present (for edit/delete)
+        const idInput = form.querySelector('[name="id"]');
+        if (idInput) {
+          data.id = idInput.value;
+        }
+
+        // Dispatch custom event with form data
+        document.dispatchEvent(
+          new CustomEvent("crud-submit", {
+            detail: {
+              modalId,
+              mode,
+              data,
+            },
+          }),
+        );
+
+        close();
+      });
+    }
+  })();
+</script>

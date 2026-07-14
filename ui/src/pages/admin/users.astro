@@ -1,0 +1,226 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components//core/Breadcrumb.astro";
+import DataTable from "../../components/table/DataTable.astro";
+import CrudModal from "../../components/forms/CrudModal.astro";
+import Toast from "../../components/Toast.astro";
+import { getUsers } from "@/lib/users";
+import { getBusinessUnitsSelect } from "@/lib/business_units";
+import { getProfilesSelect } from "@/lib/profiles";
+
+// Fetch users from API
+let users: any[] = [];
+let errorMessage: string | null = null;
+try {
+  const apiUsers = await getUsers();
+  users = apiUsers;
+} catch (error) {
+  console.error('Failed to fetch users:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch users from API';
+  // Fallback to empty array to still render the page
+  users = [];
+}
+
+// Fetch business_units for filter dropdown and form select
+let business_units: any[] = [];
+try {
+  const apiBusinessUnits = await getBusinessUnitsSelect();
+  business_units = apiBusinessUnits;
+} catch (error) {
+  console.error('Failed to fetch business_units:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch business_units from API';
+  // Fallback to empty array to still render the page
+  business_units = [];
+}
+
+// Fetch profiles for filter dropdown and form select
+let profiles: any[] = [];
+try {
+  const apiProfiles = await getProfilesSelect();
+  profiles = apiProfiles;
+} catch (error) {
+  console.error('Failed to fetch profiles:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch profiles from API';
+  // Fallback to empty array to still render the page
+  profiles = [];
+}
+
+const columns = [
+  { key: "name", label: "user_modal.first_name", as: "title", subtitleKey: "username", subtitleFormat: "text" },
+  { key: "username", label: "user_modal.username", visible: false },
+  { key: "profile", label: "user_modal.profile", visible: false },
+  { key: "profile_name", label: "user_modal.profile" },
+  { key: "unit", label: "user_modal.unit", visible: false },
+  { key: "unit_name", label: "user_modal.unit" },
+];
+const data = users.map((user) => ({
+  id: user.id,
+  name: `${user.first_name} ${user.last_name}`,
+  username: user.username,
+  email: user.email,
+  first_name: user.first_name,
+  last_name: user.last_name,
+  profile: user.profile,
+  profile_name: profiles.find((r) => String(r.value) === String(user.profile))?.label || user.profile,
+  unit: user.unit,
+  unit_name: business_units.find((bu) => String(bu.value) === String(user.unit))?.label || user.unit,
+  is_active: user.is_active,
+}));
+
+const formFields = [
+  { key: "username", label: "user_modal.username", required: true, placeholder: "john.doe" },
+  { key: "email", label: "user_modal.email", type: "email" as const, required: true, placeholder: "john@example.com" },
+  { key: "password", label: "user_modal.password", type: "text" as const, required: true, placeholder: "********" },
+  { key: "first_name", label: "user_modal.first_name", required: true, placeholder: "John" },
+  { key: "last_name", label: "user_modal.last_name", required: true, placeholder: "Doe" },
+  { key: "profile", label: "user_modal.profile", type: "select" as const, options: profiles, required: true },
+  { key: "unit", label: "user_modal.unit", type: "select" as const, options: business_units, required: true },
+];
+const fieldKeys = formFields.map((f) => f.key);
+---
+
+<BaseLayout>
+  {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
+
+  <div class="mx-auto w-full max-w-full md:p-0">
+    <Breadcrumb
+      moduleName="Administration"
+      pageName="Users"
+      pageTitle="Users"
+      homeLink="/"
+      moduleNameKey="modules.ADMIN"
+      pageNameKey="menu_options.users"
+      pageTitleKey="menu_options.users"
+    />
+
+    <CrudModal
+      mode="create"
+      modalId="user-create-modal"
+      entityName="User"
+      fields={formFields}
+      showTrigger={false}
+    />
+    <CrudModal
+      mode="edit"
+      modalId="user-edit-modal"
+      entityName="User"
+      fields={formFields.filter(f => f.key !== 'password')}
+      showTrigger={false}
+    />
+    <CrudModal
+      mode="delete"
+      modalId="user-delete-modal"
+      entityName="User"
+      fields={formFields}
+      showTrigger={false}
+    />
+
+    <div
+      id="users-data"
+      data-rows={encodeURIComponent(JSON.stringify(data))}
+      data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
+      class="hidden"
+      aria-hidden="true"
+    >
+    </div>
+
+    <script>
+      import { initCrudPage } from "@/lib/crudClient";
+      import {
+        createUser,
+        updateUser,
+        deleteUser,
+      } from "@/lib/users";
+
+      initCrudPage({
+        dataId: "users-data",
+        editModalId: "user-edit-modal",
+        deleteModalId: "user-delete-modal",
+      });
+
+      // Helper function to show toast notifications
+      function showToast(message, variant = "info") {
+        const toast = document.createElement("div");
+        toast.className = `fixed top-4 right-4 z-50 max-w-md p-4 rounded-lg border shadow-lg transition-all duration-300 ${
+          variant === "error"
+            ? "bg-red-50 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+            : "bg-green-50 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+        }`;
+        toast.innerHTML = `
+          <div class="flex items-start gap-3">
+            <div class="flex-1 text-sm font-medium">${message}</div>
+            <button type="button" class="text-gray-400 hover:text-gray-600" onclick="this.parentElement.parentElement.remove()">✕</button>
+          </div>
+        `;
+        document.body.appendChild(toast);
+
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          toast.style.transform = "translateX(100%)";
+          setTimeout(() => toast.remove(), 300);
+        }, 5000);
+      }
+
+      // Handle CRUD form submissions
+      document.addEventListener("crud-submit", async (e) => {
+        const { modalId, mode, data } = e.detail;
+
+        try {
+          if (mode === "create") {
+            // Create new user
+            await createUser({
+              username: data.username,
+              email: data.email,
+              password: data.password,
+              first_name: data.first_name,
+              last_name: data.last_name,
+              profile: data.profile,
+              unit: data.unit,
+              is_active: data.is_active !== false,
+            });
+
+            showToast("User created successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          } else if (mode === "edit") {
+            // Update existing user (id is numeric)
+            await updateUser(Number(data.id), {
+              username: data.username,
+              email: data.email,
+              first_name: data.first_name,
+              last_name: data.last_name,
+              profile: data.profile,
+              unit: data.unit,
+              is_active: data.is_active !== false,
+            });
+
+            showToast("User updated successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          } else if (mode === "delete") {
+            // Delete user
+            await deleteUser(Number(data.id));
+
+            showToast("User deleted successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          }
+        } catch (error) {
+          console.error("CRUD operation failed:", error);
+          showToast(error.message || "An error occurred", "error");
+        }
+      });
+    </script>
+
+    <div class="space-y-5 sm:space-y-6">
+      <div class="border-0 p-0">
+        <DataTable
+          columns={columns}
+          data={data}
+          tableId="users"
+          i18Item="user"
+          columnFilter="unit"
+          filterOptions={business_units}
+        />
+      </div>
+    </div>
+  </div>
+</BaseLayout>

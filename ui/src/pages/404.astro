@@ -1,0 +1,12 @@
+---
+// Astro static builds emit this as dist/404.html. Vercel serves it
+// automatically for any unmatched route, so every sidebar option whose
+// `path` points to a not-yet-implemented page lands here with the
+// friendly "we're working on this" experience instead of a bare 404.
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import ComingSoon from "@/components/ComingSoon.astro";
+---
+
+<BaseLayout title="SynapxIA">
+  <ComingSoon />
+</BaseLayout>

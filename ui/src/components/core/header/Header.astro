@@ -1,0 +1,105 @@
+---
+import { t } from "@/i18n";
+import { getLocale } from "@/utils/getLocale";
+import Menu from "@/images/icons/menu.svg?raw";
+
+const locale = getLocale(Astro);
+
+interface Props {
+  title?: string;
+  subtitle?: string;
+  avatarInitials?: string;
+  showBrandOnMobile?: boolean;
+  userName?: string;
+  userEmail?: string;
+  userAvatarUrl?: string;
+}
+
+const {
+  title = "SynapxIA",
+  subtitle = "Dashboard",
+  showBrandOnMobile = true,
+  // Neutral placeholders — the real name/email are patched in client-side
+  // from localStorage.auth_user inside AccountMenu's mount script.
+  userName = "—",
+  userEmail = "—",
+  userAvatarUrl,
+} = Astro.props as Props;
+
+import AccountMenu from "./AccountMenu.astro";
+import NotificationMenu from "./NotificationMenu.astro";
+import LanguageSwitcher from "./LanguageSwitcher.astro";
+import ThemeSwitcher from "./ThemeSwitcher.astro";
+import SearchBar from "./SearchBar.astro";
+---
+
+<header
+  class="sticky top-0 z-50 flex w-full items-center border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
+>
+  <div class="flex w-full items-center gap-2 px-3 py-2.5 sm:gap-3 lg:px-6 lg:py-3">
+    <button
+      class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-gray-800"
+      aria-label={t(locale, "header.toggle_sidebar")}
+      aria-pressed="false"
+      type="button"
+      data-sidebar-toggle
+    >
+      <span class="h-5 w-5">
+        <Fragment set:html={Menu} />
+      </span>
+    </button>
+
+    {/* Brand — shown on mobile (the sidebar carries it on desktop). Matches the
+        mockup: logo + name on the left of the bar. */}
+    {
+      showBrandOnMobile ? (
+        <a href="/" class="flex shrink-0 items-center gap-2 lg:hidden" aria-label={title}>
+          <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-sm font-semibold text-white">
+            IA
+          </span>
+          {/* Name hidden on phones (< sm) so the search bar keeps usable
+              width between the logo and the bell/avatar; still shown on
+              tablet, where there's room for both. */}
+          <span class="hidden truncate text-base font-bold text-gray-900 sm:inline dark:text-white">
+            {title}
+          </span>
+        </a>
+      ) : null
+    }
+
+    <SearchBar />
+
+    {/* Spacer pushes the controls to the right edge whenever SearchBar itself
+        isn't flexing to fill the row: below `sm` (icon-only trigger) and from
+        `lg` up (fixed desktop width). Between `sm` and `lg`, SearchBar is
+        `flex-1` and does the pushing itself, so the spacer stays hidden there. */}
+    <div class="flex-1 sm:hidden lg:block"></div>
+
+    <div class="flex shrink-0 items-center gap-1.5 sm:gap-2">
+      {/* Theme + language live in the header only from `lg` (desktop) — below
+          that, the search bar + brand name already crowd the row (390-1024px
+          had the toggle overlapping the language pills), so these move into
+          the account menu's own mobile/tablet preferences section instead. */}
+      <span class="hidden lg:flex"><ThemeSwitcher /></span>
+      <span class="hidden lg:flex"><LanguageSwitcher /></span>
+      <NotificationMenu />
+
+      <AccountMenu
+        name={userName}
+        email={userEmail}
+        avatarUrl={userAvatarUrl}
+        workItems={[
+          {
+            label: "account_menu.review_requests",
+            href: "/lib/review_requests",
+            profiles: ["ADMINISTRATOR", "ADMINISTRATIVE", "REVIEWER"],
+          },
+        ]}
+        menuItems={[
+          { label: "account_menu.edit_profile", href: "/profile" },
+          { label: "account_menu.support", href: "/support" },
+        ]}
+      />
+    </div>
+  </div>
+</header>

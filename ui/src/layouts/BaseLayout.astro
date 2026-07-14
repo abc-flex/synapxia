@@ -1,0 +1,193 @@
+---
+import "../styles/globals.css";
+import Header from "../components/core/header/Header.astro";
+import SideBar from "../components/core/sidebar/SideBar.astro";
+import ClientTranslations from "../components/ClientTranslations.astro";
+import BugReportWidget from "../components/core/BugReportWidget.astro";
+import { getNavigationData } from "@/lib/navigation";
+
+interface Props {
+  title?: string;
+}
+
+const {
+  title = "SynapxIA",
+} = Astro.props as Props;
+
+// SSR-fetch the sidebar nav data. The Astro middleware has already put the
+// JWT (read from the auth_token cookie) into AsyncLocalStorage, so apiGet
+// forwards it as a Bearer header to the API. If the user is unauthenticated
+// they'd already have been redirected by the middleware, so this call
+// always runs in an authenticated context. On API failure the helper
+// returns empty arrays — the SideBar renders gracefully.
+let primaryNav: import("@/types/nav").NavModule[] = [];
+let itemsNav: import("@/types/nav").NavOption[] = [];
+try {
+  const nav = await getNavigationData();
+  primaryNav = nav.primaryNav;
+  itemsNav = nav.itemsNav;
+} catch {
+  /* swallow — SideBar will fall back to its localStorage cache + client refetch */
+}
+
+// Get current path for sidebar active state
+const currentPath = Astro.url.pathname;
+
+// Extract current module from path (first segment after /)
+const pathSegments = currentPath.split('/').filter(Boolean);
+const currentModuleName = pathSegments[0] || "";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    {/* Auth gate runs server-side in src/middleware.ts (cookie-based).
+        Pages reach this layout already authenticated (or already redirected
+        to /login). No flash-of-empty-content, no localStorage round-trip. */}
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {/* Apply the saved theme BEFORE first paint so navigating page-to-page
+        doesn't flash the light theme (the interactive toggle wiring runs later
+        in the body). Inline + render-blocking on purpose. */}
+    <script is:inline>
+      (function () {
+        try {
+          var t = localStorage.getItem("theme");
+          if (t !== "dark" && t !== "light") {
+            t = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+          }
+          document.documentElement.classList.toggle("dark", t === "dark");
+        } catch (e) {}
+      })();
+    </script>
+    <title>{title}</title>
+  </head>
+  <body class="bg-slate-50 text-slate-900 dark:bg-gray-950 dark:text-white">
+    <ClientTranslations />
+    <div class="min-h-screen flex">
+      <SideBar modules={primaryNav} options={itemsNav} brandTitle={title} currentPath={currentPath} currentModuleName={currentModuleName} />
+
+      {/* Mobile drawer backdrop — shown only while the off-canvas sidebar is open (<lg). */}
+      <div data-sidebar-backdrop class="fixed inset-0 z-[9998] hidden bg-black/40 lg:hidden"></div>
+
+      <div class="flex-1 flex flex-col min-h-screen min-w-0">
+        <Header title={title} subtitle="Dashboard" />
+
+        <main class="flex-1">
+          <div class="mx-auto w-full max-w-screen-2xl p-4 sm:p-6 lg:p-8">
+            <slot />
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <BugReportWidget />
+  </body>
+</html>
+
+<script src="https://unpkg.com/flowbite@latest/dist/flowbite.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.3"></script>
+
+<script>
+  (() => {
+    if (typeof window === "undefined") return;
+
+    const storageKey = "sidebar-collapsed";
+    const body = document.body;
+    const toggle = document.querySelector("[data-sidebar-toggle]");
+    const sidebar = document.querySelector(".sidebar");
+    const backdrop = document.querySelector("[data-sidebar-backdrop]");
+
+    if (!toggle || !sidebar) return;
+
+    // Desktop (>=lg): hamburger collapses the static sidebar to icon width. Persisted.
+    const desktop = window.matchMedia("(min-width: 1024px)");
+
+    const applyCollapsed = (collapsed) => {
+      body.classList.toggle("sidebar-collapsed", collapsed);
+    };
+    applyCollapsed(localStorage.getItem(storageKey) === "true");
+
+    // Mobile (<lg): hamburger opens an off-canvas drawer over a backdrop. Ephemeral.
+    const openDrawer = () => {
+      body.classList.add("sidebar-open");
+      toggle.setAttribute("aria-pressed", "true");
+    };
+    const closeDrawer = () => {
+      body.classList.remove("sidebar-open");
+      toggle.setAttribute("aria-pressed", "false");
+    };
+
+    toggle.addEventListener("click", () => {
+      if (desktop.matches) {
+        const next = !body.classList.contains("sidebar-collapsed");
+        applyCollapsed(next);
+        localStorage.setItem(storageKey, String(next));
+      } else {
+        body.classList.contains("sidebar-open") ? closeDrawer() : openDrawer();
+      }
+    });
+
+    backdrop?.addEventListener("click", closeDrawer);
+    // Close the drawer when a navigation link is tapped (parent <summary> toggles have no href).
+    sidebar.addEventListener("click", (event) => {
+      if (!desktop.matches && event.target.closest("a[href]")) closeDrawer();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && body.classList.contains("sidebar-open")) closeDrawer();
+    });
+    // Crossing into desktop must always clear the mobile drawer state.
+    desktop.addEventListener("change", (event) => {
+      if (event.matches) closeDrawer();
+    });
+  })();
+
+  (() => {
+    if (typeof window === "undefined") return;
+
+    const storageKey = "theme";
+    // Multiple controls exist: header switcher (toggle) + account-menu segmented
+    // light/dark buttons. Bind them all and keep their state in sync.
+    const toggles = document.querySelectorAll<HTMLElement>("[data-theme-toggle]");
+    const segs = document.querySelectorAll<HTMLElement>("[data-theme-set]");
+    const root = document.documentElement;
+
+    // Active-segment styling for the account-menu light/dark pill.
+    const SEG_ACTIVE = ["bg-white", "text-indigo-600", "shadow-sm", "dark:bg-gray-900", "dark:text-indigo-300"];
+
+    const apply = (theme: "light" | "dark") => {
+      if (theme === "dark") {
+        root.classList.add("dark");
+      } else {
+        root.classList.remove("dark");
+      }
+      toggles.forEach((el) => el.setAttribute("aria-pressed", String(theme === "dark")));
+      segs.forEach((el) => {
+        const active = el.getAttribute("data-theme-set") === theme;
+        el.setAttribute("aria-pressed", String(active));
+        if (active) el.classList.add(...SEG_ACTIVE);
+        else el.classList.remove(...SEG_ACTIVE);
+      });
+      localStorage.setItem(storageKey, theme);
+    };
+
+    const saved = localStorage.getItem(storageKey) as "light" | "dark" | null;
+    const prefersDark =
+      window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches;
+    apply(saved ?? (prefersDark ? "dark" : "light"));
+
+    toggles.forEach((toggle) => {
+      toggle.addEventListener("click", () => {
+        const next = root.classList.contains("dark") ? "light" : "dark";
+        apply(next as "light" | "dark");
+      });
+    });
+    segs.forEach((seg) => {
+      seg.addEventListener("click", () => {
+        const set = seg.getAttribute("data-theme-set");
+        if (set === "light" || set === "dark") apply(set);
+      });
+    });
+  })();
+</script>

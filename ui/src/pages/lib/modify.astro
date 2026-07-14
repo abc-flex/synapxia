@@ -1,0 +1,40 @@
+---
+/**
+ * Modify (HU-Modify) — the proposer opens a MODIFICATION notification from the
+ * header bell (`/lib/modify?action={id}`), reads the reviewer's feedback, edits
+ * the asset + its characterizations, and resubmits for re-review.
+ *
+ * The interactive card is `ModifyAction.svelte`, compiled by the raw Svelte Vite
+ * plugin and **mounted manually** via Svelte 5's `mount()` from a bundled
+ * `<script>` (not the @astrojs/svelte island mechanism — see astro.config.mjs).
+ * Reuses the existing services (getAction / getAsset / getCharacterizationsByAsset
+ * / getSpecificationsbyCategory / markNotified) + the new `resubmitAsset` service.
+ */
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+---
+
+<BaseLayout>
+  <div class="mx-auto w-full max-w-2xl">
+    <Breadcrumb
+      moduleName="AI Library"
+      pageName="Modify"
+      pageTitle="Modify"
+      homeLink="/"
+      moduleNameKey="modules.LIB"
+      pageNameKey="modify.title"
+      pageTitleKey="modify.title"
+    />
+
+    <div id="modify-root"></div>
+  </div>
+
+  <script>
+    // Mount the Svelte component manually (bundled @/ script, no island codegen).
+    import { mount } from "svelte";
+    import ModifyAction from "@/components/svelte/ModifyAction.svelte";
+
+    const target = document.getElementById("modify-root");
+    if (target) mount(ModifyAction, { target });
+  </script>
+</BaseLayout>

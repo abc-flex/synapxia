@@ -1,0 +1,202 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import DataTable from "../../components/table/DataTable.astro";
+import CrudModal from "../../components/forms/CrudModal.astro";
+import Toast from "../../components/Toast.astro";
+import { getTeams } from "@/lib/teams";
+import { getUsersSelect } from "@/lib/users";
+
+// Fetch teams from API
+let teams: any[] = [];
+let errorMessage: string | null = null;
+
+try {
+  const apiTeams = await getTeams();
+  teams = apiTeams;
+} catch (error) {
+  console.error('Failed to fetch teams:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch teams from API';
+  // Fallback to empty array to still render the page
+  teams = [];
+}
+
+// Fetch users from API for select field
+let users: any[] = [];
+try {
+  const apiUsers = await getUsersSelect();
+  users = apiUsers;
+} catch (error) {
+  console.error('Failed to fetch users:', error);
+  errorMessage = error instanceof Error ? error.message : 'Failed to fetch users from API';
+  // Fallback to empty array to still render the page
+  users = [];
+}
+
+const columns = [
+  { key: "code", label: "team_modal.code", visible: false },
+  { key: "name", label: "team_modal.name", as: "title", subtitleKey: "code", subtitleFormat: "text" },
+  { key: "lead_name", label: "team_modal.lead", visible: true },
+];
+const data = teams.map((item) => ({
+  id: item.code,
+  code: item.code,
+  name: item.name,
+  lead: item.lead,
+  lead_name: users.find((u) => String(u.value) === String(item.lead))?.label || item.lead,
+  description: item.description,
+  chat_channel_url: item.chat_channel_url,
+  kanban_board_url: item.kanban_board_url,
+}));
+
+const formFields = [  
+  { key: "code", label: "team_modal.code", required: true, placeholder: "" },
+  { key: "name", label: "team_modal.name", required: true, placeholder: "" },
+  { key: "lead", label: "team_modal.lead", type: "select", options: users, required: false },
+  {
+    key: "description",
+    label: "team_modal.description",
+    type: "textarea" as const,
+    required: false,
+    placeholder: ""
+  },
+  { key: "chat_channel_url", label: "team_modal.chat_channel_url", type: "text", required: false },
+  { key: "kanban_board_url", label: "team_modal.kanban_board_url", type: "text", required: false },
+];
+const fieldKeys = formFields.map((f) => f.key);
+---
+
+<BaseLayout>
+  {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
+
+  <div class="mx-auto w-full max-w-full md:p-0">
+    <Breadcrumb
+      moduleName="Collaboration"
+      pageName="Teams"
+      pageTitle="Teams"
+      homeLink="/"
+      moduleNameKey="modules.COLLAB"
+      pageNameKey="menu_options.teams"
+    />
+
+    <CrudModal
+      mode="create"
+      modalId="team-create-modal"
+      entityName="Team"
+      fields={formFields}
+      showTrigger={false}
+    />
+    <CrudModal
+      mode="edit"
+      modalId="team-edit-modal"
+      entityName="Team"
+      fields={formFields}
+      showTrigger={false}
+    />
+    <CrudModal
+      mode="delete"
+      modalId="team-delete-modal"
+      entityName="Team"
+      fields={formFields}
+      showTrigger={false}
+    />
+
+    <div
+      id="teams-data"
+      data-rows={encodeURIComponent(JSON.stringify(data))}
+      data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
+      class="hidden"
+      aria-hidden="true"
+    >
+    </div>
+
+     <script>
+      import { initCrudPage } from "@/lib/crudClient";
+      import {
+        createTeam,
+        updateTeam,
+        deleteTeam,
+      } from "@/lib/teams";
+
+      initCrudPage({
+        dataId: "teams-data",
+        editModalId: "team-edit-modal",
+        deleteModalId: "team-delete-modal",
+      });
+
+      function showToast(message, variant = "info") {
+        const toast = document.createElement("div");
+        toast.className = `fixed top-4 right-4 z-50 max-w-md p-4 rounded-lg border shadow-lg transition-all duration-300 ${
+          variant === "error"
+            ? "bg-red-50 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+            : "bg-green-50 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+        }`;
+        toast.innerHTML = `
+          <div class="flex items-start gap-3">
+            <div class="flex-1 text-sm font-medium">${message}</div>
+            <button type="button" class="text-gray-400 hover:text-gray-600" onclick="this.parentElement.parentElement.remove()">✕</button>
+          </div>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          toast.style.transform = "translateX(100%)";
+          setTimeout(() => toast.remove(), 300);
+        }, 5000);
+      }
+
+      document.addEventListener("crud-submit", async (e) => {
+        const { mode, data } = e.detail;
+        try {
+          if (mode === "create") {
+            await createTeam({
+              code: data.code,
+              name: data.name,
+              lead: data.lead || undefined,
+              description: data.description || undefined,
+              chat_channel_url: data.chat_channel_url || undefined,
+              kanban_board_url: data.kanban_board_url || undefined,
+            });
+            showToast("Team created successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          } else if (mode === "edit") {
+            await updateTeam(data.id, {
+              name: data.name,
+              lead: data.lead || undefined,
+              description: data.description || undefined,
+              chat_channel_url: data.chat_channel_url || undefined,
+              kanban_board_url: data.kanban_board_url || undefined,
+            });
+            showToast("Team updated successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          } else if (mode === "delete") {
+            await deleteTeam(data.id);
+            showToast("Team deleted successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+          }
+        } catch (error) {
+          console.error("CRUD operation failed:", error);
+          const msg = error?.message || "";
+          if (error?.status === 409 || msg.includes("409") || msg.includes("already exists")) {
+            showToast(`Team code '${data.code}' already exists`, "error");
+          } else {
+            showToast(msg || "An error occurred", "error");
+          }
+        }
+      });
+    </script>
+
+    <div class="space-y-5 sm:space-y-6">
+      <div class="space-y-5 sm:space-y-6">
+        <DataTable
+          columns={columns}
+          data={data}
+          tableId="teams"
+          i18Item="team"
+          detailPage="/collab/assignments"
+          mdItem="assignment"
+        />
+      </div>
+    </div>
+  </div>
+</BaseLayout>

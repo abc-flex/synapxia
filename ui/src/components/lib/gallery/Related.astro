@@ -1,0 +1,29 @@
+---
+/**
+ * Related — the asset "related assets" section (HU-LI07) embedded inside the
+ * reusable CatalogDetailModal. Presentational shell only: a heading and a list
+ * container that the `mountRelated` controller (lib/related.ts) hydrates on
+ * open. Read-only here — relations are created/removed from the admin asset
+ * editor (AssetDetailModal / assetDetailTabs.ts), not from the gallery.
+ *
+ * Backed by the existing `related_assets` table via the resolved
+ * `/api/asset_relations/related/{id}` route — no new table.
+ *
+ * Ids are scoped by `modalId` so every catalog (prompts/agents/mcps) gets its
+ * own section; the controller queries within `#${modalId}-related` and hides
+ * the whole block when the asset has no active relations.
+ */
+export interface Props {
+  /** The detail dialog id, e.g. "mcp-view-modal". */
+  modalId: string;
+}
+const { modalId } = Astro.props as Props;
+---
+
+{/* Lives alone in the modal's "Related" tab, which already labels it — so no
+    in-section heading or top divider here. */}
+<section id={`${modalId}-related`}>
+  <p data-related-status class="hidden text-sm text-gray-400 dark:text-gray-500"></p>
+
+  <div data-related-list class="grid gap-2 sm:grid-cols-2"></div>
+</section>

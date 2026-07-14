@@ -1,0 +1,44 @@
+---
+import "../styles/globals.css";
+import ClientTranslations from "../components/ClientTranslations.astro";
+
+interface Props {
+  title?: string;
+}
+
+const {
+  title = "SynapxIA",
+} = Astro.props as Props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    {/* Auth gate runs server-side in src/middleware.ts (cookie-based).
+        Pages reach this layout already authenticated (or already redirected
+        to /login). No flash-of-empty-content, no localStorage round-trip. */}
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {/* Apply the saved theme BEFORE first paint so navigation doesn't flash the
+        light theme. Inline + render-blocking on purpose. */}
+    <script is:inline>
+      (function () {
+        try {
+          var t = localStorage.getItem("theme");
+          if (t !== "dark" && t !== "light") {
+            t = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+          }
+          document.documentElement.classList.toggle("dark", t === "dark");
+        } catch (e) {}
+      })();
+    </script>
+    <title>{title}</title>
+  </head>
+  <body class="bg-slate-50 text-slate-900 dark:bg-gray-950 dark:text-white">
+    {/* Theme-aware bg/text mirrors BaseLayout so this minimal layout (landing,
+        login, signup, dashboard) renders correctly in dark mode — the global
+        base `body` rule in globals.css is light-only. */}
+    <ClientTranslations />
+    <slot />
+  </body>
+</html>

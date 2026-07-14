@@ -1,0 +1,51 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import DefaultInputsCard from "../components/forms/DefaultInputsCard.astro";
+import SelectInputsCard from "../components/forms/SelectInputsCard.astro";
+import TextareaCard from "../components/forms/TextareaCard.astro";
+import InputStatesCard from "../components/forms/InputStatesCard.astro";
+import InputGroupCard from "../components/forms/InputGroupCard.astro";
+import FileInputCard from "../components/forms/FileInputCard.astro";
+import CheckboxesCard from "../components/forms/CheckboxesCard.astro";
+import RadiosCard from "../components/forms/RadiosCard.astro";
+import TogglesCard from "../components/forms/TogglesCard.astro";
+import DropzoneCard from "../components/forms/DropzoneCard.astro";
+import { t } from "@/i18n";
+import { getLocale } from "@/utils/getLocale";
+
+const locale = getLocale(Astro);
+const title = t(locale, "forms_demo.title");
+// Nav items are kept as a vestige of the tailadmin template; BaseLayout
+// doesn't actually consume `navItems` (it builds its own nav). Translated
+// labels via i18n keys so the array isn't hardcoded English if it's ever
+// surfaced again.
+const navItems = [
+  { label: t(locale, "forms_demo.nav_dashboard"), href: "/" },
+  { label: t(locale, "forms_demo.nav_forms"), href: "/forms" },
+  { label: t(locale, "forms_demo.nav_calendar"), href: "#" },
+  { label: t(locale, "forms_demo.nav_user_profile"), href: "#" },
+  { label: t(locale, "forms_demo.nav_tables"), href: "#" },
+  { label: t(locale, "forms_demo.nav_pages"), href: "#" },
+];
+---
+<BaseLayout title={title} navItems={navItems}>
+  <div class="mx-auto max-w-6xl space-y-6">
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div class="space-y-6">
+        <DefaultInputsCard />
+        <SelectInputsCard />
+        <TextareaCard />
+        <InputStatesCard />
+      </div>
+
+      <div class="space-y-6">
+        <InputGroupCard />
+        <FileInputCard />
+        <CheckboxesCard />
+        <RadiosCard />
+        <TogglesCard />
+        <DropzoneCard />
+      </div>
+    </div>
+  </div>
+</BaseLayout>

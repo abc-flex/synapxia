@@ -1,0 +1,40 @@
+---
+/**
+ * Show Action (HU-Show Action) — read-only view of a PUBLICATION / REJECTION
+ * outcome action for the current user, reached from the header bell
+ * (`/lib/show-action?action={id}`).
+ *
+ * FIRST Svelte pilot: the interactive card is `ShowAction.svelte`, compiled by
+ * the raw Svelte Vite plugin and **mounted manually** via Svelte 5's `mount()`
+ * from a bundled `<script>` (not the @astrojs/svelte island mechanism — see
+ * astro.config.mjs). Reuses the existing vanilla services (getAction / getAsset
+ * / markNotified / dismissNotification) — no backend change. NOT the review flow.
+ */
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+---
+
+<BaseLayout>
+  <div class="mx-auto w-full max-w-2xl">
+    <Breadcrumb
+      moduleName="AI Library"
+      pageName="Notification"
+      pageTitle="Action"
+      homeLink="/"
+      moduleNameKey="modules.LIB"
+      pageNameKey="show_action.title"
+      pageTitleKey="show_action.title"
+    />
+
+    <div id="show-action-root"></div>
+  </div>
+
+  <script>
+    // Mount the Svelte component manually (bundled @/ script, no island codegen).
+    import { mount } from "svelte";
+    import ShowAction from "@/components/svelte/ShowAction.svelte";
+
+    const target = document.getElementById("show-action-root");
+    if (target) mount(ShowAction, { target });
+  </script>
+</BaseLayout>

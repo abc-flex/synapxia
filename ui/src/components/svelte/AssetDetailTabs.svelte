@@ -83,12 +83,14 @@
     assetId = null,
     onError,
     onCountsChange,
+    onTabChange,
   }: {
     idPrefix: string;
     mode?: "modal" | "inline";
     assetId?: number | null;
     onError?: (msg: string) => void;
     onCountsChange?: (counts: TabCounts) => void;
+    onTabChange?: (name: TabName) => void;
   } = $props();
 
   const reportError = (m: string) => (onError ? onError(m) : console.error(m));
@@ -176,6 +178,12 @@
   });
   $effect(() => {
     onCountsChange?.(countsObj);
+  });
+  // Notify the parent (the .astro footer) which tab is active so it can show
+  // the version picker + "Save new version" for chars only, and "Save
+  // related"/"Save permissions" (no version bump) for the other two tabs.
+  $effect(() => {
+    onTabChange?.(activeTab);
   });
   export function counts(): TabCounts {
     return {
@@ -503,10 +511,15 @@
     return snapshot;
   }
 
-  export async function flush(id: number, opts?: { skipChars?: boolean }): Promise<void> {
-    // 1. Characterizations — skipped when a version save already snapshotted
-    //    them server-side (relations/permissions are not versioned and always
-    //    flush here).
+  export async function flush(
+    id: number,
+    opts?: { skipChars?: boolean; skipRelations?: boolean; skipPermissions?: boolean },
+  ): Promise<void> {
+    // Each slice is independently skippable so the modal can save one tab at a
+    // time: chars save = version bump (chars snapshotted server-side, so
+    // skipChars here); a "Save related" / "Save permissions" flush touches only
+    // its own slice and never versions.
+    // 1. Characterizations.
     if (!opts?.skipChars) {
       for (const spec of loadedSpecs) {
         const featureCode = spec.feature;
@@ -533,77 +546,88 @@
     }
 
     // 2. Relations (deletes first → re-add hits 409 → reactivate)
-    const stagedTargets = new Set(stagedRelations.map((r) => r.target));
-    for (const [target] of initialRelByTarget) {
-      if (!stagedTargets.has(target)) {
-        try {
-          await deleteAssetRelation(id, target);
-        } catch {
-          /* already gone */
+    if (!opts?.skipRelations) {
+      const stagedTargets = new Set(stagedRelations.map((r) => r.target));
+      for (const [target] of initialRelByTarget) {
+        if (!stagedTargets.has(target)) {
+          try {
+            await deleteAssetRelation(id, target);
+          } catch {
+            /* already gone */
+          }
         }
       }
-    }
-    for (const rel of stagedRelations) {
-      const initial = initialRelByTarget.get(rel.target);
-      if (!initial) {
-        try {
-          await createAssetRelation({ source: id, target: rel.target, type: rel.type, rationale: rel.rationale || undefined });
-        } catch {
-          await updateAssetRelation(id, rel.target, { type: rel.type, rationale: rel.rationale || null, is_active: true });
+      for (const rel of stagedRelations) {
+        const initial = initialRelByTarget.get(rel.target);
+        if (!initial) {
+          try {
+            await createAssetRelation({ source: id, target: rel.target, type: rel.type, rationale: rel.rationale || undefined });
+          } catch {
+            await updateAssetRelation(id, rel.target, { type: rel.type, rationale: rel.rationale || null, is_active: true });
+          }
+        } else if (initial.type !== rel.type || (initial.rationale ?? "") !== rel.rationale) {
+          await updateAssetRelation(id, rel.target, { type: rel.type, rationale: rel.rationale || null });
         }
-      } else if (initial.type !== rel.type || (initial.rationale ?? "") !== rel.rationale) {
-        await updateAssetRelation(id, rel.target, { type: rel.type, rationale: rel.rationale || null });
       }
     }
 
     // 3. Permissions (surrogate-id keyed)
-    const stagedIds = new Set(stagedPermissions.filter((p) => p.id != null).map((p) => p.id));
-    for (const [pid] of initialPermById) {
-      if (!stagedIds.has(pid)) {
-        try {
-          await deleteAssetPermission(pid);
-        } catch {
-          /* already gone */
+    if (!opts?.skipPermissions) {
+      const stagedIds = new Set(stagedPermissions.filter((p) => p.id != null).map((p) => p.id));
+      for (const [pid] of initialPermById) {
+        if (!stagedIds.has(pid)) {
+          try {
+            await deleteAssetPermission(pid);
+          } catch {
+            /* already gone */
+          }
         }
       }
-    }
-    for (const p of stagedPermissions) {
-      if (p.id == null) {
-        try {
-          const created = await createAssetPermission({
-            asset: id,
-            target_type: p.targetType,
-            target_code: p.targetCode,
-            access_level: p.access,
-          });
-          p.id = created.id;
-        } catch (err) {
-          if (!isConflict(err)) throw err; // 409 = identical active grant already exists → skip
-        }
-      } else {
-        const init = initialPermById.get(p.id);
-        if (init && (init.target_type !== p.targetType || init.target_code !== p.targetCode || init.access_level !== p.access)) {
-          await updateAssetPermission(p.id, { target_type: p.targetType, target_code: p.targetCode, access_level: p.access });
+      for (const p of stagedPermissions) {
+        if (p.id == null) {
+          try {
+            const created = await createAssetPermission({
+              asset: id,
+              target_type: p.targetType,
+              target_code: p.targetCode,
+              access_level: p.access,
+            });
+            p.id = created.id;
+          } catch (err) {
+            if (!isConflict(err)) throw err; // 409 = identical active grant already exists → skip
+          }
+        } else {
+          const init = initialPermById.get(p.id);
+          if (init && (init.target_type !== p.targetType || init.target_code !== p.targetCode || init.access_level !== p.access)) {
+            await updateAssetPermission(p.id, { target_type: p.targetType, target_code: p.targetCode, access_level: p.access });
+          }
         }
       }
     }
 
-    // Re-seed initial maps from persisted state so a second flush (no reload)
-    // diffs against the new baseline.
-    const charSeed: [string, any][] = [];
-    for (const s of loadedSpecs) {
-      const v = (charValues[s.feature] ?? "").trim();
-      if (v) charSeed.push([s.feature, { feature: s.feature, value: v }]);
+    // Re-seed the initial maps of the slices we actually persisted so a second
+    // flush (no reload) diffs against the new baseline. Skipped slices keep
+    // their old baseline (they weren't written this call).
+    if (!opts?.skipChars) {
+      const charSeed: [string, any][] = [];
+      for (const s of loadedSpecs) {
+        const v = (charValues[s.feature] ?? "").trim();
+        if (v) charSeed.push([s.feature, { feature: s.feature, value: v }]);
+      }
+      initialCharByFeature = new Map(charSeed);
     }
-    initialCharByFeature = new Map(charSeed);
-    initialRelByTarget = new Map(
-      stagedRelations.map((r) => [r.target, { target: r.target, type: r.type, rationale: r.rationale }]),
-    );
-    initialPermById = new Map(
-      stagedPermissions
-        .filter((p) => p.id != null)
-        .map((p) => [p.id as number, { target_type: p.targetType, target_code: p.targetCode, access_level: p.access }]),
-    );
+    if (!opts?.skipRelations) {
+      initialRelByTarget = new Map(
+        stagedRelations.map((r) => [r.target, { target: r.target, type: r.type, rationale: r.rationale }]),
+      );
+    }
+    if (!opts?.skipPermissions) {
+      initialPermById = new Map(
+        stagedPermissions
+          .filter((p) => p.id != null)
+          .map((p) => [p.id as number, { target_type: p.targetType, target_code: p.targetCode, access_level: p.access }]),
+      );
+    }
   }
 
   export function reset(): void {

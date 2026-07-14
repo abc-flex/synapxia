@@ -20,6 +20,15 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-07-14 16:58 — fix(ui): per-tab save in the editable asset detail modal — only Characterizations versions
+
+- **The `/lib/assets` "Edit details" modal footer is now tab-aware.** Previously the change-type picker (Patch/Minor/Major) + `v1.0.0 → v1.0.1` preview + "Save new version" button showed on every tab, so editing just a relation or a permission still bumped the asset's version and re-snapshotted the characterizations — wrong, since only the characterization set is versioned (HU-LI09). Now: **Characterizations** keeps the version UI + "Save new version" (bumps the version); **Related Assets** and **Permissions** hide the picker + preview, relabel the button "Save related" / "Save permissions", and persist only their own slice with no version bump.
+- **How:** `AssetDetailTabs.svelte` gained an `onTabChange` prop (`$effect` on `activeTab`, mirroring `onCountsChange`) and its `flush()` opts widened from `{ skipChars }` to `{ skipChars, skipRelations, skipPermissions }` (each slice + its re-seed guarded). `AssetDetailModal.astro` tracks `activeDetailTab`, repaints the footer per tab via a new `paintFooterForTab()`, and branches the submit: chars → `createAssetVersion`; related → `flush({skipChars,skipPermissions})`; permissions → `flush({skipChars,skipRelations})`. Core-field PUT still runs whenever core is visible; create mode is unchanged. **UI only — no backend/API/DDL change** (all endpoints already existed).
+- Verified: `bun run build` + `npx tsc --noEmit` clean (only pre-existing `advancedTable.ts` errors); Playwright smoke on `/lib/assets` — footer label + version-UI visibility correct on all three tabs, and saving routes to the right endpoint (chars → `/versions`, related → `asset_relations` only, permissions → `asset_permissions` only, neither touching `/versions`).
+- Files affected: `ui/src/components/lib/AssetDetailModal.astro`, `ui/src/components/svelte/AssetDetailTabs.svelte`, `ui/src/i18n/en.json`, `ui/src/i18n/es.json`
+
+---
+
 ## 2026-07-14 16:32 — feat(lib): version-history "Versions" tab on the gallery detail modal
 
 - **Surfaces the version history that `create_version` already produces but nothing exposed.** Two new read-only endpoints on the assets router: `GET /api/assets/{id}/versions` (one entry per `version_label` via a DISTINCT/`GROUP BY` over the asset's characterizations — `MIN(created_at)` per label — newest-first by date, `is_current` flagged, enriched from the matching `VERSIONING` action for `change_type` + `actor`; null for the initial `1.0.0` which has no versioning action) and `GET /api/assets/{id}/versions/{version_label}/characterizations` (one version's snapshot). Both gated at module read privilege only (no per-asset MANAGE guard) so gallery viewers read history exactly like the current snapshot; the write-side `POST /{id}/versions` keeps its MANAGE guard. New `AssetVersion` response schema; `version_service.list_versions` + `get_version_characterizations`. **No DDL change** — pure query over existing `characterizations` + `actions`.

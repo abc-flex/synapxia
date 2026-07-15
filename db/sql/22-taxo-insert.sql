@@ -2,23 +2,25 @@
 -- ******* Table categories *********
 -- **********************************
 
-INSERT INTO categories (code, name, description, parent) VALUES
-    ('AI_ASSETS', 'AI Assets', 'Category for all AI-related assets', NULL),
+INSERT INTO categories (code, name, description, parent, option) VALUES
+    ('AI_ASSETS', 'AI Assets', 'Category for all AI-related assets', NULL, NULL),
+    ('CLASSIC_AI', 'Classic AI', 'Category for Classic AI assets', 'AI_ASSETS', NULL),
+    ('GEN_AI', 'Generative AI', 'Category for Generative AI assets', 'AI_ASSETS', NULL);
     -- Classic AI and Machine Learning Models
-    ('CLASSIC_AI', 'Classic AI', 'Category for Classic AI assets', 'AI_ASSETS'),
-    ('ML_MODELS', 'Machine Learning Models', 'Category for Machine Learning Models', 'CLASSIC_AI'),
-    ('ALGORITHMS', 'Algorithms', 'Category for Algorithms', 'CLASSIC_AI'),
-    ('DATASETS', 'Datasets', 'Category for Datasets', 'CLASSIC_AI'),
+    ('CLASSIC_AI', 'Classic AI', 'Category for Classic AI assets', 'AI_ASSETS', NULL),
+    ('ML_MODELS', 'Machine Learning Models', 'Category for Machine Learning Models', 'CLASSIC_AI', NULL),
+    ('ALGORITHMS', 'Algorithms', 'Category for Algorithms', 'CLASSIC_AI', NULL),
+    ('DATASETS', 'Datasets', 'Category for Datasets', 'CLASSIC_AI', NULL),
     -- Generative AI
-    ('GEN_AI', 'Generative AI', 'Category for Generative AI assets', 'AI_ASSETS'),
-    ('PROMPTS', 'Prompt', 'Category for Prompt', 'GEN_AI'),
-    ('MCPS', 'Model Context Protocol', 'Category for MCPs servers and clients definitions', 'GEN_AI'),
-    ('AGENTS', 'Agents', 'Category for AI Agents', 'GEN_AI'),
-    ('AI_FLOWS', 'AI Flows', 'Category for Generative AI Flows in N8n', 'GEN_AI'),
-    ('SKILLS', 'Skills', 'Category for AI Skills in Generative AI tools', 'GEN_AI'),
-    ('ASSISTANTS', 'Assistants aka GPTs', 'Category for AI Assistants in ChatGPT', 'GEN_AI'),
-    ('RAG_APPS', 'RAG Apps', 'Category for Retrieval-Augmented Generation applications', 'GEN_AI'),
-    ('GEN_AI_MODELS', 'Gen AI Models', 'Category for Gen AI Models', 'GEN_AI');
+    ('GEN_AI', 'Generative AI', 'Category for Generative AI assets', 'AI_ASSETS', NULL),
+    ('PROMPTS', 'Prompts', 'Category for Prompt', 'GEN_AI', '/lib/prompts'),
+    ('MCPS', 'Model Context Protocol', 'Category for MCPs servers and clients definitions', 'GEN_AI', '/lib/mcps'),
+    ('AGENTS', 'Agents', 'Category for AI Agents', 'GEN_AI', '/lib/agents'),
+    ('AI_FLOWS', 'AI Flows', 'Category for Generative AI Flows in N8n', 'GEN_AI', NULL),
+    ('SKILLS', 'Skills', 'Category for AI Skills in Generative AI tools', 'GEN_AI', NULL),
+    ('ASSISTANTS', 'Assistants aka GPTs', 'Category for AI Assistants in ChatGPT', 'GEN_AI', NULL),
+    ('RAG_APPS', 'RAG Apps', 'Category for Retrieval-Augmented Generation applications', 'GEN_AI', NULL),
+    ('GEN_AI_MODELS', 'Gen AI Models', 'Category for Gen AI Models', 'GEN_AI', NULL);
 
 -- **********************************
 -- ******* Table features ****

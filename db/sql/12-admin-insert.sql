@@ -55,7 +55,7 @@ INSERT INTO options (module, code, name, description, sort_order, type, path, ic
 
 -- ===== Module: ASSET LIBRARY =====
 INSERT INTO options (module, code, name, description, sort_order, type, path, icon) VALUES
-    ('LIB','ASSETS','Assets Management',
+    ('LIB','ASSETS','Asset Management',
      'Inventory of digital assets linked to owners, initiatives and processes.',
      10,'FORM','/lib/assets','archive-box'),
     ('LIB','PROMPTS','Prompt Gallery',

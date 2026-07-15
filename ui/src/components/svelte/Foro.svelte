@@ -31,7 +31,10 @@
   import { showToast } from "@/lib/toast";
   import type { DiscussionItem } from "@/types/api";
 
-  let { modalId }: { modalId: string } = $props();
+  // `readonly` renders the thread without any write affordance (no composer,
+  // no Answer link, no Delete) — used by the Asset Management edit modal's
+  // Discussion tab, which is view-only. The gallery leaves it false.
+  let { modalId, readonly = false }: { modalId: string; readonly?: boolean } = $props();
 
   let items = $state<DiscussionItem[]>([]);
   let statusText = $state("");
@@ -245,7 +248,7 @@
             {entry.item.author || t("foro.anonymous", "Someone")}
           </span>
           <span>{formatRelative(entry.item.created_at, locale())}</span>
-          {#if canDelete(entry.item)}
+          {#if !readonly && canDelete(entry.item)}
             <button
               type="button"
               class="ml-auto text-xs font-medium text-gray-400 opacity-0 transition-opacity hover:text-red-600 focus:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100 dark:hover:text-red-400"
@@ -265,7 +268,7 @@
                   {answer.author || t("foro.anonymous", "Someone")}
                 </span>
                 <span>{formatRelative(answer.created_at, locale())}</span>
-                {#if canDelete(answer)}
+                {#if !readonly && canDelete(answer)}
                   <button
                     type="button"
                     class="ml-auto text-xs font-medium text-gray-400 opacity-0 transition-opacity hover:text-red-600 focus:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100 dark:hover:text-red-400"
@@ -279,9 +282,10 @@
             </div>
           {/each}
 
-          <!-- Answer affordance (only when signed in): a subtle link that reveals
-               an inline composer on click — keeps the thread minimal until you act. -->
-          {#if me}
+          <!-- Answer affordance (only when signed in, and not in readonly view):
+               a subtle link that reveals an inline composer on click — keeps the
+               thread minimal until you act. -->
+          {#if !readonly && me}
             {#if answerOpen[entry.item.id]}
               <div class="ml-5 mt-2 flex items-start gap-2">
                 <textarea
@@ -313,35 +317,38 @@
     {/if}
   </div>
 
-  <!-- Slim composer at the end of the discussion: pick Comment or Question, then post. -->
-  <div class="mt-5 border-t border-gray-200 pt-4 dark:border-gray-800">
-    <div class="mb-2 inline-flex rounded-md border border-gray-300 p-0.5 dark:border-gray-700" role="group">
-      <button
-        type="button"
-        aria-pressed={postType === "COMMENT"}
-        class={typeToggleClass(postType === "COMMENT")}
-        onclick={() => (postType = "COMMENT")}
-      >{t("foro.tag_comment", "Comment")}</button>
-      <button
-        type="button"
-        aria-pressed={postType === "QUESTION"}
-        class={typeToggleClass(postType === "QUESTION")}
-        onclick={() => (postType = "QUESTION")}
-      >{t("foro.tag_question", "Question")}</button>
+  <!-- Slim composer at the end of the discussion: pick Comment or Question, then
+       post. Hidden entirely in readonly view (Asset Management edit modal). -->
+  {#if !readonly}
+    <div class="mt-5 border-t border-gray-200 pt-4 dark:border-gray-800">
+      <div class="mb-2 inline-flex rounded-md border border-gray-300 p-0.5 dark:border-gray-700" role="group">
+        <button
+          type="button"
+          aria-pressed={postType === "COMMENT"}
+          class={typeToggleClass(postType === "COMMENT")}
+          onclick={() => (postType = "COMMENT")}
+        >{t("foro.tag_comment", "Comment")}</button>
+        <button
+          type="button"
+          aria-pressed={postType === "QUESTION"}
+          class={typeToggleClass(postType === "QUESTION")}
+          onclick={() => (postType = "QUESTION")}
+        >{t("foro.tag_question", "Question")}</button>
+      </div>
+      <div class="flex items-end gap-2">
+        <textarea
+          bind:this={composerEl}
+          bind:value={draft}
+          rows="1"
+          placeholder={composerPlaceholder}
+          class="min-h-[2.5rem] flex-1 resize-y rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+        ></textarea>
+        <button
+          type="button"
+          class="shrink-0 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+          onclick={submitPost}
+        >{t("foro.post", "Post")}</button>
+      </div>
     </div>
-    <div class="flex items-end gap-2">
-      <textarea
-        bind:this={composerEl}
-        bind:value={draft}
-        rows="1"
-        placeholder={composerPlaceholder}
-        class="min-h-[2.5rem] flex-1 resize-y rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-      ></textarea>
-      <button
-        type="button"
-        class="shrink-0 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
-        onclick={submitPost}
-      >{t("foro.post", "Post")}</button>
-    </div>
-  </div>
+  {/if}
 </section>

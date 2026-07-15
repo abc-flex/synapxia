@@ -29,12 +29,21 @@ interface EChartsTreeNode {
   name: string;
   value?: string;
   children?: EChartsTreeNode[];
+  nodeCount?: number;
+  leavePath?: string | null;
 }
 
 function toEChartsNode(node: TreeNodeData): EChartsTreeNode {
+  const isLeaf = node.children.length === 0;
+  const nodeCount = node.raw?.assets_count;
+  const leavePath = node.raw?.option ?? null;
+  const hasCount = isLeaf && typeof nodeCount === 'number';
+
   return {
-    name: node.label,
+    name: hasCount ? `${node.label} (${nodeCount})` : node.label,
     value: node.description || '',
+    ...(hasCount && { nodeCount }),
+    ...(hasCount && leavePath && { leavePath }),
     ...(node.children.length > 0 && {
       children: node.children.map(toEChartsNode),
     }),
@@ -168,6 +177,25 @@ const treeDataJson = JSON.stringify(treeData);
     };
 
     chart.setOption(option);
+
+    // Leaves with assets (nodeCount > 0) carry an leavePath — make them clickable
+    // links to the corresponding asset library page.
+    const isLinkable = (data) =>
+      !!data && !!data.leavePath && (data.nodeCount ?? 0) > 0;
+
+    chart.on('click', (params) => {
+      if (isLinkable(params.data)) {
+        window.location.href = params.data.leavePath;
+      }
+    });
+
+    chart.on('mouseover', (params) => {
+      container.style.cursor = isLinkable(params.data) ? 'pointer' : 'default';
+    });
+
+    chart.on('mouseout', () => {
+      container.style.cursor = 'default';
+    });
 
     window.addEventListener('resize', () => chart.resize());
   }

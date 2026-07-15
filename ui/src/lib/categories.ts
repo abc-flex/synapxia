@@ -6,10 +6,20 @@
 import { apiGet, apiPost, apiPut, apiDelete, buildQueryString } from './api';
 import type { Category, CategoryCreate, CategoryUpdate } from '../types/api';
 
-// Interface for select options with value and label
+// Interface for select categories with value and label
 export interface CategorySelectOption {
   value: string;
   label: string;
+}
+
+// Interface for categories with assets count
+export interface CategoryWithAssets {
+  code: string;
+  name: string;
+  description: string | null;
+  parent: string | null;
+  option: string | null;
+  assets_count: number;
 }
 
 /**
@@ -30,6 +40,16 @@ export async function getCategories(skip: number = 0, limit: number = 100): Prom
  */
 export async function getCategoriesSelect(): Promise<CategorySelectOption[]> {
   return apiGet<CategorySelectOption[]>(`/api/categories/select`);
+}
+
+/**
+ * Fetch all categories with assets count optimized for treeview controls
+ * Returns values of active categories
+ * @returns Promise with array of CategoryWithAssets objects
+ */
+export async function getCategoriesWithAssetsCount(skip: number = 0, limit: number = 100): Promise<CategoryWithAssets[]> {
+  const queryString = buildQueryString({ skip, limit });
+  return apiGet<CategoryWithAssets[]>(`/api/categories/assets${queryString}`);
 }
 
 /**

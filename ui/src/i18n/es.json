@@ -308,6 +308,7 @@
     "description": "Descripción",
     "parent": "Categoría Padre",
     "icon": "Ícono",
+    "option": "Ruta de la Biblioteca",
     "one_title": "Categoría",
     "many_title": "Categorías",
     "filter_title": "Todas las Categorías",

@@ -308,6 +308,7 @@
     "description": "Description",
     "parent": "Parent",
     "icon": "Icon",
+    "option": "Library Path",
     "one_title": "Category",
     "many_title": "Categories",
     "filter_title": "All Categories",

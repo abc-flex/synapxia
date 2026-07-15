@@ -12,7 +12,7 @@ CREATE TABLE assets (
     status	         VARCHAR(100) NOT NULL, -- references List_items.value where list='ASSET_STATUS'
 	tags             JSONB,
 	detail           TEXT,
-    current_version  VARCHAR(30)  DEFAULT '1.0.0',
+    current_version  VARCHAR(30)  NOT NULL DEFAULT '1.0.0',
     is_active        BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at       TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at       TIMESTAMPTZ,

@@ -9,6 +9,7 @@ CREATE TABLE categories (
     description VARCHAR(500),
     parent      VARCHAR(50),
     icon        TEXT,
+    option      TEXT, -- references Options.path where module='LIB'
     is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ,
@@ -34,6 +35,7 @@ CREATE TABLE specifications (
     feature         VARCHAR(50)   NOT NULL,
     default_value   TEXT, -- Any or references List_items.value where list IN [select code from lists where type='FEATURE']
     required        BOOLEAN       NOT NULL DEFAULT FALSE, -- feature must be filled when proposing/characterizing an asset of this category
+    copyable        BOOLEAN       NOT NULL DEFAULT FALSE, -- feature can be copied for use in implementations of an asset of this category
     sort_order      INTEGER       NOT NULL DEFAULT 0,
     is_active       BOOLEAN       NOT NULL DEFAULT TRUE,
     created_at      TIMESTAMPTZ   NOT NULL DEFAULT NOW(),

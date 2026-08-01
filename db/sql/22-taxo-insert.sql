@@ -4,8 +4,6 @@
 
 INSERT INTO categories (code, name, description, parent, option) VALUES
     ('AI_ASSETS', 'AI Assets', 'Category for all AI-related assets', NULL, NULL),
-    ('CLASSIC_AI', 'Classic AI', 'Category for Classic AI assets', 'AI_ASSETS', NULL),
-    ('GEN_AI', 'Generative AI', 'Category for Generative AI assets', 'AI_ASSETS', NULL);
     -- Classic AI and Machine Learning Models
     ('CLASSIC_AI', 'Classic AI', 'Category for Classic AI assets', 'AI_ASSETS', NULL),
     ('ML_MODELS', 'Machine Learning Models', 'Category for Machine Learning Models', 'CLASSIC_AI', NULL),

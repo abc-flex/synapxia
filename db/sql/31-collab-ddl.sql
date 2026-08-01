@@ -6,6 +6,7 @@
 CREATE TABLE teams (
     code             VARCHAR(50)  NOT NULL,
     name             VARCHAR(100) NOT NULL,
+    icon             TEXT,
     description      VARCHAR(500),
     lead             BIGINT,
     chat_channel_url TEXT,

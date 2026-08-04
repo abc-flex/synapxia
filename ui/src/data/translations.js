@@ -2,7 +2,7 @@ export const translations = {
   en: {
     header: {
       subtitle:
-        "System for Insight, Adoption, Practice & eXpansion through Intelligent Agents"
+        "SYstem for Next-gen AI Practice, eXpansion & Intelligent Adoption"
     },
     labels: {
       language: "Language",
@@ -46,7 +46,7 @@ export const translations = {
       featureComingSoon: "Feature coming soon: Add new entry"
     },
     footer: {
-      copyright: "© 2025 SinapxIA. All rights reserved."
+      copyright: "© 2025 SynapxIA. All rights reserved."
     }
   },
   es: {
@@ -95,7 +95,7 @@ export const translations = {
       featureComingSoon: "Funcionalidad próximamente: Agregar nueva entrada"
     },
     footer: {
-      copyright: "© 2025 SinapxIA. Todos los derechos reservados."
+      copyright: "© 2025 SynapxIA. Todos los derechos reservados."
     }
   }
 };

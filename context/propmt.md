@@ -1,5 +1,5 @@
 jquintero_billtrst: # Project Description
-The project to be developed is a platform that supports the adoption of Generative AI within an organization, named **SinapxIA: System for INsight, Adoption, Practice & eXpansion through Intelligent Agents**.
+The project to be developed is a platform that supports the adoption of Generative AI within an organization, named **SynapxIA: SYstem for Next-gen AI Practice, eXpansion & Intelligent Adoption**.
 
 The system will be built in phases. The first module is an **Assignments Dashboard**, for which only the UI component should be developed as a standalone client-side demo using **HTML + HTMX + JavaScript**.
 
@@ -57,7 +57,7 @@ Copy code
 - No server calls
 - No backend processing
 
-GitHub Copilot: Optimizing tool selection...I'll create a client-side UI demo for the SinapxIA Assignments Dashboard using HTML, HTMX, and JavaScript. Let me break this down into organized, clean components.
+GitHub Copilot: Optimizing tool selection...I'll create a client-side UI demo for the SynapxIA Assignments Dashboard using HTML, HTMX, and JavaScript. Let me break this down into organized, clean components.
 
 Created 7 todos
 
@@ -65,29 +65,29 @@ Now I'll start implementing the solution:
 
 Starting: _Create main HTML structure with layout_ (1/7)
 
-Created [](file:///Users/juan.quintero/Desktop/sinapxia/index.html)
+Created [](file:///Users/juan.quintero/Desktop/synapxia/index.html)
 
 Starting: _Create CSS styles_ (2/7)
 
-Created [](file:///Users/juan.quintero/Desktop/sinapxia/styles.css)
+Created [](file:///Users/juan.quintero/Desktop/synapxia/styles.css)
 
 Starting: _Transform CSV data to JSON format_ (3/7)
 
-Created [](file:///Users/juan.quintero/Desktop/sinapxia/data.js)
+Created [](file:///Users/juan.quintero/Desktop/synapxia/data.js)
 
 Starting: _Implement dashboard grid rendering_ (4/7)
 
-Created [](file:///Users/juan.quintero/Desktop/sinapxia/app.js)
+Created [](file:///Users/juan.quintero/Desktop/synapxia/app.js)
 
 Starting: _Add i18n structure_ (7/7)
 
-Created [](file:///Users/juan.quintero/Desktop/sinapxia/i18n.js)
+Created [](file:///Users/juan.quintero/Desktop/synapxia/i18n.js)
 
 Completed: _Add i18n structure_ (7/7)
 
-Created [](file:///Users/juan.quintero/Desktop/sinapxia/README.md)
+Created [](file:///Users/juan.quintero/Desktop/synapxia/README.md)
 
-Perfect! I've successfully created the SinapxIA Assignments Dashboard. Here's what has been implemented:
+Perfect! I've successfully created the SynapxIA Assignments Dashboard. Here's what has been implemented:
 
 ## ✅ Completed Features
 

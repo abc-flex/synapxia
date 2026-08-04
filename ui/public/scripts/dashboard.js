@@ -240,7 +240,7 @@ const init = () => {
     return;
   }
 
-  const storedLanguage = localStorage.getItem("sinapxia-language");
+  const storedLanguage = localStorage.getItem("synapxia-language");
   if (storedLanguage && translations[storedLanguage]) {
     currentLanguage = storedLanguage;
   } else {
@@ -262,7 +262,7 @@ const init = () => {
 
   languageSelector.addEventListener("change", (event) => {
     currentLanguage = event.target.value;
-    localStorage.setItem("sinapxia-language", currentLanguage);
+    localStorage.setItem("synapxia-language", currentLanguage);
     renderLanguageOptions();
     renderDimensionOptions();
     renderModalMetricOptions();

@@ -3,7 +3,7 @@
   "configVersion": 0,
   "workspaces": {
     "": {
-      "name": "sinapxia-ui",
+      "name": "synapxia-ui",
       "dependencies": {
         "@astrojs/tailwind": "^6.0.0",
         "@astrojs/vercel": "^8.0.0",

@@ -67,7 +67,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="SynapxIA API",
     version="1.0.0",
-    description="API for AI adoption management - System for Insight, Adoption, Practice & eXpansion through Intelligent Agents",
+    description="API for AI adoption management - SYstem for Next-gen AI Practice, eXpansion & Intelligent Adoption",
     openapi_tags=[
         {
             "name": "authentication",
@@ -451,7 +451,7 @@ def read_root() -> dict:
 
     return {
         "name": "SynapxIA API",
-        "description": "System for Insight, Adoption, Practice & eXpansion through Intelligent Agents",
+        "description": "SYstem for Next-gen AI Practice, eXpansion & Intelligent Adoption",
         "version": app.version,
         "docs": {
             "swagger": "/docs",

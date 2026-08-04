@@ -4,8 +4,8 @@
 
 The name **SynapxIA** stands for:
 
-> **Services Yielding New Applications and Practices for eXtended AI Adoption**  
-> *Servicios Y Nuevas Aplicaciones para la Práctica y eXpansión de la Inteligencia Artificial*
+> **SYstem for Next-gen AI Practice, eXpansion & Intelligent Adoption**  
+> *SIstema de Nivel Avanzado para la Práctica y eXpansión de la Inteligencia Artificial*
 
 SynapxIA aims to become a central point for coordinating AI initiatives, classifying and reusing digital assets, managing teams, measuring adoption levels, analyzing generated impact, and connecting AI opportunities with the organization's business processes.
 
@@ -147,7 +147,7 @@ Its main value is to articulate people, knowledge, assets, processes, and indica
 
 ## License
 
-© 2025 SinapxIA. All rights reserved.
+© 2025 SynapxIA. All rights reserved.
 
 ---
 

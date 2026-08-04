@@ -1,4 +1,4 @@
-# SinapxIA API - Documentación
+# SynapxIA API - Documentación
 
 ## Descripción
 
@@ -149,7 +149,7 @@ uvicorn main:app --reload
 ## Estructura del Proyecto
 
 ```
-sinapxia/
+synapxia/
 ├── api/
 │   ├── main.py              # Aplicación FastAPI con CRUD
 │   └── requirements.txt      # Dependencias Python
@@ -167,7 +167,7 @@ Configurables en `.env`:
 
 ```
 DB_HOST=db              # Host de PostgreSQL
-DB_NAME=sinapxia        # Nombre de la base de datos
+DB_NAME=synapxia        # Nombre de la base de datos
 DB_USER=postgres        # Usuario de PostgreSQL
 DB_PASSWORD=postgres    # Contraseña de PostgreSQL
 DB_PORT=5432            # Puerto interno del contenedor (API + PgAdmin usan db:5432)
@@ -203,7 +203,7 @@ docker-compose logs -f db
 
 ### Acceder a PostgreSQL dentro del contenedor
 ```bash
-docker-compose exec db psql -U postgres -d sinapxia
+docker-compose exec db psql -U postgres -d synapxia
 ```
 
 ## Códigos de Respuesta HTTP

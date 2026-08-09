@@ -211,11 +211,12 @@ INSERT INTO lists (code, name, description, type, module) VALUES (
     'LIST_OF_VALUES', 'INITS'); 
 INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
     ('INITIATIVE_STATUS', 'en', 'ACTIVATED', 'Activated', 10),
-    ('INITIATIVE_STATUS', 'en', 'ACCEPTED', 'Accepted', 20),
-    ('INITIATIVE_STATUS', 'en', 'REJECTED', 'Rejected', 30),
-    ('INITIATIVE_STATUS', 'en', 'IN_PROGRESS', 'In Progress', 40),
-    ('INITIATIVE_STATUS', 'en', 'DELIVERED', 'Delivered', 50),
-    ('INITIATIVE_STATUS', 'en', 'ARCHIVED', 'Archived', 60);
+    ('INITIATIVE_STATUS', 'en', 'FEEDBACK', 'Feedback Provided', 20),
+    ('INITIATIVE_STATUS', 'en', 'ACCEPTED', 'Accepted', 30),
+    ('INITIATIVE_STATUS', 'en', 'REJECTED', 'Rejected', 40),
+    ('INITIATIVE_STATUS', 'en', 'IN_PROGRESS', 'In Progress', 50),
+    ('INITIATIVE_STATUS', 'en', 'DELIVERED', 'Delivered', 60),
+    ('INITIATIVE_STATUS', 'en', 'ARCHIVED', 'Archived', 70);
 
 -- ===== List: Collaboration Type =====
 INSERT INTO lists (code, name, description, type, module) VALUES (
@@ -225,10 +226,10 @@ INSERT INTO lists (code, name, description, type, module) VALUES (
 INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
     ('COLLAB_TYPE', 'en', 'ACTIVATION', 'Activation', 10),
     ('COLLAB_TYPE', 'en', 'DIAGNOSIS', 'Diagnosis', 20),
-    ('COLLAB_TYPE', 'en', 'ACCEPTANCE', 'Acceptance', 30),
-    ('COLLAB_TYPE', 'en', 'REJECTION', 'Rejection', 40),
-    ('COLLAB_TYPE', 'en', 'DELIVERY', 'Delivery', 50),
-    ('COLLAB_TYPE', 'en', 'VERSIONING', 'Versioning', 60),
+    ('COLLAB_TYPE', 'en', 'MODIFICATION', 'Modification', 30),
+    ('COLLAB_TYPE', 'en', 'ACCEPTANCE', 'Acceptance', 40),
+    ('COLLAB_TYPE', 'en', 'REJECTION', 'Rejection', 50),
+    ('COLLAB_TYPE', 'en', 'DELIVERY', 'Delivery', 60),
     ('COLLAB_TYPE', 'en', 'ARCHIVING', 'Archiving', 70),
     ('COLLAB_TYPE', 'en', 'VOTE', 'Vote', 80),
     ('COLLAB_TYPE', 'en', 'COMMENT', 'Comment', 90),

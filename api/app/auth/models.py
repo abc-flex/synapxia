@@ -6,7 +6,7 @@ Currently contains only the refresh-token row used by fastapi-users'
 resolves against the same registry SQLModel uses for the rest of the schema.
 """
 from fastapi_users_db_sqlalchemy.access_token import SQLAlchemyBaseAccessTokenTable
-from sqlalchemy import Column, ForeignKey, Integer
+from sqlalchemy import BigInteger, Column, ForeignKey
 from sqlalchemy.orm import DeclarativeBase
 from sqlmodel import SQLModel
 
@@ -30,7 +30,7 @@ class RefreshToken(SQLAlchemyBaseAccessTokenTable[int], Base):
     __tablename__ = "refresh_tokens"
 
     user_id = Column(
-        Integer,
+        BigInteger,
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
     )

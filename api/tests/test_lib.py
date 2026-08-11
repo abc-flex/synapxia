@@ -13,7 +13,7 @@ from app.lib.internal.models import (
     Favorite,
     Action, ActionCreate, ActionUpdate,
     AssetRelation,
-    AssetPermission,
+    AssetPermission, AssetPermissionCreate, AssetPermissionUpdate,
 )
 
 
@@ -65,12 +65,26 @@ def test_lib_models_match_ddl_fields():
                  "updated_at"),
         AssetRelation: ("source", "target", "type", "rationale", "is_active",
                         "created_at", "updated_at"),
+        # No `is_active` here on purpose: a grant is revoked (valid_to), never
+        # logically deleted — the DDL has no such column.
         AssetPermission: ("id", "asset", "target_type", "target_code",
-                          "access_level", "valid_from", "valid_to", "is_active"),
+                          "access_level", "valid_from", "valid_to"),
     }
     for model, fields in expected.items():
         missing = [f for f in fields if f not in model.model_fields]
         assert not missing, f"{model.__name__} missing DDL fields: {missing}"
+
+
+def test_asset_permission_has_no_is_active_flag():
+    """Regression guard: `asset_permissions` must NOT grow a logical-delete flag.
+
+    Revocation and expiry are the same state and both live in `valid_to`; a
+    second mechanism would let the two disagree (a row active-but-expired, or
+    inactive-but-valid) and every access check would have to honor both.
+    """
+    for model in (AssetPermission, AssetPermissionCreate, AssetPermissionUpdate):
+        assert "is_active" not in model.model_fields, (
+            f"{model.__name__} reintroduced is_active — revoke via valid_to instead")
 
 
 def test_openapi_action_schema_uses_detail():

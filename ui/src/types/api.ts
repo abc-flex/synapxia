@@ -807,6 +807,9 @@ export interface RelatedAsset {
 // asset id; `target_code` is the target entity's id/code ("PUBLIC" for PUBLIC).
 // ============================================================================
 
+// A grant has no `is_active` flag: it is never logically deleted, only revoked,
+// and `valid_to` expresses that (revoking sets it to now). DELETE closes the
+// window server-side; setting `valid_to` on an update schedules the expiry.
 export interface AssetPermission {
   id: number;
   asset: number;
@@ -815,7 +818,6 @@ export interface AssetPermission {
   access_level: string;
   valid_from?: string;
   valid_to?: string | null;
-  is_active?: boolean;
 }
 
 export interface AssetPermissionCreate {
@@ -824,7 +826,6 @@ export interface AssetPermissionCreate {
   target_code: string;
   access_level: string;
   valid_to?: string | null;
-  is_active?: boolean;
 }
 
 export interface AssetPermissionUpdate {
@@ -832,7 +833,6 @@ export interface AssetPermissionUpdate {
   target_code?: string;
   access_level?: string;
   valid_to?: string | null;
-  is_active?: boolean;
 }
 
 // ============================================================================

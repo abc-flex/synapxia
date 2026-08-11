@@ -38,10 +38,10 @@ def get_all(
     skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
     _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
 ) -> List[AssetPermission]:
-    """List all active asset permissions (paginated)."""
+    """List all asset permissions that have not been revoked (paginated)."""
     return session.exec(
         select(AssetPermission)
-        .where(AssetPermission.is_active == True)
+        .where(permissions_service.not_revoked_clause())
         .offset(skip).limit(limit)
         .order_by(AssetPermission.asset, AssetPermission.id)
     ).all()
@@ -55,10 +55,15 @@ def get_by_asset(
     session: Session = Depends(get_db_session),
     _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
 ) -> List[AssetPermission]:
-    """List active permissions for one asset."""
+    """List the not-yet-revoked permissions of one asset. A future-dated grant
+    (``valid_from`` ahead of now) is included — it is scheduled, not revoked,
+    and must stay manageable until it takes effect."""
     return session.exec(
         select(AssetPermission)
-        .where(AssetPermission.asset == asset_id, AssetPermission.is_active == True)
+        .where(
+            AssetPermission.asset == asset_id,
+            permissions_service.not_revoked_clause(),
+        )
         .offset(skip).limit(limit)
         .order_by(AssetPermission.id)
     ).all()
@@ -73,10 +78,10 @@ def get(
     permission = session.get(AssetPermission, permission_id)
     if not permission:
         raise HTTPException(status_code=404, detail="Asset permission not found")
-    elif not permission.is_active:
+    elif permissions_service.is_revoked(permission):
         raise HTTPException(
             status_code=400,
-            detail=f"Asset permission '{permission_id}' is inactive")
+            detail=f"Asset permission '{permission_id}' has been revoked")
     return permission
 
 
@@ -99,15 +104,16 @@ def create(
 
     _ensure_manage(session, current, permission.asset)
 
-    # Reject a duplicate ACTIVE grant for the same (asset, target_type, target_code,
-    # access_level) so a re-add doesn't pile up rows.
+    # Reject a duplicate un-revoked grant for the same (asset, target_type,
+    # target_code, access_level) so a re-add doesn't pile up rows. A previously
+    # revoked grant does NOT block re-granting the same access.
     existing = session.exec(
         select(AssetPermission).where(
             AssetPermission.asset == permission.asset,
             AssetPermission.target_type == permission.target_type,
             AssetPermission.target_code == permission.target_code,
             AssetPermission.access_level == permission.access_level,
-            AssetPermission.is_active == True,
+            permissions_service.not_revoked_clause(),
         )
     ).first()
     if existing:
@@ -159,20 +165,25 @@ def delete(
     permission_id: int, session: Session = Depends(get_db_session),
     current: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
 ) -> AssetPermission:
-    """Logical delete: set is_active=False (the record is retained). Requires
-    MANAGE on the asset."""
+    """Revoke the grant by closing its validity window (``valid_to`` = now).
+    The record is retained. Requires MANAGE on the asset.
+
+    A permission is never logically deleted: revoking it and letting it expire
+    are the same state, so ``valid_to`` is the single mechanism for both. Any
+    ``valid_to`` already set in the future is overwritten — an explicit revoke
+    takes effect immediately, not on the originally scheduled date."""
     permission = session.get(AssetPermission, permission_id)
     if not permission:
         raise HTTPException(status_code=404, detail="Asset permission not found")
     _ensure_manage(session, current, permission.asset)
-    if not permission.is_active:
+    if permissions_service.is_revoked(permission):
         raise HTTPException(
             status_code=400,
-            detail=f"Asset permission '{permission_id}' is already inactive")
+            detail=f"Asset permission '{permission_id}' is already revoked")
 
-    permission.is_active = False
+    permission.valid_to = datetime.utcnow()
     session.add(permission)
     session.commit()
     session.refresh(permission)
-    logger.info(f"Asset permission deactivated (logical delete): {permission_id}")
+    logger.info(f"Asset permission revoked (valid_to closed): {permission_id}")
     return permission

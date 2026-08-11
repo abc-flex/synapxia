@@ -362,8 +362,12 @@ class AssetPermissionBase(SQLModel):
     # (bigserial) — unlike relations' composite key. `target_type` /
     # `access_level` come from the TARGET_TYPE / ACCESS_LEVEL lists;
     # `target_code` is the target entity's id/code (literal "PUBLIC" when
-    # target_type=PUBLIC). `valid_from`/`valid_to` carry optional temporal
-    # validity; `is_active` drives logical delete (added in 43-lib-perms-active-ddl).
+    # target_type=PUBLIC).
+    #
+    # NOTE: this table has NO `is_active` flag — deliberately. A grant is never
+    # logically deleted, it is *revoked*, and `valid_from`/`valid_to` already
+    # express that: revoking sets `valid_to` to now, so an expired grant and a
+    # revoked one are the same state. One mechanism, not two.
     asset: int = Field(sa_column=Column(
         'asset', BigInteger, ForeignKey('assets.id')))
     target_type: str = Field(max_length=100)
@@ -371,7 +375,6 @@ class AssetPermissionBase(SQLModel):
     access_level: str = Field(max_length=100)
     valid_from: datetime = Field(default_factory=datetime.utcnow)
     valid_to: Optional[datetime] = None
-    is_active: bool = Field(default=True)
 
 
 class AssetPermission(AssetPermissionBase, table=True):
@@ -389,16 +392,14 @@ class AssetPermissionCreate(SQLModel):
         max_length=100, description="Access level (ACCESS_LEVEL list value)")
     valid_to: Optional[datetime] = Field(
         default=None, description="Optional expiry timestamp")
-    is_active: Optional[bool] = Field(
-        default=True, description="Indicates if the permission is active")
 
 
 class AssetPermissionUpdate(SQLModel):
     target_type: Optional[str] = Field(default=None, max_length=100)
     target_code: Optional[str] = Field(default=None, max_length=50)
     access_level: Optional[str] = Field(default=None, max_length=100)
-    valid_to: Optional[datetime] = Field(default=None)
-    is_active: Optional[bool] = Field(default=None)
+    valid_to: Optional[datetime] = Field(
+        default=None, description="Expiry timestamp; set it to revoke the grant")
 
 
 class AssetWithAccessLevels(SQLModel):

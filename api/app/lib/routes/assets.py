@@ -96,13 +96,14 @@ def get_all_with_access(
     ).all()
     asset_ids = [asset.id for asset in assets]
 
-    # Asset-wide summary (who-is-granted-what display fields). Mirrors the old
-    # SQL aggregate's semantics exactly: is_active only, no temporal check —
-    # only visibility/my_access honor validity windows.
+    # Asset-wide summary (who-is-granted-what display fields). Counts every
+    # grant that has not been revoked, including ones scheduled to start later
+    # — the badge answers "who is this shared with", not "who can open it right
+    # now" (that is `my_access`, which applies the full validity window).
     summary_perms = session.exec(
         select(AssetPermission).where(
             AssetPermission.asset.in_(asset_ids),  # type: ignore[attr-defined]
-            AssetPermission.is_active == True,  # noqa: E712
+            permissions_service.not_revoked_clause(),
         )
     ).all() if asset_ids else []
     levels_by_asset: dict = {}

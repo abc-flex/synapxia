@@ -11,9 +11,11 @@ the current user's scopes:
   - TEAM    → a team the user belongs to via an active collab assignment
   - PROJECT → a project belonging to one of the user's teams
 
-All collab relationships (assignments, projects) and the permissions themselves are
-gated by ``is_active`` + temporal validity (``valid_from``/``valid_to``). Read-only —
-no new table.
+Collab relationships (assignments, projects) are gated by ``is_active``. The grants
+themselves are NOT: ``asset_permissions`` has no logical-delete flag, because a grant
+is never deleted — it is *revoked*, and revoking simply sets ``valid_to``. So a single
+temporal check (``valid_from``/``valid_to``) decides whether a grant is in effect.
+Read-only — no new table.
 """
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Set
@@ -65,6 +67,36 @@ def _is_valid_now(valid_from, valid_to, now: datetime) -> bool:
     return True
 
 
+def not_revoked_clause(now: Optional[datetime] = None):
+    """SQL predicate for "this grant has not been revoked".
+
+    Revocation is expressed by setting ``valid_to`` (``DELETE
+    /api/asset_permissions/{id}`` sets it to *now*), so a grant counts as live
+    while ``valid_to`` is NULL or still in the future — the same boundary
+    ``_is_valid_now`` uses (``valid_to <= now`` → no longer in effect).
+
+    ``valid_from`` is deliberately NOT part of this predicate: a grant dated to
+    start next month is not revoked, it is merely not in effect yet, and it must
+    stay visible and manageable in the permissions list until it starts.
+    """
+    n = now or datetime.utcnow()
+    return or_(
+        AssetPermission.valid_to == None,  # noqa: E711
+        AssetPermission.valid_to > n,
+    )
+
+
+def is_revoked(permission: AssetPermission, now: Optional[datetime] = None) -> bool:
+    """Python twin of :func:`not_revoked_clause` — True once ``valid_to`` has
+    passed. Goes through ``_as_naive_utc`` so a tz-aware TIMESTAMPTZ read back
+    from Postgres can be compared against a naive UTC "now" without raising
+    "can't compare offset-naive and offset-aware datetimes"."""
+    vt = _as_naive_utc(permission.valid_to)
+    if vt is None:
+        return False
+    return vt <= _as_naive_utc(now or datetime.utcnow())
+
+
 def resolve_user_scopes(session: Session, user: User) -> Dict[str, Set[str]]:
     """The current user's scope identifiers, keyed by scope-type.
 
@@ -107,10 +139,12 @@ def resolve_user_scopes(session: Session, user: User) -> Dict[str, Set[str]]:
 def _matching_perms(
     session: Session, user: User, asset_ids: Optional[List[int]] = None
 ) -> List[AssetPermission]:
-    """Active, temporally-valid AssetPermission rows that grant ``user`` access
-    (PUBLIC rows or rows matching one of the user's scope pairs). With
-    ``asset_ids=None`` the scan is repo-wide but SQL-bounded to the user's own
-    scope pairs, so it returns at most the user's grant rows — not the table."""
+    """AssetPermission rows in effect right now (``_is_valid_now``) that grant
+    ``user`` access — PUBLIC rows or rows matching one of the user's scope pairs.
+    Revoked grants carry a past ``valid_to`` and are filtered out by that same
+    check. With ``asset_ids=None`` the scan is repo-wide but SQL-bounded to the
+    user's own scope pairs, so it returns at most the user's grant rows — not
+    the table."""
     scopes = resolve_user_scopes(session, user)
     now = datetime.utcnow()
 
@@ -122,10 +156,7 @@ def _matching_perms(
                 AssetPermission.target_code.in_(list(codes)),  # type: ignore[attr-defined]
             ))
 
-    query = select(AssetPermission).where(
-        AssetPermission.is_active == True,  # noqa: E712
-        or_(*scope_clauses),
-    )
+    query = select(AssetPermission).where(or_(*scope_clauses))
     if asset_ids is not None:
         if not asset_ids:
             return []
@@ -182,7 +213,7 @@ def assets_user_scopes(
 ) -> Dict[int, List[str]]:
     """For each asset id, the sorted scope-types by which ``user`` is granted access
     (a subset of USER/ROLE/TEAM/UNIT/PROJECT/PUBLIC). Empty list when the user has no
-    matching active permission. One batched query over the given assets (no N+1)."""
+    matching grant in effect. One batched query over the given assets (no N+1)."""
     if not asset_ids:
         return {}
 
@@ -191,8 +222,7 @@ def assets_user_scopes(
 
     perms = session.exec(
         select(AssetPermission).where(
-            AssetPermission.asset.in_(asset_ids),
-            AssetPermission.is_active == True,  # noqa: E712
+            AssetPermission.asset.in_(asset_ids),  # type: ignore[attr-defined]
         )
     ).all()
 

@@ -3,8 +3,9 @@
  *
  * Surrogate-id rows: a target (USER/ROLE/TEAM/UNIT/PROJECT/PUBLIC) is granted
  * an access level (VIEW/MANAGE) on an asset. `target_code` is the target
- * entity's id/code ("PUBLIC" when target_type=PUBLIC). Logical delete via
- * is_active=False.
+ * entity's id/code ("PUBLIC" when target_type=PUBLIC). A grant is never
+ * deleted, only revoked: DELETE closes its validity window (`valid_to` = now)
+ * and the row is retained.
  */
 
 import { apiGet, apiPost, apiPut, apiDelete, buildQueryString } from "./api";
@@ -14,7 +15,7 @@ import type {
   AssetPermissionUpdate,
 } from "../types/api";
 
-/** Active permissions for one asset. */
+/** Not-yet-revoked permissions for one asset. */
 export async function getAssetPermissionsByAsset(
   assetId: number,
   skip = 0,
@@ -50,6 +51,8 @@ export async function updateAssetPermission(
   );
 }
 
+/** Revoke a grant: the API closes its validity window (`valid_to` = now) and
+ * returns the retained row. */
 export async function deleteAssetPermission(id: number): Promise<AssetPermission> {
   return apiDelete<AssetPermission>(
     `/api/asset_permissions/${encodeURIComponent(String(id))}`,

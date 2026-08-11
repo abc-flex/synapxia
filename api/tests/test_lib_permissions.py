@@ -35,11 +35,13 @@ def _mk_asset(session, name="A"):
     return a
 
 
-def _mk_perm(session, asset, target_type, target_code, *, is_active=True,
+def _mk_perm(session, asset, target_type, target_code, *,
              valid_from=None, valid_to=None, access_level="VIEW"):
+    """A grant. Pass `valid_to=PAST` to model a revoked/expired one — the table
+    has no is_active flag, revocation just closes the validity window."""
     p = AssetPermission(
         asset=asset, target_type=target_type, target_code=target_code,
-        access_level=access_level, is_active=is_active,
+        access_level=access_level,
         valid_from=valid_from or NOW, valid_to=valid_to,
     )
     session.add(p)
@@ -132,12 +134,12 @@ def test_assets_scopes_role_team_project_via_assignments(session):
     assert out[a.id] == ["PROJECT", "ROLE", "TEAM"]
 
 
-def test_assets_scopes_excludes_inactive_and_expired_permissions(session):
+def test_assets_scopes_excludes_revoked_and_not_yet_valid_permissions(session):
     a = _mk_asset(session)
-    _mk_perm(session, a.id, "USER", "7", is_active=False)     # inactive
-    _mk_perm(session, a.id, "UNIT", "GEN_AI", valid_to=PAST)  # expired
+    _mk_perm(session, a.id, "USER", "7", valid_to=PAST)          # revoked/expired
+    _mk_perm(session, a.id, "UNIT", "GEN_AI", valid_from=FUTURE)  # not started yet
     out = svc.assets_user_scopes(session, _user(7, "GEN_AI"), [a.id])
-    assert a.id not in out  # no granting permission → asset absent
+    assert a.id not in out  # no grant in effect → asset absent
 
 
 def test_assets_scopes_empty_for_no_ids(session):

@@ -50,10 +50,12 @@ def _mk_asset(session, name="A"):
 
 
 def _mk_perm(session, asset, target_type, target_code, *, access_level="VIEW",
-             is_active=True, valid_from=None, valid_to=None):
+             valid_from=None, valid_to=None):
+    """A grant. Pass `valid_to=PAST` to model a revoked/expired one — the table
+    has no is_active flag, revocation just closes the validity window."""
     p = AssetPermission(
         asset=asset, target_type=target_type, target_code=target_code,
-        access_level=access_level, is_active=is_active,
+        access_level=access_level,
         valid_from=valid_from or NOW, valid_to=valid_to,
     )
     session.add(p)
@@ -112,14 +114,14 @@ def test_every_scope_type_grants(session):
         assert svc.user_asset_access(session, user, a.id) == "MANAGE", target_type
 
 
-def test_temporal_and_inactive_grants_ignored(session):
+def test_temporal_and_revoked_grants_ignored(session):
     user = _user()
     a = _mk_asset(session)
-    # Expired MANAGE + future MANAGE + inactive MANAGE → none count.
+    # Expired MANAGE + future MANAGE + revoked-just-now MANAGE → none count.
     _mk_perm(session, a.id, "USER", "1", access_level="MANAGE",
              valid_from=PAST, valid_to=PAST + timedelta(hours=1))
     _mk_perm(session, a.id, "USER", "1", access_level="MANAGE", valid_from=FUTURE)
-    _mk_perm(session, a.id, "PUBLIC", "ALL", access_level="MANAGE", is_active=False)
+    _mk_perm(session, a.id, "PUBLIC", "ALL", access_level="MANAGE", valid_to=NOW)
     # Currently-valid VIEW is what remains.
     _mk_perm(session, a.id, "USER", "1", access_level="VIEW")
     assert svc.user_asset_access(session, user, a.id) == "VIEW"
@@ -305,6 +307,53 @@ def test_view_user_cannot_self_escalate_via_permissions(session, client):
     assert client.delete(f"/api/asset_permissions/{pid}").status_code == 403
 
 
+# --- Revocation closes the validity window (no is_active flag) ---------------
+
+def test_delete_revokes_by_closing_valid_to(session, client):
+    """DELETE is a revoke, not a logical delete: it stamps `valid_to` so the
+    row survives, stops conferring access, and drops out of the listing."""
+    _seed_privileges(session)
+    a = _grant_matrix_asset(session)  # user 1 MANAGE, user 2 VIEW
+
+    _override(_user(id=1))
+    r = client.post("/api/asset_permissions/", json={
+        "asset": a.id, "target_type": "USER", "target_code": "4",
+        "access_level": "VIEW"})
+    assert r.status_code == 201
+    pid = r.json()["data"]["id"]
+    assert svc.user_asset_access(session, _user(id=4), a.id) == "VIEW"
+
+    assert client.delete(f"/api/asset_permissions/{pid}").status_code == 200
+
+    # The row is retained, with the window closed — not removed, not flagged.
+    revoked = session.get(AssetPermission, pid)
+    assert revoked is not None
+    assert revoked.valid_to is not None
+    assert svc.is_revoked(revoked)
+
+    # Access is gone, the grant no longer lists, and re-revoking is a 400.
+    session.expire_all()
+    assert svc.user_asset_access(session, _user(id=4), a.id) is None
+    listed = client.get(f"/api/asset_permissions/asset/{a.id}").json()["data"]
+    assert pid not in {row["id"] for row in listed}
+    assert client.delete(f"/api/asset_permissions/{pid}").status_code == 400
+
+
+def test_revoked_grant_does_not_block_regranting(session, client):
+    """The duplicate-grant 409 only looks at live grants, so the same access can
+    be handed back after a revoke."""
+    _seed_privileges(session)
+    a = _grant_matrix_asset(session)
+    _override(_user(id=1))
+
+    body = {"asset": a.id, "target_type": "USER", "target_code": "4",
+            "access_level": "VIEW"}
+    pid = client.post("/api/asset_permissions/", json=body).json()["data"]["id"]
+    assert client.post("/api/asset_permissions/", json=body).status_code == 409
+    assert client.delete(f"/api/asset_permissions/{pid}").status_code == 200
+    assert client.post("/api/asset_permissions/", json=body).status_code == 201
+
+
 # --- Plain create auto-grants the creator ------------------------------------
 
 def test_create_auto_grants_creator_manage(session, client):
@@ -322,7 +371,7 @@ def test_create_auto_grants_creator_manage(session, client):
             AssetPermission.target_type == "USER",
             AssetPermission.target_code == "7",
             AssetPermission.access_level == "MANAGE",
-            AssetPermission.is_active == True,  # noqa: E712
+            svc.not_revoked_clause(),
         )
     ).first()
     assert grant is not None

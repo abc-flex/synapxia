@@ -310,6 +310,32 @@ document.addEventListener("crud-submit", async (e) => {
 
 ---
 
+## Design tokens (modals & forms)
+
+The values actually in use — verified against the components listed, not aspirational.
+Match these when building a new modal or form so surfaces stay consistent. Global
+palette/breakpoint tokens live in [`docs/responsive-ui-implementation-plan.md`](../docs/responsive-ui-implementation-plan.md);
+the CSS custom properties live in `ui/src/styles/globals.css`.
+
+| Token | Value | Where |
+|-------|-------|-------|
+| Primary | `indigo-600` (#4F46E5) | buttons, active tab, borders on secondary buttons |
+| Focus ring | `focus:border-indigo-500` + `focus:ring-2 focus:ring-indigo-200` | every input/select/textarea |
+| Input border | `border-gray-300` (dark `border-gray-700`) | `lib/formClasses.ts` `inputClass` |
+| Divider / card border | `border-gray-200` (dark `border-gray-800`) | panel + list separators |
+| Text | `gray-900` headings · `gray-700` labels · `gray-500` hints | (dark: `gray-100` / `gray-200` / `gray-400`) |
+| Count badge | `rounded-full bg-indigo-100 text-indigo-700` `text-[10px]` | tab counters, `AssetDetailTabs.svelte` |
+| Chip / tag | `rounded-full bg-indigo-50 text-indigo-700` `text-[11px]` | relation-type chips |
+| Radius | `rounded-lg` controls · `rounded-2xl` modal · `rounded-full` badges | |
+| Modal width — CRUD | `w-[680px] max-w-full` | `components/forms/CrudModal.astro` |
+| Modal width — detail | `w-[min(900px,95vw)]` | `components/lib/AssetDetailModal.astro` |
+
+Shared input/label classes are **importable** from `lib/formClasses.ts` (`inputClass` /
+`labelClass`) by both `.astro` frontmatter and client islands — use them instead of
+re-inlining the class strings.
+
+---
+
 ## API client (`ui/src/lib/api.ts`)
 
 **Functions:**

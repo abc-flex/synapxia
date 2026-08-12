@@ -1,5 +1,11 @@
 # Responsive UI Refresh — Implementation Plan
 
+> **Status: SHIPPED (PR #46), kept as a historical record.** The plan below describes the
+> intended target; the code has since moved past it through later responsive passes
+> (mobile toolbar/gallery work, header search overlay). **Do not treat this as the current
+> state of the UI** — read the components themselves, and see
+> [`ui/CLAUDE.md`](../ui/CLAUDE.md) § "Design tokens" for the values actually in use.
+
 **Branch:** `feat/responsive-ui-refresh` · **Scope:** refine the current look + full mobile
 responsiveness (no rebrand). Commits follow **Conventional Commits**.
 
@@ -7,11 +13,12 @@ responsiveness (no rebrand). Commits follow **Conventional Commits**.
 - Private Figma file (your Drafts): `https://www.figma.com/design/3f8xvADR47P17b25QTnvau`
   — frames: Desktop app shell + Asset table, Mobile cards, Mobile drawer. *(CrudModal +
   Dashboard frames pending Figma free-plan quota reset.)*
-- Local HTML preview (not deployed): [`design/responsive-preview.html`](../design/responsive-preview.html)
-  — covers **all** surfaces incl. CrudModal + Dashboard.
+- A local HTML preview (`design/responsive-preview.html`) backed this plan. It was
+  **removed** once it had drifted from the shipped UI — recover it from history if needed:
+  `git show 8252b48:design/responsive-preview.html`.
 
-The HTML preview is the source of truth for the visual target; this doc maps it onto the
-existing Astro/Tailwind code.
+The HTML preview was the source of truth for the visual target at the time; this doc maps
+it onto the Astro/Tailwind code as it stood then.
 
 ---
 

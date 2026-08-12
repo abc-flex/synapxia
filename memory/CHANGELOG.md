@@ -20,6 +20,17 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-08-11 22:46 — chore(docs): remove the `design/` + `designs/` mockup folders, keep the tokens
+
+- **Deleted both root-level mockup folders.** `design/` (PR #46, `responsive-preview.html`) and `designs/` (PR #52, two asset-modal mockups + README) were static HTML review artifacts with near-identical names — indistinguishable in the directory tree and easy to add a file to the wrong one. Neither was referenced by any build/deploy config (`astro.config.mjs`, `vercel.json`, `docker-compose.yml`, `Makefile`, `.gitignore`, `package.json`, `pyproject.toml`) and both sat outside `ui/public`, so nothing shipped them — removal has **zero functional impact**.
+- **The deciding factor was staleness, not tidiness.** `designs/asset-detail-tabs.html` showed 3 tabs (`chars`/`related`/`permissions`) while the shipped `AssetDetailTabs.svelte` has had 6 since PR #92 (+ `discussion`/`history`/`versions`), and the responsive preview predates two later mobile passes. Mockups that no longer describe the UI are worse than absent ones — someone will read them as current. Git keeps them: `git show 6fe2992:designs/asset-detail-tabs.html`, `git show 8252b48:design/responsive-preview.html`.
+- **Preserved the one piece of live value: a new "Design tokens (modals & forms)" section in `ui/CLAUDE.md`.** Only values *verified against the current components* were carried over — primary/focus-ring indigo, input vs divider grays (`gray-300` vs `gray-200`), text grays, badge/chip styles, radii, and the two real modal widths (`w-[680px]` in `CrudModal.astro`, `w-[min(900px,95vw)]` in `AssetDetailModal.astro`). The old README's "emerald (MANAGE) / sky (PUBLIC)" status badges were **deliberately dropped**: they existed only in the mockup — `/lib/assets` renders `access` as ordinary tags.
+- **`docs/responsive-ui-implementation-plan.md` got a status banner** marking it as a shipped-and-superseded historical record, and its now-dead link to `design/responsive-preview.html` was replaced with the `git show` recovery command.
+- Historical CHANGELOG entries for PRs #46/#52 still name these paths; left untouched per the never-edit-other-PRs' -entries rule.
+- Files affected: `design/responsive-preview.html` (deleted), `designs/README.md` (deleted), `designs/asset-detail-tabs.html` (deleted), `designs/create-edit-modal.html` (deleted), `ui/CLAUDE.md`, `docs/responsive-ui-implementation-plan.md`
+
+---
+
 ## 2026-08-10 00:10 — refactor(lib): asset permissions are revoked via `valid_to`, not an `is_active` flag
 
 - **Reverted the `asset_permissions.is_active` column and its logical-delete semantics.** A grant is never deleted, it is *revoked* — and `valid_from`/`valid_to` already expressed that, so the flag was a second, redundant mechanism that could disagree with the temporal window (a row active-but-expired, or inactive-but-valid) and forced every access check to honor both. Now there is one mechanism: **`DELETE /api/asset_permissions/{id}` stamps `valid_to = now()`** (row retained, 400 if already revoked), and "live" everywhere means `valid_to IS NULL OR valid_to > now()`.

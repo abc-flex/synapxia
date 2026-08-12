@@ -1,4 +1,4 @@
 [
-  { "code": "en", "label": "English", "flag": "🇬🇧" },
-  { "code": "es", "label": "Español", "flag": "🇨🇴" }
+  { "code": "en", "label": "English", "flagCode": "gb" },
+  { "code": "es", "label": "Español", "flagCode": "co" }
 ]

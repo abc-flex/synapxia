@@ -1153,5 +1153,11 @@
     "status_pending": "Pendiente",
     "status_seen": "Visto",
     "open_action": "Abrir"
+  },
+  "tree_chart": {
+    "zoom_in": "Acercar",
+    "zoom_out": "Alejar",
+    "reset_view": "Restablecer vista",
+    "toggle_collapse": "Expandir/Contraer todo"
   }
 }

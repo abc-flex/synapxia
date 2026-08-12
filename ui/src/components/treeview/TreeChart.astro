@@ -31,6 +31,11 @@ interface EChartsTreeNode {
   children?: EChartsTreeNode[];
   nodeCount?: number;
   leavePath?: string | null;
+  childCount: number;
+}
+
+function getSortCount(node: TreeNodeData): number {
+  return node.children.length === 0 ? Number(node.raw?.assets_count) || 0 : 0;
 }
 
 function toEChartsNode(node: TreeNodeData): EChartsTreeNode {
@@ -39,13 +44,19 @@ function toEChartsNode(node: TreeNodeData): EChartsTreeNode {
   const leavePath = node.raw?.option ?? null;
   const hasCount = isLeaf && typeof nodeCount === 'number';
 
+  // Leaves with nodeCount > 0 sort before their siblings (stable otherwise).
+  const sortedChildren = [...node.children].sort(
+    (a, b) => (getSortCount(b) > 0 ? 1 : 0) - (getSortCount(a) > 0 ? 1 : 0),
+  );
+
   return {
     name: hasCount ? `${node.label} (${nodeCount})` : node.label,
     value: node.description || '',
+    childCount: node.children.length,
     ...(hasCount && { nodeCount }),
     ...(hasCount && leavePath && { leavePath }),
     ...(node.children.length > 0 && {
-      children: node.children.map(toEChartsNode),
+      children: sortedChildren.map(toEChartsNode),
     }),
   };
 }
@@ -54,8 +65,40 @@ const treeData = roots.map(toEChartsNode);
 const treeDataJson = JSON.stringify(treeData);
 ---
 
-<div class="chart-container">
-  <div id="tree-chart" style={`width: 100%; height: ${height};`}></div>
+<div class="chart-container" style={`height: ${height};`}>
+  <div class="chart-toolbar">
+    <button
+      type="button"
+      id="tree-zoom-in"
+      title="Zoom in"
+      aria-label="Zoom in"
+      data-i18n-title="tree_chart.zoom_in"
+      data-i18n-aria-label="tree_chart.zoom_in">+</button>
+    <button
+      type="button"
+      id="tree-zoom-out"
+      title="Zoom out"
+      aria-label="Zoom out"
+      data-i18n-title="tree_chart.zoom_out"
+      data-i18n-aria-label="tree_chart.zoom_out">–</button>
+    <button
+      type="button"
+      id="tree-zoom-reset"
+      title="Reset view"
+      aria-label="Reset view"
+      data-i18n-title="tree_chart.reset_view"
+      data-i18n-aria-label="tree_chart.reset_view">⤢</button>
+    <button
+      type="button"
+      id="tree-toggle-collapse"
+      title="Expand/Collapse all"
+      aria-label="Expand/Collapse all"
+      data-i18n-title="tree_chart.toggle_collapse"
+      data-i18n-aria-label="tree_chart.toggle_collapse">⊟</button>
+  </div>
+  <div class="chart-scroll">
+    <div id="tree-chart" style="height: 100%;"></div>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
@@ -80,41 +123,29 @@ const treeDataJson = JSON.stringify(treeData);
 
     const chart = echarts.init(container);
 
-    // Boxed = standard hierarchy look: every node framed in a rounded rectangle,
-    // text centered inside, orthogonal connector lines.
+    const isLinkable = (data) =>
+      !!data && !!data.leavePath && (data.nodeCount ?? 0) > 0;
+
+    // Vertical org-chart look — mirrors the official ECharts "tree-vertical"
+    // example: hollow circle markers, rotated labels above/below each node
+    // (non-leaf above, leaf below), thin default connector lines.
     const boxedSeries = {
       orient,
-      edgeShape: 'polyline',
-      edgeForkPosition: '50%',
-      roam: true,
-      symbol: 'rect',
-      symbolSize: [140, 48],
+      symbol: 'emptyCircle',
       label: {
-        position: 'inside',
-        align: 'center',
+        position: 'top',
+        rotate: -90,
         verticalAlign: 'middle',
-        fontSize: 12,
-        fontWeight: 500,
-        color: '#1e293b',
-        width: 124,
-        overflow: 'break',
-        lineHeight: 15,
+        align: 'right',
+        fontSize: 9,
       },
       leaves: {
         label: {
-          position: 'inside',
-          align: 'center',
+          position: 'bottom',
+          rotate: -90,
           verticalAlign: 'middle',
+          align: 'left',
         },
-      },
-      lineStyle: {
-        color: '#94a3b8',
-        width: 1.5,
-      },
-      itemStyle: {
-        color: '#eef2ff',
-        borderColor: '#4f46e5',
-        borderWidth: 1.5,
       },
     };
 
@@ -147,22 +178,28 @@ const treeDataJson = JSON.stringify(treeData);
     };
 
     const margins = boxed
-      ? { top: '4%', left: '4%', bottom: '4%', right: '4%' }
+      ? { left: '2%', right: '2%', top: 'middle', height: '75%' }
       : { top: '2%', left: '7%', bottom: '2%', right: '20%' };
 
     const option = {
       tooltip: {
         trigger: 'item',
         triggerOn: 'mousemove',
-        formatter: (params) =>
-          params.data && params.data.value
-            ? `<strong>${params.name}</strong><br/>${params.data.value}`
-            : `<strong>${params.name}</strong>`,
+        formatter: (params) => {
+          const childLabel =
+            params.data?.childCount > 0
+              ? `<br/><span style="color:#94a3b8">${params.data.childCount} sub-elemento(s)</span>`
+              : '';
+          return params.data && params.data.value
+            ? `<strong>${params.name}</strong><br/>${params.data.value}${childLabel}`
+            : `<strong>${params.name}</strong>${childLabel}`;
+        },
       },
       series: [
         {
           type: 'tree',
           data: data,
+          zoom: 1,
           ...margins,
           ...(boxed ? boxedSeries : plainSeries),
           emphasis: {
@@ -177,11 +214,6 @@ const treeDataJson = JSON.stringify(treeData);
     };
 
     chart.setOption(option);
-
-    // Leaves with assets (nodeCount > 0) carry an leavePath — make them clickable
-    // links to the corresponding asset library page.
-    const isLinkable = (data) =>
-      !!data && !!data.leavePath && (data.nodeCount ?? 0) > 0;
 
     chart.on('click', (params) => {
       if (isLinkable(params.data)) {
@@ -198,6 +230,39 @@ const treeDataJson = JSON.stringify(treeData);
     });
 
     window.addEventListener('resize', () => chart.resize());
+
+    // Zoom / reset / expand-all controls — the boxed org-chart layout in
+    // particular gets dense fast, so a manual zoom step is friendlier than
+    // relying only on trackpad pinch / ctrl+wheel (still available via `roam`).
+    let zoomLevel = 1;
+    const applyZoom = (next) => {
+      zoomLevel = Math.min(Math.max(next, 0.3), 2.5);
+      chart.setOption({ series: [{ zoom: zoomLevel }] });
+    };
+
+    const zoomInBtn = document.getElementById('tree-zoom-in');
+    const zoomOutBtn = document.getElementById('tree-zoom-out');
+    const zoomResetBtn = document.getElementById('tree-zoom-reset');
+    const toggleCollapseBtn = document.getElementById('tree-toggle-collapse');
+
+    zoomInBtn?.addEventListener('click', () => applyZoom(zoomLevel + 0.2));
+    zoomOutBtn?.addEventListener('click', () => applyZoom(zoomLevel - 0.2));
+    zoomResetBtn?.addEventListener('click', () => applyZoom(1));
+
+    let allExpanded = true;
+    const setCollapsed = (nodes, collapsed) => {
+      nodes.forEach((node) => {
+        if (node.children && node.children.length > 0) {
+          node.collapsed = collapsed;
+          setCollapsed(node.children, collapsed);
+        }
+      });
+    };
+    toggleCollapseBtn?.addEventListener('click', () => {
+      allExpanded = !allExpanded;
+      setCollapsed(data, !allExpanded);
+      chart.setOption({ series: [{ data }] });
+    });
   }
 
   if (document.readyState === 'loading') {
@@ -209,15 +274,47 @@ const treeDataJson = JSON.stringify(treeData);
 
 <style>
   .chart-container {
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
+    position: relative;
+    display: flex;
+    flex-direction: column;
     background: white;
-    padding: 0;
     overflow: hidden;
     font-family: Outfit, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
 
-  #category-tree {
-    border-radius: 12px;
+  .chart-toolbar {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 10;
+    display: flex;
+    gap: 4px;
+  }
+
+  .chart-toolbar button {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    background: rgba(255, 255, 255, 0.92);
+    color: #4f46e5;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .chart-toolbar button:hover {
+    background: #eef2ff;
+    border-color: #4f46e5;
+  }
+
+  .chart-scroll {
+    flex: 1 1 auto;
+    overflow-x: auto;
+    overflow-y: hidden;
+    position: relative;
   }
 </style>

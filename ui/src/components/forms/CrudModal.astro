@@ -52,6 +52,10 @@ interface Props {
   showTrigger?: boolean;
   triggerLabel?: string;
   actionLabel?: string;
+  // Tailwind width class for the dialog's inner form. Default matches the
+  // design-token modal width (680px); override for forms whose fields (e.g. a
+  // long <select> option) need more room so they don't overflow the dialog.
+  widthClass?: string;
 }
 
 const {
@@ -64,6 +68,7 @@ const {
   showTrigger = true,
   triggerLabel,
   actionLabel,
+  widthClass = "w-[680px]",
 } = Astro.props as Props;
 
 const isDelete = mode === "delete";
@@ -112,7 +117,7 @@ const triggerTextKey =
   id={modalId}
   class="modal max-h-[calc(100dvh-2rem)] max-w-[calc(100vw-2rem)] rounded-2xl border border-gray-200 bg-white p-0 shadow-2xl backdrop:bg-black/40 dark:border-gray-800 dark:bg-gray-900"
 >
-  <form method="dialog" class="flex max-h-[calc(100dvh-2rem)] w-[680px] max-w-full flex-col space-y-0">
+  <form method="dialog" class={`flex max-h-[calc(100dvh-2rem)] ${widthClass} max-w-full flex-col space-y-0`}>
     <div
       class="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-gray-800"
     >

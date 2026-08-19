@@ -418,6 +418,8 @@
     "date": "As-of date",
     "team": "Team",
     "role": "Role",
+    "no_team": "No team",
+    "legend_info": "Click a user to see their detail, history and associated metrics.",
     "empty_message": "No assignments found for this dimension and date",
     "metric_saved": "Metric updated successfully",
     "metric_save_error": "Error updating metric"

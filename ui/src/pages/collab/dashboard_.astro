@@ -39,7 +39,7 @@ const metricFields = [
 
     <div class="space-y-5 sm:space-y-6">
       <!-- Filters Section -->
-      <div class="flex flex-col gap-4 md:flex-row md:items-end">
+      <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div class="flex flex-col gap-1">
           <label
             for="dimensionSelect"
@@ -51,7 +51,7 @@ const metricFields = [
           <select
             id="dimensionSelect"
             data-initial-dimension={dimensionFilter}
-            class="rounded-lg border border-gray-300 bg-white px-3 py-2 sm:py-1.5 text-sm text-gray-800 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:focus:border-indigo-400"
+            class="px-4 py-2 border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition shadow-sm"
           >
           </select>
         </div>
@@ -66,20 +66,22 @@ const metricFields = [
           <input
             id="asOfDate"
             type="date"
-            class="rounded-lg border border-gray-300 bg-white px-3 py-2 sm:py-1.5 text-sm text-gray-800 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:focus:border-indigo-400"
+            class="px-4 py-2 border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition shadow-sm"
           />
         </div>
-        <span class="md:ml-auto md:self-center flex items-center gap-1.5 text-sm text-slate-400">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-4 h-4 shrink-0">
-            <circle cx="12" cy="12" r="9" />
-            <path d="M12 16v-4.5M12 8h.01" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-          <span data-i18n="assignment_dashboard.legend_info">Color represents the user's level in the selected dimension.</span>
-        </span>
       </div>
 
       <!-- Dashboard Grid Section -->
-      <div id="teamsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4"></div>
+      <div class="overflow-x-auto">
+        <table class="w-full border-collapse text-sm min-w-[800px] datatable-dense">
+          <thead
+            id="assignmentThead"
+            class="bg-gray-200 text-sm uppercase text-gray-700 border-b border-black"
+          >
+          </thead>
+          <tbody id="assignmentTbody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -91,7 +93,6 @@ const metricFields = [
     entityName="Metric"
     fields={metricFields}
     showTrigger={false}
-    widthClass="w-[820px]"
   />
 
   <style>
@@ -154,44 +155,16 @@ const metricFields = [
         .toUpperCase();
     }
 
-    // The scale keeps HIGH (4) and VERY_HIGH (5) as distinct buckets — the
-    // original table shaded the top value a deeper green/teal than plain
-    // High, and that distinction was lost when both got merged into one
-    // "Alto" bucket.
-    const METRIC_BUCKET: Record<string, "LOW" | "MEDIUM" | "HIGH" | "VERY_HIGH" | "NO_DATA"> = {
-      UNDEFINED: "NO_DATA",
-      NO_USAGE: "LOW",
-      LOW: "LOW",
-      MODERATE: "MEDIUM",
-      HIGH: "HIGH",
-      VERY_HIGH: "VERY_HIGH",
-    };
     const METRIC_COLORS: Record<string, string> = {
-      LOW: "bg-orange-100 text-orange-700 border border-orange-400",
-      MEDIUM: "bg-yellow-100 text-yellow-700 border border-yellow-400",
-      HIGH: "bg-lime-100 text-lime-700 border border-lime-400",
-      VERY_HIGH: "bg-emerald-200 text-emerald-800 border border-emerald-500",
-      NO_DATA: "bg-slate-50 text-slate-500 border border-slate-300",
+      UNDEFINED: "bg-slate-100 text-slate-700 border border-slate-300",
+      NO_USAGE: "bg-red-300 text-red-700 border border-red-500",
+      LOW: "bg-orange-300 text-orange-700 border border-orange-500",
+      MODERATE: "bg-yellow-200 text-yellow-700 border border-yellow-500",
+      HIGH: "bg-lime-300 text-lime-700 border border-lime-500",
+      VERY_HIGH: "bg-green-300 text-green-700 border border-green-500",
     };
     const getMetricColorClass = (metric: string): string =>
-      METRIC_COLORS[METRIC_BUCKET[metric] || "NO_DATA"];
-
-    // Cycled accent per team card (top border + icon background/text). The top
-    // border color MUST use the directional `border-t-*` utility, not the
-    // all-sides `border-*` one — both set the same `border-color` longhands
-    // under the hood, so `border-violet-400` + `border-slate-100` (for the
-    // other sides) fight over the same properties and whichever wins depends
-    // on Tailwind's internal generation order (alphabetical by color name),
-    // which is why only some accents used to show up.
-    const TEAM_ACCENTS = [
-      { border: "border-t-violet-400", chip: "bg-violet-100 text-violet-600" },
-      { border: "border-t-blue-400", chip: "bg-blue-100 text-blue-600" },
-      { border: "border-t-teal-400", chip: "bg-teal-100 text-teal-600" },
-      { border: "border-t-orange-400", chip: "bg-orange-100 text-orange-600" },
-      { border: "border-t-rose-400", chip: "bg-rose-100 text-rose-600" },
-    ];
-    const getTeamAccent = (index: number) => TEAM_ACCENTS[index % TEAM_ACCENTS.length];
-    const TEAM_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="w-4 h-4"><path d="M17 20v-1a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v1" stroke-linecap="round" stroke-linejoin="round" /><circle cx="9" cy="8" r="3" /><path d="M22 20v-1a4 4 0 0 0-3-3.87" stroke-linecap="round" /><path d="M16 4.13a4 4 0 0 1 0 7.75" stroke-linecap="round" /></svg>`;
+      METRIC_COLORS[metric] || "bg-gray-400";
 
     // Minimal i18n lookup against the dict injected by ClientTranslations.astro
     function t(key: string, fallback: string): string {
@@ -351,107 +324,89 @@ const metricFields = [
 
     // ----- Rendering -----
     function renderGrid() {
-      const grid = document.getElementById("teamsGrid");
-      if (!grid) return;
+      const thead = document.getElementById("assignmentThead");
+      const tbody = document.getElementById("assignmentTbody");
+      if (!thead || !tbody) return;
 
       if (assignments.length === 0) {
-        grid.innerHTML = `<div class="col-span-full px-4 py-10 text-center text-slate-500">${escapeHtml(
+        thead.innerHTML = "";
+        tbody.innerHTML = `<tr><td class="px-4 py-10 text-center text-slate-500">${escapeHtml(
           t("assignment_dashboard.empty_message", "No assignments found"),
-        )}</div>`;
+        )}</td></tr>`;
         return;
       }
 
       const withTeam = assignments.filter((a) => a.team && a.team.trim() !== "");
       const withoutTeam = assignments.filter((a) => !a.team || a.team.trim() === "");
+      const roles = [...new Set(withTeam.map((a) => a.role))];
       const teams = [...new Set(withTeam.map((a) => a.team))].filter(Boolean);
 
-      const teamCards = teams
-        .map((team, index) => teamCardMarkup(team, withTeam.filter((a) => a.team === team), index))
-        .join("");
+      // Header
+      thead.innerHTML = `
+        <tr class="border-b border-slate-200">
+          <th class="text-slate-900 text-center px-2 py-3 font-semibold sticky top-0 z-10 border border-slate-200">
+            <span class="uppercase" data-i18n="assignment_dashboard.team">Team</span> &#11208;<br>
+            <span class="uppercase" data-i18n="assignment_dashboard.role">Role</span> &#11206;
+          </th>
+          ${teams
+            .map(
+              (team) =>
+                `<th class="text-slate-900 px-4 py-3 font-semibold text-center border border-slate-200 sticky top-0 z-10">${escapeHtml(
+                  team.toUpperCase(),
+                )}</th>`,
+            )
+            .join("")}
+        </tr>`;
 
-      const noTeamCard = withoutTeam.length > 0 ? noTeamCardMarkup(withoutTeam) : "";
-
-      grid.innerHTML = teamCards + noTeamCard;
-    }
-
-    // No-team members don't fit the per-team column layout, so they get one
-    // full-width card instead: role groups (label + avatars) laid out side by
-    // side across the row, mirroring the original design's bottom strip.
-    function noTeamCardMarkup(members: GridRow[]): string {
-      const roles = [...new Set(members.map((m) => m.role))].sort((a, b) => a.localeCompare(b));
-      const groups = roles
+      // Body: role × team matrix
+      const roleRows = roles
         .map((role) => {
-          const avatars = members
-            .filter((m) => m.role === role)
-            .map((emp) => avatarMarkup(emp))
+          const cells = teams
+            .map((team) => {
+              const employees = withTeam.filter((a) => a.role === role && a.team === team);
+              const avatars = employees.map((emp) => avatarMarkup(emp)).join("");
+              return `<td class="px-4 py-3 border border-slate-200 text-center">${
+                employees.length > 0
+                  ? `<div class="flex flex-wrap gap-2 justify-center items-center min-h-[80px]">${avatars}</div>`
+                  : ""
+              }</td>`;
+            })
             .join("");
-          // No `items-center`/`justify-center` here: the default `stretch`
-          // makes the label bar match the width of its avatar row below (the
-          // widest element in the column) instead of shrinking to its own
-          // text width and centering, so it lines up like the team cards.
-          return `<div class="flex flex-col gap-2">
-            <div class="bg-[#eaeef4] text-slate-600 text-[11px] font-semibold uppercase tracking-wide px-2 py-1 rounded text-left">${escapeHtml(
+          return `<tr class="border-b border-slate-200 hover:bg-slate-50">
+            <td class="bg-gray-50 text-slate-900 text-center text-sm uppercase px-4 py-3 font-semibold border border-slate-200">${escapeHtml(
               role,
-            )}</div>
-            <div class="flex flex-wrap gap-2">${avatars}</div>
-          </div>`;
+            )}</td>${cells}</tr>`;
         })
         .join("");
 
-      // The wrapper spans the full grid row (so the card gets its own line
-      // instead of sitting beside a team card); the card itself is
-      // `inline-flex` so its width shrinks to fit the content instead of
-      // stretching to the wrapper's full width.
-      return `<div class="col-span-full flex justify-start">
-        <div class="inline-flex flex-col bg-white rounded-xl shadow-sm border-t-4 border-x border-b border-t-slate-400 border-x-slate-100 border-b-slate-100">
-          <div class="flex items-center gap-2 px-4 py-3 border-b border-slate-100">
-            <span class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-slate-100 text-slate-500">${TEAM_ICON}</span>
-            <h3 class="font-semibold text-slate-800 uppercase text-sm tracking-wide">${escapeHtml(
-              t("assignment_dashboard.no_team", "No team"),
-            )}</h3>
-          </div>
-          <div class="p-4 flex flex-wrap gap-x-8 gap-y-4">${groups}</div>
-        </div>
-      </div>`;
-    }
+      // No-team row
+      let noTeamRow = "";
+      if (withoutTeam.length > 0) {
+        const items = withoutTeam
+          .map(
+            (emp) =>
+              `<div class="flex flex-col items-center gap-2">${avatarMarkup(
+                emp,
+              )}<span class="text-xs font-medium text-slate-600 max-w-[70px] text-center line-clamp-2">${escapeHtml(
+                emp.role,
+              )}</span></div>`,
+          )
+          .join("");
+        noTeamRow = `<tr class="border-b border-slate-200">
+          <td class="px-4 py-3 font-semibold border border-slate-200">--</td>
+          <td colspan="${teams.length}" class="px-4 py-3 border border-slate-200">
+            <div class="grid grid-cols-4 gap-4 md:grid-cols-6 lg:grid-cols-8 justify-items-center min-h-[120px]">${items}</div>
+          </td></tr>`;
+      }
 
-    // One card per team: header (icon + name) + one section per role, each
-    // section a light label bar followed by that role's avatars.
-    function teamCardMarkup(teamLabel: string, members: GridRow[], accentIndex: number): string {
-      const accent = getTeamAccent(accentIndex);
-      // Alphabetical so every card lists its roles in the same order.
-      const roles = [...new Set(members.map((m) => m.role))].sort((a, b) => a.localeCompare(b));
-      const sections = roles
-        .map((role) => {
-          const avatars = members
-            .filter((m) => m.role === role)
-            .map((emp) => avatarMarkup(emp))
-            .join("");
-          return `<div>
-            <div class="bg-[#eaeef4] text-slate-600 text-[11px] font-semibold uppercase tracking-wide px-2 py-1 rounded mb-2">${escapeHtml(
-              role,
-            )}</div>
-            <div class="flex flex-wrap gap-2">${avatars}</div>
-          </div>`;
-        })
-        .join("");
-
-      return `<div class="bg-white rounded-xl shadow-sm border-t-4 border-x border-b ${accent.border} border-x-slate-100 border-b-slate-100">
-        <div class="flex items-center gap-2 px-4 py-3 border-b border-slate-100">
-          <span class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${accent.chip}">${TEAM_ICON}</span>
-          <h3 class="font-semibold text-slate-800 uppercase text-sm tracking-wide truncate">${escapeHtml(
-            teamLabel.toUpperCase(),
-          )}</h3>
-        </div>
-        <div class="p-4 space-y-4">${sections}</div>
-      </div>`;
+      tbody.innerHTML = roleRows + noTeamRow;
     }
 
     function avatarMarkup(emp: GridRow): string {
       const initials = getInitials(emp.name);
       const metricClass = getMetricColorClass(emp.metric);
       return `<div class="avatar-wrapper relative inline-block group">
-        <button class="avatar w-12 h-7 rounded-full flex items-center justify-center font-bold text-xs cursor-pointer transition-transform hover:scale-110 ${metricClass}" data-metric-id="${emp.id}">${escapeHtml(
+        <button class="avatar w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer transition-transform hover:scale-110 ${metricClass}" data-metric-id="${emp.id}">${escapeHtml(
           initials,
         )}</button>
         <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 text-white text-xs px-3 py-2 rounded whitespace-nowrap z-50 pointer-events-none shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200">${escapeHtml(
@@ -466,8 +421,8 @@ const metricFields = [
       document.getElementById("asOfDate")?.addEventListener("change", reload);
 
       // Delegated avatar click — bound once and survives grid re-renders (the
-      // grid container is reused; only its innerHTML changes).
-      document.getElementById("teamsGrid")?.addEventListener("click", (e) => {
+      // <tbody> element is reused; only its innerHTML changes).
+      document.getElementById("assignmentTbody")?.addEventListener("click", (e) => {
         const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(".avatar");
         if (!btn) return;
         const row = assignments.find((a) => a.id === Number(btn.dataset.metricId));

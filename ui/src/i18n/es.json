@@ -418,6 +418,8 @@
     "date": "Fecha de corte",
     "team": "Equipo",
     "role": "Rol",
+    "no_team": "Sin equipo",
+    "legend_info": "Haz clic en un usuario para ver su detalle, historial y métricas asociadas.",
     "empty_message": "No se encontraron asignaciones para esta dimensión y fecha",
     "metric_saved": "Métrica actualizada correctamente",
     "metric_save_error": "Error al actualizar la métrica"

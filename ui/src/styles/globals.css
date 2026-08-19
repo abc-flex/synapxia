@@ -461,12 +461,18 @@
 /* Roomier default rows (matches the refreshed desktop design) */
 .datatable-dense th,
 .datatable-dense td {
-  padding: 0.875rem 1rem !important;
-  /* ~py-3.5 px-4 */
   font-size: 0.875rem;
   /* text-sm */
   line-height: 1.35rem;
   vertical-align: middle;
+}
+.datatable-dense th {
+  padding: 0.875rem 1rem !important;
+  /* ~py-3.5 px-4 */
+}
+.datatable-dense td {
+  padding: 0.5rem 1rem !important;
+  /* ~py-2 px-4 */
 }
 
 /* Optional compact variant */
@@ -483,7 +489,7 @@
   border-bottom: 1px solid #e5e7eb;
   /* gray-200 */
   font-weight: 600;
-  font-size: 0.6875rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: #6b7280;
@@ -597,7 +603,7 @@
 }
 
 .dark .datatable-dense thead th {
-  font-size: 0.6875rem;
+  font-size: 0.8rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;

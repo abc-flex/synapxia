@@ -7,7 +7,7 @@ INSERT INTO roles (code, name, description) VALUES
     ('FRONT',     'Frontend Developer',       'Responsible for user interface implementation, client-side logic and interaction patterns, ensuring usability, accessibility and a consistent user experience.'),
     ('QA',        'QA Engineer',              'Responsible for designing and executing tests, validating quality criteria and helping prevent defects through automated and manual testing practices.'),
     ('TM',        'Team Manager',             'Responsible for leading a delivery squad, coordinating its members, removing blockers and ensuring the team meets its objectives and commitments.'),
-    ('TECH_LEAD', 'Technical Lead',           'Responsible for the technical direction across squads, defining reference architecture, standards and best practices, and mentoring developers.'),
+    ('TL', 'Technical Lead',           'Responsible for the technical direction across squads, defining reference architecture, standards and best practices, and mentoring developers.'),
     ('ARCH',      'Solution Architect',       'Responsible for designing solution and software architecture, ensuring technical coherence, scalability and alignment with enterprise standards.'),
     ('CTO',       'Chief Technology Officer', 'Responsible for the overall technology strategy and vision, leading innovation and aligning technical capabilities with business goals.'),
     ('CONS',      'Consultant',               'Specialized advisor who provides guidance, best practices and expertise to support the adoption of GenAI tools and methodologies.'),
@@ -196,9 +196,9 @@ FROM (VALUES
     ('natalia.cifuentes@abcflex.com.co', 'ECHO',    'QA'),
 
     -- Cross-cutting roles (no team)
-    ('ricardo.bedoya@abcflex.com.co',    NULL,      'TECH_LEAD'),
-    ('adriana.velez@abcflex.com.co',     NULL,      'TECH_LEAD'),
-    ('oscar.patino@abcflex.com.co',      NULL,      'TECH_LEAD'),
+    ('ricardo.bedoya@abcflex.com.co',    NULL,      'TL'),
+    ('adriana.velez@abcflex.com.co',     NULL,      'TL'),
+    ('oscar.patino@abcflex.com.co',      NULL,      'TL'),
     ('hernan.giraldo@abcflex.com.co',    NULL,      'ARCH'),
     ('patricia.londono@abcflex.com.co',  NULL,      'CTO'),
     ('roberto.aguirre@abcflex.com.co',   NULL,      'CONS'),

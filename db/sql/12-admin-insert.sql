@@ -64,7 +64,7 @@ INSERT INTO options (module, code, name, description, sort_order, type, path, ic
     ('LIB','MCPS','MCP Directory',
      'Curated directory of tools compatible with Model Context Protocol.',
      30,'FORM','/lib/mcps','server-stack'),
-    ('LIB','AGENTS','Agents repository',
+    ('LIB','AGENTS','Agent Repository',
      'Inventory of AI agents with higher autonomy.',
      40,'FORM','/lib/agents','cpu-chip'),
     ('LIB','FLOWS','Agentic Flows',
@@ -135,7 +135,7 @@ VALUES
      'Operational user with read access to collaboration, Generative AI, AI initiatives, processes and digital assets, and edit rights only for AI initiative proposals.',
      'user-group'),
     ('REVIEWER',
-     'Asset Reviewer',
+     'Reviewer',
      'Reviews proposed library assets before publication: can run the review workflow (review/modify/publish/reject) over digital assets, characterizations and actions.',
      'user-group');
 
@@ -157,12 +157,14 @@ VALUES
     -- TAXO
     ('ADMINISTRATOR','TAXO','CATEGORIES', TRUE),
     ('ADMINISTRATOR','TAXO','FEATURES',   TRUE),
+    ('ADMINISTRATOR','TAXO','TAXONOMY',   TRUE),
 
     -- COLLAB
+    ('ADMINISTRATOR','COLLAB','ROLES',      TRUE),
     ('ADMINISTRATOR','COLLAB','TEAMS',      TRUE),
     ('ADMINISTRATOR','COLLAB','PROJECTS',   TRUE),
     ('ADMINISTRATOR','COLLAB','DIMENSIONS', TRUE),
-    ('ADMINISTRATOR','COLLAB','DASHBOARD', TRUE),
+    ('ADMINISTRATOR','COLLAB','DASHBOARD',  TRUE),
 
     -- LIB
     ('ADMINISTRATOR','LIB','ASSETS',     TRUE),
@@ -176,8 +178,9 @@ VALUES
     ('ADMINISTRATOR','LIB','MODELS',     TRUE),
 
     -- INITS
-    ('ADMINISTRATOR','INITS','PROPOSE', TRUE),
-    ('ADMINISTRATOR','INITS','EXPLORE', TRUE),
+    ('ADMINISTRATOR','INITS','CRITERIAS',   TRUE),
+    ('ADMINISTRATOR','INITS','INITIATIVES', TRUE),
+    ('ADMINISTRATOR','INITS','EXPLORE',     TRUE),
 
     -- ANA
     ('ADMINISTRATOR','ANA','DASHBOARDS', TRUE),
@@ -194,12 +197,14 @@ VALUES
     -- TAXO
     ('ADMINISTRATIVE','TAXO','CATEGORIES', TRUE),
     ('ADMINISTRATIVE','TAXO','FEATURES',   TRUE),
+    ('ADMINISTRATIVE','TAXO','TAXONOMY',   TRUE),
 
     -- COLLAB
+    ('ADMINISTRATIVE','COLLAB','ROLES',      TRUE),
     ('ADMINISTRATIVE','COLLAB','TEAMS',      TRUE),
     ('ADMINISTRATIVE','COLLAB','PROJECTS',   TRUE),
     ('ADMINISTRATIVE','COLLAB','DIMENSIONS', TRUE),
-    ('ADMINISTRATIVE','COLLAB','DASHBOARD', TRUE),
+    ('ADMINISTRATIVE','COLLAB','DASHBOARD',  TRUE),
 
     -- LIB
     ('ADMINISTRATIVE','LIB','ASSETS',     TRUE),
@@ -213,8 +218,9 @@ VALUES
     ('ADMINISTRATIVE','LIB','MODELS',     TRUE),
 
     -- INITS
-    ('ADMINISTRATIVE','INITS','PROPOSE', TRUE),
-    ('ADMINISTRATIVE','INITS','EXPLORE', TRUE),
+    ('ADMINISTRATIVE','INITS','CRITERIAS',   TRUE),
+    ('ADMINISTRATIVE','INITS','INITIATIVES', TRUE),
+    ('ADMINISTRATIVE','INITS','EXPLORE',     TRUE),
 
     -- ANA
     ('ADMINISTRATIVE','ANA','DASHBOARDS', TRUE),
@@ -231,15 +237,16 @@ VALUES
     -- TAXO (read-only)
     ('COLLABORATOR','TAXO','CATEGORIES', FALSE),
     ('COLLABORATOR','TAXO','FEATURES',   FALSE),
+    ('COLLABORATOR','TAXO','TAXONOMY',   FALSE),
 
     -- COLLAB (read-only)
+    ('COLLABORATOR','COLLAB','ROLES',      FALSE),
     ('COLLABORATOR','COLLAB','TEAMS',      FALSE),
     ('COLLABORATOR','COLLAB','PROJECTS',   FALSE),
     ('COLLABORATOR','COLLAB','DIMENSIONS', FALSE),
-    ('COLLABORATOR','COLLAB','DASHBOARD', FALSE),
+    ('COLLABORATOR','COLLAB','DASHBOARD',  FALSE),
 
     -- LIB (read-only)
-    ('COLLABORATOR','LIB','ASSETS',     FALSE),
     ('COLLABORATOR','LIB','PROMPTS',    FALSE),
     ('COLLABORATOR','LIB','MCPS',       FALSE),
     ('COLLABORATOR','LIB','AGENTS',     FALSE),
@@ -250,38 +257,53 @@ VALUES
     ('COLLABORATOR','LIB','MODELS',     FALSE),
 
     -- INITS (read-only)
-    ('COLLABORATOR','INITS','PROPOSE',  TRUE),
-    ('COLLABORATOR','INITS','EXPLORE',  FALSE),
+    ('COLLABORATOR','INITS','CRITERIAS', FALSE),
+    ('COLLABORATOR','INITS','EXPLORE',   FALSE),
 
     -- ANA (read-only)
     ('COLLABORATOR','ANA','DASHBOARDS', FALSE),
     ('COLLABORATOR','ANA','USAGE',      FALSE),
 
     -- PROC (read-only)
-    ('COLLABORATOR','PROC','PROCESSES',   FALSE),
     ('COLLABORATOR','PROC','VALUE_CHAIN', FALSE),
     ('COLLABORATOR','PROC','MAP',         FALSE);
 
 -- ===== Profile: REVIEWER =====
--- Dedicated library-asset reviewers: full edit over the LIB review surface
--- (assets, characterizations, actions) so they can run the propose/review
--- workflow transitions, plus read access to the curated LIB catalogs.
 INSERT INTO privileges (profile, module, option, can_edit)
 VALUES
-    -- TAXO (read-only — needs to see categories/features behind a proposal)
+    -- TAXO (read-only)
     ('REVIEWER','TAXO','CATEGORIES', FALSE),
     ('REVIEWER','TAXO','FEATURES',   FALSE),
+    ('REVIEWER','TAXO','TAXONOMY',   FALSE),
 
-    -- LIB (full edit — the review workflow lives here)
-    ('REVIEWER','LIB','ASSETS',     TRUE),
-    ('REVIEWER','LIB','PROMPTS',    TRUE),
-    ('REVIEWER','LIB','MCPS',       TRUE),
-    ('REVIEWER','LIB','AGENTS',     TRUE),
-    ('REVIEWER','LIB','FLOWS',      TRUE),
-    ('REVIEWER','LIB','SKILLS',     TRUE),
-    ('REVIEWER','LIB','ASSISTANTS', TRUE),
-    ('REVIEWER','LIB','RAG_APPS',   TRUE),
-    ('REVIEWER','LIB','MODELS',     TRUE);
+    -- COLLAB (read-only)
+    ('REVIEWER','COLLAB','ROLES',      FALSE),
+    ('REVIEWER','COLLAB','TEAMS',      FALSE),
+    ('REVIEWER','COLLAB','PROJECTS',   FALSE),
+    ('REVIEWER','COLLAB','DIMENSIONS', FALSE),
+    ('REVIEWER','COLLAB','DASHBOARD',  FALSE),
+
+    -- LIB (read-only)
+    ('REVIEWER','LIB','PROMPTS',    FALSE),
+    ('REVIEWER','LIB','MCPS',       FALSE),
+    ('REVIEWER','LIB','AGENTS',     FALSE),
+    ('REVIEWER','LIB','FLOWS',      FALSE),
+    ('REVIEWER','LIB','SKILLS',     FALSE),
+    ('REVIEWER','LIB','ASSISTANTS', FALSE),
+    ('REVIEWER','LIB','RAG_APPS',   FALSE),
+    ('REVIEWER','LIB','MODELS',     FALSE),
+
+    -- INITS (read-only)
+    ('REVIEWER','INITS','CRITERIAS', FALSE),
+    ('REVIEWER','INITS','EXPLORE',   FALSE),
+
+    -- ANA (read-only)
+    ('REVIEWER','ANA','DASHBOARDS', FALSE),
+    ('REVIEWER','ANA','USAGE',      FALSE),
+
+    -- PROC (read-only)
+    ('REVIEWER','PROC','VALUE_CHAIN', FALSE),
+    ('REVIEWER','PROC','MAP',         FALSE);
 
 -- **********************************
 -- ********** Table Units ***********

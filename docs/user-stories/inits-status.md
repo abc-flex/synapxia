@@ -1,6 +1,6 @@
 # Status and Types for Inits Module
 
-## HU-Activate Initiative
+## HU-Propose Initiative
 When saving, request a reviewer (user with ADMINISTRATIVE role) and insert the following records:
 - 1 record in inits table with status 'ACTIVATED'
 - 1 record in collaborations table for current user with type 'ACTIVATION' and status 'FINISHED'

@@ -56,7 +56,7 @@ INSERT INTO options (module, code, name, description, sort_order, type, path, ic
 -- ===== Module: ASSET LIBRARY =====
 INSERT INTO options (module, code, name, description, sort_order, type, path, icon) VALUES
     ('LIB','ASSETS','Asset Management',
-     'Inventory of digital assets linked to owners, initiatives and processes.',
+     'Manage and track digital assets throughout their entire lifecycle.',
      10,'FORM','/lib/assets','archive-box'),
     ('LIB','PROMPTS','Prompt Gallery',
      'Curated gallery of reusable GenAI prompts.',
@@ -65,7 +65,7 @@ INSERT INTO options (module, code, name, description, sort_order, type, path, ic
      'Curated directory of tools compatible with Model Context Protocol.',
      30,'FORM','/lib/mcps','server-stack'),
     ('LIB','AGENTS','Agents repository',
-     'Index of AI agents with higher autonomy.',
+     'Inventory of AI agents with higher autonomy.',
      40,'FORM','/lib/agents','cpu-chip'),
     ('LIB','FLOWS','Agentic Flows',
      'Registry of agentic flows with multiple agents and MCP tools.',
@@ -88,10 +88,10 @@ INSERT INTO options (module, code, name, description, sort_order, type, path, ic
     ('INITS','CRITERIAS','Criterias',
      'Define criteria for evaluating initiative proposals.',
      10,'FORM','/inits/criterias','check-badge'),
-    ('INITS','PROPOSE','Propose',
-     'Capture new initiative proposals.',
-     20,'FORM','/inits/proposals','light-bulb'),
-    ('INITS','EXPLORE','Explore',
+    ('INITS','INITIATIVES','Initiative Management',
+     'Manage and track AI initiatives throughout their entire lifecycle.',
+     20,'FORM','/inits/initiatives','light-bulb'),
+    ('INITS','EXPLORE','Explore Initiatives',
      'Browse and analyze the initiative portfolio.',
      30,'FORM','/inits/explore','compass');
 

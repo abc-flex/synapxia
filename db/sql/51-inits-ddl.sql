@@ -73,16 +73,16 @@ CREATE TABLE collaborations (
     CONSTRAINT pk_collaborations PRIMARY KEY (id)
 );
 
--- Table related_inits
-CREATE TABLE related_inits (
-    source      BIGINT        NOT NULL,
-    target      BIGINT        NOT NULL,
+-- Table asset_inits
+CREATE TABLE asset_inits (
+    asset       BIGINT        NOT NULL,
+    init        BIGINT        NOT NULL,
     type        VARCHAR(100)  NOT NULL, -- references List_items.value where list='RELATION_TYPE'
     rationale   TEXT,
     is_active   BOOLEAN       NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ,
-    CONSTRAINT pk_related_inits PRIMARY KEY (source, target, type) 
+    CONSTRAINT pk_asset_inits PRIMARY KEY (asset, init, type) 
 );
 
 -- Table init_permissions
@@ -149,16 +149,16 @@ ALTER TABLE collaborations
     FOREIGN KEY (parent)
     REFERENCES collaborations(id);
 
--- related_inits.source → initiatives.id
-ALTER TABLE related_inits 
-    ADD CONSTRAINT fk_related_inits_source
-    FOREIGN KEY (source)
-    REFERENCES initiatives (id);
+-- asset_inits.asset → assets.id
+ALTER TABLE asset_inits 
+    ADD CONSTRAINT fk_asset_inits_assets
+    FOREIGN KEY (asset)
+    REFERENCES assets (id);
 
--- related_inits.target → initiatives.id
-ALTER TABLE related_inits 
-    ADD CONSTRAINT fk_related_inits_target
-    FOREIGN KEY (target)
+-- asset_inits.init → initiatives.id
+ALTER TABLE asset_inits 
+    ADD CONSTRAINT fk_asset_inits_initiatives
+    FOREIGN KEY (init)
     REFERENCES initiatives (id);
 
 -- **********************************

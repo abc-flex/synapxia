@@ -128,16 +128,14 @@ INSERT INTO collaborations (id, init, user_id, type, workflow_status, content, p
 SELECT setval(pg_get_serial_sequence('collaborations', 'id'), (SELECT MAX(id) FROM collaborations));
 
 -- **********************************
--- ******* Table related_inits ******
+-- ******* Table asset_inits ******
 -- **********************************
 
-INSERT INTO related_inits (source, target, type, rationale) VALUES
-    (1, 2, 'CONTAINS',   'The knowledge base is the foundational component of the platform.'),
-    (1, 3, 'CONTAINS',   'The RAG assistant is delivered as part of the platform.'),
-    (1, 4, 'CONTAINS',   'The onboarding hub is a consumer surface within the platform.'),
-    (1, 5, 'CONTAINS',   'The community of practice feeds tacit knowledge into the platform.'),
-    (3, 2, 'DEPENDS_ON', 'The assistant retrieves and cites content from the knowledge base.'),
-    (4, 2, 'DEPENDS_ON', 'Onboarding paths are built from knowledge base content.');
+INSERT INTO asset_inits (asset, init, type, rationale) VALUES
+    (2, 2, 'USED_BY',  'The knowledge base needs to be populated with relevant code.'),
+    (8, 1, 'USED_BY',  'Access to files is required for the platform.'),
+    (8, 2, 'USED_BY',  'The knowledge base needs to be populated with relevant files.'),
+    (11,2, 'CONTAINS', 'The knowledge base needs agent to write technical documentation.');
 
 -- **********************************
 -- ******* Table favorite_inits *****

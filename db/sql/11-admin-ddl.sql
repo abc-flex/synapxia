@@ -264,13 +264,15 @@ INSERT INTO lists (code, name, description, type, module) VALUES (
     'List that classifies application options by type, such as content pages, forms or reports.',
     'LIST_OF_VALUES', 'ADMIN');
 INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
-    ('OPTION_TYPE', 'en', 'CONTENT', 'Content', 10),
-    ('OPTION_TYPE', 'en', 'FORM',    'Form',    20),
-    ('OPTION_TYPE', 'en', 'REPORT',  'Report',  30);
+    ('OPTION_TYPE', 'en', 'CONTENT',      'Content',      10),
+    ('OPTION_TYPE', 'en', 'FORM',         'Form',         20),
+    ('OPTION_TYPE', 'en', 'REPORT',       'Report',       30),
+    ('OPTION_TYPE', 'en', 'CARD_GALLERY', 'Card Gallery', 40);
 INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
-    ('OPTION_TYPE', 'es', 'CONTENT', 'Contenido',  10),
-    ('OPTION_TYPE', 'es', 'FORM',    'Formulario', 20),
-    ('OPTION_TYPE', 'es', 'REPORT',  'Reporte',    30);
+    ('OPTION_TYPE', 'es', 'CONTENT',      'Contenido',           10),
+    ('OPTION_TYPE', 'es', 'FORM',         'Formulario',          20),
+    ('OPTION_TYPE', 'es', 'REPORT',       'Reporte',             30),
+    ('OPTION_TYPE', 'es', 'CARD_GALLERY', 'Galería de Tarjetas', 40);
 
 -- ===== List: Business Unit Type =====
 INSERT INTO lists (code, name, description, type, module) VALUES (

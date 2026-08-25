@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select, SQLModel
 from sqlalchemy.exc import IntegrityError
 
-from ..internal.models import Option, OptionCreate, OptionUpdate, Module, User
+from ..internal.models import Option, OptionCreate, OptionUpdate, Module, Privilege, User
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
 from ...internal.permissions import require_privilege
@@ -42,18 +42,42 @@ def get_list(
 @router.get("/", response_model=List[Option])
 def get_all(
     skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("ADMIN", "OPTIONS", can_edit=False))
+    # Any authenticated user (not just ADMIN.OPTIONS holders) needs this to
+    # build their own sidebar — see require_privilege on POST/PUT/DELETE below
+    # for who may actually manage option definitions. The result itself is
+    # further scoped to the caller's own privileges below.
+    current_user: User = Depends(current_active_user)
 ) -> List[Option]:
     """
     List all options with pagination (*Only active options).
 
+    Scoped to the caller: a non-superuser only sees the (module, option)
+    pairs their profile holds an active privilege row for (drives the
+    sidebar's itemsNav — e.g. a COLLABORATOR never sees ADMIN.USERS).
+    Superusers and profiles with full coverage (e.g. ADMINISTRATOR) see
+    everything, same as before.
+
     - **skip**: Number of records to skip (default: 0)
     - **limit**: Maximum number of records to return (default: 100)
     """
-    options = session.exec(select(Option).where(Option.is_active == True)
-                           .offset(skip).limit(limit)
-                           .order_by(Option.module, Option.sort_order, Option.name)).all()
-    return options
+    options = session.exec(
+        select(Option)
+        .where(Option.is_active == True)
+        .order_by(Option.module, Option.sort_order, Option.name)
+    ).all()
+
+    if not current_user.is_superuser:
+        allowed = set(
+            session.exec(
+                select(Privilege.module, Privilege.option).where(
+                    Privilege.profile == current_user.profile,
+                    Privilege.is_active == True,
+                )
+            ).all()
+        )
+        options = [o for o in options if (o.module, o.code) in allowed]
+
+    return options[skip: skip + limit]
 
 
 @router.get("/{module_code}/{code}", response_model=Option)
@@ -139,7 +163,8 @@ def create(
 
 @router.put("/{module_code}/{code}", response_model=Option)
 def update(
-    module_code: str, code: str, option_update: OptionUpdate, session: Session = Depends(get_db_session)
+    module_code: str, code: str, option_update: OptionUpdate, session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("ADMIN", "OPTIONS", can_edit=True))
 ) -> Option:
     """
     Update an existing option.

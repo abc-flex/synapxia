@@ -133,6 +133,8 @@ FROM user_data;
 -- Keep the identity sequence aligned with the rows inserted above
 SELECT setval(pg_get_serial_sequence('users', 'id'), (SELECT MAX(id) FROM users));
 
+UPDATE users SET profile = 'REVIEWER' WHERE username = 'santiago.marin';
+
 -- **********************************
 -- ******* Table Assignments ********
 -- **********************************

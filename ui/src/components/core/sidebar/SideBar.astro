@@ -3,6 +3,7 @@ import { t } from "@/i18n";
 import { getLocale } from "@/utils/getLocale";
 import { NavModule, NavOption } from "../../types/nav";
 import MenuItem from "./SideBarMenuItem.astro";
+import { buildSidebarLayout } from "@/lib/navigation";
 
 const locale = getLocale(Astro);
 
@@ -37,6 +38,12 @@ for (const [path, svg] of Object.entries(iconModules)) {
   const name = path.replace("/src/images/icons/", "").replace(/\.svg$/, "");
   iconMap[name] = svg;
 }
+
+// Parents (and flattened top-level options — see buildSidebarLayout) prefer
+// the solid icon variant for visual weight.
+const getSolidIcon = (name: string) => iconMap[`${name}-solid`] || iconMap[name] || "";
+
+const { groups, flatItems } = buildSidebarLayout(modules, options);
 ---
 
 <aside
@@ -75,14 +82,32 @@ for (const [path, svg] of Object.entries(iconModules)) {
         </h3>
 
         <ul id="sidebar-primary-nav" class="flex flex-col gap-2 mb-6">
-          {modules.map((module) => (
+          {groups.map(({ module, options: moduleOptions }) => (
             <li>
               <MenuItem
                 module={module}
-                options={options.filter((option) => option.module === module.code)}
+                options={moduleOptions}
                 currentPath={currentPath}
                 currentModuleName={currentModuleName}
               />
+            </li>
+          ))}
+          {flatItems.map((item) => (
+            <li>
+              <a
+                href={item.path || "#"}
+                class={`menu-item group ${item.path === currentPath ? "menu-item-active" : "menu-item-inactive"}`}
+                role="button"
+              >
+                <span class="menu-item-icon-tile">
+                  <span class="w-5 h-5 inline-block">
+                    <Fragment set:html={getSolidIcon(item.icon || "")} />
+                  </span>
+                </span>
+                <span class="menu-item-text" data-i18n={`menu_options.${item.code.toLowerCase()}`}>
+                  {item.name}
+                </span>
+              </a>
             </li>
           ))}
         </ul>
@@ -113,7 +138,7 @@ for (const [path, svg] of Object.entries(iconModules)) {
 
      Re-rendering is cheap: the menu has a handful of items.
      ============================================================ */
-  import { getNavigationData, readNavCache, type NavigationData } from "@/lib/navigation";
+  import { getNavigationData, readNavCache, buildSidebarLayout, type NavigationData, type FlatSidebarItem } from "@/lib/navigation";
   import type { NavModule, NavOption } from "@/types/nav";
   import { loadClientTranslations } from "@/utils/i18nClient";
 
@@ -205,15 +230,32 @@ for (const [path, svg] of Object.entries(iconModules)) {
       `;
     };
 
+    // Mirrors the SSR "flattened option" markup in this file's frontmatter —
+    // a module with only 1-2 visible options renders as a plain top-level
+    // link instead of a near-empty expandable section (see buildSidebarLayout).
+    const buildFlatItem = (item: FlatSidebarItem) => {
+      const iconSvg = moduleIcon(item.icon || "");
+      const isActive = item.path === currentPath;
+      const optI18n = `menu_options.${item.code.toLowerCase()}`;
+      return `
+        <li>
+          <a href="${escapeHtml(item.path || "#")}"
+             class="menu-item group ${isActive ? "menu-item-active" : "menu-item-inactive"}"
+             role="button">
+            <span class="menu-item-icon-tile">
+              <span class="w-5 h-5 inline-block">${iconSvg}</span>
+            </span>
+            <span class="menu-item-text" data-i18n="${escapeHtml(optI18n)}">${escapeHtml(item.name)}</span>
+          </a>
+        </li>
+      `;
+    };
+
     const render = (data: NavigationData) => {
-      const html = data.primaryNav
-        .map((module) =>
-          buildItem(
-            module,
-            data.itemsNav.filter((o) => o.module === module.code),
-          ),
-        )
-        .join("");
+      const { groups, flatItems } = buildSidebarLayout(data.primaryNav, data.itemsNav);
+      const html =
+        groups.map(({ module, options: moduleOptions }) => buildItem(module, moduleOptions)).join("") +
+        flatItems.map(buildFlatItem).join("");
       primaryUl.innerHTML = html;
       // Re-apply i18n to the newly-inserted nodes — the global translator
       // ran on DOMContentLoaded, but our rebuild happens after that.

@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select, SQLModel
 from sqlalchemy.exc import IntegrityError
 
-from ..internal.models import Module, ModuleCreate, ModuleUpdate, User
+from ..internal.models import Module, ModuleCreate, ModuleUpdate, Privilege, User
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
 from ...internal.permissions import require_privilege
@@ -42,18 +42,42 @@ def get_list(
 @router.get("/", response_model=List[Module])
 def get_all(
     skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("ADMIN", "MODULES", can_edit=False))
+    # Any authenticated user (not just ADMIN.MODULES holders) needs this to
+    # build their own sidebar — see require_privilege on POST/PUT/DELETE below
+    # for who may actually manage module definitions. The result itself is
+    # further scoped to the caller's own privileges below.
+    current_user: User = Depends(current_active_user)
 ) -> List[Module]:
     """
     List all modules with pagination (*Only active modules).
 
+    Scoped to the caller: a non-superuser only sees modules their profile
+    holds at least one active privilege in (drives the sidebar's primaryNav
+    — a profile with no ADMIN.* privilege should never see "Administration").
+    Superusers and profiles with full coverage (e.g. ADMINISTRATOR) see
+    everything, same as before.
+
     - **skip**: Number of records to skip (default: 0)
     - **limit**: Maximum number of records to return (default: 100)
     """
-    modules = session.exec(select(Module).where(Module.is_active == True)
-                           .offset(skip).limit(limit)
-                           .order_by(Module.sort_order, Module.name)).all()
-    return modules
+    modules = session.exec(
+        select(Module)
+        .where(Module.is_active == True)
+        .order_by(Module.sort_order, Module.name)
+    ).all()
+
+    if not current_user.is_superuser:
+        allowed_modules = set(
+            session.exec(
+                select(Privilege.module).where(
+                    Privilege.profile == current_user.profile,
+                    Privilege.is_active == True,
+                )
+            ).all()
+        )
+        modules = [m for m in modules if m.code in allowed_modules]
+
+    return modules[skip: skip + limit]
 
 
 @router.get("/{code}", response_model=Module)

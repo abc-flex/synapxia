@@ -57,31 +57,34 @@ INSERT INTO options (module, code, name, description, sort_order, type, path, ic
 INSERT INTO options (module, code, name, description, sort_order, type, path, icon) VALUES
     ('LIB','ASSETS','Asset Management',
      'Manage and track digital assets throughout their entire lifecycle.',
-     10,'FORM','/lib/assets','archive-box'),
+     10,'CARD_GALLERY','/lib/assets','archive-box'),
+    ('LIB','EXPLORE','Explore Category',
+     'Browse and explore different categories of digital assets (e.g., Prompt, MCP, Agent, Flow, Skill, Assistant, RAG App, Model).',
+     15,'CARD_GALLERY','/lib/explore','magnifying-glass'),
     ('LIB','PROMPTS','Prompt Gallery',
      'Curated gallery of reusable GenAI prompts.',
-     20,'FORM','/lib/prompts','chat-bubble-bottom-center-text'),
+     20,'CARD_GALLERY','/lib/prompts','chat-bubble-bottom-center-text'),
     ('LIB','MCPS','MCP Directory',
      'Curated directory of tools compatible with Model Context Protocol.',
-     30,'FORM','/lib/mcps','server-stack'),
+     30,'CARD_GALLERY','/lib/mcps','server-stack'),
     ('LIB','AGENTS','Agent Repository',
      'Inventory of AI agents with higher autonomy.',
-     40,'FORM','/lib/agents','cpu-chip'),
+     40,'CARD_GALLERY','/lib/agents','cpu-chip'),
     ('LIB','FLOWS','Agentic Flows',
      'Registry of agentic flows with multiple agents and MCP tools.',
-     50,'Form','/lib/agentic_flows','arrows-right-left'),
+     50,'CARD_GALLERY','/lib/agentic_flows','arrows-right-left'),
     ('LIB','SKILLS','Skill Catalog',
      'Curated catalog of reusable skills for AI agents.',
-     60,'FORM','/lib/skills','academic-cap'),
+     60,'CARD_GALLERY','/lib/skills','academic-cap'),
     ('LIB','ASSISTANTS','Assistants',
      'Index of assistants scope, tone and tools.',
-     70,'FORM','/lib/assistants','sparkles'),
+     70,'CARD_GALLERY','/lib/assistants','sparkles'),
     ('LIB','RAG_APPS','RAG Apps',
      'Directory of Retrieval-Augmented Generation applications.',
-     80,'FORM','/lib/rag_apps','document-magnifying-glass'),
+     80,'CARD_GALLERY','/lib/rag_apps','document-magnifying-glass'),
     ('LIB','MODELS','Models',
      'Catalog of AI and ML models used in the platform.',
-     90,'FORM','/lib/models','beaker');
+     90,'CARD_GALLERY','/lib/models','beaker');
 
 -- ===== Module: INITIATIVES =====
 INSERT INTO options (module, code, name, description, sort_order, type, path, icon) VALUES
@@ -97,18 +100,21 @@ INSERT INTO options (module, code, name, description, sort_order, type, path, ic
 
 -- ===== Module: ANALYTICS =====
 INSERT INTO options (module, code, name, description, sort_order, type, path, icon) VALUES
-    ('ANA','DASHBOARDS','Dashboard Catalog',
+    ('ANA','DASHBOARDS','Dashboard Management',
+     'Manage and configure dashboards.',
+     10,'FORM','/ana/dashboards','archive-box'),
+    ('ANA','CATALOG','Dashboard Catalog',
      'Catalog of available dashboards.',
-     10,'FORM','/ana/dashboards','chart-pie'),
+     10,'FORM','/ana/catalog','chart-pie'),
     ('ANA','USAGE','Usage Metrics',
      'Track and analyze the usage of dashboards.',
      20,'FORM','/ana/usage','chart-bar');
 
 -- ===== Module: PROCESSES =====
 INSERT INTO options (module, code, name, description, sort_order, type, path, icon) VALUES
-    ('PROC','PROCESSES','Process Catalog',
-     'Catalog of available processes.',
-     10,'FORM','/proc/process_catalog','rectangle-group'),
+    ('PROC','PROCESSES','Process Management',
+     'Manage and configure processes.',
+     10,'FORM','/proc/processes','rectangle-group'),
     ('PROC','VALUE_CHAIN','Value Chain',
      'Identify stages where AI can create impact.',
      20,'FORM','/proc/value_chain','link'),
@@ -184,6 +190,7 @@ VALUES
 
     -- ANA
     ('ADMINISTRATOR','ANA','DASHBOARDS', TRUE),
+    ('ADMINISTRATOR','ANA','CATALOG',    TRUE),
     ('ADMINISTRATOR','ANA','USAGE',      TRUE),
 
     -- PROC
@@ -224,6 +231,7 @@ VALUES
 
     -- ANA
     ('ADMINISTRATIVE','ANA','DASHBOARDS', TRUE),
+    ('ADMINISTRATIVE','ANA','CATALOG',    TRUE),
     ('ADMINISTRATIVE','ANA','USAGE',      TRUE),
 
     -- PROC
@@ -234,76 +242,44 @@ VALUES
 -- ===== Profile: COLLABORATOR =====
 INSERT INTO privileges (profile, module, option, can_edit)
 VALUES
-    -- TAXO (read-only)
-    ('COLLABORATOR','TAXO','CATEGORIES', FALSE),
-    ('COLLABORATOR','TAXO','FEATURES',   FALSE),
-    ('COLLABORATOR','TAXO','TAXONOMY',   FALSE),
 
-    -- COLLAB (read-only)
-    ('COLLABORATOR','COLLAB','ROLES',      FALSE),
-    ('COLLABORATOR','COLLAB','TEAMS',      FALSE),
-    ('COLLABORATOR','COLLAB','PROJECTS',   FALSE),
-    ('COLLABORATOR','COLLAB','DIMENSIONS', FALSE),
-    ('COLLABORATOR','COLLAB','DASHBOARD',  FALSE),
+    -- LIB
+    ('COLLABORATOR','LIB','PROMPTS',    TRUE),
+    ('COLLABORATOR','LIB','MCPS',       TRUE),
+    ('COLLABORATOR','LIB','AGENTS',     TRUE),
+    ('COLLABORATOR','LIB','FLOWS',      TRUE),
+    ('COLLABORATOR','LIB','SKILLS',     TRUE),
+    ('COLLABORATOR','LIB','ASSISTANTS', TRUE),
+    ('COLLABORATOR','LIB','RAG_APPS',   TRUE),
+    ('COLLABORATOR','LIB','MODELS',     TRUE),
 
-    -- LIB (read-only)
-    ('COLLABORATOR','LIB','PROMPTS',    FALSE),
-    ('COLLABORATOR','LIB','MCPS',       FALSE),
-    ('COLLABORATOR','LIB','AGENTS',     FALSE),
-    ('COLLABORATOR','LIB','FLOWS',      FALSE),
-    ('COLLABORATOR','LIB','SKILLS',     FALSE),
-    ('COLLABORATOR','LIB','ASSISTANTS', FALSE),
-    ('COLLABORATOR','LIB','RAG_APPS',   FALSE),
-    ('COLLABORATOR','LIB','MODELS',     FALSE),
-
-    -- INITS (read-only)
-    ('COLLABORATOR','INITS','CRITERIAS', FALSE),
-    ('COLLABORATOR','INITS','EXPLORE',   FALSE),
-
-    -- ANA (read-only)
-    ('COLLABORATOR','ANA','DASHBOARDS', FALSE),
-    ('COLLABORATOR','ANA','USAGE',      FALSE),
-
-    -- PROC (read-only)
-    ('COLLABORATOR','PROC','VALUE_CHAIN', FALSE),
-    ('COLLABORATOR','PROC','MAP',         FALSE);
+    -- Independent options (read-only)
+    ('COLLABORATOR','TAXO', 'TAXONOMY',   FALSE),
+    ('COLLABORATOR','INITS','EXPLORE',    FALSE),
+    ('COLLABORATOR','ANA',  'CATALOG',    FALSE),
+    ('COLLABORATOR','PROC', 'VALUE_CHAIN',FALSE),
+    ('COLLABORATOR','PROC', 'MAP',        FALSE);
 
 -- ===== Profile: REVIEWER =====
 INSERT INTO privileges (profile, module, option, can_edit)
 VALUES
-    -- TAXO (read-only)
-    ('REVIEWER','TAXO','CATEGORIES', FALSE),
-    ('REVIEWER','TAXO','FEATURES',   FALSE),
-    ('REVIEWER','TAXO','TAXONOMY',   FALSE),
 
-    -- COLLAB (read-only)
-    ('REVIEWER','COLLAB','ROLES',      FALSE),
-    ('REVIEWER','COLLAB','TEAMS',      FALSE),
-    ('REVIEWER','COLLAB','PROJECTS',   FALSE),
-    ('REVIEWER','COLLAB','DIMENSIONS', FALSE),
-    ('REVIEWER','COLLAB','DASHBOARD',  FALSE),
+    -- LIB
+    ('REVIEWER','LIB','PROMPTS',    TRUE),
+    ('REVIEWER','LIB','MCPS',       TRUE),
+    ('REVIEWER','LIB','AGENTS',     TRUE),
+    ('REVIEWER','LIB','FLOWS',      TRUE),
+    ('REVIEWER','LIB','SKILLS',     TRUE),
+    ('REVIEWER','LIB','ASSISTANTS', TRUE),
+    ('REVIEWER','LIB','RAG_APPS',   TRUE),
+    ('REVIEWER','LIB','MODELS',     TRUE),
 
-    -- LIB (read-only)
-    ('REVIEWER','LIB','PROMPTS',    FALSE),
-    ('REVIEWER','LIB','MCPS',       FALSE),
-    ('REVIEWER','LIB','AGENTS',     FALSE),
-    ('REVIEWER','LIB','FLOWS',      FALSE),
-    ('REVIEWER','LIB','SKILLS',     FALSE),
-    ('REVIEWER','LIB','ASSISTANTS', FALSE),
-    ('REVIEWER','LIB','RAG_APPS',   FALSE),
-    ('REVIEWER','LIB','MODELS',     FALSE),
-
-    -- INITS (read-only)
-    ('REVIEWER','INITS','CRITERIAS', FALSE),
-    ('REVIEWER','INITS','EXPLORE',   FALSE),
-
-    -- ANA (read-only)
-    ('REVIEWER','ANA','DASHBOARDS', FALSE),
-    ('REVIEWER','ANA','USAGE',      FALSE),
-
-    -- PROC (read-only)
-    ('REVIEWER','PROC','VALUE_CHAIN', FALSE),
-    ('REVIEWER','PROC','MAP',         FALSE);
+    -- Independent options (read-only)
+    ('REVIEWER','TAXO', 'TAXONOMY',   FALSE),
+    ('REVIEWER','INITS','EXPLORE',    FALSE),
+    ('REVIEWER','ANA',  'CATALOG',    FALSE),
+    ('REVIEWER','PROC', 'VALUE_CHAIN',FALSE),
+    ('REVIEWER','PROC', 'MAP',        FALSE);
 
 -- **********************************
 -- ********** Table Units ***********

@@ -20,7 +20,7 @@ from ..internal import permissions_service
 from ...taxo.internal.models import Category
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
-from ...internal.permissions import require_privilege
+from ...internal.permissions import require_privilege, has_privilege
 from ...admin.internal.models import User
 
 logger = logging.getLogger(__name__)
@@ -172,13 +172,28 @@ def get_by_category(
     skip: int = 0,
     limit: int = 100,
     session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
+    current_user: User = Depends(current_active_user),
 ) -> List[Asset]:
     """
     Obtener todos los assets de una categoría específica.
 
     - **category_code**: Código de la categoría para filtrar
+
+    Read access: either the general `LIB/ASSETS` privilege (asset managers —
+    ADMINISTRATOR/ADMINISTRATIVE) or a privilege on this specific catalog
+    option (`LIB/<category_code>`, e.g. `LIB/PROMPTS`). This lets a profile
+    browse a curated gallery (COLLABORATOR/REVIEWER hold `LIB/PROMPTS`,
+    `MCPS`, `AGENTS`, …) WITHOUT granting `LIB/ASSETS` — which is itself the
+    Asset Management page's own menu option, and would wrongly show that
+    page in their sidebar if granted just to unlock this read.
     """
+    if not has_privilege(session, current_user, "LIB", "ASSETS", can_edit=False) and \
+            not has_privilege(session, current_user, "LIB", category_code, can_edit=False):
+        raise HTTPException(
+            status_code=403,
+            detail=f"Access denied to LIB/{category_code}. Check your profile privileges.",
+        )
+
     # Validar primero si la categoría existe (opcional, pero recomendado por integridad)
     category_exists = session.get(Category, category_code)
     if not category_exists:

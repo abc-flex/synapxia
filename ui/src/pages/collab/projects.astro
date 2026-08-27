@@ -145,33 +145,13 @@ const fieldKeys = formFields.map((f) => f.key);
         updateProject,
         deleteProject,
       } from "@/lib/projects";
+      import { showToast, flashToast } from "@/lib/toast";
 
       initCrudPage({
         dataId: "projects-data",
         editModalId: "project-edit-modal",
         deleteModalId: "project-delete-modal",
       });
-
-      function showToast(message, variant = "info") {
-        const toast = document.createElement("div");
-        toast.className = `fixed top-4 right-4 z-50 max-w-md p-4 rounded-lg border shadow-lg transition-all duration-300 ${
-          variant === "error"
-            ? "bg-red-50 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
-            : "bg-green-50 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
-        }`;
-        toast.innerHTML = `
-          <div class="flex items-start gap-3">
-            <div class="flex-1 text-sm font-medium">${message}</div>
-            <button type="button" class="text-gray-400 hover:text-gray-600" onclick="this.parentElement.parentElement.remove()">✕</button>
-          </div>
-        `;
-        document.body.appendChild(toast);
-        setTimeout(() => {
-          toast.style.opacity = "0";
-          toast.style.transform = "translateX(100%)";
-          setTimeout(() => toast.remove(), 300);
-        }, 5000);
-      }
 
       document.addEventListener("crud-submit", async (e) => {
         const { mode, data } = e.detail;
@@ -188,8 +168,8 @@ const fieldKeys = formFields.map((f) => f.key);
               end_date: data.end_date || undefined,
               detail: data.detail || undefined,
             });
-            showToast("Project created successfully!");
-            setTimeout(() => window.location.reload(), 1000);
+            flashToast("Project created successfully!");
+            window.location.reload();
           } else if (mode === "edit") {
             await updateProject(data.id, {
               name: data.name,
@@ -201,12 +181,12 @@ const fieldKeys = formFields.map((f) => f.key);
               end_date: data.end_date || undefined,
               detail: data.detail || undefined,
             });
-            showToast("Project updated successfully!");
-            setTimeout(() => window.location.reload(), 1000);
+            flashToast("Project updated successfully!");
+            window.location.reload();
           } else if (mode === "delete") {
             await deleteProject(data.id);
-            showToast("Project deleted successfully!");
-            setTimeout(() => window.location.reload(), 1000);
+            flashToast("Project deleted successfully!");
+            window.location.reload();
           }
         } catch (error) {
           console.error("CRUD operation failed:", error);

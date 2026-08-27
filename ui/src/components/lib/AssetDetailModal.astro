@@ -33,7 +33,7 @@ const {
 
 <dialog
   id={modalId}
-  class="rounded-2xl p-0 w-[min(900px,95vw)] max-w-none bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 backdrop:bg-black/60 backdrop:backdrop-blur-sm"
+  class="rounded-2xl p-0 w-[min(1040px,95vw)] max-w-none bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 backdrop:bg-black/60 backdrop:backdrop-blur-sm"
 >
   {/* Fixed height so switching the Characterizations / Related / Permissions
       tabs doesn't resize/re-center the dialog — only the body scrolls. */}
@@ -43,27 +43,23 @@ const {
       <div>
         <h3
           id={`${modalId}-title`}
-          class="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white"
+          class="text-lg font-bold text-gray-900 dark:text-white"
         >
           <span
             id={`${modalId}-title-text`}
             data-i18n="asset_detail_modal.title_create"
-          >New Asset</span>
-          {/* Current version badge — filled + shown only in edit mode. */}
-          <span
-            id={`${modalId}-version`}
-            class="hidden rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300"
-            title="Current version"
-            data-i18n-title="asset_detail_modal.current_version"
-          ></span>
+          >New Asset</span
+          >{/* Edit mode appends ": <asset name>" right after the title, same
+               font/size — no separate line. */}<span id={`${modalId}-title-name`}></span>
         </h3>
-        <p
-          id={`${modalId}-subtitle`}
-          class="mt-0.5 text-xs text-gray-500 dark:text-gray-400"
-          data-i18n="asset_detail_modal.subtitle"
-        >
-          Core fields + the characterizations required by the chosen category.
-        </p>
+        {/* Current version badge — filled + shown only in edit mode. Sits on
+            its own line below the title (was previously inline beside it). */}
+        <span
+          id={`${modalId}-version`}
+          class="hidden mt-1 inline-block rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300"
+          title="Current version"
+          data-i18n-title="asset_detail_modal.current_version"
+        ></span>
       </div>
       <div class="flex items-center gap-1">
         <button
@@ -118,15 +114,11 @@ const {
       <input type="hidden" name="id" id={`${modalId}-id`} />
 
       {/* ============== Core fields ============== */}
-      {/* Visible in "full" + "core" section modes; hidden in "detail" mode
-          (the master-detail button edits only the tabs below). */}
+      {/* Re-parented into AssetDetailTabs' "core" tab panel by the script below
+          right after mount — this <section> stays the single source of truth
+          for the core-field inputs/validation/save payload, just relocated
+          into the tab flow instead of being a permanently-visible sibling. */}
       <section id={`${modalId}-core-section`}>
-        <h4
-          class="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500"
-          data-i18n="asset_detail_modal.core_section"
-        >
-          Core
-        </h4>
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div class="md:col-span-2">
             <label
@@ -227,9 +219,10 @@ const {
         </div>
       </section>
 
-      {/* ============== Collections tabs (bottom) ============== */}
-      {/* Core fields above are always visible; the editable detail collections
-          (Characterizations, Related Assets, Permissions) are the
+      {/* ============== Tabs (bottom) ============== */}
+      {/* Core Fields (the <section> above) + the editable collections
+          (Characterizations, Related Assets, Permissions) + the read-only
+          Discussion/History/Versions tabs are all one tab strip: the
           `AssetDetailTabs` Svelte island, mount()ed into this container by the
           script below (which drives it via the returned controller methods). */}
       <div id={`${modalId}-detail-tabs`}></div>
@@ -322,6 +315,7 @@ const {
   import { mountHistory } from "@/lib/history";
   import { mountVersions } from "@/lib/versions";
   import { ALL_DETAIL_SECTIONS } from "@/lib/assetSections";
+  import { createStatusBanner } from "@/lib/statusBanner";
 
   const modalId = "asset-detail-modal";
 
@@ -337,6 +331,7 @@ const {
     const refField = document.getElementById(`${modalId}-reference`) as HTMLInputElement;
     const tagsField = document.getElementById(`${modalId}-tags`) as HTMLInputElement;
     const titleEl = document.getElementById(`${modalId}-title-text`) as HTMLElement;
+    const titleNameEl = document.getElementById(`${modalId}-title-name`) as HTMLElement;
     const versionBadge = document.getElementById(`${modalId}-version`) as HTMLElement;
     const changeTypeFieldset = document.getElementById(`${modalId}-change-type`) as HTMLFieldSetElement;
     const statusBanner = document.getElementById(`${modalId}-status`) as HTMLElement;
@@ -354,21 +349,34 @@ const {
       return fallback;
     };
 
-    const showStatus = (msg, kind) => {
-      if (!statusBanner) return;
-      statusBanner.textContent = msg;
-      statusBanner.className =
-        "mx-6 mt-4 rounded-lg p-3 text-sm " +
-        (kind === "ok"
-          ? "bg-green-50 text-green-800 border border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700"
-          : "bg-red-50 text-red-800 border border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700");
-      statusBanner.classList.remove("hidden");
-    };
-    const clearStatus = () => statusBanner?.classList.add("hidden");
+    // Closable + self-dismissing (5s) — shared with the catalog modal and the
+    // profile page so every inline "save confirmation" banner behaves the same.
+    const status = createStatusBanner(statusBanner, "mx-6 mt-4 rounded-lg p-3 text-sm");
+    const showStatus = status.show;
+    const clearStatus = status.clear;
+
+    // Shared by the submit payload and the "has this changed?" snapshot below
+    // so the two never drift out of sync with each other.
+    function buildCorePayload() {
+      return {
+        name: nameField.value.trim(),
+        description: descField.value.trim() || undefined,
+        category: categorySel.value || undefined,
+        reference: refField.value.trim() || undefined,
+        status: statusSel.value,
+        tags: tagsField.value
+          ? tagsField.value.split(",").map((t) => t.trim()).filter(Boolean)
+          : undefined,
+        is_active: true,
+      };
+    }
 
     let editingAssetId: number | null = null;
     // The loaded asset's version label — drives the "old → new" preview.
     let currentVersionLabel = "1.0.0";
+    // Snapshot of the core-field payload as last loaded/saved — lets submit
+    // detect "nothing to save" instead of firing a no-op PUT.
+    let originalCoreSnapshot: string | null = null;
     // Favorite state. Edit mode toggles immediately (a per-user preference
     // orthogonal to the draft); create mode stages the bit until the id exists.
     let favoriteOn = false;
@@ -410,18 +418,20 @@ const {
       radio.addEventListener("change", renderVersionPreview);
     });
 
-    // ── Shared editable detail tabs (chars / related / permissions) ─────────
+    // ── Shared tabs (core / chars / related / permissions / …) ─────────────
     // The tabs are the `AssetDetailTabs` Svelte island; mount() returns the
     // component's exported controller methods (loadOptions/loadChars/hydrate/
     // flush/reset/…), so the orchestration below is unchanged from the vanilla
     // widget it replaces.
     const tabsRoot = document.getElementById(`${modalId}-detail-tabs`) as HTMLElement;
-    // Which detail tab is active — drives the tab-aware footer (below). Only
-    // the Characterizations tab versions; Related/Permissions save in place;
-    // Discussion/History/Versions are read-only (no Save button).
-    type DetailTab = "chars" | "related" | "permissions" | "discussion" | "history" | "versions";
+    // Which tab is active — drives the tab-aware footer (below) in edit mode.
+    // Only the Characterizations tab versions; Related/Permissions/Core Fields
+    // save their own slice in place; Discussion/History/Versions are read-only
+    // (no Save button).
+    type DetailTab = "core" | "chars" | "related" | "related_inits" | "permissions" | "discussion" | "history" | "versions";
     const READONLY_TABS: DetailTab[] = ["discussion", "history", "versions"];
-    let activeDetailTab: DetailTab = "chars";
+    let activeDetailTab: DetailTab = "core";
+    const coreInputs = [nameField, categorySel, statusSel];
     const tabs = mount(AssetDetailTabs, {
       target: tabsRoot,
       props: {
@@ -430,20 +440,36 @@ const {
         onError: (m: string) => showStatus(m, "error"),
         onTabChange: (name: DetailTab) => {
           activeDetailTab = name;
-          // Repaint the footer only while editing an existing asset with the
-          // tabs visible; create mode + core-only edit keep their own footer.
-          if (editingAssetId != null && editSection !== "core") {
+          // Tab-scoped save only applies in edit mode — create mode saves
+          // everything together, so Core Fields' inputs stay required no
+          // matter which tab is active (set once in resetForm) and the footer
+          // keeps its own plain "Save" the whole time.
+          if (editingAssetId != null) {
+            // Core Fields' required inputs would otherwise block submitting
+            // from a different (hidden) tab — only require them while that
+            // tab is actually active, mirroring how the other tabs save
+            // independently.
+            for (const f of coreInputs) if (f) f.required = name === "core";
             paintFooterForTab(name);
           }
         },
       },
     });
 
+    // The Core Fields <section> (built as static markup above, with its own
+    // inputs/validation/save payload already wired below) is re-parented into
+    // the island's "core" tab panel right after mount — same DOM node, same
+    // event listeners, just relocated into the tab flow.
+    const coreSection = document.getElementById(`${modalId}-core-section`) as HTMLElement;
+    const coreTabTarget = document.getElementById(`${modalId}-core`) as HTMLElement | null;
+    if (coreSection && coreTabTarget) coreTabTarget.appendChild(coreSection);
+
     // Footer is tab-aware in edit mode: the change-type picker + version
     // preview + "Save new version" belong to the Characterizations tab (the
-    // only versioned slice); Related/Permissions hide them and relabel the
-    // save button, saving just that slice in place; Discussion/History/Versions
-    // are read-only — the Save button is hidden entirely (Cancel/close only).
+    // only versioned slice); Core Fields/Related/Permissions hide them and
+    // relabel the save button, saving just that slice in place;
+    // Discussion/History/Versions are read-only — the Save button is hidden
+    // entirely (Cancel/close only).
     function paintFooterForTab(tab: DetailTab) {
       if (READONLY_TABS.includes(tab)) {
         changeTypeFieldset?.classList.add("hidden");
@@ -458,11 +484,13 @@ const {
         renderVersionPreview();
       } else {
         changeTypeFieldset?.classList.add("hidden");
-        const key =
-          tab === "related"
-            ? "asset_detail_modal.save_related"
-            : "asset_detail_modal.save_permissions";
-        const fallback = tab === "related" ? "Save related assets" : "Save permissions";
+        const SAVE_LABELS: Record<string, [string, string]> = {
+          core: ["asset_detail_modal.save_core", "Save core fields"],
+          related: ["asset_detail_modal.save_related", "Save related assets"],
+          related_inits: ["asset_detail_modal.save_related_inits", "Save related initiatives"],
+          permissions: ["asset_detail_modal.save_permissions", "Save permissions"],
+        };
+        const [key, fallback] = SAVE_LABELS[tab];
         submitBtn.setAttribute("data-i18n", key);
         submitBtn.textContent = tr(key, fallback);
       }
@@ -474,26 +502,6 @@ const {
     // Discussion self-mounts via the nested Foro island in AssetDetailTabs.
     mountHistory({ modalId });
     mountVersions({ modalId, sections: ALL_DETAIL_SECTIONS });
-
-    // ── Section mode ──────────────────────────────────────────────────────
-    // "" = full (core + tabs, used for create); "core" = only the core fields
-    // (the pencil); "detail" = only the Characterizations/Related/Permissions
-    // tabs (the master-detail button). The split lets each button edit just its
-    // slice, persisting only that slice on save.
-    const coreSection = document.getElementById(`${modalId}-core-section`) as HTMLElement;
-    const coreInputs = [nameField, categorySel, statusSel];
-    let editSection: "" | "core" | "detail" = "";
-
-    function applySection(section: "" | "core" | "detail") {
-      editSection = section;
-      const showCore = section !== "detail";
-      const showTabs = section !== "core";
-      if (coreSection) coreSection.classList.toggle("hidden", !showCore);
-      if (tabsRoot) tabsRoot.classList.toggle("hidden", !showTabs);
-      // Hidden required core inputs would block form submit, so relax them in
-      // detail mode (core is already saved; detail mode only flushes tabs).
-      for (const f of coreInputs) if (f) f.required = showCore;
-    }
 
     // ── Favorite star ───────────────────────────────────────────────────────
     function paintFavorite() {
@@ -533,53 +541,57 @@ const {
       form.reset(); // also re-checks the default "patch" change-type radio
       idField.value = "";
       editingAssetId = null;
+      originalCoreSnapshot = null;
       currentVersionLabel = "1.0.0";
       favoriteOn = false;
       paintFavorite();
       tabs.reset();
       versionBadge?.classList.add("hidden");
       changeTypeFieldset?.classList.add("hidden");
-      activeDetailTab = "chars";
+      activeDetailTab = "core";
+      // The modal always opens on the Core Fields tab, so its inputs start
+      // required; onTabChange relaxes/reinstates this as the user switches tabs.
+      for (const f of coreInputs) if (f) f.required = true;
       // A read-only tab may have hidden the Save button on the previous open.
       submitBtn.classList.remove("hidden");
-      // Create mode saves plainly; edit mode re-labels to "Save new version".
+      // Create mode saves plainly; edit mode re-labels per the active tab.
       submitBtn.setAttribute("data-i18n", "common.save");
       submitBtn.textContent = tr("common.save", "Save");
+      // Category is only locked while editing an existing asset (its
+      // characterization set is keyed off it) — free again for a fresh create.
+      categorySel.disabled = false;
+      // Create mode has no asset yet — title stays plain "New Asset".
+      titleNameEl.textContent = "";
       clearStatus();
+    }
+
+    // Appends ": <name>" right after the title text, in the same run so it
+    // inherits the h3's font/size — edit mode only (create mode has no name yet).
+    function setTitleName(name: string) {
+      titleNameEl.textContent = name ? `: ${name}` : "";
     }
 
     async function openCreate() {
       resetForm();
-      applySection(""); // create always edits the full asset (core + tabs)
       titleEl.setAttribute("data-i18n", "asset_detail_modal.title_create");
       titleEl.textContent = tr("asset_detail_modal.title_create", "New Asset");
       dialog.showModal();
       tabs.loadOptions(); // non-blocking; composer dropdowns fill as data arrives
     }
 
-    async function openEdit(assetId: number | string, section: "" | "core" | "detail" = "") {
+    async function openEdit(assetId: number | string) {
       resetForm();
-      applySection(section);
       editingAssetId = Number(assetId);
-      const titleKey =
-        section === "core"
-          ? "asset_detail_modal.title_edit_core"
-          : section === "detail"
-            ? "asset_detail_modal.title_edit_detail"
-            : "asset_detail_modal.title_edit";
-      const titleFallback =
-        section === "core" ? "Edit core fields"
-          : section === "detail" ? "Edit details"
-            : "Edit Asset";
-      titleEl.setAttribute("data-i18n", titleKey);
-      titleEl.textContent = tr(titleKey, titleFallback);
-      // Versioning is scoped to the Characterizations tab: the modal always
-      // opens on that tab, so paint its footer (change-type picker + "Save new
-      // version"). Switching to Related/Permissions repaints via onTabChange.
-      // Core-only edits keep the plain in-place save.
-      if (section !== "core") {
-        paintFooterForTab("chars");
-      }
+      titleEl.setAttribute("data-i18n", "asset_detail_modal.title_edit");
+      titleEl.textContent = tr("asset_detail_modal.title_edit", "Edit Asset");
+      // The category drives which characterization spec set applies to this
+      // asset — changing it on an existing asset would orphan its already-
+      // saved characterizations, so it's locked for the lifetime of the asset.
+      categorySel.disabled = true;
+      // The modal always opens on the Core Fields tab — paint its footer
+      // (plain "Save core fields", no change-type picker). Switching tabs
+      // repaints via onTabChange.
+      paintFooterForTab("core");
       dialog.showModal();
 
       const user = getUser() as any;
@@ -594,6 +606,8 @@ const {
         const asset = await getAsset(editingAssetId);
         idField.value = String(asset.id ?? "");
         nameField.value = asset.name ?? "";
+        // "Edit Asset: <name>" once the asset is known.
+        setTitleName(asset.name ?? "");
         descField.value = asset.description ?? "";
         refField.value = asset.reference ?? "";
         // Tolerate legacy/seeded rows that stored the bare status code
@@ -617,6 +631,8 @@ const {
           versionBadge.classList.remove("hidden");
         }
         renderVersionPreview();
+        // Baseline for the Core Fields "did anything actually change?" check.
+        originalCoreSnapshot = JSON.stringify(buildCorePayload());
 
         // Load + seed all three detail tabs (chars/relations/permissions).
         await tabs.hydrate(editingAssetId, asset.category ?? "");
@@ -640,9 +656,7 @@ const {
         e.preventDefault();
         const mode = target.dataset.assetMode || "create";
         const assetId = target.dataset.assetId;
-        // "core" (pencil) | "detail" (master-detail) | "" (full). Edit only.
-        const section = (target.dataset.assetSection as "" | "core" | "detail") || "";
-        if (mode === "edit" && assetId) openEdit(assetId, section);
+        if (mode === "edit" && assetId) openEdit(assetId);
         else openCreate();
       }
       const closer = e.target.closest?.(`[data-modal-close="${modalId}"]`);
@@ -669,39 +683,39 @@ const {
       submitBtn.disabled = true;
       clearStatus();
 
-      const corePayload = {
-        name: nameField.value.trim(),
-        description: descField.value.trim() || undefined,
-        category: categorySel.value || undefined,
-        reference: refField.value.trim() || undefined,
-        status: statusSel.value,
-        tags: tagsField.value
-          ? tagsField.value.split(",").map((t) => t.trim()).filter(Boolean)
-          : undefined,
-        is_active: true,
-      };
-
       try {
         let assetId: number;
         let savedMsg = tr("asset_detail_modal.saved", "Asset saved.");
+        // Set instead of performing the save when the active tab has nothing
+        // staged to persist — clicking Save on an untouched tab shouldn't
+        // fire a no-op write (and, for Characteristics, shouldn't bump the
+        // version for a snapshot identical to the one already saved).
+        let noChanges = false;
         if (editingAssetId) {
-          // What gets VERSIONED is the characterization set (HU-LI09): saving
-          // the detail section creates a new version — one transactional call
-          // bumps `current_version` by the picked change type and snapshots
-          // the characterizations under the new label. Core fields are NOT
-          // versioned: they save in place via plain PUT. Sections:
-          //   "core"   → in-place update only, no version;
-          //   "detail" → characterization snapshot as a new version;
-          //   ""       → core in place + characterizations versioned.
+          // Tab-scoped save (matches the Related/Permissions convention): only
+          // the active tab's slice persists. What gets VERSIONED is the
+          // characterization set (HU-LI09) — a Characterizations save bumps
+          // `current_version` and snapshots the set under the new label. Core
+          // Fields/Related/Permissions save their own slice in place, no
+          // version bump. Discussion/History/Versions are read-only (no
+          // reachable Save button).
           assetId = editingAssetId;
-          if (editSection !== "detail") {
-            await updateAsset(assetId, corePayload);
-          }
-          if (editSection !== "core") {
-            // Only the Characterizations tab versions; Related/Permissions save
-            // their own slice in place (no version bump). The modal reloads
-            // after each save, so one tab is saved at a time either way.
-            if (activeDetailTab === "chars") {
+          if (activeDetailTab === "core") {
+            const payload = buildCorePayload();
+            if (JSON.stringify(payload) === originalCoreSnapshot) {
+              noChanges = true;
+            } else {
+              await updateAsset(assetId, payload);
+              savedMsg = tr("asset_detail_modal.core_saved", "Core fields saved.");
+              // The title mirrors the asset's name — keep it in sync with
+              // whatever was just saved instead of requiring a reload to see it.
+              setTitleName(payload.name);
+              originalCoreSnapshot = JSON.stringify(payload);
+            }
+          } else if (activeDetailTab === "chars") {
+            if (!tabs.charsDirty()) {
+              noChanges = true;
+            } else {
               const changeType = (new FormData(form).get("change_type") || "patch") as ChangeType;
               const saved = await createAssetVersion(assetId, {
                 change_type: changeType,
@@ -711,19 +725,44 @@ const {
                 "asset_detail_modal.version_saved",
                 "Asset saved as new version.",
               ).replace("{version}", saved.current_version ?? "");
-            } else if (activeDetailTab === "related") {
-              await tabs.flush(assetId, { skipChars: true, skipPermissions: true });
-              savedMsg = tr("asset_detail_modal.related_saved", "Related assets saved.");
+              // Advance the "previous → next" baseline so a second version save
+              // in the same sitting (no reload) previews from the label we just
+              // created, not the one that was current when the modal opened.
+              currentVersionLabel = saved.current_version ?? currentVersionLabel;
+              if (versionBadge) versionBadge.textContent = `v${currentVersionLabel}`;
+              renderVersionPreview();
+            }
+          } else if (
+            activeDetailTab === "related" ||
+            activeDetailTab === "related_inits" ||
+            activeDetailTab === "permissions"
+          ) {
+            // Related Assets / Related Inits / Permissions persist TOGETHER
+            // (only Characterizations stays an isolated, versioned slice).
+            // Saving just the active tab and skipping the other two used to
+            // silently drop whatever was staged on them — e.g. add a related
+            // asset, switch to Related Inits to add one there too, hit Save:
+            // only the tab you were looking at actually reached the server.
+            if (!tabs.relationsDirty() && !tabs.initsDirty() && !tabs.permissionsDirty()) {
+              noChanges = true;
             } else {
-              await tabs.flush(assetId, { skipChars: true, skipRelations: true });
-              savedMsg = tr("asset_detail_modal.permissions_saved", "Permissions saved.");
+              await tabs.flush(assetId, { skipChars: true });
+              savedMsg =
+                activeDetailTab === "related"
+                  ? tr("asset_detail_modal.related_saved", "Related assets saved.")
+                  : activeDetailTab === "related_inits"
+                    ? tr("asset_detail_modal.related_inits_saved", "Related initiatives saved.")
+                    : tr("asset_detail_modal.permissions_saved", "Permissions saved.");
             }
           }
         } else {
-          // Create mode is unversioned — the new asset starts at 1.0.0.
-          const saved = await createAsset(corePayload);
+          // Create mode is unversioned and saves everything together (core +
+          // every staged tab) regardless of which tab happens to be active —
+          // the new asset starts at 1.0.0. There's no "nothing to save" case
+          // here — a brand-new asset always has at least its required fields.
+          const saved = await createAsset(buildCorePayload());
           assetId = Number(saved.id);
-          if (editSection !== "core") await tabs.flush(assetId);
+          await tabs.flush(assetId);
         }
 
         // 3. Favorite (create mode only — edit mode toggles immediately).
@@ -736,11 +775,25 @@ const {
           }
         }
 
-        showStatus(savedMsg, "ok");
-        setTimeout(() => {
-          closeModal();
-          window.location.reload();
-        }, 400);
+        if (noChanges) {
+          showStatus(tr("asset_detail_modal.no_changes", "No changes to save."), "info");
+          submitBtn.disabled = false;
+        } else {
+          showStatus(savedMsg, "ok");
+          if (editingAssetId) {
+            // Edit mode: stay open on whatever tab the user is on — the message
+            // confirms the save, editing continues uninterrupted. The list
+            // behind the modal picks up the change whenever it's next loaded.
+            submitBtn.disabled = false;
+          } else {
+            // Create mode: the new asset doesn't exist in the list yet, so
+            // close + reload to reveal it.
+            setTimeout(() => {
+              closeModal();
+              window.location.reload();
+            }, 400);
+          }
+        }
       } catch (err) {
         showStatus(
           err instanceof Error ? err.message : tr("asset_detail_modal.error_save", "Could not save asset."),

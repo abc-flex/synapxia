@@ -1,7 +1,39 @@
 """Models for Initiatives module"""
 from sqlmodel import Field, SQLModel, Column, String, ForeignKey
-from typing import Optional
+from sqlalchemy import JSON
+from typing import Optional, Any
 from datetime import datetime
+
+# Initiative Models
+#
+# Read-only for now: no InitiativeCreate/InitiativeUpdate, no write routes.
+# This module is still a stub overall (per db/CLAUDE.md) — the only thing
+# needed today is listing/selecting existing initiatives so an asset can be
+# related to one (see asset_inits in api/app/lib/internal/models.py). Full
+# initiative management (create/edit/propose/score) is future scope for this
+# domain and should go through a SpecKit spec first, per AGENTS.md.
+
+
+class InitiativeBase(SQLModel):
+    name: str = Field(max_length=100)
+    description: Optional[str] = Field(default=None, max_length=500)
+    expected_impact: str = Field(max_length=100)
+    priority_level: str = Field(max_length=100)
+    reference: Optional[str] = Field(default=None)
+    status: str = Field(max_length=100)
+    type: Optional[str] = Field(default=None, max_length=100)
+    tags: Optional[Any] = Field(default=None, sa_column=Column("tags", JSON))
+    detail: Optional[str] = Field(default=None)
+    score: Optional[int] = Field(default=None)
+    is_active: bool = Field(default=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = None
+
+
+class Initiative(InitiativeBase, table=True):
+    __tablename__ = "initiatives"
+    id: Optional[int] = Field(default=None, primary_key=True)
+
 
 # Criterias Models
 

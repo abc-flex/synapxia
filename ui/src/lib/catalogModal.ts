@@ -24,6 +24,7 @@ import {
 import { getSpecificationsbyCategory } from "@/lib/specifications";
 import { isFavorite, setFavorite } from "@/lib/favorites";
 import { getUser } from "@/lib/auth";
+import { createStatusBanner } from "@/lib/statusBanner";
 
 /**
  * A feature input declaration. A bare string targets the characterization
@@ -92,17 +93,11 @@ export function mountCatalogModal(cfg: CatalogModalConfig): void {
     }
     return fallback;
   };
-  const showStatus = (msg: string, kind: "ok" | "error") => {
-    if (!statusBanner) return;
-    statusBanner.textContent = msg;
-    statusBanner.className =
-      "mx-6 mt-4 rounded-lg p-3 text-sm " +
-      (kind === "ok"
-        ? "bg-green-50 text-green-800 border border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700"
-        : "bg-red-50 text-red-800 border border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700");
-    statusBanner.classList.remove("hidden");
-  };
-  const clearStatus = () => statusBanner?.classList.add("hidden");
+  // Closable + self-dismissing (5s) — shared with AssetDetailModal and the
+  // profile page so every inline "save confirmation" banner behaves the same.
+  const status = createStatusBanner(statusBanner, "mx-6 mt-4 rounded-lg p-3 text-sm");
+  const showStatus = status.show;
+  const clearStatus = status.clear;
 
   // Category defaults (default_value per feature) — seed create mode.
   let defaults: Record<string, string> = {};

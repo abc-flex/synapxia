@@ -74,9 +74,12 @@ api/
 │   │       ├── characterizations.py
 │   │       ├── favorites.py
 │   │       ├── actions.py
-│   │       └── asset_relations.py
+│   │       ├── asset_relations.py
+│   │       └── asset_inits.py    # an asset's related initiatives (asset_inits table)
 │   ├── genai/                   # ⚠️ STUB — domain placeholder, no implementation
-│   ├── inits/                   # ⚠️ STUB
+│   ├── inits/                   # ⚠️ Mostly a stub — `criterias` has full CRUD, `initiatives`
+│   │                             #   has read-only GET routes (list/select/get) so assets can be
+│   │                             #   related to one; create/edit/score initiatives is unimplemented
 │   ├── insights/                # ⚠️ STUB
 │   └── workflows/               # ⚠️ STUB
 ├── pyproject.toml               # uv-managed deps; no [tool.X] lint sections yet
@@ -138,6 +141,8 @@ Each resource implements the **canonical CRUD pattern**:
 - `characterizations` → `/{code}/{feature_code}` (composite)
 - `favorites` → `/{user_id}/{asset_code}` (composite)
 - `asset_relations` → `/{source_code}/{target_code}` (composite)
+- `asset_inits` → `/{asset_id}/{init_id}` (composite); also `/asset/{asset_id}` filter
+- `initiatives` → `/{init_id}` (integer); read-only (no POST/PUT/DELETE yet)
 
 ### Taxonomy — `/api/{categories,features}`
 - `categories` supports `parent` (self-FK; hierarchical tree, see admin seed for the
@@ -150,11 +155,20 @@ Each resource implements the **canonical CRUD pattern**:
   timestamp (master-detail from `dimensions`).
 - `teams` has optional `lead` (FK → users) and `chat_channel_url` / `kanban_board_url`.
 
-### Lib — `/api/{assets,characterizations,favorites,actions,asset_relations}`
+### Lib — `/api/{assets,characterizations,favorites,actions,asset_relations,asset_inits}`
 - `assets` have JSON-typed `tags` and `details` columns — pass arbitrary structured
   metadata. Status comes from the `ASSET_STATUS` list.
 - `characterizations` are (asset × feature → value) triples — flexible per-asset
   metadata, gated by the taxonomy.
+- `asset_inits` is `asset_relations`' twin pointed at `initiatives.id` instead of another
+  asset — same composite PK shape, same `RELATION_TYPE` list, same per-asset MANAGE write
+  guard. Backs Asset Management's "Related Inits" tab.
+
+### Inits — `/api/{criterias,initiatives}`
+- `criterias` has the full canonical CRUD shape.
+- `initiatives` is **read-only** today (`/`, `/select`, `/{init_id}`) — just enough to
+  populate the "Related Inits" target dropdown. No create/edit/score routes yet; that's
+  future scope for this still-mostly-stub domain.
 
 ---
 

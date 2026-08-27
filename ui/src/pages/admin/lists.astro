@@ -126,36 +126,13 @@ const fieldKeys = formFields.map((f) => f.key);
         updateList,
         deleteList,
       } from "@/lib/lists";
+      import { showToast, flashToast } from "@/lib/toast";
 
       initCrudPage({
         dataId: "lists-data",
         editModalId: "list-edit-modal",
         deleteModalId: "list-delete-modal",
       });
-
-      // Helper function to show toast notifications
-      function showToast(message, variant = "info") {
-        const toast = document.createElement("div");
-        toast.className = `fixed top-4 right-4 z-50 max-w-md p-4 rounded-lg border shadow-lg transition-all duration-300 ${
-          variant === "error"
-            ? "bg-red-50 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
-            : "bg-green-50 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
-        }`;
-        toast.innerHTML = `
-          <div class="flex items-start gap-3">
-            <div class="flex-1 text-sm font-medium">${message}</div>
-            <button type="button" class="text-gray-400 hover:text-gray-600" onclick="this.parentElement.parentElement.remove()">✕</button>
-          </div>
-        `;
-        document.body.appendChild(toast);
-
-        // Auto-remove after 5 seconds
-        setTimeout(() => {
-          toast.style.opacity = "0";
-          toast.style.transform = "translateX(100%)";
-          setTimeout(() => toast.remove(), 300);
-        }, 5000);
-      }
 
       // Handle CRUD form submissions
       document.addEventListener("crud-submit", async (e) => {
@@ -173,8 +150,8 @@ const fieldKeys = formFields.map((f) => f.key);
               is_active: data.is_active !== false,
             });
 
-            showToast("List created successfully!");
-            setTimeout(() => window.location.reload(), 1000);
+            flashToast("List created successfully!");
+            window.location.reload();
           } else if (mode === "edit") {
             // Update existing list
             await updateList(data.id, {
@@ -184,14 +161,14 @@ const fieldKeys = formFields.map((f) => f.key);
               is_active: data.is_active !== false,
             });
 
-            showToast("List updated successfully!");
-            setTimeout(() => window.location.reload(), 1000);
+            flashToast("List updated successfully!");
+            window.location.reload();
           } else if (mode === "delete") {
             // Delete list
             await deleteList(data.id);
 
-            showToast("List deleted successfully!");
-            setTimeout(() => window.location.reload(), 1000);
+            flashToast("List deleted successfully!");
+            window.location.reload();
           }
         } catch (error) {
           console.error("CRUD operation failed:", error);

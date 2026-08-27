@@ -165,6 +165,7 @@ import Breadcrumb from "../components/core/Breadcrumb.astro";
 
   <script>
     import { changePassword, getCurrentUser, updateMyProfile } from "@/lib/auth";
+    import { createStatusBanner } from "@/lib/statusBanner";
 
     type UiUser = {
       first_name?: string;
@@ -217,16 +218,10 @@ import Breadcrumb from "../components/core/Breadcrumb.astro";
       setVal("username", u.username);
     }
 
-    function showStatus(message: string, kind: "ok" | "error") {
-      const banner = $("profile-status");
-      if (!banner) return;
-      banner.textContent = message;
-      banner.className =
-        "rounded-lg p-3 text-sm " +
-        (kind === "ok"
-          ? "bg-green-50 text-green-800 border border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700"
-          : "bg-red-50 text-red-800 border border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700");
-    }
+    // Closable + self-dismissing (5s) — shared with AssetDetailModal and the
+    // catalog modal so every inline "save confirmation" banner behaves the same.
+    const profileStatus = createStatusBanner($("profile-status"), "rounded-lg p-3 text-sm");
+    const showStatus = (message: string, kind: "ok" | "error") => profileStatus.show(message, kind);
 
     // i18n helper — looks up via window.t exposed by ClientTranslations.astro.
     const tr = (key: string, fallback: string): string => {

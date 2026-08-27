@@ -43,6 +43,7 @@ from .lib.routes import favorites as favorites_router
 from .lib.routes import actions as actions_router
 from .lib.routes import asset_relations as asset_relations_router
 from .lib.routes import asset_permissions as asset_permissions_router
+from .lib.routes import asset_inits as asset_inits_router
 
 from .collab.routes import teams as teams_router
 from .collab.routes import assignments as assignments_router
@@ -52,6 +53,7 @@ from .collab.routes import metrics as metrics_router
 from .collab.routes import roles as roles_router
 
 from .inits.routes import criterias as criterias_router
+from .inits.routes import initiatives as initiatives_router
 
 from .support.routes import bug_reports as bug_reports_router
 
@@ -346,6 +348,7 @@ app.include_router(favorites_router.router)
 app.include_router(actions_router.router)
 app.include_router(asset_relations_router.router)
 app.include_router(asset_permissions_router.router)
+app.include_router(asset_inits_router.router)
 
 # Collaboration module
 app.include_router(teams_router.router)
@@ -357,6 +360,7 @@ app.include_router(metrics_router.router)
 
 # GenAI Initiatives module
 app.include_router(criterias_router.router)
+app.include_router(initiatives_router.router)
 
 # Support module
 app.include_router(bug_reports_router.router)

@@ -802,6 +802,37 @@ export interface RelatedAsset {
 }
 
 // ============================================================================
+// Asset Inits — an asset's related initiatives (asset_inits table). Same
+// shape as Asset Relations, but `init` points at initiatives.id instead of
+// another asset. No read-projection like RelatedAsset — only the editable
+// "Related Inits" tab on Asset Management reads/writes this today.
+// ============================================================================
+
+export interface AssetInit {
+  asset: number;
+  init: number;
+  type: string;
+  rationale?: string | null;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface AssetInitCreate {
+  asset: number;
+  init: number;
+  type: string;
+  rationale?: string;
+  is_active?: boolean;
+}
+
+export interface AssetInitUpdate {
+  type?: string;
+  rationale?: string | null;
+  is_active?: boolean;
+}
+
+// ============================================================================
 // Asset permissions — surrogate-id rows granting a target (USER/ROLE/TEAM/
 // UNIT/PROJECT/PUBLIC × access level) access to an asset. `asset` is the
 // asset id; `target_code` is the target entity's id/code ("PUBLIC" for PUBLIC).
@@ -971,6 +1002,25 @@ export interface NotificationItem {
   workflow_status: string;
   unread: boolean;
   created_at: string;
+}
+
+// Initiative type — read-only for now (no Create/Update: the API only
+// exposes GET routes today; see api/app/inits/internal/models.py).
+export interface Initiative {
+  id: number;
+  name: string;
+  description?: string;
+  expected_impact: string;
+  priority_level: string;
+  reference?: string;
+  status: string;
+  type?: string;
+  tags?: unknown;
+  detail?: string;
+  score?: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
 }
 
 // Criteria types

@@ -60,7 +60,7 @@ INSERT INTO options (module, code, name, description, sort_order, type, path, ic
      10,'CARD_GALLERY','/lib/assets','archive-box'),
     ('LIB','EXPLORE','Explore Category',
      'Browse and explore different categories of digital assets (e.g., Prompt, MCP, Agent, Flow, Skill, Assistant, RAG App, Model).',
-     15,'CARD_GALLERY','/lib/explore','magnifying-glass'),
+     15,'CARD_GALLERY','/lib/explore','search'),
     ('LIB','PROMPTS','Prompt Gallery',
      'Curated gallery of reusable GenAI prompts.',
      20,'CARD_GALLERY','/lib/prompts','chat-bubble-bottom-center-text'),
@@ -174,6 +174,7 @@ VALUES
 
     -- LIB
     ('ADMINISTRATOR','LIB','ASSETS',     TRUE),
+    ('ADMINISTRATOR','LIB','EXPLORE',    TRUE),
     ('ADMINISTRATOR','LIB','PROMPTS',    TRUE),
     ('ADMINISTRATOR','LIB','MCPS',       TRUE),
     ('ADMINISTRATOR','LIB','AGENTS',     TRUE),
@@ -215,6 +216,7 @@ VALUES
 
     -- LIB
     ('ADMINISTRATIVE','LIB','ASSETS',     TRUE),
+    ('ADMINISTRATIVE','LIB','EXPLORE',    TRUE),
     ('ADMINISTRATIVE','LIB','PROMPTS',    TRUE),
     ('ADMINISTRATIVE','LIB','MCPS',       TRUE),
     ('ADMINISTRATIVE','LIB','AGENTS',     TRUE),
@@ -244,6 +246,7 @@ INSERT INTO privileges (profile, module, option, can_edit)
 VALUES
 
     -- LIB
+    ('COLLABORATOR','LIB','EXPLORE',    TRUE),
     ('COLLABORATOR','LIB','PROMPTS',    TRUE),
     ('COLLABORATOR','LIB','MCPS',       TRUE),
     ('COLLABORATOR','LIB','AGENTS',     TRUE),
@@ -265,6 +268,7 @@ INSERT INTO privileges (profile, module, option, can_edit)
 VALUES
 
     -- LIB
+    ('REVIEWER','LIB','EXPLORE',    TRUE),
     ('REVIEWER','LIB','PROMPTS',    TRUE),
     ('REVIEWER','LIB','MCPS',       TRUE),
     ('REVIEWER','LIB','AGENTS',     TRUE),

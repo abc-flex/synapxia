@@ -89,6 +89,13 @@ const currentModuleName = pathSegments[0] || "";
 <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.3"></script>
 
 <script>
+  // Show any toast a CRUD page queued right before reloading itself (see
+  // `flashToast` in lib/toast.ts) — runs once per authenticated page load.
+  import { consumeFlashToast } from "@/lib/toast";
+  consumeFlashToast();
+</script>
+
+<script>
   (() => {
     if (typeof window === "undefined") return;
 

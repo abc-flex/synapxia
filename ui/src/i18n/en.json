@@ -104,6 +104,7 @@
     "dashboard": "Assignment Dashboard",
     "assets": "Asset Management",
     "characterizations": "Asset Characterization",
+    "lib_explore": "Explore Category",
     "prompts": "Prompt Gallery",
     "mcps": "MCP Directory",
     "agents": "Agent Repository",
@@ -468,11 +469,9 @@
   "asset_detail_modal": {
     "title_create": "New Asset",
     "title_edit": "Edit Asset",
-    "title_edit_core": "Edit core fields",
-    "title_edit_detail": "Edit details",
     "subtitle": "Core fields plus the characterizations required by the chosen category.",
-    "core_section": "Core",
-    "characterizations_section": "Characterization",
+    "core_section": "Core Fields",
+    "characterizations_section": "Characteristics",
     "characterizations_empty": "Select a category to load its required features.",
     "choose_category": "— choose category —",
     "choose_status": "— choose status —",
@@ -483,8 +482,13 @@
     "save_new_version": "Save new version",
     "save_related": "Save related assets",
     "save_permissions": "Save permissions",
+    "save_core": "Save core fields",
+    "save_related_inits": "Save related initiatives",
     "related_saved": "Related assets saved.",
     "permissions_saved": "Permissions saved.",
+    "core_saved": "Core fields saved.",
+    "related_inits_saved": "Related initiatives saved.",
+    "no_changes": "No changes to save.",
     "current_version": "Current version",
     "change_type_label": "What kind of change is this?",
     "change_type_major": "Major",
@@ -493,7 +497,6 @@
     "error_specs": "Could not load specifications.",
     "error_load": "Could not load asset.",
     "error_save": "Could not save asset.",
-    "tab_details": "Details",
     "tab_discussion": "Discussion",
     "tab_history": "History",
     "tab_versions": "Versions",
@@ -509,6 +512,13 @@
     "related_choose_type": "— choose type —",
     "related_duplicate": "This asset is already related.",
     "related_missing_fields": "Pick a target asset and a relation type.",
+    "tab_related_inits": "Related Inits",
+    "related_target_init": "Target initiative",
+    "related_choose_init": "— choose initiative —",
+    "related_inits_empty": "No related initiatives yet.",
+    "related_inits_duplicate": "This initiative is already related.",
+    "related_inits_missing_fields": "Pick a target initiative and a relation type.",
+    "error_inits": "Could not load related initiatives.",
     "favorite_add": "Add to favorites",
     "favorite_remove": "Remove from favorites",
     "error_relations": "Could not load related assets.",
@@ -831,6 +841,10 @@
     "discuss": "Comment or ask a question",
     "proposed": "Your asset has been proposed and is now under review."
   },
+  "explore": {
+    "picker_title": "Explore a category",
+    "picker_subtitle": "Choose a category to browse its assets."
+  },
   "foro": {
     "title": "Discussion",
     "tag_comment": "Comment",
@@ -986,6 +1000,9 @@
     "model": "Model",
     "platform": "Platform",
     "temperature": "Temp"
+  },
+  "explore_modal": {
+    "empty": "No assets found in this category."
   },
   "mcp_modal": {
     "title_create": "New MCP Server",

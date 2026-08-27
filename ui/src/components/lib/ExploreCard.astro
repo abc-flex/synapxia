@@ -1,0 +1,99 @@
+---
+/**
+ * ExploreCard — the "Explore Category" gallery card. Wraps the reusable
+ * GalleryCard scaffold with a category-agnostic rendering: the icon comes from
+ * the option that drove this page (not a hardcoded per-catalog SVG), and the
+ * chips slot only carries `#tag` pills — no per-category feature chips (model/
+ * platform/temperature, tools, mode, …), matching the minimal card design for
+ * this unified browser.
+ */
+import GalleryCard from "@/components/lib/gallery/GalleryCard.astro";
+
+const icons = import.meta.glob("/src/images/icons/*.svg", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+}) as Record<string, string>;
+
+function getIcon(name: string) {
+  return icons[`/src/images/icons/${name}.svg`] ?? "";
+}
+
+export interface Props {
+  id: number | string;
+  name: string;
+  subtitle?: string;
+  subtitleTs?: string;
+  description?: string;
+  statusLabel?: string;
+  statusValue?: string;
+  favorite?: string;
+  searchText?: string;
+  detailModalId?: string;
+  icon?: string;
+  tags?: string[];
+  votable?: boolean;
+  votePositive?: number;
+  voteNegative?: number;
+  myVote?: string;
+  discussCount?: number;
+  version?: string;
+}
+
+const {
+  id,
+  name,
+  subtitle,
+  subtitleTs,
+  description,
+  statusLabel,
+  statusValue,
+  favorite,
+  searchText,
+  detailModalId = "explore-view-modal",
+  icon = "search",
+  tags = [],
+  votable = false,
+  votePositive = 0,
+  voteNegative = 0,
+  myVote = "",
+  discussCount = 0,
+  version,
+} = Astro.props as Props;
+
+const iconSvg = getIcon(icon);
+---
+
+<GalleryCard
+  id={id}
+  name={name}
+  subtitle={subtitle}
+  subtitleTs={subtitleTs}
+  statusLabel={statusLabel}
+  statusValue={statusValue}
+  favorite={favorite}
+  searchText={searchText}
+  detailModalId={detailModalId}
+  votable={votable}
+  votePositive={votePositive}
+  voteNegative={voteNegative}
+  myVote={myVote}
+  discussCount={discussCount}
+  version={version}
+>
+  <span slot="icon" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
+    <span class="h-5 w-5 [&>svg]:h-5 [&>svg]:w-5">
+      <Fragment set:html={iconSvg} />
+    </span>
+  </span>
+
+  {description && (
+    <p slot="body" class="line-clamp-2 text-sm text-gray-500 dark:text-gray-400">{description}</p>
+  )}
+
+  <Fragment slot="chips">
+    {tags.map((tag) => (
+      <span class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">#{tag}</span>
+    ))}
+  </Fragment>
+</GalleryCard>

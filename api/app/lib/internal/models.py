@@ -354,6 +354,49 @@ class RelatedAsset(SQLModel):
     rationale: Optional[str] = Field(default=None, description="Why the assets are related")
 
 
+# Asset Inits Models — an asset's related initiatives (Asset Management's
+# "Related Inits" tab), the same shape as Asset Relations but pointing at
+# `initiatives.id` instead of another `assets.id`. No read-projection like
+# RelatedAsset — the editable tab resolves labels client-side from the
+# initiatives `/select` list it already loads, and nothing else reads this
+# in reverse (from the initiative side) yet.
+
+
+class AssetInitBase(SQLModel):
+    asset: int = Field(sa_column=Column(
+        'asset', BigInteger, ForeignKey('assets.id'), primary_key=True))
+    init: int = Field(sa_column=Column(
+        'init', BigInteger, ForeignKey('initiatives.id'), primary_key=True))
+    type: str = Field(max_length=100)
+    rationale: Optional[str] = Field(default=None)
+    is_active: bool = Field(default=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = None
+
+
+class AssetInit(AssetInitBase, table=True):
+    __tablename__ = "asset_inits"
+
+
+class AssetInitCreate(SQLModel):
+    asset: int = Field(description="Asset id (FK to assets.id)")
+    init: int = Field(description="Initiative id (FK to initiatives.id)")
+    type: str = Field(max_length=100, description="Relation type")
+    rationale: Optional[str] = Field(
+        default=None, description="Why the asset and initiative are related")
+    is_active: Optional[bool] = Field(
+        default=True, description="Indicates if the relation is active")
+
+
+class AssetInitUpdate(SQLModel):
+    type: Optional[str] = Field(
+        default=None, max_length=100, description="Relation type")
+    rationale: Optional[str] = Field(
+        default=None, description="Why the asset and initiative are related")
+    is_active: Optional[bool] = Field(
+        default=None, description="Indicates if the relation is active")
+
+
 # Asset Permissions Models
 
 

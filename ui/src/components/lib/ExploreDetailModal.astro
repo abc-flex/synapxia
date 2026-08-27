@@ -1,0 +1,48 @@
+---
+/**
+ * ExploreDetailModal — the "Explore Category" gallery's read-only "big card"
+ * view. Wraps the reusable CatalogDetailModal with the cross-category
+ * ALL_DETAIL_SECTIONS superset (also used by the /lib/assets Versions tab) so
+ * it renders whatever characterizations a given asset actually has, regardless
+ * of category — sections with no value simply skip themselves.
+ */
+import CatalogDetailModal from "@/components/lib/gallery/CatalogDetailModal.astro";
+
+const icons = import.meta.glob("/src/images/icons/*.svg", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+}) as Record<string, string>;
+
+function getIcon(name: string) {
+  return icons[`/src/images/icons/${name}.svg`] ?? "";
+}
+
+export interface Props {
+  modalId?: string;
+  statuses?: { value: string; label: string }[];
+  icon?: string;
+}
+
+const { modalId = "explore-view-modal", statuses = [], icon = "search" } = Astro.props as Props;
+const iconSvg = getIcon(icon);
+---
+
+<CatalogDetailModal modalId={modalId} statuses={statuses} accentClass="text-indigo-500">
+  <span slot="icon" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
+    <span class="h-5 w-5 [&>svg]:h-5 [&>svg]:w-5">
+      <Fragment set:html={iconSvg} />
+    </span>
+  </span>
+</CatalogDetailModal>
+
+<script>
+  import { mountCatalogDetail } from "@/lib/catalogDetail";
+  import { ALL_DETAIL_SECTIONS } from "@/lib/assetSections";
+
+  mountCatalogDetail({
+    modalId: "explore-view-modal",
+    editModalId: "",
+    sections: ALL_DETAIL_SECTIONS,
+  });
+</script>

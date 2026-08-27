@@ -131,7 +131,7 @@ new modules between existing bands.
 | `diagnostics` | `(init, criteria)` | `creator_score`, `reviewer_score` |
 | `favorite_inits` | `(user_id, init)` | — |
 | `collaborations` | `id` (bigserial) | `init`, `user_id`, `type`, `content`, `created_at` |
-| `related_inits` | `(source, target)` | `relation_type` |
+| `asset_inits` | `(asset, init, type)` | `rationale` — an asset's related initiatives (`asset`→`assets.id`, `init`→`initiatives.id`), same shape as `related_assets` |
 | `init_permissions` | `id` (bigserial) | `target_type`, `target_value`, `access_level` |
 
 ### Ana — `db/sql/61-ana-ddl.sql` (schema only; module is a stub on the API side)

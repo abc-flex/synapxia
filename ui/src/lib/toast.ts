@@ -146,12 +146,54 @@ export function showToast(message: string, variant: ToastVariant | string = "inf
     toast.style.transform = "translateY(0)";
   });
 
-  setTimeout(dismiss, 4000);
+  setTimeout(dismiss, 5000);
 }
 
 /** Register `window.showToast` so existing handlers reach the top-layer toast. */
 export function installGlobalToast(): void {
   if (typeof window !== "undefined") {
     (window as unknown as { showToast: typeof showToast }).showToast = showToast;
+  }
+}
+
+/* ============================================================
+   Flash toast — survives a full-page reload.
+   Several CRUD pages show a success toast then immediately call
+   `window.location.reload()` to refresh the list (no client-side re-fetch),
+   which tears the toast's DOM out mid-display instead of letting it run its
+   5s/closable lifecycle. `flashToast` stashes the message in `sessionStorage`
+   before the reload; `consumeFlashToast` (called once per page load from
+   `BaseLayout.astro`) picks it up and shows it fresh on the reloaded page.
+   ============================================================ */
+
+const FLASH_KEY = "synapxia:flash-toast";
+
+/** Queue a toast to show on the *next* page load instead of this one —
+ * call this right before a `window.location.reload()` / navigation. */
+export function flashToast(message: string, variant: ToastVariant | string = "info"): void {
+  if (typeof sessionStorage === "undefined") return;
+  try {
+    sessionStorage.setItem(FLASH_KEY, JSON.stringify({ message, variant }));
+  } catch {
+    /* storage unavailable (private mode, quota) — the toast is just skipped */
+  }
+}
+
+/** Show + clear any toast queued by `flashToast` on the previous page. */
+export function consumeFlashToast(): void {
+  if (typeof sessionStorage === "undefined") return;
+  let raw: string | null = null;
+  try {
+    raw = sessionStorage.getItem(FLASH_KEY);
+    if (raw) sessionStorage.removeItem(FLASH_KEY);
+  } catch {
+    return;
+  }
+  if (!raw) return;
+  try {
+    const parsed = JSON.parse(raw) as { message?: string; variant?: string };
+    if (parsed.message) showToast(parsed.message, parsed.variant);
+  } catch {
+    /* corrupted payload — ignore */
   }
 }

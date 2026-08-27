@@ -328,7 +328,7 @@ the CSS custom properties live in `ui/src/styles/globals.css`.
 | Chip / tag | `rounded-full bg-indigo-50 text-indigo-700` `text-[11px]` | relation-type chips |
 | Radius | `rounded-lg` controls · `rounded-2xl` modal · `rounded-full` badges | |
 | Modal width — CRUD | `w-[680px] max-w-full` | `components/forms/CrudModal.astro` |
-| Modal width — detail | `w-[min(900px,95vw)]` | `components/lib/AssetDetailModal.astro` |
+| Modal width — detail | `w-[min(1040px,95vw)]` | `components/lib/AssetDetailModal.astro` (widened from 900px to fit 8 tabs) |
 
 Shared input/label classes are **importable** from `lib/formClasses.ts` (`inputClass` /
 `labelClass`) by both `.astro` frontmatter and client islands — use them instead of

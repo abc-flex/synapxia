@@ -35,6 +35,13 @@
     deleteAssetRelation,
   } from "@/lib/asset_relations";
   import {
+    getAssetInitsByAsset,
+    createAssetInit,
+    updateAssetInit,
+    deleteAssetInit,
+  } from "@/lib/asset_inits";
+  import { getInitiativesSelect } from "@/lib/initiatives";
+  import {
     getAssetPermissionsByAsset,
     createAssetPermission,
     updateAssetPermission,
@@ -48,9 +55,11 @@
   import { translate } from "@/utils/i18nClient";
   import Foro from "@/components/svelte/Foro.svelte";
 
-  // Editable tabs first, then the read-only view tabs (Discussion/History/
-  // Versions) surfaced from the gallery detail modal — view, not edit.
-  type TabName = "chars" | "related" | "permissions" | "discussion" | "history" | "versions";
+  // "core" (the asset's core fields, hydrated/saved by the parent .astro — see
+  // the empty-shell panel below) comes first, then the editable collections,
+  // then the read-only view tabs (Discussion/History/Versions) surfaced from
+  // the gallery detail modal — view, not edit.
+  type TabName = "core" | "chars" | "related" | "related_inits" | "permissions" | "discussion" | "history" | "versions";
   const READONLY_TABS: TabName[] = ["discussion", "history", "versions"];
   interface TabCounts {
     chars: number;
@@ -61,6 +70,13 @@
   type StagedRelation = {
     target: number;
     targetLabel: string;
+    type: string;
+    typeLabel: string;
+    rationale: string;
+  };
+  type StagedInit = {
+    init: number;
+    initLabel: string;
     type: string;
     typeLabel: string;
     rationale: string;
@@ -133,7 +149,7 @@
 
   // ── State ─────────────────────────────────────────────────────────────
   let rootEl = $state<HTMLElement | undefined>(undefined);
-  let activeTab = $state<TabName>("chars");
+  let activeTab = $state<TabName>("core");
 
   // Characterizations
   let loadedSpecs = $state<EnrichedSpec[]>([]);
@@ -150,6 +166,17 @@
   let relType = $state("");
   let relRationale = $state("");
   let relError = $state("");
+
+  // Related Inits — same shape as Relations, but the target is an initiative
+  // (asset_inits table) instead of another asset. Reuses relTypeOptions (both
+  // tables share the RELATION_TYPE list).
+  let stagedInits = $state<StagedInit[]>([]);
+  let initialInitByInit = new Map<number, any>();
+  let initOptions = $state<SelectOption[]>([]);
+  let initTarget = $state("");
+  let initType = $state("");
+  let initRationale = $state("");
+  let initError = $state("");
 
   // Permissions
   let stagedPermissions = $state<StagedPermission[]>([]);
@@ -209,8 +236,8 @@
   // create mode. Keyboard nav walks the currently-visible set.
   const tabOrder = $derived<TabName[]>(
     editingAssetId != null
-      ? ["chars", "related", "permissions", "discussion", "history", "versions"]
-      : ["chars", "related", "permissions"],
+      ? ["core", "chars", "related", "related_inits", "permissions", "discussion", "history", "versions"]
+      : ["core", "chars", "related", "related_inits", "permissions"],
   );
   const tabClass = (name: TabName): string =>
     "whitespace-nowrap border-b-2 px-1 pb-3 " +
@@ -338,6 +365,45 @@
     }
   }
 
+  // ── Related Inits ─────────────────────────────────────────────────────
+  function addInit(): void {
+    initError = "";
+    const init = Number(initTarget);
+    const type = initType;
+    if (!init || !type) {
+      initError = t("asset_detail_modal.related_inits_missing_fields", "Pick a target initiative and a relation type.");
+      return;
+    }
+    if (stagedInits.some((r) => r.init === init)) {
+      initError = t("asset_detail_modal.related_inits_duplicate", "This initiative is already related.");
+      return;
+    }
+    stagedInits = [
+      ...stagedInits,
+      {
+        init,
+        initLabel: initOptions.find((o) => Number(o.value) === init)?.label || String(init),
+        type,
+        typeLabel: relTypeOptions.find((o) => o.value === type)?.label || type,
+        rationale: initRationale.trim(),
+      },
+    ];
+    initTarget = "";
+    initType = "";
+    initRationale = "";
+  }
+  function removeInit(idx: number): void {
+    stagedInits = stagedInits.filter((_, i) => i !== idx);
+  }
+
+  async function loadInitOptions(): Promise<void> {
+    try {
+      initOptions = await getInitiativesSelect();
+    } catch {
+      initOptions = [];
+    }
+  }
+
   // ── Permissions ───────────────────────────────────────────────────────
   function addPermission(): void {
     permError = "";
@@ -454,7 +520,7 @@
 
   // ── options / hydrate / flush / reset ─────────────────────────────────
   export async function loadOptions(): Promise<void> {
-    await Promise.all([loadRelationOptions(), loadPermissionOptions()]);
+    await Promise.all([loadRelationOptions(), loadPermissionOptions(), loadInitOptions()]);
   }
 
   export async function hydrate(id: number, category?: string): Promise<void> {
@@ -462,10 +528,14 @@
     await loadOptions();
 
     let cat = category;
-    const [chars, relations, permissions] = await Promise.all([
+    const [chars, relations, inits, permissions] = await Promise.all([
       getCharacterizationsByAsset(id).catch(() => [] as any[]),
       getAssetRelationsBySource(id).catch(() => {
         reportError(t("asset_detail_modal.error_relations", "Could not load related assets."));
+        return [] as any[];
+      }),
+      getAssetInitsByAsset(id).catch(() => {
+        reportError(t("asset_detail_modal.error_inits", "Could not load related initiatives."));
         return [] as any[];
       }),
       getAssetPermissionsByAsset(id).catch(() => {
@@ -487,6 +557,16 @@
     stagedRelations = relations.map((r: any) => ({
       target: r.target,
       targetLabel: assetOptions.find((a) => Number(a.value) === r.target)?.label || String(r.target),
+      type: r.type,
+      typeLabel: relTypeOptions.find((o) => o.value === r.type)?.label || r.type,
+      rationale: r.rationale ?? "",
+    }));
+
+    // Related Inits
+    initialInitByInit = new Map(inits.map((r: any) => [r.init, r]));
+    stagedInits = inits.map((r: any) => ({
+      init: r.init,
+      initLabel: initOptions.find((o) => Number(o.value) === r.init)?.label || String(r.init),
       type: r.type,
       typeLabel: relTypeOptions.find((o) => o.value === r.type)?.label || r.type,
       rationale: r.rationale ?? "",
@@ -524,9 +604,71 @@
     return snapshot;
   }
 
+  /** Whether the staged characterization set differs from what was last
+   * hydrated/flushed — mirrors `charSnapshot()` vs `initialCharByFeature`, the
+   * same comparison a version save would act on. Lets the parent skip an
+   * empty "Save new version" (a no-op save shouldn't still bump the version). */
+  export function charsDirty(): boolean {
+    const current = charSnapshot();
+    const initial: Record<string, string> = {};
+    for (const [feature, c] of initialCharByFeature) {
+      if (c?.value) initial[feature] = c.value;
+    }
+    const keys = new Set([...Object.keys(current), ...Object.keys(initial)]);
+    for (const k of keys) {
+      if ((current[k] ?? "") !== (initial[k] ?? "")) return true;
+    }
+    return false;
+  }
+
+  /** Whether the staged relations differ from the last hydrated/flushed
+   * baseline — same diff `flush()` would act on, without performing it. */
+  export function relationsDirty(): boolean {
+    const stagedTargets = new Set(stagedRelations.map((r) => r.target));
+    for (const [target] of initialRelByTarget) {
+      if (!stagedTargets.has(target)) return true; // a pending delete
+    }
+    for (const rel of stagedRelations) {
+      const initial = initialRelByTarget.get(rel.target);
+      if (!initial) return true; // a pending create
+      if (initial.type !== rel.type || (initial.rationale ?? "") !== rel.rationale) return true; // a pending update
+    }
+    return false;
+  }
+
+  /** Same as `relationsDirty()`, for the Related Inits tab. */
+  export function initsDirty(): boolean {
+    const stagedInitIds = new Set(stagedInits.map((r) => r.init));
+    for (const [initId] of initialInitByInit) {
+      if (!stagedInitIds.has(initId)) return true;
+    }
+    for (const rel of stagedInits) {
+      const initial = initialInitByInit.get(rel.init);
+      if (!initial) return true;
+      if (initial.type !== rel.type || (initial.rationale ?? "") !== rel.rationale) return true;
+    }
+    return false;
+  }
+
+  /** Same as `relationsDirty()`, for the Permissions tab (surrogate-id keyed). */
+  export function permissionsDirty(): boolean {
+    const stagedIds = new Set(stagedPermissions.filter((p) => p.id != null).map((p) => p.id));
+    for (const [pid] of initialPermById) {
+      if (!stagedIds.has(pid)) return true;
+    }
+    for (const p of stagedPermissions) {
+      if (p.id == null) return true;
+      const initial = initialPermById.get(p.id);
+      if (initial && (initial.target_type !== p.targetType || initial.target_code !== p.targetCode || initial.access_level !== p.access)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   export async function flush(
     id: number,
-    opts?: { skipChars?: boolean; skipRelations?: boolean; skipPermissions?: boolean },
+    opts?: { skipChars?: boolean; skipRelations?: boolean; skipInits?: boolean; skipPermissions?: boolean },
   ): Promise<void> {
     // Each slice is independently skippable so the modal can save one tab at a
     // time: chars save = version bump (chars snapshotted server-side, so
@@ -575,7 +717,8 @@
         if (!initial) {
           try {
             await createAssetRelation({ source: id, target: rel.target, type: rel.type, rationale: rel.rationale || undefined });
-          } catch {
+          } catch (err) {
+            if (!isConflict(err)) throw err; // 409 = a logically-deleted row for this pair — reactivate it
             await updateAssetRelation(id, rel.target, { type: rel.type, rationale: rel.rationale || null, is_active: true });
           }
         } else if (initial.type !== rel.type || (initial.rationale ?? "") !== rel.rationale) {
@@ -584,7 +727,34 @@
       }
     }
 
-    // 3. Permissions (surrogate-id keyed)
+    // 3. Related Inits (same deletes-first → re-add-reactivates pattern)
+    if (!opts?.skipInits) {
+      const stagedInitIds = new Set(stagedInits.map((r) => r.init));
+      for (const [initId] of initialInitByInit) {
+        if (!stagedInitIds.has(initId)) {
+          try {
+            await deleteAssetInit(id, initId);
+          } catch {
+            /* already gone */
+          }
+        }
+      }
+      for (const rel of stagedInits) {
+        const initial = initialInitByInit.get(rel.init);
+        if (!initial) {
+          try {
+            await createAssetInit({ asset: id, init: rel.init, type: rel.type, rationale: rel.rationale || undefined });
+          } catch (err) {
+            if (!isConflict(err)) throw err; // 409 = a logically-deleted row for this pair — reactivate it
+            await updateAssetInit(id, rel.init, { type: rel.type, rationale: rel.rationale || null, is_active: true });
+          }
+        } else if (initial.type !== rel.type || (initial.rationale ?? "") !== rel.rationale) {
+          await updateAssetInit(id, rel.init, { type: rel.type, rationale: rel.rationale || null });
+        }
+      }
+    }
+
+    // 4. Permissions (surrogate-id keyed)
     if (!opts?.skipPermissions) {
       const stagedIds = new Set(stagedPermissions.filter((p) => p.id != null).map((p) => p.id));
       for (const [pid] of initialPermById) {
@@ -634,6 +804,11 @@
         stagedRelations.map((r) => [r.target, { target: r.target, type: r.type, rationale: r.rationale }]),
       );
     }
+    if (!opts?.skipInits) {
+      initialInitByInit = new Map(
+        stagedInits.map((r) => [r.init, { init: r.init, type: r.type, rationale: r.rationale }]),
+      );
+    }
     if (!opts?.skipPermissions) {
       initialPermById = new Map(
         stagedPermissions
@@ -655,6 +830,12 @@
     relType = "";
     relRationale = "";
     relError = "";
+    stagedInits = [];
+    initialInitByInit = new Map();
+    initTarget = "";
+    initType = "";
+    initRationale = "";
+    initError = "";
     stagedPermissions = [];
     initialPermById = new Map();
     permType = "";
@@ -663,7 +844,7 @@
     permCodeDisabled = false;
     permAccess = "";
     permError = "";
-    activeTab = "chars";
+    activeTab = "core";
   }
 
   onMount(() => {
@@ -706,6 +887,18 @@
       <button
         type="button"
         role="tab"
+        data-tab="core"
+        aria-selected={activeTab === "core"}
+        tabindex={activeTab === "core" ? 0 : -1}
+        class={tabClass("core")}
+        onclick={() => (activeTab = "core")}
+        onkeydown={(e) => onTabKeydown(e)}
+      >
+        <span>{t("asset_detail_modal.core_section", "Core Fields")}</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
         data-tab="chars"
         aria-selected={activeTab === "chars"}
         tabindex={activeTab === "chars" ? 0 : -1}
@@ -731,6 +924,21 @@
         <span>{t("asset_detail_modal.tab_related", "Related Assets")}</span>
         {#if stagedRelations.length > 0}
           <span class="ml-1 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">{stagedRelations.length}</span>
+        {/if}
+      </button>
+      <button
+        type="button"
+        role="tab"
+        data-tab="related_inits"
+        aria-selected={activeTab === "related_inits"}
+        tabindex={activeTab === "related_inits" ? 0 : -1}
+        class={tabClass("related_inits")}
+        onclick={() => (activeTab = "related_inits")}
+        onkeydown={(e) => onTabKeydown(e)}
+      >
+        <span>{t("asset_detail_modal.tab_related_inits", "Related Inits")}</span>
+        {#if stagedInits.length > 0}
+          <span class="ml-1 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">{stagedInits.length}</span>
         {/if}
       </button>
       <button
@@ -789,6 +997,15 @@
         </button>
       {/if}
     </div>
+  </div>
+
+  <!-- Core Fields panel (empty shell) — the asset's core fields (name/category/
+       status/description/reference/tags) live in AssetDetailModal.astro's own
+       markup/validation/save logic; its script re-parents that existing
+       <section> into this shell right after mount (same "hydrated externally"
+       pattern as the History/Versions panels below). -->
+  <div data-tabpanel="core" role="tabpanel" class="pt-4" class:hidden={activeTab !== "core"}>
+    <section id={`${idPrefix}-core`}></section>
   </div>
 
   <!-- Characterizations panel -->
@@ -875,6 +1092,62 @@
                 <span class="hidden md:block max-w-[200px] truncate text-xs text-gray-500 dark:text-gray-400" title={rel.rationale}>{rel.rationale}</span>
               {/if}
               <button type="button" class="shrink-0 rounded-md p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30" title={t("asset_detail_modal.related_remove", "Remove")} onclick={() => removeRelation(idx)} aria-label={t("asset_detail_modal.related_remove", "Remove")}>
+                <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+              </button>
+            </li>
+          {/each}
+        </ul>
+      {/if}
+    </section>
+  </div>
+
+  <!-- Related Inits panel -->
+  <div data-tabpanel="related_inits" role="tabpanel" class="pt-4 space-y-4" class:hidden={activeTab !== "related_inits"}>
+    <section>
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div>
+          <label for={`${idPrefix}-init-target`} class={labelClass}>{t("asset_detail_modal.related_target_init", "Target initiative")}</label>
+          <select id={`${idPrefix}-init-target`} bind:value={initTarget} class={fieldClass}>
+            <option value="">{t("asset_detail_modal.related_choose_init", "— choose initiative —")}</option>
+            {#each initOptions as o (o.value)}
+              <option value={o.value}>{o.label}</option>
+            {/each}
+          </select>
+        </div>
+        <div>
+          <label for={`${idPrefix}-init-type`} class={labelClass}>{t("asset_detail_modal.related_type", "Relation type")}</label>
+          <select id={`${idPrefix}-init-type`} bind:value={initType} class={fieldClass}>
+            <option value="">{t("asset_detail_modal.related_choose_type", "— choose type —")}</option>
+            {#each relTypeOptions as o (o.value)}
+              <option value={o.value}>{o.label}</option>
+            {/each}
+          </select>
+        </div>
+        <div class="md:col-span-2">
+          <label for={`${idPrefix}-init-rationale`} class={labelClass}>{t("asset_detail_modal.related_rationale", "Rationale")}</label>
+          <div class="flex gap-2">
+            <input id={`${idPrefix}-init-rationale`} type="text" bind:value={initRationale} placeholder={t("asset_detail_modal.related_rationale_placeholder", "Why are these related? (optional)")} class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white" />
+            <button type="button" class={addBtnClass} onclick={addInit}>{t("asset_detail_modal.related_add", "Add relation")}</button>
+          </div>
+        </div>
+      </div>
+      {#if initError}
+        <p class="mt-2 text-xs text-red-600 dark:text-red-400">{initError}</p>
+      {/if}
+    </section>
+    <section>
+      {#if stagedInits.length === 0}
+        <div class={emptyClass}>{t("asset_detail_modal.related_inits_empty", "No related initiatives yet.")}</div>
+      {:else}
+        <ul class="space-y-2">
+          {#each stagedInits as rel, idx (rel.init)}
+            <li class={rowClass}>
+              <span class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-800 dark:text-gray-200" title={rel.initLabel}>{rel.initLabel}</span>
+              <span class="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">{rel.typeLabel || rel.type}</span>
+              {#if rel.rationale}
+                <span class="hidden md:block max-w-[200px] truncate text-xs text-gray-500 dark:text-gray-400" title={rel.rationale}>{rel.rationale}</span>
+              {/if}
+              <button type="button" class="shrink-0 rounded-md p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30" title={t("asset_detail_modal.related_remove", "Remove")} onclick={() => removeInit(idx)} aria-label={t("asset_detail_modal.related_remove", "Remove")}>
                 <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
               </button>
             </li>

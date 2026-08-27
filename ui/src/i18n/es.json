@@ -104,6 +104,7 @@
     "dashboard": "Panel de Métricas",
     "assets": "Gestión de Activos",
     "characterizations": "Caracterización de Activos",
+    "lib_explore": "Explorar Categoría",
     "prompts": "Galería de Prompts",
     "mcps": "Directorio de MCPs",
     "agents": "Repositorio de Agentes",
@@ -468,11 +469,9 @@
   "asset_detail_modal": {
     "title_create": "Nuevo Activo",
     "title_edit": "Editar Activo",
-    "title_edit_core": "Editar campos principales",
-    "title_edit_detail": "Editar detalles",
     "subtitle": "Campos principales más las caracterizaciones requeridas por la categoría elegida.",
-    "core_section": "Datos principales",
-    "characterizations_section": "Caracterización",
+    "core_section": "Campos principales",
+    "characterizations_section": "Características",
     "characterizations_empty": "Selecciona una categoría para cargar sus características requeridas.",
     "choose_category": "— elige categoría —",
     "choose_status": "— elige estado —",
@@ -483,8 +482,13 @@
     "save_new_version": "Guardar nueva versión",
     "save_related": "Guardar activos relacionados",
     "save_permissions": "Guardar permisos",
+    "save_core": "Guardar campos principales",
+    "save_related_inits": "Guardar iniciativas relacionadas",
     "related_saved": "Activos relacionados guardados.",
     "permissions_saved": "Permisos guardados.",
+    "core_saved": "Campos principales guardados.",
+    "related_inits_saved": "Iniciativas relacionadas guardadas.",
+    "no_changes": "No hay cambios por guardar.",
     "current_version": "Versión actual",
     "change_type_label": "¿Qué tipo de cambio es?",
     "change_type_major": "Mayor",
@@ -493,7 +497,6 @@
     "error_specs": "No se pudieron cargar las especificaciones.",
     "error_load": "No se pudo cargar el activo.",
     "error_save": "No se pudo guardar el activo.",
-    "tab_details": "Detalles",
     "tab_discussion": "Discusión",
     "tab_history": "Historial",
     "tab_versions": "Versiones",
@@ -509,6 +512,13 @@
     "related_choose_type": "— elige un tipo —",
     "related_duplicate": "Este activo ya está relacionado.",
     "related_missing_fields": "Selecciona un activo destino y un tipo de relación.",
+    "tab_related_inits": "Iniciativas relacionadas",
+    "related_target_init": "Iniciativa destino",
+    "related_choose_init": "— elige una iniciativa —",
+    "related_inits_empty": "Aún no hay iniciativas relacionadas.",
+    "related_inits_duplicate": "Esta iniciativa ya está relacionada.",
+    "related_inits_missing_fields": "Selecciona una iniciativa destino y un tipo de relación.",
+    "error_inits": "No se pudieron cargar las iniciativas relacionadas.",
     "favorite_add": "Añadir a favoritos",
     "favorite_remove": "Quitar de favoritos",
     "error_relations": "No se pudieron cargar los activos relacionados.",
@@ -831,6 +841,10 @@
     "discuss": "Comentar o preguntar",
     "proposed": "Tu activo ha sido propuesto y ahora está en revisión."
   },
+  "explore": {
+    "picker_title": "Explorar una categoría",
+    "picker_subtitle": "Elige una categoría para explorar sus activos."
+  },
   "foro": {
     "title": "Discusión",
     "tag_comment": "Comentario",
@@ -986,6 +1000,9 @@
     "model": "Modelo",
     "platform": "Plataforma",
     "temperature": "Temp"
+  },
+  "explore_modal": {
+    "empty": "No se encontraron activos en esta categoría."
   },
   "mcp_modal": {
     "title_create": "Nuevo servidor MCP",

@@ -123,36 +123,13 @@ const fieldKeys = formFields.map((f) => f.key);
         updateOption,
         deleteOption,
       } from "@/lib/options";
+      import { showToast, flashToast } from "@/lib/toast";
 
       initCrudPage({
         dataId: "options-data",
         editModalId: "option-edit-modal",
         deleteModalId: "option-delete-modal",
       });
-
-      // Helper function to show toast notifications
-      function showToast(message, variant = "info") {
-        const toast = document.createElement("div");
-        toast.className = `fixed top-4 right-4 z-50 max-w-md p-4 rounded-lg border shadow-lg transition-all duration-300 ${
-          variant === "error"
-            ? "bg-red-50 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
-            : "bg-green-50 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
-        }`;
-        toast.innerHTML = `
-          <div class="flex items-start gap-3">
-            <div class="flex-1 text-sm font-medium">${message}</div>
-            <button type="button" class="text-gray-400 hover:text-gray-600" onclick="this.parentElement.parentElement.remove()">✕</button>
-          </div>
-        `;
-        document.body.appendChild(toast);
-
-        // Auto-remove after 5 seconds
-        setTimeout(() => {
-          toast.style.opacity = "0";
-          toast.style.transform = "translateX(100%)";
-          setTimeout(() => toast.remove(), 300);
-        }, 5000);
-      }
 
       // Handle CRUD form submissions
       document.addEventListener("crud-submit", async (e) => {
@@ -170,8 +147,8 @@ const fieldKeys = formFields.map((f) => f.key);
               sort_order: data.sort_order ? Number(data.sort_order) : 0,
             });
 
-            showToast("Option created successfully!");
-            setTimeout(() => window.location.reload(), 1000);
+            flashToast("Option created successfully!");
+            window.location.reload();
           } else if (mode === "edit") {
             // Extract module and code from the composite ID (format: "module:code")
             const [module, code] = data.id.split(":");
@@ -183,8 +160,8 @@ const fieldKeys = formFields.map((f) => f.key);
               sort_order: data.sort_order ? Number(data.sort_order) : 0,
             });
 
-            showToast("Option updated successfully!");
-            setTimeout(() => window.location.reload(), 1000);
+            flashToast("Option updated successfully!");
+            window.location.reload();
           } else if (mode === "delete") {
             // Extract module and code from the composite ID
             const [module, code] = data.id.split(":");
@@ -192,8 +169,8 @@ const fieldKeys = formFields.map((f) => f.key);
             // Delete option
             await deleteOption(module, code);
 
-            showToast("Option deleted successfully!");
-            setTimeout(() => window.location.reload(), 1000);
+            flashToast("Option deleted successfully!");
+            window.location.reload();
           }
         } catch (error) {
           console.error("CRUD operation failed:", error);

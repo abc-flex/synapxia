@@ -57,10 +57,11 @@
 
   // "core" (the asset's core fields, hydrated/saved by the parent .astro — see
   // the empty-shell panel below) comes first, then the editable collections,
-  // then the read-only view tabs (Discussion/History/Versions) surfaced from
-  // the gallery detail modal — view, not edit.
+  // then the tabs surfaced from the gallery detail modal: Discussion is fully
+  // interactive (same Foro island, same as Explore/gallery browsing), while
+  // History/Versions stay read-only view tabs.
   type TabName = "core" | "chars" | "related" | "related_inits" | "permissions" | "discussion" | "history" | "versions";
-  const READONLY_TABS: TabName[] = ["discussion", "history", "versions"];
+  const READONLY_TABS: TabName[] = ["history", "versions"];
   interface TabCounts {
     chars: number;
     related: number;
@@ -155,11 +156,18 @@
   let loadedSpecs = $state<EnrichedSpec[]>([]);
   let charValues = $state<Record<string, string>>({});
   let charsLoading = $state(false);
-  let initialCharByFeature = new Map<string, any>();
+  // $state (not a plain let): reassigned wholesale by hydrate()/flush()/
+  // commitCharsBaseline() to reseed the dirty-check baseline — needs to be
+  // reactive so charsDirty()/charChanged (and the tab dot) actually notice
+  // the reseed instead of holding onto a stale pre-save computation.
+  let initialCharByFeature = $state(new Map<string, any>());
+  // Feature → true while its required value is missing (set by validateChars,
+  // cleared as soon as the user edits that field).
+  let charInvalid = $state<Record<string, boolean>>({});
 
   // Relations
   let stagedRelations = $state<StagedRelation[]>([]);
-  let initialRelByTarget = new Map<number, any>();
+  let initialRelByTarget = $state(new Map<number, any>());
   let assetOptions = $state<SelectOption[]>([]);
   let relTypeOptions = $state<SelectOption[]>([]);
   let relTarget = $state("");
@@ -171,7 +179,7 @@
   // (asset_inits table) instead of another asset. Reuses relTypeOptions (both
   // tables share the RELATION_TYPE list).
   let stagedInits = $state<StagedInit[]>([]);
-  let initialInitByInit = new Map<number, any>();
+  let initialInitByInit = $state(new Map<number, any>());
   let initOptions = $state<SelectOption[]>([]);
   let initTarget = $state("");
   let initType = $state("");
@@ -180,7 +188,7 @@
 
   // Permissions
   let stagedPermissions = $state<StagedPermission[]>([]);
-  let initialPermById = new Map<number, any>();
+  let initialPermById = $state(new Map<number, any>());
   let targetTypeOptions = $state<SelectOption[]>([]);
   let accessOptions = $state<SelectOption[]>([]);
   let targetTypeLabels = new Map<string, string>();
@@ -191,6 +199,14 @@
   let permCodeOptions = $state<SelectOption[]>([]);
   let permCodeDisabled = $state(false);
   let permError = $state("");
+
+  // Core Fields lives in the parent .astro (plain DOM inputs, re-parented
+  // into the "core" panel below) — it reports its own dirty state here via
+  // setCoreDirty() so the tab strip's pending-changes dot stays accurate.
+  let coreDirty = $state(false);
+  export function setCoreDirty(dirty: boolean): void {
+    coreDirty = dirty;
+  }
 
   // Seed from the prop's initial value only (it never changes after mount);
   // reset() re-reads it inside a closure, which is fine.
@@ -228,9 +244,81 @@
     assetOptions.filter((a) => !editingAssetId || Number(a.value) !== editingAssetId),
   );
 
+  // ── Pending-changes indicators ──────────────────────────────────────────
+  // Live diff against each slice's last-hydrated/flushed baseline — feeds the
+  // tab strip's "unsaved" dot and the per-item amber highlight the "Keep
+  // editing" flow (AssetDetailModal.astro) jumps to. Fully derived, so it
+  // self-clears the moment a slice's baseline is reseeded by flush()/
+  // commitCharsBaseline() — no manual bookkeeping needed.
+  const charChanged = $derived.by(() => {
+    const set = new Set<string>();
+    for (const spec of loadedSpecs) {
+      const initialValue = initialCharByFeature.get(spec.feature)?.value ?? "";
+      if ((charValues[spec.feature] ?? "").trim() !== initialValue) set.add(spec.feature);
+    }
+    return set;
+  });
+  const pendingRelationTargets = $derived.by(() => {
+    const set = new Set<number>();
+    for (const rel of stagedRelations) {
+      const initial = initialRelByTarget.get(rel.target);
+      if (!initial || initial.type !== rel.type || (initial.rationale ?? "") !== rel.rationale) set.add(rel.target);
+    }
+    return set;
+  });
+  const pendingInitIds = $derived.by(() => {
+    const set = new Set<number>();
+    for (const rel of stagedInits) {
+      const initial = initialInitByInit.get(rel.init);
+      if (!initial || initial.type !== rel.type || (initial.rationale ?? "") !== rel.rationale) set.add(rel.init);
+    }
+    return set;
+  });
+  const permPendingKey = (p: StagedPermission): string => (p.id != null ? String(p.id) : `${p.targetType}:${p.targetCode}`);
+  const pendingPermissionKeys = $derived.by(() => {
+    const set = new Set<string>();
+    for (const p of stagedPermissions) {
+      const initial = p.id != null ? initialPermById.get(p.id) : null;
+      if (!initial || initial.target_type !== p.targetType || initial.target_code !== p.targetCode || initial.access_level !== p.access) {
+        set.add(permPendingKey(p));
+      }
+    }
+    return set;
+  });
+  // Tab-dot indicator: reuses the same charsDirty()/relationsDirty()/
+  // initsDirty()/permissionsDirty() the save flow already relies on (defined
+  // below, hoisted) rather than re-deriving from the pending-row sets above —
+  // those only see rows still present in the staged list, so they miss a
+  // pending REMOVAL (the row is simply gone, nothing left to flag), while
+  // e.g. relationsDirty() also checks for a baseline entry with no staged
+  // counterpart.
+  const tabDirty = $derived<Partial<Record<TabName, boolean>>>({
+    core: coreDirty,
+    chars: charsDirty(),
+    related: relationsDirty(),
+    related_inits: initsDirty(),
+    permissions: permissionsDirty(),
+  });
+
   // ── Tabs ──────────────────────────────────────────────────────────────
   export function activateTab(name: TabName): void {
     activeTab = name;
+  }
+
+  /** Called right after activateTab() lands on a tab with pending changes
+   * (the "Keep editing" flow) — focuses/scrolls to the first item that
+   * differs from its saved baseline so the highlight is easy to find. Core
+   * Fields is handled by the parent .astro itself (its inputs aren't in this
+   * component). */
+  export function focusFirstPending(): void {
+    if (activeTab === "chars") {
+      const feature = loadedSpecs.find((s) => charChanged.has(s.feature))?.feature;
+      if (feature) rootEl?.querySelector<HTMLElement>(`#${idPrefix}-char-${feature}`)?.focus();
+    } else if (activeTab === "related" || activeTab === "related_inits" || activeTab === "permissions") {
+      rootEl
+        ?.querySelector<HTMLElement>(`[data-tabpanel="${activeTab}"] [data-pending="1"]`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
   }
   // The read-only view tabs only make sense for an existing asset — hidden in
   // create mode. Keyboard nav walks the currently-visible set.
@@ -265,6 +353,7 @@
   export async function loadChars(categoryCode: string): Promise<void> {
     loadedSpecs = [];
     charValues = {};
+    charInvalid = {};
     if (!categoryCode) {
       charsLoading = false;
       return;
@@ -604,6 +693,44 @@
     return snapshot;
   }
 
+  /** Marks every required-but-empty characterization field invalid (red
+   * border) and returns whether the set is save-worthy. Mirrors the Propose
+   * page's required-spec gate (`specifications.required`) so a version save
+   * can't silently drop a required feature the same way an omitted-optional
+   * one is dropped by `charSnapshot()`. */
+  export function validateChars(): boolean {
+    const invalid: Record<string, boolean> = {};
+    let firstBad: string | null = null;
+    for (const spec of loadedSpecs) {
+      if (!spec.required) continue;
+      const bad = !(charValues[spec.feature] ?? "").trim();
+      invalid[spec.feature] = bad;
+      if (bad && !firstBad) firstBad = spec.feature;
+    }
+    charInvalid = invalid;
+    if (firstBad) {
+      rootEl
+        ?.querySelector<HTMLElement>(`#${idPrefix}-char-${firstBad}`)
+        ?.focus();
+      return false;
+    }
+    return true;
+  }
+
+  /** Re-seeds the characterizations baseline from the currently staged
+   * values — call after a successful version save (which persists via
+   * `createAssetVersion` directly, bypassing `flush()`'s own reseed) so
+   * `charsDirty()` reports clean again instead of comparing against the
+   * pre-save snapshot forever. */
+  export function commitCharsBaseline(): void {
+    const seed: [string, any][] = [];
+    for (const spec of loadedSpecs) {
+      const value = (charValues[spec.feature] ?? "").trim();
+      if (value) seed.push([spec.feature, { feature: spec.feature, value }]);
+    }
+    initialCharByFeature = new Map(seed);
+  }
+
   /** Whether the staged characterization set differs from what was last
    * hydrated/flushed — mirrors `charSnapshot()` vs `initialCharByFeature`, the
    * same comparison a version save would act on. Lets the parent skip an
@@ -822,6 +949,7 @@
     editingAssetId = assetId;
     loadedSpecs = [];
     charValues = {};
+    charInvalid = {};
     charsLoading = false;
     initialCharByFeature = new Map();
     stagedRelations = [];
@@ -844,6 +972,7 @@
     permCodeDisabled = false;
     permAccess = "";
     permError = "";
+    coreDirty = false;
     activeTab = "core";
   }
 
@@ -878,10 +1007,33 @@
     "flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-white/[0.02] px-3 py-2";
   const emptyClass =
     "rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-6 text-center text-sm text-gray-500 dark:text-gray-400";
+
+  // A required characterization control swaps its neutral border for red once
+  // validateChars() has flagged it empty; typing/choosing a value clears the
+  // flag again (re-validated for real on the next save attempt).
+  const charSelectClass =
+    "w-full rounded-md border px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:bg-gray-800 dark:text-white";
+  const charTextareaClass =
+    "w-full rounded-md border px-3 py-2 text-sm font-mono focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:bg-gray-800 dark:text-white";
+  const charBorderClass = (feature: string): string => {
+    if (charInvalid[feature]) return "border-red-500 dark:border-red-500";
+    if (charChanged.has(feature)) return "border-amber-400 dark:border-amber-500";
+    return "border-gray-300 dark:border-gray-700";
+  };
+  const clearCharInvalid = (feature: string): void => {
+    if (charInvalid[feature]) charInvalid = { ...charInvalid, [feature]: false };
+  };
 </script>
 
 <div bind:this={rootEl}>
   <!-- Tabs header -->
+  {#snippet pendingDot()}
+    <span
+      class="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-amber-500"
+      title={t("asset_detail_modal.unsaved_indicator", "Unsaved changes")}
+      aria-hidden="true"
+    ></span>
+  {/snippet}
   <div class="border-b border-gray-200 dark:border-gray-800">
     <div role="tablist" aria-label="Asset detail sections" class="-mb-px flex flex-nowrap gap-4 overflow-x-auto no-scrollbar text-sm font-medium sm:gap-6">
       <button
@@ -895,6 +1047,7 @@
         onkeydown={(e) => onTabKeydown(e)}
       >
         <span>{t("asset_detail_modal.core_section", "Core Fields")}</span>
+        {#if tabDirty.core}{@render pendingDot()}{/if}
       </button>
       <button
         type="button"
@@ -910,6 +1063,7 @@
         {#if loadedSpecs.length > 0}
           <span class="ml-1 rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-300">{loadedSpecs.length}</span>
         {/if}
+        {#if tabDirty.chars}{@render pendingDot()}{/if}
       </button>
       <button
         type="button"
@@ -925,6 +1079,7 @@
         {#if stagedRelations.length > 0}
           <span class="ml-1 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">{stagedRelations.length}</span>
         {/if}
+        {#if tabDirty.related}{@render pendingDot()}{/if}
       </button>
       <button
         type="button"
@@ -940,6 +1095,7 @@
         {#if stagedInits.length > 0}
           <span class="ml-1 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">{stagedInits.length}</span>
         {/if}
+        {#if tabDirty.related_inits}{@render pendingDot()}{/if}
       </button>
       <button
         type="button"
@@ -955,9 +1111,10 @@
         {#if stagedPermissions.length > 0}
           <span class="ml-1 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">{stagedPermissions.length}</span>
         {/if}
+        {#if tabDirty.permissions}{@render pendingDot()}{/if}
       </button>
-      <!-- Read-only view tabs (Discussion / History / Versions) — only for an
-           existing asset (nothing to view while creating). View, not edit. -->
+      <!-- Discussion (interactive) / History / Versions (read-only) — only for
+           an existing asset (nothing to view/discuss while creating). -->
       {#if editingAssetId != null}
         <button
           type="button"
@@ -1030,14 +1187,32 @@
               <p class="mb-2 text-xs text-gray-500 dark:text-gray-400 break-words">{spec.featureObj.description}</p>
             {/if}
             {#if spec.listItems && spec.listItems.length > 0}
-              <select id={`${idPrefix}-char-${spec.feature}`} bind:value={charValues[spec.feature]} class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white">
+              <select
+                id={`${idPrefix}-char-${spec.feature}`}
+                bind:value={charValues[spec.feature]}
+                onchange={() => clearCharInvalid(spec.feature)}
+                aria-invalid={charInvalid[spec.feature] ? "true" : undefined}
+                class={`${charSelectClass} ${charBorderClass(spec.feature)}`}
+              >
                 <option value="">—</option>
                 {#each langItems(spec.listItems) as li (li.value)}
                   <option value={li.value}>{li.label || li.value}</option>
                 {/each}
               </select>
             {:else}
-              <textarea id={`${idPrefix}-char-${spec.feature}`} bind:value={charValues[spec.feature]} rows="2" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white"></textarea>
+              <textarea
+                id={`${idPrefix}-char-${spec.feature}`}
+                bind:value={charValues[spec.feature]}
+                oninput={() => clearCharInvalid(spec.feature)}
+                rows="2"
+                aria-invalid={charInvalid[spec.feature] ? "true" : undefined}
+                class={`${charTextareaClass} ${charBorderClass(spec.feature)}`}
+              ></textarea>
+            {/if}
+            {#if charInvalid[spec.feature]}
+              <p class="mt-1 text-xs text-red-600 dark:text-red-400">
+                {t("asset_detail_modal.characterization_required", "Please fill the required characterization fields.")}
+              </p>
             {/if}
           </div>
         {/each}
@@ -1085,7 +1260,10 @@
       {:else}
         <ul class="space-y-2">
           {#each stagedRelations as rel, idx (rel.target)}
-            <li class={rowClass}>
+            <li
+              class={pendingRelationTargets.has(rel.target) ? `${rowClass} ring-2 ring-amber-400` : rowClass}
+              data-pending={pendingRelationTargets.has(rel.target) ? "1" : undefined}
+            >
               <span class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-800 dark:text-gray-200" title={rel.targetLabel}>{rel.targetLabel}</span>
               <span class="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">{rel.typeLabel || rel.type}</span>
               {#if rel.rationale}
@@ -1141,7 +1319,10 @@
       {:else}
         <ul class="space-y-2">
           {#each stagedInits as rel, idx (rel.init)}
-            <li class={rowClass}>
+            <li
+              class={pendingInitIds.has(rel.init) ? `${rowClass} ring-2 ring-amber-400` : rowClass}
+              data-pending={pendingInitIds.has(rel.init) ? "1" : undefined}
+            >
               <span class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-800 dark:text-gray-200" title={rel.initLabel}>{rel.initLabel}</span>
               <span class="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">{rel.typeLabel || rel.type}</span>
               {#if rel.rationale}
@@ -1204,7 +1385,10 @@
       {:else}
         <ul class="space-y-2">
           {#each stagedPermissions as p, idx (p.id ?? `${p.targetType}:${p.targetCode}`)}
-            <li class={rowClass}>
+            <li
+              class={pendingPermissionKeys.has(permPendingKey(p)) ? `${rowClass} ring-2 ring-amber-400` : rowClass}
+              data-pending={pendingPermissionKeys.has(permPendingKey(p)) ? "1" : undefined}
+            >
               <span class="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-300">{p.targetTypeLabel || p.targetType}</span>
               <span class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-800 dark:text-gray-200" title={p.targetCodeLabel}>{p.targetCodeLabel}</span>
               <span class="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">{p.accessLabel || p.access}</span>
@@ -1218,10 +1402,12 @@
     </section>
   </div>
 
-  <!-- Discussion panel (read-only) — the Foro island self-loads the opened
-       asset's thread off the same [data-modal-open] trigger. -->
+  <!-- Discussion panel — the Foro island self-loads the opened asset's thread
+       off the same [data-modal-open] trigger. Fully interactive (comment/
+       question/answer/delete-own), matching the gallery's read/browse
+       CatalogDetailModal Discussion tab. -->
   <div data-tabpanel="discussion" role="tabpanel" class="pt-4" class:hidden={activeTab !== "discussion"}>
-    <Foro modalId={idPrefix} readonly />
+    <Foro modalId={idPrefix} />
   </div>
 
   <!-- History panel (read-only) — hydrated by mountHistory (lib/history.ts),

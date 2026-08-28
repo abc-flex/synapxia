@@ -124,8 +124,7 @@ const {
             <label
               for={`${modalId}-name`}
               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              data-i18n="asset_modal.name"
-            >Name *</label>
+            ><span data-i18n="asset_modal.name">Name</span><span class="ml-0.5 text-red-500" aria-hidden="true">*</span></label>
             <input
               id={`${modalId}-name`}
               name="name"
@@ -139,8 +138,7 @@ const {
             <label
               for={`${modalId}-category`}
               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              data-i18n="asset_modal.category"
-            >Category *</label>
+            ><span data-i18n="asset_modal.category">Category</span><span class="ml-0.5 text-red-500" aria-hidden="true">*</span></label>
             <select
               id={`${modalId}-category`}
               name="category"
@@ -158,8 +156,7 @@ const {
             <label
               for={`${modalId}-status`}
               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              data-i18n="asset_modal.status"
-            >Status *</label>
+            ><span data-i18n="asset_modal.status">Status</span><span class="ml-0.5 text-red-500" aria-hidden="true">*</span></label>
             <select
               id={`${modalId}-status-select`}
               name="status"
@@ -299,6 +296,42 @@ const {
   </form>
 </dialog>
 
+{/* ============== Discard-changes confirmation ============== */}
+{/* A second, stacked dialog — Cancel/X/Esc on the main dialog route through
+    requestClose() below, which opens this one instead of closing outright
+    whenever a slice (core/chars/related/related_inits/permissions) has
+    unsaved edits. Native <dialog> only lets Esc dismiss the topmost modal, so
+    it can safely stack on top of the still-open edit dialog. */}
+<dialog
+  id={`${modalId}-discard-confirm`}
+  class="rounded-2xl p-6 w-[420px] max-w-full bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 backdrop:bg-black/60 backdrop:backdrop-blur-sm"
+>
+  <h3 class="text-base font-bold text-gray-900 dark:text-white" data-i18n="asset_detail_modal.discard_title">
+    Discard changes?
+  </h3>
+  <p class="mt-2 text-sm text-gray-600 dark:text-gray-400" data-i18n="asset_detail_modal.discard_message">
+    You have unsaved changes. If you leave now, they will be lost.
+  </p>
+  <div class="mt-5 flex justify-end gap-3">
+    <button
+      type="button"
+      id={`${modalId}-discard-keep`}
+      class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+      data-i18n="asset_detail_modal.discard_keep_editing"
+    >
+      Keep editing
+    </button>
+    <button
+      type="button"
+      id={`${modalId}-discard-confirm-btn`}
+      class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+      data-i18n="asset_detail_modal.discard_confirm"
+    >
+      Discard changes
+    </button>
+  </div>
+</dialog>
+
 <script>
   /* ============================================================
      AssetDetailModal — runtime orchestration.
@@ -310,7 +343,7 @@ const {
   import type { ChangeType } from "@/types/api";
   import { isFavorite, setFavorite } from "@/lib/favorites";
   import { getUser } from "@/lib/auth";
-  import { mount } from "svelte";
+  import { mount, tick } from "svelte";
   import AssetDetailTabs from "@/components/svelte/AssetDetailTabs.svelte";
   import { mountHistory } from "@/lib/history";
   import { mountVersions } from "@/lib/versions";
@@ -338,6 +371,9 @@ const {
     const submitBtn = document.getElementById(`${modalId}-submit`) as HTMLButtonElement;
     const favBtn = document.getElementById(`${modalId}-fav`) as HTMLButtonElement;
     const favSvg = favBtn?.querySelector("svg") as SVGElement;
+    const discardDialog = document.getElementById(`${modalId}-discard-confirm`) as HTMLDialogElement | null;
+    const discardKeepBtn = document.getElementById(`${modalId}-discard-keep`) as HTMLButtonElement;
+    const discardConfirmBtn = document.getElementById(`${modalId}-discard-confirm-btn`) as HTMLButtonElement;
 
     // ── Small helpers ──────────────────────────────────────────────────────
     const tr = (key: string, fallback: string): string => {
@@ -426,8 +462,9 @@ const {
     const tabsRoot = document.getElementById(`${modalId}-detail-tabs`) as HTMLElement;
     // Which tab is active — drives the tab-aware footer (below) in edit mode.
     // Only the Characterizations tab versions; Related/Permissions/Core Fields
-    // save their own slice in place; Discussion/History/Versions are read-only
-    // (no Save button).
+    // save their own slice in place; Discussion/History/Versions have no
+    // footer Save button — Discussion is fully interactive but saves inline
+    // (Foro's own Post/Answer buttons), History/Versions are pure read-only.
     type DetailTab = "core" | "chars" | "related" | "related_inits" | "permissions" | "discussion" | "history" | "versions";
     const READONLY_TABS: DetailTab[] = ["discussion", "history", "versions"];
     let activeDetailTab: DetailTab = "core";
@@ -496,12 +533,46 @@ const {
       }
     }
 
-    // Read-only view tabs (Discussion/History/Versions) reuse the same
-    // controllers the gallery detail modal uses. They self-hook the modal's
-    // open trigger (which carries data-asset-id), so one call each suffices;
-    // Discussion self-mounts via the nested Foro island in AssetDetailTabs.
+    // Discussion/History/Versions reuse the same controllers/island the
+    // gallery detail modal uses (History/Versions read-only; Discussion fully
+    // interactive). They self-hook the modal's open trigger (which carries
+    // data-asset-id), so one call each suffices; Discussion self-mounts via
+    // the nested Foro island in AssetDetailTabs.
     mountHistory({ modalId });
     mountVersions({ modalId, sections: ALL_DETAIL_SECTIONS });
+
+    // ── Core Fields pending-change highlight ────────────────────────────────
+    // Core Fields lives here (not in the Svelte island), so it tracks + paints
+    // its own "differs from baseline" state and just reports the summary
+    // (tabs.setCoreDirty) for the tab strip's dot. Live on every keystroke —
+    // not only when "Keep editing" fires — so the highlight is always accurate.
+    const CORE_FIELD_ENTRIES: [HTMLElement, string][] = [
+      [nameField, "name"],
+      [categorySel, "category"],
+      [statusSel, "status"],
+      [descField, "description"],
+      [refField, "reference"],
+      [tagsField, "tags"],
+    ];
+    function coreChangedFields(): HTMLElement[] {
+      const baseline = originalCoreSnapshot ? (JSON.parse(originalCoreSnapshot) as Record<string, unknown>) : {};
+      const current = buildCorePayload() as Record<string, unknown>;
+      return CORE_FIELD_ENTRIES.filter(
+        ([, key]) => JSON.stringify(current[key]) !== JSON.stringify(baseline[key]),
+      ).map(([el]) => el);
+    }
+    function updateCoreHighlight() {
+      const changed = new Set(coreChangedFields());
+      for (const [el] of CORE_FIELD_ENTRIES) {
+        el.classList.toggle("ring-2", changed.has(el));
+        el.classList.toggle("ring-amber-400", changed.has(el));
+      }
+      tabs.setCoreDirty(changed.size > 0);
+    }
+    for (const [el] of CORE_FIELD_ENTRIES) {
+      el.addEventListener("input", updateCoreHighlight);
+      el.addEventListener("change", updateCoreHighlight);
+    }
 
     // ── Favorite star ───────────────────────────────────────────────────────
     function paintFavorite() {
@@ -541,7 +612,10 @@ const {
       form.reset(); // also re-checks the default "patch" change-type radio
       idField.value = "";
       editingAssetId = null;
-      originalCoreSnapshot = null;
+      // Baseline for hasUnsavedChanges() in create mode — the blank form
+      // right after reset. openEdit() overwrites this with the loaded
+      // asset's real snapshot once fetched.
+      originalCoreSnapshot = JSON.stringify(buildCorePayload());
       currentVersionLabel = "1.0.0";
       favoriteOn = false;
       paintFavorite();
@@ -563,6 +637,7 @@ const {
       // Create mode has no asset yet — title stays plain "New Asset".
       titleNameEl.textContent = "";
       clearStatus();
+      updateCoreHighlight(); // clears any leftover ring from the previous open
     }
 
     // Appends ": <name>" right after the title text, in the same run so it
@@ -633,6 +708,7 @@ const {
         renderVersionPreview();
         // Baseline for the Core Fields "did anything actually change?" check.
         originalCoreSnapshot = JSON.stringify(buildCorePayload());
+        updateCoreHighlight(); // fields were set programmatically — no input/change events fired
 
         // Load + seed all three detail tabs (chars/relations/permissions).
         await tabs.hydrate(editingAssetId, asset.category ?? "");
@@ -649,6 +725,57 @@ const {
       resetForm();
     }
 
+    // Which tabs (in display order) have a slice that hasn't been saved yet.
+    // Each tab already tracks its own dirty state for the tab-scoped save
+    // flow — this just reads them in order instead of re-deriving anything.
+    // Discussion/History/Versions never stage anything (Discussion saves
+    // inline, the other two are read-only), so they're never in this list.
+    function pendingTabs(): DetailTab[] {
+      const pending: DetailTab[] = [];
+      if (JSON.stringify(buildCorePayload()) !== originalCoreSnapshot) pending.push("core");
+      if (tabs.charsDirty()) pending.push("chars");
+      if (tabs.relationsDirty()) pending.push("related");
+      if (tabs.initsDirty()) pending.push("related_inits");
+      if (tabs.permissionsDirty()) pending.push("permissions");
+      return pending;
+    }
+
+    function hasUnsavedChanges(): boolean {
+      const favoriteChanged = !editingAssetId && favoriteOn; // create mode only — edit mode saves it immediately
+      return pendingTabs().length > 0 || favoriteChanged;
+    }
+
+    // Cancel / X / Esc all route here instead of closing outright: pending
+    // edits get a confirmation stop, same as a plain close when there's
+    // nothing to lose.
+    function requestClose() {
+      if (hasUnsavedChanges()) {
+        discardDialog?.showModal();
+      } else {
+        closeModal();
+      }
+    }
+
+    // "Keep editing": jump to the first tab with a pending change and draw
+    // the eye to it — the tab strip's amber dot (always live) plus this
+    // one-time focus/scroll are the "resalte" the user asked for.
+    discardKeepBtn?.addEventListener("click", async () => {
+      discardDialog?.close();
+      const [firstPending] = pendingTabs();
+      if (!firstPending) return;
+      tabs.activateTab(firstPending);
+      await tick(); // let Svelte un-hide the target panel before focusing/scrolling into it
+      if (firstPending === "core") {
+        coreChangedFields()[0]?.focus();
+      } else {
+        tabs.focusFirstPending();
+      }
+    });
+    discardConfirmBtn?.addEventListener("click", () => {
+      discardDialog?.close();
+      closeModal();
+    });
+
     // ── Wire global "data-modal-open" / "data-modal-close" buttons ────────
     document.addEventListener("click", (e) => {
       const target = e.target.closest?.(`[data-modal-open="${modalId}"]`);
@@ -662,14 +789,14 @@ const {
       const closer = e.target.closest?.(`[data-modal-close="${modalId}"]`);
       if (closer) {
         e.preventDefault();
-        closeModal();
+        requestClose();
       }
     });
 
     // Close on ESC (native) leaves the form populated; reset on subsequent open.
     dialog.addEventListener("cancel", (e) => {
       e.preventDefault();
-      closeModal();
+      requestClose();
     });
 
     // ── Category change → reload the dynamic characterization fields ───────
@@ -711,8 +838,22 @@ const {
               // whatever was just saved instead of requiring a reload to see it.
               setTitleName(payload.name);
               originalCoreSnapshot = JSON.stringify(payload);
+              updateCoreHighlight();
             }
           } else if (activeDetailTab === "chars") {
+            // A spec's `required` flag (from the category's specifications
+            // table) must have a value before this slice can save — mirrors
+            // the Propose page's required-characterization gate, since
+            // charSnapshot() would otherwise just silently drop a blank
+            // required field the same way it drops an optional one.
+            if (!tabs.validateChars()) {
+              showStatus(
+                tr("asset_detail_modal.characterization_required", "Please fill the required characterization fields."),
+                "error",
+              );
+              submitBtn.disabled = false;
+              return;
+            }
             if (!tabs.charsDirty()) {
               noChanges = true;
             } else {
@@ -731,6 +872,11 @@ const {
               currentVersionLabel = saved.current_version ?? currentVersionLabel;
               if (versionBadge) versionBadge.textContent = `v${currentVersionLabel}`;
               renderVersionPreview();
+              // createAssetVersion persists directly (no tabs.flush()), so
+              // reseed the dirty-check baseline ourselves — otherwise
+              // charsDirty() (and hasUnsavedChanges()) would keep reporting
+              // this slice as pending forever after a successful save.
+              tabs.commitCharsBaseline();
             }
           } else if (
             activeDetailTab === "related" ||
@@ -760,6 +906,15 @@ const {
           // every staged tab) regardless of which tab happens to be active —
           // the new asset starts at 1.0.0. There's no "nothing to save" case
           // here — a brand-new asset always has at least its required fields.
+          if (!tabs.validateChars()) {
+            tabs.activateTab("chars");
+            showStatus(
+              tr("asset_detail_modal.characterization_required", "Please fill the required characterization fields."),
+              "error",
+            );
+            submitBtn.disabled = false;
+            return;
+          }
           const saved = await createAsset(buildCorePayload());
           assetId = Number(saved.id);
           await tabs.flush(assetId);

@@ -5,7 +5,7 @@ import Toast from "../../components/Toast.astro";
 import CardGallery from "../../components/lib/gallery/CardGallery.astro";
 import ExploreCard from "../../components/lib/ExploreCard.astro";
 import ExploreDetailModal from "../../components/lib/ExploreDetailModal.astro";
-import { getAssetsbyCategory } from "@/lib/assets";
+import { getAssetsByCategoryWithAccess } from "@/lib/assets";
 import { getOptions, getOption } from "@/lib/options";
 import { getListItemsbyList } from "@/lib/list_items";
 import { getCurrentUser } from "@/lib/auth";
@@ -30,8 +30,9 @@ const CATEGORY = params.get("code") ?? "";
 let categoryName = params.get("name") ?? "";
 let categoryIcon = params.get("icon") ?? "";
 
-// A bare `?code=` link (or a hand-typed URL) may be missing name/icon — resolve
-// them from the option itself so the page stays usable without every param set.
+// The picker links with a bare `?code=` (name/icon are optional overrides for
+// callers that already have them). Resolve them from the option itself so the
+// name/icon always match the sidebar's current values for that option.
 if (CATEGORY && (!categoryName || !categoryIcon)) {
   try {
     const opt = await getOption("LIB", CATEGORY);
@@ -42,6 +43,18 @@ if (CATEGORY && (!categoryName || !categoryIcon)) {
   }
 }
 if (!categoryIcon) categoryIcon = "search";
+
+// Privileges/Permisos filter (mirrors `/lib/assets`'s toolbar filter, HU-LI08)
+// — no "all" option: the gallery always shows exactly one scope at a time,
+// defaulting to PUBLIC (listed first, which is also the <select>'s default).
+const PRIVILEGE_OPTIONS = [
+  { value: "PUBLIC", label: "Public", i18n: "asset_table.perm_filter_public" },
+  { value: "USER", label: "Shared with me", i18n: "asset_table.perm_filter_user" },
+  { value: "ROLE", label: "My role", i18n: "asset_table.perm_filter_role" },
+  { value: "TEAM", label: "My team", i18n: "asset_table.perm_filter_team" },
+  { value: "UNIT", label: "My unit", i18n: "asset_table.perm_filter_unit" },
+  { value: "PROJECT", label: "My projects", i18n: "asset_table.perm_filter_project" },
+];
 
 // ── Picker mode: no category selected yet ──────────────────────────────────
 let pickerOptions: { code: string; name: string; icon: string; description?: string }[] = [];
@@ -64,7 +77,11 @@ let statuses: { value: string; label: string }[] = [];
 if (CATEGORY) {
   let assets: any[] = [];
   try {
-    assets = await getAssetsbyCategory(CATEGORY);
+    // Access-scoped (HU-LI08): only assets a grant reaches the caller through
+    // are returned, each carrying `permission_scopes` for the privileges
+    // filter below. Bumped limit (vs. the default 100) since this now doubles
+    // as the page's only fetch for the category.
+    assets = await getAssetsByCategoryWithAccess(CATEGORY, 0, 500);
   } catch (error) {
     console.error(`Failed to fetch assets for category ${CATEGORY}:`, error);
     errorMessage = error instanceof Error ? error.message : "Failed to fetch assets from API";
@@ -130,6 +147,10 @@ if (CATEGORY) {
       tags,
       version: item.current_version ?? "1.0.0",
       searchText: [item.name, item.description, tags.join(" ")].filter(Boolean).join(" "),
+      // Comma-separated scope-types by which the current user is granted
+      // access — drives the toolbar's privileges filter (columnFilter4's
+      // gallery counterpart).
+      permissions: (item.permission_scopes ?? []).join(","),
     };
   });
 }
@@ -156,7 +177,7 @@ if (CATEGORY) {
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
           {pickerOptions.map((o) => (
             <a
-              href={`/lib/explore?code=${encodeURIComponent(o.code)}&name=${encodeURIComponent(o.name)}&icon=${encodeURIComponent(o.icon)}`}
+              href={`/lib/explore?code=${encodeURIComponent(o.code)}`}
               class="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-gray-800 dark:bg-gray-900"
             >
               <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
@@ -191,6 +212,8 @@ if (CATEGORY) {
           galleryId="explore-gallery"
           emptyKey="explore_modal.empty"
           statuses={[]}
+          privileges={PRIVILEGE_OPTIONS}
+          growSearch={false}
           proposeHref={`/lib/propose?category=${CATEGORY}`}
         >
           {rows.map((r) => (
@@ -204,6 +227,7 @@ if (CATEGORY) {
               statusValue={r.statusValue}
               favorite={r.favorite}
               searchText={r.searchText}
+              permissions={r.permissions}
               icon={categoryIcon}
               tags={r.tags}
               votable={true}

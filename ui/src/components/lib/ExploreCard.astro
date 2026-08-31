@@ -29,6 +29,7 @@ export interface Props {
   statusValue?: string;
   favorite?: string;
   searchText?: string;
+  permissions?: string;
   detailModalId?: string;
   icon?: string;
   tags?: string[];
@@ -50,6 +51,7 @@ const {
   statusValue,
   favorite,
   searchText,
+  permissions,
   detailModalId = "explore-view-modal",
   icon = "search",
   tags = [],
@@ -73,6 +75,7 @@ const iconSvg = getIcon(icon);
   statusValue={statusValue}
   favorite={favorite}
   searchText={searchText}
+  permissions={permissions}
   detailModalId={detailModalId}
   votable={votable}
   votePositive={votePositive}

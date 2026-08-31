@@ -28,6 +28,10 @@ export interface Props {
   favorite?: string;
   /** Lowercased haystack for client-side search. */
   searchText?: string;
+  /** Comma-separated scope-types (USER/ROLE/TEAM/UNIT/PROJECT/PUBLIC) by which
+   * the current user is granted access to this asset — drives the gallery's
+   * privileges filter (mirrors the asset list's `permission_scopes`). */
+  permissions?: string;
   /** Dialog id opened when the card (or its edit button) is activated. */
   editModalId?: string;
   /**
@@ -65,6 +69,7 @@ const {
   statusValue = "",
   favorite = "no",
   searchText = "",
+  permissions = "",
   editModalId,
   detailModalId,
   hero = false,
@@ -109,6 +114,7 @@ const favBtnHero = base + "hover:bg-white/20 " + (favOn ? "text-yellow-300" : "t
   data-search={searchText}
   data-status={statusValue}
   data-favorite={favOn ? "yes" : "no"}
+  data-permissions={permissions}
   data-edit-modal={editModalId}
   data-detail-modal={detailModalId}
   class={`group relative flex cursor-pointer flex-col rounded-2xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-gray-800 dark:bg-gray-900 ${hero ? "overflow-hidden" : "p-4"}`}

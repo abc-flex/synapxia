@@ -53,47 +53,17 @@ def get_all(
     return assets
 
 
-# NOTE: declared before any `/{...}` dynamic route so "with-access" isn't
-# captured as a path parameter.
-@router.get("/with-access", response_model=List[AssetWithAccessLevels])
-def get_all_with_access(
-    skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
-    current: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
+def _assets_with_access_rows(
+    session: Session,
+    assets: List[Asset],
+    access_map: dict,
+    current: User,
 ) -> List[AssetWithAccessLevels]:
-    """
-    List the assets THE CALLER CAN ACCESS, with a per-asset access summary.
-
-    Visibility is caller-scoped (HU-LI08): only assets with an active,
-    temporally-valid `asset_permissions` grant reaching the current user (via
-    USER/ROLE/TEAM/UNIT/PROJECT/PUBLIC) are returned — an asset with no grants
-    is hidden. Superusers see every active asset. Access filtering happens
-    BEFORE `skip`/`limit`, so pages stay full and stable.
-
-    Each row adds `access_levels` (distinct active access levels granted on the
-    asset to anyone), `is_public` (any active permission targeting PUBLIC),
-    `permission_scopes` (the scope-types by which the current user is granted
-    access; drives the privileges/permisos filter), and `my_access` (the
-    caller's effective level, MANAGE beats VIEW — superusers always MANAGE;
-    drives the row action gating). The existing `GET /api/assets/` contract is
-    unchanged.
-
-    - **skip**: Number of records to skip (default: 0)
-    - **limit**: Maximum number of records to return (default: 100)
-    """
-    if current.is_superuser:
-        access_map: dict = {}
-        query = select(Asset).where(Asset.is_active == True)  # noqa: E712
-    else:
-        access_map = permissions_service.accessible_assets(session, current)
-        if not access_map:
-            return []
-        query = select(Asset).where(
-            Asset.is_active == True,  # noqa: E712
-            Asset.id.in_(list(access_map)),  # type: ignore[attr-defined]
-        )
-    assets = session.exec(
-        query.order_by(Asset.name).offset(skip).limit(limit)
-    ).all()
+    """Shared `AssetWithAccessLevels` projection for `assets` (already filtered
+    to whatever the caller may see). Factored out of `get_all_with_access` so
+    the category-scoped `get_by_category_with_access` can reuse the exact same
+    access-summary shape (`access_levels`/`is_public`/`permission_scopes`/
+    `my_access`) over a narrower asset set."""
     asset_ids = [asset.id for asset in assets]
 
     # Asset-wide summary (who-is-granted-what display fields). Counts every
@@ -138,6 +108,50 @@ def get_all_with_access(
                        else access_map.get(asset.id)),
         ))
     return result
+
+
+# NOTE: declared before any `/{...}` dynamic route so "with-access" isn't
+# captured as a path parameter.
+@router.get("/with-access", response_model=List[AssetWithAccessLevels])
+def get_all_with_access(
+    skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
+    current: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
+) -> List[AssetWithAccessLevels]:
+    """
+    List the assets THE CALLER CAN ACCESS, with a per-asset access summary.
+
+    Visibility is caller-scoped (HU-LI08): only assets with an active,
+    temporally-valid `asset_permissions` grant reaching the current user (via
+    USER/ROLE/TEAM/UNIT/PROJECT/PUBLIC) are returned — an asset with no grants
+    is hidden. Superusers see every active asset. Access filtering happens
+    BEFORE `skip`/`limit`, so pages stay full and stable.
+
+    Each row adds `access_levels` (distinct active access levels granted on the
+    asset to anyone), `is_public` (any active permission targeting PUBLIC),
+    `permission_scopes` (the scope-types by which the current user is granted
+    access; drives the privileges/permisos filter), and `my_access` (the
+    caller's effective level, MANAGE beats VIEW — superusers always MANAGE;
+    drives the row action gating). The existing `GET /api/assets/` contract is
+    unchanged.
+
+    - **skip**: Number of records to skip (default: 0)
+    - **limit**: Maximum number of records to return (default: 100)
+    """
+    if current.is_superuser:
+        access_map: dict = {}
+        query = select(Asset).where(Asset.is_active == True)  # noqa: E712
+    else:
+        access_map = permissions_service.accessible_assets(session, current)
+        if not access_map:
+            return []
+        query = select(Asset).where(
+            Asset.is_active == True,  # noqa: E712
+            Asset.id.in_(list(access_map)),  # type: ignore[attr-defined]
+        )
+    assets = session.exec(
+        query.order_by(Asset.name).offset(skip).limit(limit)
+    ).all()
+    return _assets_with_access_rows(session, assets, access_map, current)
 
 
 class AssetBasic(SQLModel):
@@ -209,6 +223,51 @@ def get_by_category(
         .order_by(Asset.name)
     ).all()
     return items
+
+
+@router.get("/category/{category_code}/with-access", response_model=List[AssetWithAccessLevels])
+def get_by_category_with_access(
+    category_code: str,
+    skip: int = 0,
+    limit: int = 100,
+    session: Session = Depends(get_db_session),
+    current_user: User = Depends(current_active_user),
+) -> List[AssetWithAccessLevels]:
+    """
+    Category-scoped counterpart of `/with-access`: the same per-asset access
+    summary (`access_levels`/`is_public`/`permission_scopes`/`my_access`),
+    restricted to one category and to assets the CALLER can access (HU-LI08).
+    Backs the Explore Category page's privileges filter.
+
+    Read access follows `get_by_category`'s rule (`LIB/ASSETS` OR
+    `LIB/<category_code>`), not `/with-access`'s stricter `LIB/ASSETS`-only
+    gate — Explore is reachable by profiles (COLLABORATOR/REVIEWER) that hold
+    only the catalog-specific privilege, not `LIB/ASSETS`.
+    """
+    if not has_privilege(session, current_user, "LIB", "ASSETS", can_edit=False) and \
+            not has_privilege(session, current_user, "LIB", category_code, can_edit=False):
+        raise HTTPException(
+            status_code=403,
+            detail=f"Access denied to LIB/{category_code}. Check your profile privileges.",
+        )
+
+    if current_user.is_superuser:
+        access_map: dict = {}
+        query = select(Asset).where(
+            Asset.is_active == True, Asset.category == category_code)  # noqa: E712
+    else:
+        access_map = permissions_service.accessible_assets(session, current_user)
+        if not access_map:
+            return []
+        query = select(Asset).where(
+            Asset.is_active == True,  # noqa: E712
+            Asset.category == category_code,
+            Asset.id.in_(list(access_map)),  # type: ignore[attr-defined]
+        )
+    assets = session.exec(
+        query.order_by(Asset.name).offset(skip).limit(limit)
+    ).all()
+    return _assets_with_access_rows(session, assets, access_map, current_user)
 
 
 # ---------------------------------------------------------------------------

@@ -84,6 +84,7 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
   const search = document.getElementById(`${galleryId}-search`) as HTMLInputElement | null;
   const statusSel = document.getElementById(`${galleryId}-status`) as HTMLSelectElement | null;
   const favToggle = document.getElementById(`${galleryId}-fav-filter`) as HTMLButtonElement | null;
+  const privilegeSel = document.getElementById(`${galleryId}-privilege`) as HTMLSelectElement | null;
   const emptyEl = document.getElementById(`${galleryId}-empty`);
   const showMoreBtn = document.getElementById(`${galleryId}-more`) as HTMLButtonElement | null;
 
@@ -94,13 +95,19 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
     const q = (search?.value || "").trim().toLowerCase();
     const st = statusSel?.value || "";
     const favOnly = favToggle?.getAttribute("aria-pressed") === "true";
+    const priv = privilegeSel?.value || "";
 
     let matched = 0;
     for (const card of cards()) {
       const text = (card.dataset.search || "").toLowerCase();
       const cardStatus = card.dataset.status || "";
       const fav = card.dataset.favorite === "yes";
-      const ok = (!q || text.includes(q)) && (!st || cardStatus === st) && (!favOnly || fav);
+      const scopes = (card.dataset.permissions || "").split(",").filter(Boolean);
+      const ok =
+        (!q || text.includes(q)) &&
+        (!st || cardStatus === st) &&
+        (!favOnly || fav) &&
+        (!priv || scopes.includes(priv));
       if (ok) {
         matched++;
         card.classList.toggle("hidden", matched > limit);
@@ -117,6 +124,10 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
     applyFilters();
   });
   statusSel?.addEventListener("change", () => {
+    limit = pageSize;
+    applyFilters();
+  });
+  privilegeSel?.addEventListener("change", () => {
     limit = pageSize;
     applyFilters();
   });

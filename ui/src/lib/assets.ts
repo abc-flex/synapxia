@@ -68,6 +68,17 @@ export async function getAssetsbyCategory(category_code: string, skip: number = 
 }
 
 /**
+ * Category-scoped counterpart of `getAssetsWithAccess`: the assets in one
+ * category the CALLER can access, with the same per-asset access summary
+ * (`access_levels` / `is_public` / `permission_scopes` / `my_access`). Drives
+ * the Explore Category page's privileges filter.
+ */
+export async function getAssetsByCategoryWithAccess(category_code: string, skip: number = 0, limit: number = 100): Promise<AssetWithAccessLevels[]> {
+  const queryString = buildQueryString({ skip, limit });
+  return apiGet<AssetWithAccessLevels[]>(`/api/assets/category/${category_code}/with-access${queryString}`);
+}
+
+/**
  * Fetch a single asset by its id
  * @param id - Unique asset id
  * @returns Promise with asset data

@@ -29,6 +29,21 @@ export interface Props {
   /** When set, render a primary "Propose" CTA linking here (e.g. /lib/propose?category=PROMPTS). */
   proposeHref?: string;
   proposeLabelKey?: string;
+  /**
+   * Privileges/Permisos filter — the scope-types the current user may pick
+   * from (subset of USER/ROLE/TEAM/UNIT/PROJECT/PUBLIC). Unlike `statuses`
+   * there is no "all" option: the first entry is the default selection (pass
+   * PUBLIC first so it's the default privilege), and the gallery always shows
+   * exactly the assets matching the selected one.
+   */
+  privileges?: { value: string; label: string; i18n?: string }[];
+  /**
+   * When false, the search box no longer flex-grows to fill the row — it and
+   * the filters beside it hug the left, leaving the trailing CTA
+   * (new/propose) pinned to the far right with a visible gap. Opt-in so the
+   * default look of existing galleries (Prompts/MCPs/Agents) is unaffected.
+   */
+  growSearch?: boolean;
 }
 
 const {
@@ -43,13 +58,19 @@ const {
   favLabelKey = "gallery.favorites_only",
   proposeHref,
   proposeLabelKey = "menu_options.propose",
+  privileges = [],
+  growSearch = true,
 } = Astro.props as Props;
+
+const searchWrapClass = growSearch
+  ? "relative min-w-[200px] flex-1"
+  : "relative w-full sm:w-72";
 ---
 
 <section id={galleryId}>
   {/* Toolbar */}
   <div class="mb-5 flex flex-wrap items-center gap-3">
-    <div class="relative min-w-[200px] flex-1">
+    <div class={searchWrapClass}>
       <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400">
         <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="9" cy="9" r="6" /><path d="m20 20-4.5-4.5" />
@@ -76,6 +97,17 @@ const {
 
     {showFavorites && (
       <FavoritesPill id={`${galleryId}-fav-filter`} labelKey={favLabelKey} collapseLabelOnMobile={true} />
+    )}
+
+    {privileges.length > 0 && (
+      <select
+        id={`${galleryId}-privilege`}
+        class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+      >
+        {privileges.map((p) => (
+          <option value={p.value} data-i18n={p.i18n}>{p.label}</option>
+        ))}
+      </select>
     )}
 
     {newModalId && (

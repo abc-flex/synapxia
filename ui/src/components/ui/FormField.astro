@@ -19,17 +19,26 @@ interface Props {
   errorId?: string;
   errorKey?: string;
   error?: string;
+  /** When set, renders a red required-marker beside the label. */
+  required?: boolean;
   /** Extra classes on the wrapper (e.g. `sm:col-span-2`). */
   class?: string;
 }
 
 const {
-  controlId, labelKey, label = "", errorId, errorKey, error = "", class: cls = "",
+  controlId, labelKey, label = "", errorId, errorKey, error = "", required = false, class: cls = "",
 } = Astro.props as Props;
 ---
 
 <div class={cls}>
-  <label class={labelClass} for={controlId} data-i18n={labelKey}>{labelKey || label}</label>
+  <label class={labelClass} for={controlId}>
+    <!-- The i18n runtime patch sets textContent on the element carrying
+         data-i18n, so the label text lives in its own child span — a sibling
+         to the required marker, not a wrapper around it — or a language
+         switch would wipe the marker. -->
+    <span data-i18n={labelKey}>{labelKey || label}</span>
+    {required && <span class="ml-0.5 text-red-500" aria-hidden="true">*</span>}
+  </label>
   <slot />
   {errorId && (
     <p id={errorId} class={fieldErrorClass} data-i18n={errorKey}>{errorKey || error}</p>

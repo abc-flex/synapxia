@@ -6,15 +6,26 @@
  * and MANAGE permissions — generating the reviewer's notification.
  *
  * UX: a type-branded hero (gradient + icon matching that type's gallery card)
- * over a two-tab form (Details / Characterization). Built on the shared UI
- * primitives in `components/ui/` (Tabs, FormField, Button) + `lib/formClasses`
- * (input/label classes, `setFieldInvalid`) + `lib/tabs` (`initTabs`).
+ * over a four-step wizard — Core Fields → Characteristics → Related Assets →
+ * Related Inits. Built on the shared UI primitives in `components/ui/` (Tabs,
+ * FormField, Button) + `lib/formClasses` (input/label classes, `addBtnClass`/
+ * `rowClass`/`emptyClass`, `setFieldInvalid`) + `lib/tabs` (`initTabs`).
  *
  * Reached from a gallery's "Propose" button with `?category=<CODE>`: the type is
- * then locked and the hero/heading/characterization brand to it. Direct visit
- * (no `?category=`) → editable type select; the hero + Characterization tab
+ * then locked and the hero/heading/characteristics brand to it. Direct visit
+ * (no `?category=`) → editable type select; the hero + Characteristics tab
  * appear once a type is chosen. All inputs stay DOM-mounted (tabs only show/
  * hide) so the submit handler collects them via FormData + querySelectorAll.
+ *
+ * Only the last step (Related Inits) actually submits — it proposes the asset
+ * (POSTs to `/api/assets/propose`, same as before) and then, since
+ * asset_relations/asset_inits both need a real asset id that doesn't exist
+ * until that POST succeeds, creates the staged relations/inits as follow-up
+ * calls against the newly-returned asset. Related Assets/Inits are optional;
+ * nothing is sent for either unless the user added at least one row. Core
+ * Fields and (when the category has specs) Characteristics are re-validated
+ * on every submit click regardless of the active tab, since the tab buttons
+ * are directly clickable — a user can jump straight to the last tab.
  */
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumb from "../../components/core/Breadcrumb.astro";
@@ -22,16 +33,53 @@ import Toast from "../../components/Toast.astro";
 import Tabs from "../../components/ui/Tabs.astro";
 import FormField from "../../components/ui/FormField.astro";
 import Button from "../../components/ui/Button.astro";
-import { inputClass } from "@/lib/formClasses";
+import { inputClass, labelClass, addBtnClass, emptyClass } from "@/lib/formClasses";
+import { getOptions } from "@/lib/options";
 
 const PROPOSE_TABS = [
-  { key: "details", labelKey: "propose.tab_details" },
+  { key: "core", labelKey: "asset_detail_modal.core_section" },
   { key: "characterization", labelKey: "propose.tab_characterization", hidden: true },
+  { key: "related", labelKey: "asset_detail_modal.tab_related" },
+  { key: "related_inits", labelKey: "asset_detail_modal.tab_related_inits" },
 ];
+
+// Same icon source as the sidebar and /lib/explore: each LIB option's own
+// `icon` slug, resolved to raw SVG here (server-side, so the client bundle
+// doesn't have to ship every icon file). Rendered below as one hidden
+// `data-icon-for="<CODE>"` swatch per option; the client script swaps the
+// hero icon to the matching swatch's markup once a category is known —
+// covers both the locked (`?category=`) and the direct-visit dropdown case.
+const icons = import.meta.glob("/src/images/icons/*.svg", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+}) as Record<string, string>;
+function getIcon(name: string) {
+  return icons[`/src/images/icons/${name}.svg`] ?? "";
+}
+let libOptions: { code: string; icon?: string }[] = [];
+try {
+  // `module` isn't actually filtered server-side (GET /api/options/ ignores
+  // it and returns every module the caller can see) — filter here so we only
+  // register LIB icons, not every option's.
+  libOptions = (await getOptions("LIB", 0, 200)).filter((o) => o.module === "LIB");
+} catch {
+  // Falls back to the generic default icon client-side.
+}
 ---
 
 <BaseLayout>
   <div class="mx-auto w-full max-w-3xl">
+    <!-- Hidden per-category icon registry (same `options.icon` the sidebar and
+         /lib/explore use) — the client script copies the matching swatch's
+         markup into the hero icon once a category is known. Not rendered
+         visibly; just a lookup table resolved server-side. -->
+    <div id="propose-icon-registry" class="hidden" aria-hidden="true">
+      {libOptions.map((o) => (
+        <span data-icon-for={o.code}><Fragment set:html={getIcon(o.icon || "search")} /></span>
+      ))}
+    </div>
+
     <Breadcrumb
       moduleName="AI Library"
       pageName="Propose"
@@ -64,9 +112,9 @@ const PROPOSE_TABS = [
       <Tabs tabs={PROPOSE_TABS} ariaLabel="Propose sections" />
 
       <div class="px-6 py-5">
-        <!-- Details panel -->
-        <div data-tab-panel="details" class="space-y-5">
-          <FormField controlId="propose-name" labelKey="propose.name"
+        <!-- Core Fields panel -->
+        <div data-tab-panel="core" class="space-y-5">
+          <FormField controlId="propose-name" labelKey="propose.name" required
             errorId="propose-name-error" errorKey="propose.name_required">
             <input id="propose-name" name="name" type="text" maxlength="100" class={inputClass}
               data-i18n-placeholder="propose.name_placeholder" placeholder="Asset name" />
@@ -78,7 +126,7 @@ const PROPOSE_TABS = [
           </FormField>
 
           <div class="grid gap-5 sm:grid-cols-2">
-            <FormField controlId="propose-category" labelKey="propose.category"
+            <FormField controlId="propose-category" labelKey="propose.category" required
               errorId="propose-category-error" errorKey="propose.category_required">
               <!-- Editable selector — used only on a direct visit (no ?category=). -->
               <select id="propose-category" name="category" class={inputClass}>
@@ -89,9 +137,10 @@ const PROPOSE_TABS = [
                 class={`${inputClass} hidden cursor-not-allowed bg-gray-100 dark:bg-gray-800`} />
             </FormField>
 
-            <FormField controlId="propose-reviewer" labelKey="propose.reviewer">
+            <FormField controlId="propose-reviewer" labelKey="propose.reviewer" required
+              errorId="propose-reviewer-error" errorKey="propose.reviewer_required">
               <select id="propose-reviewer" name="reviewer_id" class={inputClass}>
-                <option value="" data-i18n="propose.reviewer_auto">Auto-assign</option>
+                <option value="" data-i18n="propose.reviewer_placeholder">Select a reviewer…</option>
               </select>
             </FormField>
           </div>
@@ -107,18 +156,91 @@ const PROPOSE_TABS = [
           </FormField>
         </div>
 
-        <!-- Characterization panel -->
+        <!-- Characteristics panel -->
         <div data-tab-panel="characterization" class="hidden">
           <p class="mb-4 text-xs text-gray-500 dark:text-gray-400" data-i18n="propose.characterization_hint">
             Describe the asset against this type's features. Defaults are prefilled; adjust as needed.
           </p>
           <div id="propose-characterization-fields" class="grid gap-5 sm:grid-cols-2"></div>
         </div>
+
+        <!-- Related Assets panel -->
+        <div data-tab-panel="related" class="hidden space-y-4">
+          <p class="text-xs text-gray-500 dark:text-gray-400" data-i18n="propose.related_hint">
+            Relate this asset to others already in the library (optional).
+          </p>
+          <div class="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label for="propose-rel-target" class={labelClass} data-i18n="asset_detail_modal.related_target">Target asset</label>
+              <select id="propose-rel-target" class={inputClass}>
+                <option value="" data-i18n="asset_detail_modal.related_choose_asset">— choose asset —</option>
+              </select>
+            </div>
+            <div>
+              <label for="propose-rel-type" class={labelClass} data-i18n="asset_detail_modal.related_type">Relation type</label>
+              <select id="propose-rel-type" class={inputClass}>
+                <option value="" data-i18n="asset_detail_modal.related_choose_type">— choose type —</option>
+              </select>
+            </div>
+            <div class="sm:col-span-2">
+              <label for="propose-rel-rationale" class={labelClass} data-i18n="asset_detail_modal.related_rationale">Rationale</label>
+              <div class="flex gap-2">
+                <input id="propose-rel-rationale" type="text" class={`flex-1 ${inputClass}`}
+                  data-i18n-placeholder="asset_detail_modal.related_rationale_placeholder" placeholder="Why are these related? (optional)" />
+                <button type="button" id="propose-rel-add" class={addBtnClass} data-i18n="asset_detail_modal.related_add">Add relation</button>
+              </div>
+            </div>
+          </div>
+          <p id="propose-rel-error" class="hidden text-xs text-red-600 dark:text-red-400"></p>
+          <div id="propose-rel-list" class="space-y-2">
+            <div class={emptyClass} data-i18n="asset_detail_modal.related_empty">No related assets yet.</div>
+          </div>
+        </div>
+
+        <!-- Related Inits panel -->
+        <div data-tab-panel="related_inits" class="hidden space-y-4">
+          <p class="text-xs text-gray-500 dark:text-gray-400" data-i18n="propose.related_inits_hint">
+            Relate this asset to relevant initiatives (optional).
+          </p>
+          <div class="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label for="propose-init-target" class={labelClass} data-i18n="asset_detail_modal.related_target_init">Target initiative</label>
+              <select id="propose-init-target" class={inputClass}>
+                <option value="" data-i18n="asset_detail_modal.related_choose_init">— choose initiative —</option>
+              </select>
+            </div>
+            <div>
+              <label for="propose-init-type" class={labelClass} data-i18n="asset_detail_modal.related_type">Relation type</label>
+              <select id="propose-init-type" class={inputClass}>
+                <option value="" data-i18n="asset_detail_modal.related_choose_type">— choose type —</option>
+              </select>
+            </div>
+            <div class="sm:col-span-2">
+              <label for="propose-init-rationale" class={labelClass} data-i18n="asset_detail_modal.related_rationale">Rationale</label>
+              <div class="flex gap-2">
+                <input id="propose-init-rationale" type="text" class={`flex-1 ${inputClass}`}
+                  data-i18n-placeholder="asset_detail_modal.related_rationale_placeholder" placeholder="Why are these related? (optional)" />
+                <button type="button" id="propose-init-add" class={addBtnClass} data-i18n="asset_detail_modal.related_add">Add relation</button>
+              </div>
+            </div>
+          </div>
+          <p id="propose-init-error" class="hidden text-xs text-red-600 dark:text-red-400"></p>
+          <div id="propose-init-list" class="space-y-2">
+            <div class={emptyClass} data-i18n="asset_detail_modal.related_inits_empty">No related initiatives yet.</div>
+          </div>
+        </div>
       </div>
 
-      <!-- Footer -->
-      <div class="flex justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-800">
-        <Button id="propose-submit" type="submit" variant="primary" labelKey="propose.submit" />
+      <!-- Footer: "Back to gallery" always on the left; a secondary "Propose
+           for review" shortcut appears on Characteristics/Related Assets (the
+           two steps where enough is already known to submit, but the wizard
+           would otherwise force one more optional tab first). -->
+      <div class="flex items-center justify-between gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-800">
+        <Button id="propose-back" type="button" variant="ghost" labelKey="propose.back_to_gallery" />
+        <div class="flex gap-3">
+          <Button id="propose-submit-secondary" type="button" variant="secondary" labelKey="propose.submit" class="hidden" />
+          <Button id="propose-submit" type="submit" variant="primary" labelKey="propose.submit" />
+        </div>
       </div>
     </form>
   </div>
@@ -131,10 +253,19 @@ const PROPOSE_TABS = [
     import { getCategories } from "@/lib/categories";
     import { getReviewers, proposeAsset } from "@/lib/propose";
     import { buildCharFieldDefs } from "@/lib/charFields";
+    import { getAssetsSelect } from "@/lib/assets";
+    import { createAssetRelation } from "@/lib/asset_relations";
+    import { getInitiativesSelect } from "@/lib/initiatives";
+    import { createAssetInit } from "@/lib/asset_inits";
+    import { getListItemsbyList } from "@/lib/list_items";
     import { loadClientTranslations, translate } from "@/utils/i18nClient";
     import { installGlobalToast, showToast } from "@/lib/toast";
     import { initTabs } from "@/lib/tabs";
-    import { inputClass, labelClass, setFieldInvalid } from "@/lib/formClasses";
+    import { inputClass, labelClass, rowClass, emptyClass, setFieldInvalid } from "@/lib/formClasses";
+
+    type SelectOption = { value: string; label: string };
+    type StagedRelation = { target: number; targetLabel: string; type: string; typeLabel: string; rationale: string };
+    type StagedInit = { init: number; initLabel: string; type: string; typeLabel: string; rationale: string };
 
     loadClientTranslations();
     installGlobalToast();
@@ -143,26 +274,23 @@ const PROPOSE_TABS = [
       "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition disabled:opacity-60";
     const HERO_BASE = "flex items-start gap-4 bg-gradient-to-br px-6 py-5 text-white";
 
-    // Per-type branding — icons + colors copied from the gallery cards so
+    // Per-type gradient/button colors — copied from the gallery cards so
     // "Propose a Prompt/MCP/Agent" matches PromptCard / McpCard / AgentCard.
-    const ICON_PROMPT =
-      `<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 10h8M8 14h5M21 12a8 8 0 0 1-8 8H7l-4 3v-5a8 8 0 1 1 18-6z" stroke-linecap="round" stroke-linejoin="round" /></svg>`;
-    const ICON_MCP =
-      `<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="6" rx="1.5" /><rect x="3" y="14" width="18" height="6" rx="1.5" /><path d="M7 7h.01M7 17h.01" stroke-linecap="round" /></svg>`;
-    const ICON_AGENT =
-      `<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="6" y="6" width="12" height="12" rx="2" /><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3" stroke-linecap="round" /></svg>`;
+    // The hero ICON is separate: it comes from the category's own registered
+    // `options.icon` (same source as the sidebar and /lib/explore), looked up
+    // in applyIcon() below — not hardcoded per type.
     const ICON_DEFAULT =
       `<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14" stroke-linecap="round" /></svg>`;
 
-    type Theme = { grad: string; icon: string; submit: string };
+    type Theme = { grad: string; submit: string };
     const THEME_DEFAULT: Theme = {
-      grad: "from-indigo-500 to-indigo-600", icon: ICON_DEFAULT,
+      grad: "from-indigo-500 to-indigo-600",
       submit: "bg-indigo-600 hover:bg-indigo-700",
     };
     const THEMES: Record<string, Theme> = {
-      PROMPTS: { grad: "from-indigo-500 to-indigo-600", icon: ICON_PROMPT, submit: "bg-indigo-600 hover:bg-indigo-700" },
-      MCPS: { grad: "from-emerald-500 to-emerald-600", icon: ICON_MCP, submit: "bg-emerald-600 hover:bg-emerald-700" },
-      AGENTS: { grad: "from-violet-500 to-indigo-500", icon: ICON_AGENT, submit: "bg-violet-600 hover:bg-violet-700" },
+      PROMPTS: { grad: "from-indigo-500 to-indigo-600", submit: "bg-indigo-600 hover:bg-indigo-700" },
+      MCPS: { grad: "from-emerald-500 to-emerald-600", submit: "bg-emerald-600 hover:bg-emerald-700" },
+      AGENTS: { grad: "from-violet-500 to-indigo-500", submit: "bg-violet-600 hover:bg-violet-700" },
     };
 
     const TITLE_KEYS: Record<string, string> = {
@@ -188,53 +316,148 @@ const PROPOSE_TABS = [
     const catLocked = document.getElementById("propose-category-locked") as HTMLInputElement | null;
     const revSel = document.getElementById("propose-reviewer") as HTMLSelectElement | null;
     const submitBtn = document.getElementById("propose-submit") as HTMLButtonElement | null;
+    const submitSecondaryBtn = document.getElementById("propose-submit-secondary") as HTMLButtonElement | null;
+    const backBtn = document.getElementById("propose-back") as HTMLButtonElement | null;
     const hero = document.getElementById("propose-hero") as HTMLElement | null;
     const heroIcon = document.getElementById("propose-hero-icon") as HTMLElement | null;
     const heroTitle = document.getElementById("propose-hero-title") as HTMLElement | null;
+    const iconRegistry = document.getElementById("propose-icon-registry") as HTMLElement | null;
     const charTab = document.getElementById("tab-characterization") as HTMLButtonElement | null;
     const charFields = document.getElementById("propose-characterization-fields") as HTMLElement | null;
     const nameErr = document.getElementById("propose-name-error") as HTMLElement | null;
     const catErr = document.getElementById("propose-category-error") as HTMLElement | null;
+    const revErr = document.getElementById("propose-reviewer-error") as HTMLElement | null;
+
+    // Related Assets tab controls.
+    const relTargetSel = document.getElementById("propose-rel-target") as HTMLSelectElement | null;
+    const relTypeSel = document.getElementById("propose-rel-type") as HTMLSelectElement | null;
+    const relRationaleInput = document.getElementById("propose-rel-rationale") as HTMLInputElement | null;
+    const relAddBtn = document.getElementById("propose-rel-add") as HTMLButtonElement | null;
+    const relErrorEl = document.getElementById("propose-rel-error") as HTMLElement | null;
+    const relListEl = document.getElementById("propose-rel-list") as HTMLElement | null;
+
+    // Related Inits tab controls (same shape, target is an initiative).
+    const initTargetSel = document.getElementById("propose-init-target") as HTMLSelectElement | null;
+    const initTypeSel = document.getElementById("propose-init-type") as HTMLSelectElement | null;
+    const initRationaleInput = document.getElementById("propose-init-rationale") as HTMLInputElement | null;
+    const initAddBtn = document.getElementById("propose-init-add") as HTMLButtonElement | null;
+    const initErrorEl = document.getElementById("propose-init-error") as HTMLElement | null;
+    const initListEl = document.getElementById("propose-init-list") as HTMLElement | null;
 
     let lockedCategory: string | null = null;
     let theme: Theme = THEME_DEFAULT;
     // Feature codes that are `required` for the current category (from the
-    // specifications table) — the Characterization step must fill these.
+    // specifications table) — the Characteristics step must fill these.
     const requiredFeatures = new Set<string>();
+
+    // Staged (not yet persisted — the asset doesn't exist until the final
+    // submit) Related Assets / Related Inits rows. Flushed to the API right
+    // after `proposeAsset()` returns the new asset's id (see submitProposal).
+    let stagedRelations: StagedRelation[] = [];
+    let stagedInits: StagedInit[] = [];
+    let assetOptions: SelectOption[] = [];
+    let initOptions: SelectOption[] = [];
+    let relTypeOptions: SelectOption[] = [];
 
     // Shared tab toggler; keep the stepped submit label in sync with the tab.
     const tabs = initTabs(document, {
       onActivate: () => updateSubmitLabel(),
     });
 
-    // The category has a Characterization step ⇔ its tab button is visible
+    // The category has a Characteristics step ⇔ its tab button is visible
     // (set by setCharTabVisible once specs load).
     const hasCharStep = () => charTab != null && !charTab.classList.contains("hidden");
-    const onDetails = () => tabs.current() !== "characterization";
 
-    // Two-step button: "Caracterizar" on Details when a char step exists (it just
-    // advances to the Characterization tab); "Proponer para revisión" otherwise.
+    // The wizard's actual step order — Characteristics only appears when the
+    // category has specifications; Related Assets/Inits are always present.
+    function stepOrder(): string[] {
+      return hasCharStep()
+        ? ["core", "characterization", "related", "related_inits"]
+        : ["core", "related", "related_inits"];
+    }
+
+    // Each non-final step's button reads as "<name of the next step> >"; the
+    // final step (Related Inits) reads "Propose for review" and submits.
+    const NEXT_STEP_LABEL: Record<string, { key: string; fallback: string }> = {
+      characterization: { key: "propose.next_characteristics", fallback: "Characteristics >" },
+      related: { key: "propose.next_related", fallback: "Related Assets >" },
+      related_inits: { key: "propose.next_related_inits", fallback: "Related Inits >" },
+    };
+
+    // Steps where enough is already known to submit directly, so the "Propose
+    // for review" shortcut is offered beside the "next" button instead of
+    // forcing the (optional) remaining tabs first. Related Inits doesn't need
+    // it — its own "next" button already reads "Propose for review", since
+    // it's the last step.
+    const DIRECT_SUBMIT_TABS = ["characterization", "related"];
+
     function updateSubmitLabel() {
       if (!submitBtn) return;
-      const step1 = hasCharStep() && onDetails();
-      const key = step1 ? "propose.characterize" : "propose.submit";
-      submitBtn.setAttribute("data-i18n", key);
-      submitBtn.textContent = tr(key, step1 ? "Characterize" : "Propose for review");
+      const order = stepOrder();
+      const current = tabs.current() || order[0];
+      const idx = order.indexOf(current);
+      const next = idx >= 0 ? order[idx + 1] : undefined;
+      const def = next ? NEXT_STEP_LABEL[next] : { key: "propose.submit", fallback: "Propose for review" };
+      submitBtn.setAttribute("data-i18n", def.key);
+      submitBtn.textContent = tr(def.key, def.fallback);
+      submitSecondaryBtn?.classList.toggle("hidden", !DIRECT_SUBMIT_TABS.includes(current));
+    }
+
+    // "Back to gallery": the originating gallery if known (locked category, or
+    // whatever category is currently selected on a direct visit), else fall
+    // back to browser history, else the generic catalog browser. Nothing is
+    // persisted mid-wizard, so there's nothing to confirm/discard first.
+    function backToGallery(): void {
+      const category = lockedCategory || catSel?.value || "";
+      if (category) {
+        window.location.href = "/lib/explore?code=" + encodeURIComponent(category);
+        return;
+      }
+      if (window.history.length > 1) {
+        window.history.back();
+        return;
+      }
+      window.location.href = "/lib/explore";
     }
 
     function setCharTabVisible(visible: boolean) {
       if (!charTab) return;
       charTab.classList.toggle("hidden", !visible);
-      if (!visible && charTab.getAttribute("aria-selected") === "true") tabs.activate("details");
+      if (!visible && charTab.getAttribute("aria-selected") === "true") tabs.activate("core");
       updateSubmitLabel();
+    }
+
+    // Advance from `current` to the next step, or run the final submission
+    // when `current` is the last one (Related Inits).
+    async function advanceFrom(current: string): Promise<void> {
+      const order = stepOrder();
+      const idx = order.indexOf(current);
+      const next = idx >= 0 ? order[idx + 1] : undefined;
+      if (next) {
+        tabs.activate(next);
+        updateSubmitLabel();
+      } else {
+        await submitProposal();
+      }
     }
 
     /* ---- branding --------------------------------------------------------- */
     function applyTheme(category: string) {
       theme = THEMES[(category || "").toUpperCase()] || THEME_DEFAULT;
       if (hero) hero.className = `${HERO_BASE} ${theme.grad}`;
-      if (heroIcon) heroIcon.innerHTML = theme.icon;
       if (submitBtn) submitBtn.className = `${SUBMIT_BASE} ${theme.submit}`;
+    }
+
+    // The hero icon mirrors the category's own registered icon — the same one
+    // shown in the sidebar and on /lib/explore — via the hidden per-category
+    // swatches the frontmatter rendered into #propose-icon-registry. Falls
+    // back to the generic default icon if the category has no matching LIB
+    // option (or none is registered yet).
+    function applyIcon(category: string) {
+      if (!heroIcon) return;
+      const code = (category || "").toUpperCase();
+      const swatch = iconRegistry?.querySelector(`[data-icon-for="${CSS.escape(code)}"]`);
+      heroIcon.innerHTML = swatch ? swatch.innerHTML : ICON_DEFAULT;
     }
 
     function applyTitle(category: string) {
@@ -261,6 +484,7 @@ const PROPOSE_TABS = [
     function syncType(category: string) {
       applyTitle(category);
       applyTheme(category);
+      applyIcon(category);
       void fillCharacterization(category);
     }
 
@@ -394,8 +618,212 @@ const PROPOSE_TABS = [
           revSel.appendChild(o);
         }
       } catch {
-        /* auto-assign stays the only option */
+        /* the placeholder stays the only option; submit will validate */
       }
+    }
+
+    /* ---- related assets / related inits ------------------------------------
+     * Both tabs stage rows client-side only — asset_relations/asset_inits both
+     * need a real source asset id, which doesn't exist until proposeAsset()
+     * returns. The staged rows are flushed as follow-up creates in
+     * submitProposal() once that id is known. */
+    function findLabel(options: SelectOption[], value: string): string {
+      return options.find((o) => o.value === value)?.label || value;
+    }
+
+    function populateSelectOptions(sel: HTMLSelectElement | null, options: SelectOption[]): void {
+      if (!sel) return;
+      while (sel.options.length > 1) sel.remove(1); // keep the placeholder (index 0)
+      for (const o of options) {
+        const opt = document.createElement("option");
+        opt.value = o.value;
+        opt.textContent = o.label;
+        sel.appendChild(opt);
+      }
+    }
+
+    function buildStagedRow(label: string, typeLabel: string, rationale: string, onRemove: () => void): HTMLElement {
+      const row = document.createElement("div");
+      row.className = rowClass;
+
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "min-w-0 flex-1 truncate text-sm font-semibold text-gray-800 dark:text-gray-200";
+      nameSpan.title = label;
+      nameSpan.textContent = label;
+      row.appendChild(nameSpan);
+
+      const typeSpan = document.createElement("span");
+      typeSpan.className = "shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300";
+      typeSpan.textContent = typeLabel;
+      row.appendChild(typeSpan);
+
+      if (rationale) {
+        const rSpan = document.createElement("span");
+        rSpan.className = "hidden md:block max-w-[200px] truncate text-xs text-gray-500 dark:text-gray-400";
+        rSpan.title = rationale;
+        rSpan.textContent = rationale;
+        row.appendChild(rSpan);
+      }
+
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "shrink-0 rounded-md p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30";
+      const removeLabel = tr("asset_detail_modal.related_remove", "Remove");
+      removeBtn.title = removeLabel;
+      removeBtn.setAttribute("aria-label", removeLabel);
+      removeBtn.innerHTML =
+        '<svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>';
+      removeBtn.addEventListener("click", onRemove);
+      row.appendChild(removeBtn);
+
+      return row;
+    }
+
+    function renderRelatedList(): void {
+      if (!relListEl) return;
+      relListEl.innerHTML = "";
+      if (!stagedRelations.length) {
+        const empty = document.createElement("div");
+        empty.className = emptyClass;
+        empty.textContent = tr("asset_detail_modal.related_empty", "No related assets yet.");
+        relListEl.appendChild(empty);
+        return;
+      }
+      stagedRelations.forEach((rel, idx) => {
+        relListEl.appendChild(buildStagedRow(rel.targetLabel, rel.typeLabel || rel.type, rel.rationale, () => removeRelation(idx)));
+      });
+    }
+
+    function renderInitsList(): void {
+      if (!initListEl) return;
+      initListEl.innerHTML = "";
+      if (!stagedInits.length) {
+        const empty = document.createElement("div");
+        empty.className = emptyClass;
+        empty.textContent = tr("asset_detail_modal.related_inits_empty", "No related initiatives yet.");
+        initListEl.appendChild(empty);
+        return;
+      }
+      stagedInits.forEach((rel, idx) => {
+        initListEl.appendChild(buildStagedRow(rel.initLabel, rel.typeLabel || rel.type, rel.rationale, () => removeInit(idx)));
+      });
+    }
+
+    function showRelError(msg: string): void {
+      if (!relErrorEl) return;
+      relErrorEl.textContent = msg;
+      relErrorEl.classList.remove("hidden");
+    }
+
+    function showInitError(msg: string): void {
+      if (!initErrorEl) return;
+      initErrorEl.textContent = msg;
+      initErrorEl.classList.remove("hidden");
+    }
+
+    function addRelation(): void {
+      relErrorEl?.classList.add("hidden");
+      const target = Number(relTargetSel?.value || "");
+      const type = relTypeSel?.value || "";
+      if (!target || !type) {
+        showRelError(tr("asset_detail_modal.related_missing_fields", "Pick a target asset and a relation type."));
+        return;
+      }
+      if (stagedRelations.some((r) => r.target === target)) {
+        showRelError(tr("asset_detail_modal.related_duplicate", "This asset is already related."));
+        return;
+      }
+      stagedRelations = [
+        ...stagedRelations,
+        {
+          target,
+          targetLabel: findLabel(assetOptions, String(target)),
+          type,
+          typeLabel: findLabel(relTypeOptions, type),
+          rationale: (relRationaleInput?.value || "").trim(),
+        },
+      ];
+      if (relTargetSel) relTargetSel.value = "";
+      if (relTypeSel) relTypeSel.value = "";
+      if (relRationaleInput) relRationaleInput.value = "";
+      renderRelatedList();
+    }
+
+    function removeRelation(idx: number): void {
+      stagedRelations = stagedRelations.filter((_, i) => i !== idx);
+      renderRelatedList();
+    }
+
+    function addInit(): void {
+      initErrorEl?.classList.add("hidden");
+      const initId = Number(initTargetSel?.value || "");
+      const type = initTypeSel?.value || "";
+      if (!initId || !type) {
+        showInitError(tr("asset_detail_modal.related_inits_missing_fields", "Pick a target initiative and a relation type."));
+        return;
+      }
+      if (stagedInits.some((r) => r.init === initId)) {
+        showInitError(tr("asset_detail_modal.related_inits_duplicate", "This initiative is already related."));
+        return;
+      }
+      stagedInits = [
+        ...stagedInits,
+        {
+          init: initId,
+          initLabel: findLabel(initOptions, String(initId)),
+          type,
+          typeLabel: findLabel(relTypeOptions, type),
+          rationale: (initRationaleInput?.value || "").trim(),
+        },
+      ];
+      if (initTargetSel) initTargetSel.value = "";
+      if (initTypeSel) initTypeSel.value = "";
+      if (initRationaleInput) initRationaleInput.value = "";
+      renderInitsList();
+    }
+
+    function removeInit(idx: number): void {
+      stagedInits = stagedInits.filter((_, i) => i !== idx);
+      renderInitsList();
+    }
+
+    relAddBtn?.addEventListener("click", addRelation);
+    initAddBtn?.addEventListener("click", addInit);
+
+    function filterByLang<T extends { lang?: string; sort_order?: number }>(items: T[]): T[] {
+      const lang = (typeof localStorage !== "undefined" && localStorage.getItem("lang")) || "en";
+      const byLang = items.filter((i) => i.lang === lang);
+      const scoped = byLang.length ? byLang : items.filter((i) => i.lang === "en");
+      return scoped.slice().sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    }
+
+    async function loadRelationTypeOptions(): Promise<void> {
+      try {
+        const items = await getListItemsbyList("RELATION_TYPE");
+        relTypeOptions = filterByLang(items).map((li) => ({ value: li.value, label: li.label || li.value }));
+      } catch {
+        relTypeOptions = [];
+      }
+      populateSelectOptions(relTypeSel, relTypeOptions);
+      populateSelectOptions(initTypeSel, relTypeOptions);
+    }
+
+    async function loadAssetOptions(): Promise<void> {
+      try {
+        assetOptions = await getAssetsSelect();
+      } catch {
+        assetOptions = [];
+      }
+      populateSelectOptions(relTargetSel, assetOptions);
+    }
+
+    async function loadInitiativeOptions(): Promise<void> {
+      try {
+        initOptions = await getInitiativesSelect();
+      } catch {
+        initOptions = [];
+      }
+      populateSelectOptions(initTargetSel, initOptions);
     }
 
     /* ---- init ------------------------------------------------------------- */
@@ -431,59 +859,70 @@ const PROPOSE_TABS = [
     // Clear a field's invalid state as soon as the user fixes it.
     nameInput?.addEventListener("input", () => setFieldInvalid(nameInput, nameErr, false));
     catSel?.addEventListener("change", () => setFieldInvalid(catSel, catErr, false));
+    revSel?.addEventListener("change", () => setFieldInvalid(revSel, revErr, false));
 
     void init();
     void fillReviewers();
+    void loadRelationTypeOptions();
+    void loadAssetOptions();
+    void loadInitiativeOptions();
 
-    form?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const fd = new FormData(form);
+    // Validates the Core Fields tab (Name/Category/Reviewer). Returns false
+    // (and marks the offending inputs) when something's missing.
+    function validateCore(fd: FormData): boolean {
       const name = String(fd.get("name") || "").trim();
       const category = lockedCategory || String(fd.get("category") || "");
       const catControl = lockedCategory ? catLocked : catSel;
+      const reviewerRaw = String(fd.get("reviewer_id") || "");
       const nameBad = !name;
       const catBad = !category;
+      const reviewerBad = !reviewerRaw;
       // Mark the offending inputs inline (red border + message).
       setFieldInvalid(nameInput, nameErr, nameBad);
       setFieldInvalid(catControl, catErr, catBad);
-      if (nameBad || catBad) {
-        tabs.activate("details");
-        (nameBad ? nameInput : catControl)?.focus();
-        showToast(tr("propose.required", "Name and category are required"), "error");
-        return;
+      setFieldInvalid(revSel, revErr, reviewerBad);
+      if (nameBad || catBad || reviewerBad) {
+        (nameBad ? nameInput : catBad ? catControl : revSel)?.focus();
+        showToast(tr("propose.required", "Name, category and reviewer are required"), "error");
+        return false;
       }
+      return true;
+    }
 
-      // Step 1 → "Caracterizar": advance to the Characterization step (no post).
-      if (hasCharStep() && onDetails()) {
-        tabs.activate("characterization");
-        updateSubmitLabel();
-        return;
+    // Validates the Characteristics tab: the specifications table marks some
+    // features `required` (e.g. AGENTS.INSTRUCTIONS); block until each is
+    // filled. Optional features (e.g. AGENTS.TOOLS) may stay blank.
+    function validateCharacterization(): boolean {
+      if (!hasCharStep()) return true;
+      let firstBad: HTMLElement | null = null;
+      charFields
+        ?.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("[data-required]")
+        .forEach((el) => {
+          const bad = !(el.value || "").trim();
+          setFieldInvalid(el, null, bad);
+          if (bad && !firstBad) firstBad = el;
+        });
+      if (firstBad) {
+        (firstBad as HTMLElement).focus();
+        showToast(
+          tr("propose.characterization_required", "Please fill the required characterization fields."),
+          "error",
+        );
+        return false;
       }
+      return true;
+    }
 
-      // Step 2 → "Proponer": the specifications table marks some features
-      // `required` (e.g. AGENTS.INSTRUCTIONS); block until each is filled.
-      // Optional features (e.g. AGENTS.TOOLS) may stay blank — defaults apply.
-      if (hasCharStep()) {
-        let firstBad: HTMLElement | null = null;
-        charFields
-          ?.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("[data-required]")
-          .forEach((el) => {
-            const bad = !(el.value || "").trim();
-            setFieldInvalid(el, null, bad);
-            if (bad && !firstBad) firstBad = el;
-          });
-        if (firstBad) {
-          tabs.activate("characterization");
-          (firstBad as HTMLElement).focus();
-          showToast(
-            tr("propose.characterization_required", "Please fill the required characterization fields."),
-            "error",
-          );
-          return;
-        }
-      }
+    // Final step: propose the asset, then flush the staged Related Assets /
+    // Related Inits rows against the newly-created asset id — this is what
+    // implements the "Propose for review" action that used to live on the
+    // Characterization tab, now on the last (Related Inits) tab.
+    async function submitProposal(): Promise<void> {
+      if (!form) return;
+      const fd = new FormData(form);
+      const name = String(fd.get("name") || "").trim();
+      const category = lockedCategory || String(fd.get("category") || "");
 
-      // Collect the per-feature characterization values (non-empty only).
       const values: Record<string, string> = {};
       charFields
         ?.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("[data-characterization]")
@@ -505,27 +944,122 @@ const PROPOSE_TABS = [
       };
 
       if (submitBtn) submitBtn.disabled = true;
+
+      let assetId: number | undefined;
       try {
-        await proposeAsset(payload);
-        // Came from a gallery's Propose CTA → return to that gallery with a flag;
-        // the gallery shows the "proposed" toast on load (see catalogGallery.ts).
-        if (lockedCategory) {
-          window.location.href = "/lib/" + lockedCategory.toLowerCase() + "?proposed=1";
-          return;
-        }
-        // Direct visit (no locked category) → confirm + reset the form in place.
-        showToast(tr("propose.success", "Asset proposed for review"), "success");
-        form.reset();
-        tabs.activate("details");
-        setCharTabVisible(false);
+        const asset = await proposeAsset(payload);
+        assetId = asset.id;
       } catch (err) {
         showToast(
           err instanceof Error ? err.message : tr("propose.error", "Could not propose the asset"),
           "error",
         );
-      } finally {
         if (submitBtn) submitBtn.disabled = false;
+        return;
       }
+
+      // The asset now exists — create the staged relations/inits against its
+      // real id. A failure here is reported separately: the asset itself was
+      // already proposed successfully, so it isn't a failed proposal.
+      let relFailures = 0;
+      if (assetId != null) {
+        for (const rel of stagedRelations) {
+          try {
+            await createAssetRelation({ source: assetId, target: rel.target, type: rel.type, rationale: rel.rationale || undefined });
+          } catch {
+            relFailures++;
+          }
+        }
+        for (const rel of stagedInits) {
+          try {
+            await createAssetInit({ asset: assetId, init: rel.init, type: rel.type, rationale: rel.rationale || undefined });
+          } catch {
+            relFailures++;
+          }
+        }
+      }
+
+      showToast(
+        relFailures > 0
+          ? tr("propose.related_save_partial", "Asset proposed for review, but some related items could not be saved.")
+          : tr("propose.success", "Asset proposed for review"),
+        relFailures > 0 ? "error" : "success",
+      );
+
+      // Came from a gallery's Propose CTA → return to that gallery with a flag;
+      // the gallery shows the "proposed" toast on load (see catalogGallery.ts).
+      if (lockedCategory) {
+        window.location.href = "/lib/" + lockedCategory.toLowerCase() + "?proposed=1";
+        return;
+      }
+
+      // Direct visit (no locked category) → reset the form + wizard in place.
+      form.reset();
+      tabs.activate("core");
+      setCharTabVisible(false);
+      stagedRelations = [];
+      stagedInits = [];
+      renderRelatedList();
+      renderInitsList();
+      if (submitBtn) submitBtn.disabled = false;
+    }
+
+    // The secondary "Propose for review" shortcut (Characteristics/Related
+    // Assets tabs): same validation gate as the primary flow, but submits
+    // immediately instead of advancing one step at a time. It's never shown
+    // on Core Fields, so validateCore always applies here; it's never shown
+    // before Characteristics is reachable, so validateCharacterization always
+    // applies too (no risk of demanding it before the user could fill it).
+    async function attemptDirectSubmit(): Promise<void> {
+      if (!form) return;
+      if (!validateCore(new FormData(form))) {
+        tabs.activate("core");
+        updateSubmitLabel();
+        return;
+      }
+      if (!validateCharacterization()) {
+        tabs.activate("characterization");
+        updateSubmitLabel();
+        return;
+      }
+      await submitProposal();
+    }
+
+    backBtn?.addEventListener("click", backToGallery);
+    submitSecondaryBtn?.addEventListener("click", () => void attemptDirectSubmit());
+
+    form?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!form) return;
+
+      // Core Fields are validated on every submit attempt, regardless of which
+      // tab is active — tab buttons are directly clickable, so a user can jump
+      // straight to Related Inits and hit "Propose for review" without ever
+      // passing through Core Fields via the "next" flow.
+      if (!validateCore(new FormData(form))) {
+        tabs.activate("core");
+        updateSubmitLabel();
+        return;
+      }
+
+      const current = tabs.current() || "core";
+      if (current === "core") {
+        await advanceFrom("core");
+        return;
+      }
+
+      // Past Core Fields → Characteristics must be valid before going further
+      // (same jump-ahead concern as above).
+      if (!validateCharacterization()) {
+        tabs.activate("characterization");
+        updateSubmitLabel();
+        return;
+      }
+
+      // Related Assets / Related Inits have no required-field gate — adding a
+      // row is validated locally in addRelation()/addInit(); the tabs
+      // themselves are optional steps.
+      await advanceFrom(current);
     });
   </script>
 </BaseLayout>

@@ -18,6 +18,18 @@ export const labelClass =
 /** Inline error-message class (used by FormField's `<p>`). */
 export const fieldErrorClass = "mt-1 hidden text-xs text-red-600 dark:text-red-400";
 
+/** Secondary "Add" button beside a staged-list composer (relations/inits). */
+export const addBtnClass =
+  "shrink-0 rounded-lg border border-indigo-600 px-4 py-2 text-sm font-semibold text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-900/30";
+
+/** One row of a staged list (relations/inits). */
+export const rowClass =
+  "flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-white/[0.02] px-3 py-2";
+
+/** Empty-state placeholder for a staged list (relations/inits). */
+export const emptyClass =
+  "rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-6 text-center text-sm text-gray-500 dark:text-gray-400";
+
 /**
  * Toggle a field's invalid state: swap the neutral border for red and reveal
  * the field's inline error message. Reusable across any form that renders a

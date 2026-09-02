@@ -15,6 +15,7 @@ import { getCharacterizationsByAsset } from "@/lib/characterizations";
 import { isFavorite, setFavorite } from "@/lib/favorites";
 import { getVoteTally, setVote, getWorkflowStage, type VoteValue } from "@/lib/actions";
 import { mountRelated } from "@/lib/related";
+import { mountRelatedInits } from "@/lib/relatedInits";
 import { mountHistory } from "@/lib/history";
 import { mountVersions } from "@/lib/versions";
 import { styleVoteButton } from "@/lib/catalogGallery";
@@ -218,6 +219,7 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
   // section (HU-LI06) is now the `Foro` Svelte island, which self-mounts from
   // Foro.astro and hooks the same trigger on its own — no wiring needed here.
   mountRelated({ modalId });
+  mountRelatedInits({ modalId }); // no-op if the modal has no Related Inits tab
   mountHistory({ modalId });
   mountVersions({ modalId, sections });
 
@@ -227,6 +229,17 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
   const stagePill = document.getElementById(`${modalId}-stage-pill`) as HTMLElement | null;
   const descEl = document.getElementById(`${modalId}-desc`) as HTMLElement | null;
   const sectionsEl = document.getElementById(`${modalId}-sections`) as HTMLElement | null;
+  // Asset-table fields (description/reference/tags), grouped in their own card
+  // — only present when the modal opted into showReferenceTags (Explore
+  // today); the `-wrap` elements are null everywhere else, so every use below
+  // is guarded and falls back to toggling `descEl` alone (the pre-existing
+  // behavior for Prompt/MCP/Agent).
+  const infoCardEl = document.getElementById(`${modalId}-asset-info`) as HTMLElement | null;
+  const descWrapEl = document.getElementById(`${modalId}-desc-wrap`) as HTMLElement | null;
+  const referenceWrapEl = document.getElementById(`${modalId}-reference-wrap`) as HTMLElement | null;
+  const referenceEl = document.getElementById(`${modalId}-reference`) as HTMLElement | null;
+  const tagsWrapEl = document.getElementById(`${modalId}-tags-wrap`) as HTMLElement | null;
+  const tagsEl = document.getElementById(`${modalId}-tags`) as HTMLElement | null;
   const favBtn = document.getElementById(`${modalId}-fav`) as HTMLButtonElement | null;
   const favSvg = favBtn?.querySelector("svg") as SVGElement | null;
   const voteWrap = document.getElementById(`${modalId}-vote`) as HTMLElement | null;
@@ -377,7 +390,12 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
     paintFavorite();
     activateTab("detail"); // every open starts on the Detail tab
     if (nameEl) nameEl.textContent = "…";
-    if (descEl) descEl.classList.add("hidden");
+    (descWrapEl ?? descEl)?.classList.add("hidden");
+    if (referenceEl) referenceEl.textContent = "";
+    referenceWrapEl?.classList.add("hidden");
+    if (tagsEl) tagsEl.innerHTML = "";
+    tagsWrapEl?.classList.add("hidden");
+    infoCardEl?.classList.add("hidden");
     if (sectionsEl) sectionsEl.innerHTML = "";
     if (statusPill) statusPill.classList.add("hidden");
     if (versionPill) versionPill.classList.add("hidden");
@@ -461,11 +479,58 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
       if (seq !== openSeq) return; // superseded by a newer open()
       const byFeature = Object.fromEntries(chars.map((c) => [c.feature, c]));
 
+      let hasDesc = false;
+      let hasReference = false;
+      let hasTags = false;
+
       if (descEl) {
         const desc = (asset.description ?? "").trim();
+        hasDesc = !!desc;
         descEl.textContent = desc;
-        descEl.classList.toggle("hidden", !desc);
+        (descWrapEl ?? descEl).classList.toggle("hidden", !hasDesc);
       }
+
+      if (referenceEl) {
+        const reference = (asset.reference ?? "").trim();
+        hasReference = !!reference;
+        referenceEl.textContent = "";
+        if (reference) {
+          // The reference field is generally a repo/doc URL — always link it,
+          // opening in a new tab. Only an already-http(s) value is used as-is;
+          // anything else (a bare domain, or legacy non-URL text) gets an
+          // `https://` prefix rather than being treated as an in-app relative
+          // path, and this also neutralizes any javascript:/data: scheme since
+          // those don't match the http(s) check and get the prefix prepended.
+          const href = /^https?:\/\//i.test(reference) ? reference : `https://${reference}`;
+          const link = document.createElement("a");
+          link.href = href;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.className = "text-indigo-600 hover:underline dark:text-indigo-400";
+          link.textContent = reference;
+          referenceEl.appendChild(link);
+        }
+        referenceWrapEl?.classList.toggle("hidden", !hasReference);
+      }
+
+      if (tagsEl) {
+        const tags = Array.isArray(asset.tags) ? (asset.tags as string[]).filter(Boolean) : [];
+        hasTags = tags.length > 0;
+        tagsEl.innerHTML = "";
+        for (const tag of tags) {
+          const chip = document.createElement("span");
+          chip.className =
+            "inline-flex items-center rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300";
+          chip.textContent = `#${tag}`;
+          tagsEl.appendChild(chip);
+        }
+        tagsWrapEl?.classList.toggle("hidden", !hasTags);
+      }
+
+      // The card itself only makes sense if at least one of its three
+      // sub-blocks has content — otherwise it renders as an empty bordered
+      // box with nothing inside.
+      infoCardEl?.classList.toggle("hidden", !(hasDesc || hasReference || hasTags));
 
       if (sectionsEl) {
         renderCharacterizationSections(

@@ -946,6 +946,11 @@
       "EXTENDS": "Extiende"
     }
   },
+  "related_inits": {
+    "loading": "Cargando iniciativas relacionadas…",
+    "empty": "No hay iniciativas relacionadas.",
+    "error": "No se pudieron cargar las iniciativas relacionadas."
+  },
   "propose": {
     "title": "Proponer un activo",
     "subtitle": "Envía un nuevo activo para revisión. Se notificará a un revisor para aprobar, solicitar cambios o rechazar.",
@@ -1051,6 +1056,8 @@
     "error_load": "No se pudo cargar.",
     "tab_detail": "Detalles",
     "tab_related": "Relacionados",
+    "tab_related_assets": "Activos relacionados",
+    "tab_related_inits": "Iniciativas relacionadas",
     "tab_discussion": "Discusión",
     "tab_history": "Historial",
     "tab_versions": "Versiones"

@@ -1,0 +1,27 @@
+---
+/**
+ * RelatedInits — the asset "related initiatives" section, mirroring Related.astro
+ * (HU-LI07) but backed by the `asset_inits` table (asset ↔ initiative) instead of
+ * `related_assets`. Presentational shell only: a list container that the
+ * `mountRelatedInits` controller (lib/relatedInits.ts) hydrates on open.
+ *
+ * Read-only here — relations are created/removed from the admin asset editor
+ * (AssetDetailTabs' "Related Inits" tab), not from this gallery view. Unlike
+ * Related assets, initiative cards are not clickable: the `inits` domain has no
+ * browsing UI yet (read-only stub), so there's nowhere to navigate to.
+ *
+ * Ids are scoped by `modalId`; the controller queries within
+ * `#${modalId}-related-inits` and hides the whole block when there are none.
+ */
+export interface Props {
+  /** The detail dialog id, e.g. "explore-view-modal". */
+  modalId: string;
+}
+const { modalId } = Astro.props as Props;
+---
+
+<section id={`${modalId}-related-inits`}>
+  <p data-related-inits-status class="hidden text-sm text-gray-400 dark:text-gray-500"></p>
+
+  <div data-related-inits-list class="grid gap-2 sm:grid-cols-2"></div>
+</section>

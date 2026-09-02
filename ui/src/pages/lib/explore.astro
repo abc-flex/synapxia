@@ -7,7 +7,6 @@ import ExploreCard from "../../components/lib/ExploreCard.astro";
 import ExploreDetailModal from "../../components/lib/ExploreDetailModal.astro";
 import { getAssetsByCategoryWithAccess } from "@/lib/assets";
 import { getOptions, getOption } from "@/lib/options";
-import { getListItemsbyList } from "@/lib/list_items";
 import { getCurrentUser } from "@/lib/auth";
 import { getFavoritesByUser } from "@/lib/favorites";
 import { getActions, summarizeVotes } from "@/lib/actions";
@@ -72,7 +71,6 @@ if (!CATEGORY) {
 // ── Gallery mode: assets in the selected category ───────────────────────────
 let errorMessage: string | null = null;
 let rows: any[] = [];
-let statuses: { value: string; label: string }[] = [];
 
 if (CATEGORY) {
   let assets: any[] = [];
@@ -110,22 +108,6 @@ if (CATEGORY) {
     discussByAsset = new Map();
   }
 
-  let status: any[] = [];
-  try {
-    status = await getListItemsbyList("ASSET_STATUS");
-  } catch {
-    status = [];
-  }
-  statuses = status.map((s) => ({ value: s.value, label: s.label }));
-
-  const resolveStatusLabel = (raw: string): string => {
-    if (!raw) return "";
-    const direct = status.find((s) => s.value === raw);
-    if (direct) return direct.label;
-    const stripped = status.find((s) => s.value.replace(/^\d+-/, "") === raw);
-    return stripped?.label ?? raw;
-  };
-
   const isPublished = (raw: unknown): boolean =>
     String(raw ?? "").replace(/^\d+-/, "").toUpperCase() === "PUBLISHED";
 
@@ -138,7 +120,6 @@ if (CATEGORY) {
       subtitle: formatRelative(item.updated_at ?? item.created_at, locale),
       subtitleTs: item.updated_at ?? item.created_at,
       statusValue: item.status,
-      statusLabel: resolveStatusLabel(item.status),
       favorite: favIds.has(item.id) ? "yes" : "no",
       votePositive: votesByAsset.get(Number(item.id))?.positive ?? 0,
       voteNegative: votesByAsset.get(Number(item.id))?.negative ?? 0,
@@ -206,7 +187,7 @@ if (CATEGORY) {
         />
 
         {/* Read-only "big card" view (opened by a whole-card click) */}
-        <ExploreDetailModal modalId="explore-view-modal" statuses={statuses} icon={categoryIcon} />
+        <ExploreDetailModal modalId="explore-view-modal" icon={categoryIcon} categoryLabel={categoryName} />
 
         <CardGallery
           galleryId="explore-gallery"
@@ -223,7 +204,6 @@ if (CATEGORY) {
               subtitle={r.subtitle}
               subtitleTs={r.subtitleTs}
               description={r.description}
-              statusLabel={r.statusLabel}
               statusValue={r.statusValue}
               favorite={r.favorite}
               searchText={r.searchText}

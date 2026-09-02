@@ -25,7 +25,6 @@ export interface Props {
   subtitle?: string;
   subtitleTs?: string;
   description?: string;
-  statusLabel?: string;
   statusValue?: string;
   favorite?: string;
   searchText?: string;
@@ -47,7 +46,6 @@ const {
   subtitle,
   subtitleTs,
   description,
-  statusLabel,
   statusValue,
   favorite,
   searchText,
@@ -71,7 +69,6 @@ const iconSvg = getIcon(icon);
   name={name}
   subtitle={subtitle}
   subtitleTs={subtitleTs}
-  statusLabel={statusLabel}
   statusValue={statusValue}
   favorite={favorite}
   searchText={searchText}
@@ -83,6 +80,7 @@ const iconSvg = getIcon(icon);
   myVote={myVote}
   discussCount={discussCount}
   version={version}
+  versionInline
 >
   <span slot="icon" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
     <span class="h-5 w-5 [&>svg]:h-5 [&>svg]:w-5">

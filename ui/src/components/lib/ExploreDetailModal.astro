@@ -20,15 +20,25 @@ function getIcon(name: string) {
 
 export interface Props {
   modalId?: string;
-  statuses?: { value: string; label: string }[];
   icon?: string;
+  /** The category all assets in this Explore view belong to (the page is
+   * category-scoped) — shown where the status pill used to be, since every
+   * asset shown here is always PUBLISHED and the status pill is redundant. */
+  categoryLabel?: string;
 }
 
-const { modalId = "explore-view-modal", statuses = [], icon = "search" } = Astro.props as Props;
+const { modalId = "explore-view-modal", icon = "search", categoryLabel = "" } = Astro.props as Props;
 const iconSvg = getIcon(icon);
 ---
 
-<CatalogDetailModal modalId={modalId} statuses={statuses} accentClass="text-indigo-500">
+<CatalogDetailModal
+  modalId={modalId}
+  accentClass="text-indigo-500"
+  showReferenceTags
+  relatedAssetsLabel
+  showRelatedInits
+  categoryLabel={categoryLabel}
+>
   <span slot="icon" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
     <span class="h-5 w-5 [&>svg]:h-5 [&>svg]:w-5">
       <Fragment set:html={iconSvg} />

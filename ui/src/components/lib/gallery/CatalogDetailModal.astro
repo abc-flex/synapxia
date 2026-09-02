@@ -13,9 +13,21 @@
  * calls `mountCatalogDetail` to hydrate it and wire Edit/Delete/Copy/favorite.
  */
 import Related from "@/components/lib/gallery/Related.astro";
+import RelatedInits from "@/components/lib/gallery/RelatedInits.astro";
 import Foro from "@/components/lib/gallery/Foro.astro";
 import HistoryTimeline from "@/components/lib/gallery/HistoryTimeline.astro";
 import VersionsTimeline from "@/components/lib/gallery/VersionsTimeline.astro";
+
+// Small field icons for the asset-info card (description/reference/tags) —
+// same import.meta.glob inventory ExploreCard/ExploreDetailModal already use.
+const fieldIcons = import.meta.glob("/src/images/icons/*.svg", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+}) as Record<string, string>;
+function getFieldIcon(name: string) {
+  return fieldIcons[`/src/images/icons/${name}.svg`] ?? "";
+}
 
 export interface Props {
   /** Dialog id, e.g. "prompt-view-modal". */
@@ -24,13 +36,39 @@ export interface Props {
   accentClass?: string;
   /** Status options (value→label) so the controller can resolve the header pill. */
   statuses?: { value: string; label: string }[];
+  /** Show the asset's reference + tags under the description, before the
+   * characterization sections. Opt-in — Explore only, for now. */
+  showReferenceTags?: boolean;
+  /** Relabel the "Related" tab to "Related Assets" with a live count badge.
+   * Opt-in — Explore only, for now. */
+  relatedAssetsLabel?: boolean;
+  /** Add a "Related Inits" tab (assets ↔ initiatives, via asset_inits) beside
+   * Related Assets. Opt-in — Explore only, for now. */
+  showRelatedInits?: boolean;
+  /** Replace the status pill with a static category name (the status pill is
+   * redundant when every asset shown is always PUBLISHED, and unlike the
+   * per-catalog galleries, Explore doesn't otherwise say which category an
+   * asset belongs to). Opt-in — Explore only, for now. When set, the status
+   * pill is not rendered at all. Shown with a generic "this is a category"
+   * icon (a funnel, like a filter) — not the category's own icon, which
+   * would just duplicate the header avatar next to it. */
+  categoryLabel?: string;
 }
 
 const {
   modalId,
   accentClass = "text-indigo-600 dark:text-indigo-300",
   statuses = [],
+  showReferenceTags = false,
+  relatedAssetsLabel = false,
+  showRelatedInits = false,
+  categoryLabel = "",
 } = Astro.props as Props;
+
+const descIcon = getFieldIcon("document-text");
+const referenceIcon = getFieldIcon("link");
+const categoryIconSvg = categoryLabel ? getFieldIcon("funnel") : "";
+const tagsIcon = getFieldIcon("tag");
 ---
 
 <dialog
@@ -51,7 +89,14 @@ const {
         <div class="min-w-0">
           <h3 id={`${modalId}-name`} class="text-lg font-bold text-gray-900 line-clamp-2 sm:truncate dark:text-white">—</h3>
           <div class="mt-1 flex flex-wrap items-center gap-1">
-            <span id={`${modalId}-status-pill`} class="hidden w-fit items-center rounded-full px-2.5 py-0.5 text-xs font-medium"></span>
+            {categoryLabel ? (
+              <span class="inline-flex w-fit items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                <span class="h-3.5 w-3.5 [&>svg]:h-3.5 [&>svg]:w-3.5"><Fragment set:html={categoryIconSvg} /></span>
+                {categoryLabel}
+              </span>
+            ) : (
+              <span id={`${modalId}-status-pill`} class="hidden w-fit items-center rounded-full px-2.5 py-0.5 text-xs font-medium"></span>
+            )}
             <span id={`${modalId}-version-pill`} class="hidden w-fit items-center rounded-full bg-gray-100 px-2.5 py-0.5 font-mono text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300"></span>
             <span id={`${modalId}-stage-pill`} class="hidden w-fit items-center rounded-full border border-gray-300 px-2.5 py-0.5 text-xs font-medium text-gray-600 dark:border-gray-600 dark:text-gray-300"></span>
           </div>
@@ -130,15 +175,42 @@ const {
           class="dt-detail-tab whitespace-nowrap border-b-2 border-indigo-600 px-1 pb-3 pt-3 text-indigo-600 dark:text-indigo-400"
           data-i18n="catalog_detail.tab_detail"
         >Details</button>
-        <button
-          type="button"
-          role="tab"
-          data-detail-tab="related"
-          aria-selected="false"
-          tabindex="-1"
-          class="dt-detail-tab whitespace-nowrap border-b-2 border-transparent px-1 pb-3 pt-3 text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-          data-i18n="catalog_detail.tab_related"
-        >Related</button>
+        {relatedAssetsLabel ? (
+          <button
+            type="button"
+            role="tab"
+            data-detail-tab="related"
+            aria-selected="false"
+            tabindex="-1"
+            class="dt-detail-tab whitespace-nowrap border-b-2 border-transparent px-1 pb-3 pt-3 text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          >
+            <span data-i18n="catalog_detail.tab_related_assets">Related Assets</span>
+            <span id={`${modalId}-related-count`} class="ml-1 hidden rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">0</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            role="tab"
+            data-detail-tab="related"
+            aria-selected="false"
+            tabindex="-1"
+            class="dt-detail-tab whitespace-nowrap border-b-2 border-transparent px-1 pb-3 pt-3 text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            data-i18n="catalog_detail.tab_related"
+          >Related</button>
+        )}
+        {showRelatedInits && (
+          <button
+            type="button"
+            role="tab"
+            data-detail-tab="related_inits"
+            aria-selected="false"
+            tabindex="-1"
+            class="dt-detail-tab whitespace-nowrap border-b-2 border-transparent px-1 pb-3 pt-3 text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          >
+            <span data-i18n="catalog_detail.tab_related_inits">Related Inits</span>
+            <span id={`${modalId}-related-inits-count`} class="ml-1 hidden rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">0</span>
+          </button>
+        )}
         <button
           type="button"
           role="tab"
@@ -172,12 +244,46 @@ const {
     {/* Body (scrollable) — one panel per tab. */}
     <div class="flex-1 overflow-y-auto px-6 py-5">
       <div data-detail-panel="detail" class="space-y-6">
-        <p id={`${modalId}-desc`} class="hidden whitespace-pre-wrap text-sm text-gray-600 dark:text-gray-300"></p>
+        {showReferenceTags ? (
+          /* Asset-table fields (description/reference/tags) — visually grouped
+             in their own card, separate from the characterization sections
+             below (which come from the characterizations table). */
+          <div id={`${modalId}-asset-info`} class="space-y-2 rounded-xl border border-gray-200 bg-gray-50/60 p-4 dark:border-gray-800 dark:bg-gray-800/40">
+            <div id={`${modalId}-desc-wrap`} class="hidden flex flex-wrap items-baseline gap-1.5 text-sm">
+              <span class="shrink-0 inline-flex items-center gap-1 font-medium text-gray-500 dark:text-gray-400">
+                <span class="h-3.5 w-3.5 [&>svg]:h-3.5 [&>svg]:w-3.5"><Fragment set:html={descIcon} /></span>
+                <span data-i18n="asset_modal.description">Description</span>:
+              </span>
+              <p id={`${modalId}-desc`} class="whitespace-pre-wrap text-gray-900 dark:text-gray-100"></p>
+            </div>
+            <div id={`${modalId}-reference-wrap`} class="hidden flex flex-wrap items-baseline gap-1.5 text-sm">
+              <span class="shrink-0 inline-flex items-center gap-1 font-medium text-gray-500 dark:text-gray-400">
+                <span class="h-3.5 w-3.5 [&>svg]:h-3.5 [&>svg]:w-3.5"><Fragment set:html={referenceIcon} /></span>
+                <span data-i18n="asset_modal.reference">Repository URL</span>:
+              </span>
+              <p id={`${modalId}-reference`} class="break-all text-gray-900 dark:text-gray-100"></p>
+            </div>
+            <div id={`${modalId}-tags-wrap`} class="hidden flex flex-wrap items-baseline gap-1.5 text-sm">
+              <span class="shrink-0 inline-flex items-center gap-1 font-medium text-gray-500 dark:text-gray-400">
+                <span class="h-3.5 w-3.5 [&>svg]:h-3.5 [&>svg]:w-3.5"><Fragment set:html={tagsIcon} /></span>
+                <span data-i18n="asset_modal.tags">Tags</span>:
+              </span>
+              <div id={`${modalId}-tags`} class="flex flex-wrap gap-1.5"></div>
+            </div>
+          </div>
+        ) : (
+          <p id={`${modalId}-desc`} class="hidden whitespace-pre-wrap text-sm text-gray-600 dark:text-gray-300"></p>
+        )}
         <div id={`${modalId}-sections`} class="space-y-6"></div>
       </div>
       <div data-detail-panel="related" class="hidden">
         <Related modalId={modalId} />
       </div>
+      {showRelatedInits && (
+        <div data-detail-panel="related_inits" class="hidden">
+          <RelatedInits modalId={modalId} />
+        </div>
+      )}
       <div data-detail-panel="discussion" class="hidden">
         <Foro modalId={modalId} />
       </div>

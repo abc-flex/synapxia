@@ -43,11 +43,18 @@ export function mountRelated(cfg: RelatedConfig): void {
 
   const listEl = root.querySelector<HTMLElement>("[data-related-list]");
   const statusEl = root.querySelector<HTMLElement>("[data-related-status]");
+  const countEl = document.getElementById(`${modalId}-related-count`);
 
   const setStatus = (text: string) => {
     if (!statusEl) return;
     statusEl.textContent = text;
     statusEl.classList.toggle("hidden", !text);
+  };
+
+  const setCount = (n: number) => {
+    if (!countEl) return;
+    countEl.textContent = String(n);
+    countEl.classList.toggle("hidden", n === 0);
   };
 
   const relTypeLabel = (type: string): string =>
@@ -103,9 +110,11 @@ export function mountRelated(cfg: RelatedConfig): void {
     if (!listEl) return;
     listEl.innerHTML = "";
     setStatus(tr("related.loading", "Loading related assets…"));
+    setCount(0);
     try {
       const items = await getRelatedAssets(id);
       setStatus("");
+      setCount(items.length);
       if (!items.length) {
         // Dedicated tab now — show an empty state rather than hiding.
         const p = document.createElement("p");

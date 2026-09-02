@@ -946,6 +946,11 @@
       "EXTENDS": "Extends"
     }
   },
+  "related_inits": {
+    "loading": "Loading related initiatives…",
+    "empty": "No related initiatives.",
+    "error": "Could not load related initiatives."
+  },
   "propose": {
     "title": "Propose an asset",
     "subtitle": "Submit a new asset for review. A reviewer will be notified to approve, request changes, or reject it.",
@@ -1051,6 +1056,8 @@
     "error_load": "Could not load.",
     "tab_detail": "Details",
     "tab_related": "Related",
+    "tab_related_assets": "Related Assets",
+    "tab_related_inits": "Related Inits",
     "tab_discussion": "Discussion",
     "tab_history": "History",
     "tab_versions": "Versions"

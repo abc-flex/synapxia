@@ -12,7 +12,7 @@ from ..internal.models import (
 from ..internal import permissions_service
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
-from ...internal.permissions import require_privilege
+from ...internal.permissions import require_privilege, check_any_privilege
 from ...admin.internal.models import User
 
 logger = logging.getLogger(__name__)
@@ -100,7 +100,7 @@ def get_by_target(
 def get_related(
     asset_id: int, skip: int = 0, limit: int = 100,
     session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
+    current_user: User = Depends(current_active_user),
 ) -> List[RelatedAsset]:
     """
     Resolved related assets in **both directions**, de-duplicated by the other
@@ -109,9 +109,18 @@ def get_related(
     target asset's display fields + the relation metadata without an extra
     round-trip per relation.
 
+    Read access: `LIB/ASSETS` OR a privilege on the source asset's own category
+    (same rule as `assets.get`) — lets a catalog viewer (COLLABORATOR/REVIEWER)
+    read the Related Assets tab without holding `LIB/ASSETS`.
+
     - **asset_id**: The asset whose relations are resolved
     - **skip** / **limit**: pagination over the de-duplicated result
     """
+    asset = session.get(Asset, asset_id)
+    check_any_privilege(
+        session, current_user, "LIB",
+        ["ASSETS"] + ([asset.category] if asset and asset.category else []),
+    )
     # Bound each direction fetch by the requested page's upper edge — after
     # de-dup the page can draw entirely from one direction, so skip+limit per
     # side is a safe (and bounded) superset.

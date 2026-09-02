@@ -20,7 +20,7 @@ from ..internal import permissions_service
 from ...taxo.internal.models import Category
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
-from ...internal.permissions import require_privilege, has_privilege
+from ...internal.permissions import require_privilege, has_privilege, check_any_privilege
 from ...admin.internal.models import User
 
 logger = logging.getLogger(__name__)
@@ -426,21 +426,26 @@ def create_version(
 @router.get("/{asset_id}/versions", response_model=List[AssetVersion])
 def list_versions(
     asset_id: int, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
+    current_user: User = Depends(current_active_user),
 ) -> List[AssetVersion]:
     """
     The asset's version history (HU-LI09, read side), newest-first by creation
     date. Each entry: `version_label`, `created_at` (the version's first
     characterization snapshot), `is_current`, and — for bumped versions — the
     `change_type` + `actor` from the VERSIONING action (null for the initial
-    1.0.0). A browse-surface read: module read privilege only, no per-asset
-    MANAGE guard (same access as viewing the current snapshot).
+    1.0.0). A browse-surface read: `LIB/ASSETS` OR a privilege on this asset's
+    own category (see `get_by_category`'s docstring) — no per-asset MANAGE
+    guard (same access as viewing the current snapshot).
 
     - **asset_id**: Unique asset id (404 if it doesn't exist / is inactive)
     """
     asset = session.get(Asset, asset_id)
     if not asset or not asset.is_active:
         raise HTTPException(status_code=404, detail="Asset not found")
+    check_any_privilege(
+        session, current_user, "LIB",
+        ["ASSETS"] + ([asset.category] if asset.category else []),
+    )
     return version_service.list_versions(session, asset_id)
 
 
@@ -450,7 +455,7 @@ def list_versions(
 )
 def get_version_characterizations(
     asset_id: int, version_label: str, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
+    current_user: User = Depends(current_active_user),
 ) -> List[Characterization]:
     """
     The characterization snapshot of one specific version of an asset — what the
@@ -464,6 +469,10 @@ def get_version_characterizations(
     asset = session.get(Asset, asset_id)
     if not asset or not asset.is_active:
         raise HTTPException(status_code=404, detail="Asset not found")
+    check_any_privilege(
+        session, current_user, "LIB",
+        ["ASSETS"] + ([asset.category] if asset.category else []),
+    )
     return version_service.get_version_characterizations(
         session, asset_id, version_label)
 
@@ -471,17 +480,26 @@ def get_version_characterizations(
 @router.get("/{asset_id}", response_model=Asset)
 def get(
     asset_id: int, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
+    current_user: User = Depends(current_active_user),
 ) -> Asset:
     """
     Get an asset by its id.
+
+    Read access: either the general `LIB/ASSETS` privilege (asset managers) or
+    a privilege on this asset's own category (`LIB/<category>`) — same rule as
+    `get_by_category` (COLLABORATOR/REVIEWER browsing a published catalog via
+    Explore hold the category option, not `LIB/ASSETS`).
 
     - **asset_id**: Unique asset id
     """
     asset = session.get(Asset, asset_id)
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
-    elif not asset.is_active:
+    check_any_privilege(
+        session, current_user, "LIB",
+        ["ASSETS"] + ([asset.category] if asset.category else []),
+    )
+    if not asset.is_active:
         raise HTTPException(status_code=400, detail=f"Asset with id '{asset_id}' is inactive")
     return asset
 

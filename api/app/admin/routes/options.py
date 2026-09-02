@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from ..internal.models import Option, OptionCreate, OptionUpdate, Module, Privilege, User
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
-from ...internal.permissions import require_privilege
+from ...internal.permissions import require_privilege, has_privilege
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/options", tags=["options"])
@@ -83,10 +83,16 @@ def get_all(
 @router.get("/{module_code}/{code}", response_model=Option)
 def get(
     module_code: str, code: str, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("ADMIN", "OPTIONS", can_edit=False))
+    current_user: User = Depends(current_active_user),
 ) -> Option:
     """
     Get an option by its module and code.
+
+    Read access mirrors the list route (`get_all` above): a non-superuser must
+    hold an active privilege on this specific (module, code) pair — the same
+    scoping the sidebar itself uses — rather than the broader `ADMIN/OPTIONS`
+    management privilege. Lets any profile resolve its own option's
+    name/icon (e.g. Explore's breadcrumb) without being an options manager.
 
     - **module_code**: Module code
     - **code**: Option code
@@ -97,7 +103,14 @@ def get(
     ).first()
     if not option:
         raise HTTPException(status_code=404, detail="Option not found")
-    elif not option.is_active:
+    if not current_user.is_superuser and not has_privilege(
+        session, current_user, module_code, code, can_edit=False
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail=f"Access denied to {module_code}/{code}. Check your profile privileges.",
+        )
+    if not option.is_active:
         raise HTTPException(
             status_code=400,
             detail=f"Option with module '{module_code}' and code '{code}' is inactive"

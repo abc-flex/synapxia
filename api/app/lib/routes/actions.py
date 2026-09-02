@@ -14,7 +14,7 @@ from ..internal.models import (
 from ..internal import actions_service
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
-from ...internal.permissions import require_privilege
+from ...internal.permissions import require_privilege, check_any_privilege
 from ...admin.internal.models import User
 
 logger = logging.getLogger(__name__)
@@ -48,19 +48,28 @@ def get_all(
 @router.get("/votes/asset/{asset_id}", response_model=VoteTally)
 def get_vote_tally(
     asset_id: int, session: Session = Depends(get_db_session),
-    current: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=False))
+    current: User = Depends(current_active_user),
 ) -> VoteTally:
     """
     Vote tally for an asset (positive/negative counts + net score), plus the
     current user's own vote in ``my_vote``.
 
+    Read access: `LIB/ASSETS` OR a privilege on the asset's own category (same
+    rule as `assets.get`) — lets a catalog viewer (COLLABORATOR/REVIEWER) read
+    the vote bar without holding `LIB/ASSETS`.
+
     - **asset_id**: Asset id
     """
-    if not actions_service.asset_exists(session, asset_id):
+    asset = session.get(Asset, asset_id)
+    if not asset:
         raise HTTPException(
             status_code=400,
             detail=f"Asset with id '{asset_id}' does not exist"
         )
+    check_any_privilege(
+        session, current, "LIB",
+        ["ASSETS"] + ([asset.category] if asset.category else []),
+    )
     tally = actions_service.get_vote_tally(session, asset_id, current.id)
     return VoteTally(asset=asset_id, **tally)
 
@@ -68,14 +77,22 @@ def get_vote_tally(
 @router.get("/votes/{user_id}/{asset_id}", response_model=Action)
 def get_user_vote(
     user_id: int, asset_id: int, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=False))
+    current: User = Depends(current_active_user),
 ) -> Action:
     """
     Get a user's active vote on an asset.
 
+    Read access: `LIB/ASSETS` OR a privilege on the asset's own category (same
+    rule as `assets.get`).
+
     - **user_id**: User ID
     - **asset_id**: Asset id
     """
+    asset = session.get(Asset, asset_id)
+    check_any_privilege(
+        session, current, "LIB",
+        ["ASSETS"] + ([asset.category] if asset and asset.category else []),
+    )
     vote = actions_service.get_user_vote(session, user_id, asset_id)
     if not vote or not vote.is_active:
         raise HTTPException(status_code=404, detail="Vote not found")
@@ -85,21 +102,33 @@ def get_user_vote(
 @router.post("/votes", response_model=VoteTally, status_code=200)
 def set_vote(
     payload: VoteRequest, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=True))
+    current: User = Depends(current_active_user),
 ) -> VoteTally:
     """
     Set or flip a user's vote on an asset. Re-sending the same value toggles it
     off (clears the vote). Votes are stored as ``actions`` rows of type VOTE.
 
+    Write access: `LIB/ASSETS` OR a privilege on the asset's own category with
+    edit intent (same rule as `assets.get`, but requiring `can_edit=True` —
+    COLLABORATOR/REVIEWER hold their catalog options with edit rights, which is
+    what lets them vote/participate on a published asset without holding
+    `LIB/ASSETS`).
+
     - **user_id**: User ID (required)
     - **asset**: Asset id (required)
     - **content**: POSITIVE or NEGATIVE (required)
     """
-    if not actions_service.asset_exists(session, payload.asset):
+    asset = session.get(Asset, payload.asset)
+    if not asset:
         raise HTTPException(
             status_code=400,
             detail=f"Asset with id '{payload.asset}' does not exist"
         )
+    check_any_privilege(
+        session, current, "LIB",
+        ["ASSETS"] + ([asset.category] if asset.category else []),
+        can_edit=True,
+    )
     try:
         actions_service.set_vote(
             session, payload.user_id, payload.asset, payload.content)
@@ -122,14 +151,23 @@ def set_vote(
 @router.delete("/votes/{user_id}/{asset_id}", response_model=VoteTally, status_code=200)
 def clear_vote(
     user_id: int, asset_id: int, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=True))
+    current: User = Depends(current_active_user),
 ) -> VoteTally:
     """
     Clear a user's vote on an asset (logical delete of the VOTE action).
 
+    Write access: same rule as `set_vote` (`LIB/ASSETS` OR the asset's category
+    with edit intent).
+
     - **user_id**: User ID
     - **asset_id**: Asset id
     """
+    asset = session.get(Asset, asset_id)
+    check_any_privilege(
+        session, current, "LIB",
+        ["ASSETS"] + ([asset.category] if asset and asset.category else []),
+        can_edit=True,
+    )
     vote = actions_service.get_user_vote(session, user_id, asset_id)
     if not vote or not vote.is_active:
         raise HTTPException(status_code=404, detail="Vote not found")
@@ -158,31 +196,42 @@ def clear_vote(
 @router.get("/discussion/asset/{asset_id}", response_model=List[DiscussionItem])
 def get_discussion(
     asset_id: int, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=False))
+    current: User = Depends(current_active_user),
 ) -> List[DiscussionItem]:
     """
     The discussion (comments + questions + answers) for an asset, oldest first,
     each enriched with the author's username. Answers carry the question id in
     ``parent`` so the client can thread them.
 
+    Read access: `LIB/ASSETS` OR a privilege on the asset's own category (same
+    rule as `assets.get`).
+
     - **asset_id**: Asset id
     """
-    if not actions_service.asset_exists(session, asset_id):
+    asset = session.get(Asset, asset_id)
+    if not asset:
         raise HTTPException(
             status_code=400,
             detail=f"Asset with id '{asset_id}' does not exist"
         )
+    check_any_privilege(
+        session, current, "LIB",
+        ["ASSETS"] + ([asset.category] if asset.category else []),
+    )
     return actions_service.list_discussion(session, asset_id)
 
 
 @router.post("/comments", response_model=DiscussionItem, status_code=201)
 def add_comment(
     payload: ParticipationCreate, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=True))
+    current: User = Depends(current_active_user),
 ) -> DiscussionItem:
-    """Post a comment on an asset (an ``actions`` row of type COMMENT)."""
+    """Post a comment on an asset (an ``actions`` row of type COMMENT).
+
+    Write access: `LIB/ASSETS` OR a privilege on the asset's own category with
+    edit intent (same rule as `set_vote`)."""
     return _create_participation(
-        session, "comment",
+        session, current, "comment",
         lambda: actions_service.add_comment(
             session, payload.user_id, payload.asset, payload.content),
         payload.asset)
@@ -191,11 +240,13 @@ def add_comment(
 @router.post("/questions", response_model=DiscussionItem, status_code=201)
 def add_question(
     payload: ParticipationCreate, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=True))
+    current: User = Depends(current_active_user),
 ) -> DiscussionItem:
-    """Ask a question on an asset (an ``actions`` row of type QUESTION)."""
+    """Ask a question on an asset (an ``actions`` row of type QUESTION).
+
+    Write access: same rule as `add_comment`."""
     return _create_participation(
-        session, "question",
+        session, current, "question",
         lambda: actions_service.add_question(
             session, payload.user_id, payload.asset, payload.content),
         payload.asset)
@@ -204,27 +255,37 @@ def add_question(
 @router.post("/answers", response_model=DiscussionItem, status_code=201)
 def add_answer(
     payload: AnswerCreate, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=True))
+    current: User = Depends(current_active_user),
 ) -> DiscussionItem:
     """Answer a question (``actions`` row of type ANSWER, ``parent`` = question
-    id). The parent must be an active question on the same asset (else 400)."""
+    id). The parent must be an active question on the same asset (else 400).
+
+    Write access: same rule as `add_comment`."""
     return _create_participation(
-        session, "answer",
+        session, current, "answer",
         lambda: actions_service.add_answer(
             session, payload.user_id, payload.asset, payload.content,
             payload.parent),
         payload.asset)
 
 
-def _create_participation(session, label, create_fn, asset_id):
+def _create_participation(session, current_user, label, create_fn, asset_id):
     """Shared body for the comment/question/answer POST handlers: validate the
-    asset, run the service create, and map ValueError→400 / IntegrityError→409
-    (never a raw 500). Returns the enriched discussion item."""
-    if not actions_service.asset_exists(session, asset_id):
+    asset, check write access (`LIB/ASSETS` OR the asset's category, with edit
+    intent — same rule as `set_vote`), run the service create, and map
+    ValueError→400 / IntegrityError→409 (never a raw 500). Returns the
+    enriched discussion item."""
+    asset = session.get(Asset, asset_id)
+    if not asset:
         raise HTTPException(
             status_code=400,
             detail=f"Asset with id '{asset_id}' does not exist"
         )
+    check_any_privilege(
+        session, current_user, "LIB",
+        ["ASSETS"] + ([asset.category] if asset.category else []),
+        can_edit=True,
+    )
     try:
         action = create_fn()
     except ValueError as exc:
@@ -250,21 +311,29 @@ def _create_participation(session, label, create_fn, asset_id):
 def get_history(
     asset_id: int, skip: int = 0, limit: int = 100,
     session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=False))
+    current: User = Depends(current_active_user),
 ) -> List[HistoryEntry]:
     """
     The activity timeline for an asset (newest first): every active action
     (votes, comments, questions, answers, and any review-workflow actions) plus
     a synthetic CREATED marker, each enriched with the actor's username.
 
+    Read access: `LIB/ASSETS` OR a privilege on the asset's own category (same
+    rule as `assets.get`).
+
     - **asset_id**: Asset id
     - **skip** / **limit**: pagination over the timeline
     """
-    if not actions_service.asset_exists(session, asset_id):
+    asset = session.get(Asset, asset_id)
+    if not asset:
         raise HTTPException(
             status_code=400,
             detail=f"Asset with id '{asset_id}' does not exist"
         )
+    check_any_privilege(
+        session, current, "LIB",
+        ["ASSETS"] + ([asset.category] if asset.category else []),
+    )
     entries = actions_service.get_asset_history(session, asset_id)
     return entries[skip:skip + limit]
 
@@ -272,7 +341,7 @@ def get_history(
 @router.get("/workflow/asset/{asset_id}", response_model=Optional[WorkflowStage])
 def get_workflow_stage(
     asset_id: int, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=False))
+    current: User = Depends(current_active_user),
 ) -> Optional[WorkflowStage]:
     """
     The asset's current review stage: the latest review-workflow action
@@ -280,13 +349,21 @@ def get_workflow_stage(
     notified / finished). Read-only and distinct from ``asset.status``.
     Returns ``null`` when the asset has no workflow actions.
 
+    Read access: `LIB/ASSETS` OR a privilege on the asset's own category (same
+    rule as `assets.get`).
+
     - **asset_id**: Asset id
     """
-    if not actions_service.asset_exists(session, asset_id):
+    asset = session.get(Asset, asset_id)
+    if not asset:
         raise HTTPException(
             status_code=400,
             detail=f"Asset with id '{asset_id}' does not exist"
         )
+    check_any_privilege(
+        session, current, "LIB",
+        ["ASSETS"] + ([asset.category] if asset.category else []),
+    )
     stage = actions_service.get_workflow_stage(session, asset_id)
     return stage
 
@@ -501,18 +578,29 @@ def update(
 @router.delete("/{id}", response_model=Action, status_code=200)
 def delete(
     id: int, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=True))
+    current: User = Depends(current_active_user),
 ) -> Action:
     """
-    Delete an action (logical delete).
+    Delete an action (logical delete). Also backs the Foro discussion's
+    comment/question delete (`deleteParticipation`).
 
     Performs a logical delete by setting is_active=False instead of removing the record.
+
+    Write access: `LIB/ASSETS` OR a privilege on the action's own asset's
+    category, with edit intent (same rule as `set_vote`/`add_comment`).
 
     - **id**: Unique action ID to delete
     """
     action = session.get(Action, id)
     if not action:
         raise HTTPException(status_code=404, detail="Action not found")
+
+    asset = session.get(Asset, action.asset) if action.asset else None
+    check_any_privilege(
+        session, current, "LIB",
+        ["ASSETS"] + ([asset.category] if asset and asset.category else []),
+        can_edit=True,
+    )
 
     # Check if already inactive
     if not action.is_active:

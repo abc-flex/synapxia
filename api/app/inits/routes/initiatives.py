@@ -7,7 +7,8 @@ from sqlalchemy import cast, String
 
 from ..internal.models import Initiative
 from ..internal.dependencies import get_db_session
-from ...internal.permissions import require_privilege
+from ...internal.permissions import require_privilege, check_any_privilege
+from ...auth.routes import current_active_user
 from ...admin.internal.models import User
 
 logger = logging.getLogger(__name__)
@@ -27,11 +28,17 @@ class InitiativeBasic(SQLModel):
 @router.get("/select", response_model=List[InitiativeBasic])
 def get_select(
     session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("INITS", "INITIATIVES", can_edit=False))
+    current_user: User = Depends(current_active_user),
 ) -> List[InitiativeBasic]:
     """
     Lightweight list of active initiatives for UI dropdowns: value = id, label = name.
+
+    Read access: `INITS/INITIATIVES` (initiative managers) OR `INITS/EXPLORE`
+    (the read-only browse privilege COLLABORATOR/REVIEWER hold) — backs the
+    "Related Inits" tab's target dropdown from both the Asset Management edit
+    modal and the read-only Explore detail modal.
     """
+    check_any_privilege(session, current_user, "INITS", ["INITIATIVES", "EXPLORE"])
     rows = session.exec(
         select(
             cast(Initiative.id, String).label("value"),

@@ -76,6 +76,35 @@ def check_privilege(session: Session, user: User, module: str, option: str, can_
     )
 
 
+def has_any_privilege(
+    session: Session, user: User, module: str, options: list[str], can_edit: bool = False
+) -> bool:
+    """Non-raising check: does ``user`` have (module, option) access for ANY of
+    the given options — the multi-option counterpart to ``has_privilege``, for
+    routes reachable via more than one entry-point option (e.g. a catalog-scoped
+    read that should open to the asset-management option OR that specific
+    category's own option). Superusers always do."""
+    if user.is_superuser:
+        return True
+    return any(has_privilege(session, user, module, option, can_edit) for option in options)
+
+
+def check_any_privilege(
+    session: Session, user: User, module: str, options: list[str], can_edit: bool = False
+) -> None:
+    """Raises HTTPException(403) unless ``has_any_privilege(...)`` is True."""
+    if has_any_privilege(session, user, module, options, can_edit):
+        return
+    logger.warning(
+        f"✗ {user.username} (profile={user.profile}) denied access to "
+        f"{module}/{{{'|'.join(options)}}} (can_edit={can_edit})"
+    )
+    raise HTTPException(
+        status_code=403,
+        detail=f"Access denied to {module}/{{{'|'.join(options)}}}. Check your profile privileges.",
+    )
+
+
 def require_privilege(module: str, option: str, can_edit: bool = False) -> Callable:
     """
     Dependency factory: returns an async callable suitable for
@@ -107,4 +136,7 @@ def require_privilege(module: str, option: str, can_edit: bool = False) -> Calla
     return _check
 
 
-__all__ = ["require_privilege", "has_privilege", "check_privilege"]
+__all__ = [
+    "require_privilege", "has_privilege", "check_privilege",
+    "has_any_privilege", "check_any_privilege",
+]

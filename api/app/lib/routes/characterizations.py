@@ -13,7 +13,7 @@ from ..internal import permissions_service
 from ...taxo.internal.models import Feature, Specification
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
-from ...internal.permissions import require_privilege
+from ...internal.permissions import require_privilege, check_any_privilege
 from ...admin.internal.models import User
 
 logger = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ def _current_label(session: Session, asset_id) -> str:
 @router.get("/", response_model=List[Characterization])
 def get_all(
     skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "CHARACTERIZATIONS", can_edit=False))
+    current_user: User = Depends(current_active_user),
 ) -> List[Characterization]:
     """
     List all characterizations with pagination.
@@ -52,9 +52,15 @@ def get_all(
     Only the asset's CURRENT version's rows are listed (HU-LI09): prior
     ``version_label`` generations stay stored as history but are not returned.
 
+    Read access: `LIB/ASSETS` (asset managers) OR `LIB/EXPLORE` (the umbrella
+    browse privilege every catalog-viewer profile holds) — this is a
+    cross-asset read, so it can't be scoped to one category the way the
+    per-asset endpoints are.
+
     - **skip**: Number of records to skip (default: 0)
     - **limit**: Maximum number of records to return (default: 100)
     """
+    check_any_privilege(session, current_user, "LIB", ["ASSETS", "EXPLORE"])
     characterizations = session.exec(
         select(Characterization)
         .join(Asset, Characterization.asset == Asset.id, isouter=True)
@@ -79,14 +85,22 @@ def get_all(
 @router.get("/{code}/{feature_code}", response_model=Characterization)
 def get(
     code: str, feature_code: str, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "CHARACTERIZATIONS", can_edit=False))
+    current_user: User = Depends(current_active_user),
 ) -> Characterization:
     """
     Get a characterization by its asset and feature.
 
+    Read access: `LIB/ASSETS` OR a privilege on the owning asset's category
+    (same rule as `assets.get`) OR the umbrella `LIB/EXPLORE`.
+
     - **code**: Asset code
     - **feature_code**: Feature code
     """
+    asset = session.get(Asset, code)
+    check_any_privilege(
+        session, current_user, "LIB",
+        ["ASSETS", "EXPLORE"] + ([asset.category] if asset and asset.category else []),
+    )
     characterization = session.exec(
         select(Characterization).where(
             Characterization.asset == code,

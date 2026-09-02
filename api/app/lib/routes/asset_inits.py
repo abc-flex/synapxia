@@ -10,7 +10,8 @@ from ..internal.models import AssetInit, AssetInitCreate, AssetInitUpdate, Asset
 from ..internal import permissions_service
 from ..internal.dependencies import get_db_session
 from ...inits.internal.models import Initiative
-from ...internal.permissions import require_privilege
+from ...auth.routes import current_active_user
+from ...internal.permissions import require_privilege, check_any_privilege
 from ...admin.internal.models import User
 
 logger = logging.getLogger(__name__)
@@ -52,14 +53,23 @@ def get_all(
 def get_by_asset(
     asset_id: int, skip: int = 0, limit: int = 100,
     session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
+    current_user: User = Depends(current_active_user),
 ) -> List[AssetInit]:
     """
     List active initiative relations for the given asset.
 
+    Read access: `LIB/ASSETS` OR a privilege on the asset's own category (same
+    rule as `assets.get`) — lets a catalog viewer (COLLABORATOR/REVIEWER) read
+    the Related Inits tab without holding `LIB/ASSETS`.
+
     - **asset_id**: Asset id
     - **skip** / **limit**: pagination
     """
+    asset = session.get(Asset, asset_id)
+    check_any_privilege(
+        session, current_user, "LIB",
+        ["ASSETS"] + ([asset.category] if asset and asset.category else []),
+    )
     relations = session.exec(
         select(AssetInit)
         .where(AssetInit.asset == asset_id, AssetInit.is_active == True)

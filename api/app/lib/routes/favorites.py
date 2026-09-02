@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from ..internal.models import Favorite, FavoriteCreate, FavoriteUpdate, Asset
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
-from ...internal.permissions import require_privilege
+from ...internal.permissions import require_privilege, check_any_privilege
 from ...admin.internal.models import User
 
 logger = logging.getLogger(__name__)
@@ -39,14 +39,18 @@ def get_all(
 def get_by_user(
     user_id: int, skip: int = 0, limit: int = 1000,
     session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
+    current_user: User = Depends(current_active_user),
 ) -> List[Favorite]:
     """
     List a single user's active favorites (for the "my favorites" filter).
 
+    Read access: `LIB/ASSETS` OR the umbrella `LIB/EXPLORE` — this list spans
+    every category, so it can't be scoped to one the way per-asset endpoints are.
+
     - **user_id**: User id
     - **skip** / **limit**: pagination
     """
+    check_any_privilege(session, current_user, "LIB", ["ASSETS", "EXPLORE"])
     return session.exec(
         select(Favorite)
         .where(Favorite.user_id == user_id, Favorite.is_active == True)
@@ -58,14 +62,22 @@ def get_by_user(
 @router.get("/{user_id}/{asset_id}", response_model=Favorite)
 def get(
     user_id: int, asset_id: int, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
+    current_user: User = Depends(current_active_user),
 ) -> Favorite:
     """
     Get a favorite by its user and asset.
 
+    Read access: `LIB/ASSETS` OR a privilege on the asset's own category (same
+    rule as `assets.get`) OR the umbrella `LIB/EXPLORE`.
+
     - **user_id**: User ID
     - **asset_id**: Asset id
     """
+    asset = session.get(Asset, asset_id)
+    check_any_privilege(
+        session, current_user, "LIB",
+        ["ASSETS", "EXPLORE"] + ([asset.category] if asset and asset.category else []),
+    )
     favorite = session.exec(
         select(Favorite).where(
             Favorite.user_id == user_id,

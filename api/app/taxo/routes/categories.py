@@ -10,7 +10,7 @@ from sqlalchemy import case
 from ..internal.models import Category, CategoryCreate, CategoryUpdate
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
-from ...internal.permissions import require_privilege
+from ...internal.permissions import require_privilege, check_any_privilege
 from ...admin.internal.models import User
 from ...lib.internal.models import  Asset
 
@@ -53,12 +53,18 @@ def get_list(
 @router.get("/assets", response_model=List[CategoryWithAssets])
 def get_with_assets_count(
     skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("TAXO", "CATEGORIES", can_edit=False))
+    current_user: User = Depends(current_active_user),
 ) -> List[CategoryWithAssets]:
     """
     Returns all the active categories with the total count of associated assets,
     ordered alphabetically by name.
+
+    Read access: `TAXO/CATEGORIES` (taxonomy managers) OR `TAXO/TAXONOMY` (the
+    read-only privilege COLLABORATOR/REVIEWER hold) — backs the "View
+    Taxonomy" page's tree, which those profiles can already reach via the
+    sidebar.
     """
+    check_any_privilege(session, current_user, "TAXO", ["CATEGORIES", "TAXONOMY"])
     statement = (
         select(
             Category.code,

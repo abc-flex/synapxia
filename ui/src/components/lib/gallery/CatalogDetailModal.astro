@@ -248,33 +248,35 @@ const tagsIcon = getFieldIcon("tag");
           /* Asset-table fields (description/reference/tags) — visually grouped
              in their own card, separate from the characterization sections
              below (which come from the characterizations table). */
-          <div id={`${modalId}-asset-info`} class="space-y-2 rounded-xl border border-gray-200 bg-gray-50/60 p-4 dark:border-gray-800 dark:bg-gray-800/40">
-            <div id={`${modalId}-desc-wrap`} class="hidden flex flex-wrap items-baseline gap-1.5 text-sm">
-              <span class="shrink-0 inline-flex items-center gap-1 font-medium text-gray-500 dark:text-gray-400">
-                <span class="h-3.5 w-3.5 [&>svg]:h-3.5 [&>svg]:w-3.5"><Fragment set:html={descIcon} /></span>
-                <span data-i18n="asset_modal.description">Description</span>:
-              </span>
-              <p id={`${modalId}-desc`} class="whitespace-pre-wrap text-gray-900 dark:text-gray-100"></p>
-            </div>
-            <div id={`${modalId}-reference-wrap`} class="hidden flex flex-wrap items-baseline gap-1.5 text-sm">
-              <span class="shrink-0 inline-flex items-center gap-1 font-medium text-gray-500 dark:text-gray-400">
-                <span class="h-3.5 w-3.5 [&>svg]:h-3.5 [&>svg]:w-3.5"><Fragment set:html={referenceIcon} /></span>
-                <span data-i18n="asset_modal.reference">Repository URL</span>:
-              </span>
-              <p id={`${modalId}-reference`} class="break-all text-gray-900 dark:text-gray-100"></p>
-            </div>
-            <div id={`${modalId}-tags-wrap`} class="hidden flex flex-wrap items-baseline gap-1.5 text-sm">
-              <span class="shrink-0 inline-flex items-center gap-1 font-medium text-gray-500 dark:text-gray-400">
-                <span class="h-3.5 w-3.5 [&>svg]:h-3.5 [&>svg]:w-3.5"><Fragment set:html={tagsIcon} /></span>
-                <span data-i18n="asset_modal.tags">Tags</span>:
-              </span>
-              <div id={`${modalId}-tags`} class="flex flex-wrap gap-1.5"></div>
+          <div id={`${modalId}-asset-info`}>
+            <div class="space-y-2 rounded-xl border border-indigo-100 bg-indigo-50/50 p-4 dark:border-indigo-500/20 dark:bg-indigo-500/[0.06]">
+              <div id={`${modalId}-desc-wrap`} class="hidden flex flex-wrap items-baseline gap-1.5 text-sm">
+                <span class="shrink-0 inline-flex items-center gap-1 font-medium text-gray-500 dark:text-gray-400">
+                  <span class="h-3.5 w-3.5 [&>svg]:h-3.5 [&>svg]:w-3.5"><Fragment set:html={descIcon} /></span>
+                  <span data-i18n="asset_modal.description">Description</span>:
+                </span>
+                <p id={`${modalId}-desc`} class="whitespace-pre-wrap text-gray-900 dark:text-gray-100"></p>
+              </div>
+              <div id={`${modalId}-reference-wrap`} class="hidden flex flex-wrap items-baseline gap-1.5 text-sm">
+                <span class="shrink-0 inline-flex items-center gap-1 font-medium text-gray-500 dark:text-gray-400">
+                  <span class="h-3.5 w-3.5 [&>svg]:h-3.5 [&>svg]:w-3.5"><Fragment set:html={referenceIcon} /></span>
+                  <span data-i18n="asset_modal.reference">Repository URL</span>:
+                </span>
+                <p id={`${modalId}-reference`} class="break-all text-gray-900 dark:text-gray-100"></p>
+              </div>
+              <div id={`${modalId}-tags-wrap`} class="hidden flex flex-wrap items-baseline gap-1.5 text-sm">
+                <span class="shrink-0 inline-flex items-center gap-1 font-medium text-gray-500 dark:text-gray-400">
+                  <span class="h-3.5 w-3.5 [&>svg]:h-3.5 [&>svg]:w-3.5"><Fragment set:html={tagsIcon} /></span>
+                  <span data-i18n="asset_modal.tags">Tags</span>:
+                </span>
+                <div id={`${modalId}-tags`} class="flex flex-wrap gap-1.5"></div>
+              </div>
             </div>
           </div>
         ) : (
           <p id={`${modalId}-desc`} class="hidden whitespace-pre-wrap text-sm text-gray-600 dark:text-gray-300"></p>
         )}
-        <div id={`${modalId}-sections`} class="space-y-6"></div>
+        <div id={`${modalId}-sections`} class="space-y-4"></div>
       </div>
       <div data-detail-panel="related" class="hidden">
         <Related modalId={modalId} />

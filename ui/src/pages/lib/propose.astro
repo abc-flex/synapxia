@@ -145,6 +145,11 @@ try {
             </FormField>
           </div>
 
+          <FormField controlId="propose-reference" labelKey="propose.reference">
+            <input id="propose-reference" name="reference" type="text" class={inputClass}
+              data-i18n-placeholder="propose.reference_placeholder" placeholder="Repo URL or reference" />
+          </FormField>
+
           <FormField controlId="propose-tags" labelKey="propose.tags">
             <input id="propose-tags" name="tags" type="text" class={inputClass}
               data-i18n-placeholder="propose.tags_placeholder" placeholder="comma, separated, tags" />
@@ -161,7 +166,7 @@ try {
           <p class="mb-4 text-xs text-gray-500 dark:text-gray-400" data-i18n="propose.characterization_hint">
             Describe the asset against this type's features. Defaults are prefilled; adjust as needed.
           </p>
-          <div id="propose-characterization-fields" class="grid gap-5 sm:grid-cols-2"></div>
+          <div id="propose-characterization-fields" class="space-y-5"></div>
         </div>
 
         <!-- Related Assets panel -->
@@ -253,6 +258,7 @@ try {
     import { getCategories } from "@/lib/categories";
     import { getReviewers, proposeAsset } from "@/lib/propose";
     import { buildCharFieldDefs } from "@/lib/charFields";
+    import { buildDetailToggle } from "@/lib/detailToggle";
     import { getAssetsSelect } from "@/lib/assets";
     import { createAssetRelation } from "@/lib/asset_relations";
     import { getInitiativesSelect } from "@/lib/initiatives";
@@ -507,10 +513,12 @@ try {
         }
         for (const def of defs) {
           const code = def.feature;
+          // Full-width stacked card (the container is a single-column
+          // `space-y-5` stack, not a 2-column grid) — mirrors the value/detail
+          // layout of the /lib/assets edit modal's Characterizations tab.
           const cell = document.createElement("div");
-          if (def.control === "textarea") cell.className = "sm:col-span-2";
 
-          // Label row: name + required star on the left, FEAT_TYPE badge right.
+          // Label row: name + required star on the left, "Type: X" badge right.
           // The feature name lives in its own [data-i18n] span so a language
           // switch (loadClientTranslations sets textContent) doesn't wipe the
           // required `*` marker, which sits beside it as a sibling.
@@ -535,15 +543,21 @@ try {
           if (def.type) {
             const badge = document.createElement("span");
             badge.className = "shrink-0 text-[10px] uppercase tracking-wide text-gray-400";
-            badge.textContent = def.type;
+            badge.textContent = `${tr("asset_detail_modal.characterization_type_label", "Type")}: ${def.type}`;
             labelRow.appendChild(badge);
           }
           cell.appendChild(labelRow);
+
+          // Meta row: description (left, flex-1) + Show/Hide detail toggle
+          // (right, via ml-auto) — shares one row instead of each getting its
+          // own, so the full-width layout doesn't cost extra vertical space.
+          const metaRow = document.createElement("div");
+          metaRow.className = "mb-2 mt-1 flex items-start gap-2";
           if (def.description) {
             const desc = document.createElement("p");
-            desc.className = "mb-1 text-xs text-gray-500 dark:text-gray-400 break-words";
+            desc.className = "min-w-0 flex-1 text-xs text-gray-500 dark:text-gray-400 break-words";
             desc.textContent = def.description;
-            cell.appendChild(desc);
+            metaRow.appendChild(desc);
           }
 
           let field: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
@@ -579,7 +593,30 @@ try {
           const clear = () => setFieldInvalid(field, null, false);
           field.addEventListener("input", clear);
           field.addEventListener("change", clear);
+
+          // Optional per-feature detail — collapsed by default, revealed by
+          // the Show/Hide switch below (same toggle+visibility contract as
+          // the /lib/assets edit modal's Characterizations tab).
+          const detailField = document.createElement("textarea");
+          detailField.id = `char-detail-${code}`;
+          detailField.name = `${code}__detail`;
+          detailField.rows = 2;
+          detailField.className = `mt-2 hidden ${inputClass}`;
+          detailField.setAttribute("data-characterization-detail", code);
+          detailField.setAttribute("data-i18n-placeholder", "asset_detail_modal.characterization_detail_placeholder");
+          detailField.placeholder = tr("asset_detail_modal.characterization_detail_placeholder", "Additional detail (optional)");
+
+          const detailToggle = buildDetailToggle(detailField, {
+            tr,
+            onToggle: (expanded) => {
+              if (expanded) detailField.focus();
+            },
+          });
+          detailToggle.classList.add("ml-auto");
+          metaRow.appendChild(detailToggle);
+          cell.appendChild(metaRow);
           cell.appendChild(field);
+          cell.appendChild(detailField);
 
           charFields.appendChild(cell);
         }
@@ -931,16 +968,27 @@ try {
           if (v) values[el.name] = v;
         });
 
+      const details: Record<string, string> = {};
+      charFields
+        ?.querySelectorAll<HTMLTextAreaElement>("[data-characterization-detail]")
+        .forEach((el) => {
+          const feature = el.getAttribute("data-characterization-detail") || "";
+          const v = el.value.trim();
+          if (feature && v) details[feature] = v;
+        });
+
       const tagsRaw = String(fd.get("tags") || "").trim();
       const reviewerRaw = String(fd.get("reviewer_id") || "");
       const payload = {
         name,
         category,
         description: String(fd.get("description") || "").trim() || undefined,
+        reference: String(fd.get("reference") || "").trim() || undefined,
         detail: String(fd.get("detail") || "").trim() || undefined,
         tags: tagsRaw ? tagsRaw.split(",").map((t) => t.trim()).filter(Boolean) : undefined,
         reviewer_id: reviewerRaw ? Number(reviewerRaw) : undefined,
         values: Object.keys(values).length ? values : undefined,
+        details: Object.keys(details).length ? details : undefined,
       };
 
       if (submitBtn) submitBtn.disabled = true;

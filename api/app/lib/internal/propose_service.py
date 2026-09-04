@@ -94,6 +94,7 @@ def propose_asset(session: Session, proposer_id: int, data: ProposeRequest) -> A
     # Resolve the reviewer before any write so a bad reviewer fails cleanly.
     reviewer = resolve_reviewer(session, data.reviewer_id)
     overrides: Dict[str, str] = data.values or {}
+    detail_overrides: Dict[str, str] = data.details or {}
 
     try:
         asset = Asset(
@@ -120,6 +121,7 @@ def propose_asset(session: Session, proposer_id: int, data: ProposeRequest) -> A
                 asset=asset.id,
                 feature=spec.feature,
                 value=overrides.get(spec.feature, spec.default_value),
+                detail=(detail_overrides.get(spec.feature) or "").strip() or None,
             ))
 
         # 3 + 4. Proposal (finished) + review assignment (assigned).

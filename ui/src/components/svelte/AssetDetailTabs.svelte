@@ -155,6 +155,12 @@
   // Characterizations
   let loadedSpecs = $state<EnrichedSpec[]>([]);
   let charValues = $state<Record<string, string>>({});
+  // Optional free-text elaboration per feature, additional to `value` (DB
+  // column `detail`). Hidden by default per field — revealed via the
+  // "+ Add detail" disclosure button — and auto-expanded on load when a
+  // value already exists, so existing content is never silently hidden.
+  let charDetails = $state<Record<string, string>>({});
+  let charDetailExpanded = $state<Record<string, boolean>>({});
   let charsLoading = $state(false);
   // $state (not a plain let): reassigned wholesale by hydrate()/flush()/
   // commitCharsBaseline() to reseed the dirty-check baseline — needs to be
@@ -253,8 +259,11 @@
   const charChanged = $derived.by(() => {
     const set = new Set<string>();
     for (const spec of loadedSpecs) {
-      const initialValue = initialCharByFeature.get(spec.feature)?.value ?? "";
+      const initial = initialCharByFeature.get(spec.feature);
+      const initialValue = initial?.value ?? "";
+      const initialDetail = initial?.detail ?? "";
       if ((charValues[spec.feature] ?? "").trim() !== initialValue) set.add(spec.feature);
+      else if ((charDetails[spec.feature] ?? "").trim() !== initialDetail) set.add(spec.feature);
     }
     return set;
   });
@@ -353,6 +362,8 @@
   export async function loadChars(categoryCode: string): Promise<void> {
     loadedSpecs = [];
     charValues = {};
+    charDetails = {};
+    charDetailExpanded = {};
     charInvalid = {};
     if (!categoryCode) {
       charsLoading = false;
@@ -396,12 +407,19 @@
     );
 
     const values: Record<string, string> = {};
+    const details: Record<string, string> = {};
     for (const spec of enriched) {
       const existing = initialCharByFeature.get(spec.feature);
       values[spec.feature] = existing?.value ?? spec.default_value ?? "";
+      details[spec.feature] = existing?.detail ?? "";
     }
     loadedSpecs = enriched;
     charValues = values;
+    charDetails = details;
+    // Always start collapsed — even for features that already carry a
+    // detail — so the panel stays visually light by default; the toggle's
+    // icon/label reflect the (always-false) initial state.
+    charDetailExpanded = {};
     charsLoading = false;
   }
 
@@ -693,6 +711,19 @@
     return snapshot;
   }
 
+  /** Companion to `charSnapshot()` for the `detail` column — sent alongside
+   * `values` on a version save so a detail-only edit (no value change)
+   * still reaches the server. A blank entry means "no detail" for that
+   * feature (the server clears it), mirroring how a blank `value` entry
+   * means "not carried forward". */
+  export function charDetailSnapshot(): Record<string, string> {
+    const snapshot: Record<string, string> = {};
+    for (const spec of loadedSpecs) {
+      snapshot[spec.feature] = (charDetails[spec.feature] ?? "").trim();
+    }
+    return snapshot;
+  }
+
   /** Marks every required-but-empty characterization field invalid (red
    * border) and returns whether the set is save-worthy. Mirrors the Propose
    * page's required-spec gate (`specifications.required`) so a version save
@@ -726,7 +757,8 @@
     const seed: [string, any][] = [];
     for (const spec of loadedSpecs) {
       const value = (charValues[spec.feature] ?? "").trim();
-      if (value) seed.push([spec.feature, { feature: spec.feature, value }]);
+      const detail = (charDetails[spec.feature] ?? "").trim();
+      if (value) seed.push([spec.feature, { feature: spec.feature, value, detail }]);
     }
     initialCharByFeature = new Map(seed);
   }
@@ -744,6 +776,11 @@
     const keys = new Set([...Object.keys(current), ...Object.keys(initial)]);
     for (const k of keys) {
       if ((current[k] ?? "") !== (initial[k] ?? "")) return true;
+    }
+    // A detail-only edit (value unchanged) is still a pending change.
+    for (const spec of loadedSpecs) {
+      const initialDetail = initialCharByFeature.get(spec.feature)?.detail ?? "";
+      if ((charDetails[spec.feature] ?? "").trim() !== initialDetail) return true;
     }
     return false;
   }
@@ -806,6 +843,7 @@
       for (const spec of loadedSpecs) {
         const featureCode = spec.feature;
         const newValue = (charValues[featureCode] ?? "").trim();
+        const newDetail = (charDetails[featureCode] ?? "").trim();
         const existing = initialCharByFeature.get(featureCode);
         if (!newValue) {
           if (existing) {
@@ -818,11 +856,14 @@
           continue;
         }
         if (existing) {
-          if (existing.value !== newValue) {
-            await updateCharacterization(id, featureCode, { value: newValue });
+          const patch: { value?: string; detail?: string } = {};
+          if (existing.value !== newValue) patch.value = newValue;
+          if ((existing.detail ?? "") !== newDetail) patch.detail = newDetail;
+          if (Object.keys(patch).length) {
+            await updateCharacterization(id, featureCode, patch);
           }
         } else {
-          await createCharacterization({ asset: id, feature: featureCode, value: newValue });
+          await createCharacterization({ asset: id, feature: featureCode, value: newValue, detail: newDetail || undefined });
         }
       }
     }
@@ -949,6 +990,8 @@
     editingAssetId = assetId;
     loadedSpecs = [];
     charValues = {};
+    charDetails = {};
+    charDetailExpanded = {};
     charInvalid = {};
     charsLoading = false;
     initialCharByFeature = new Map();
@@ -1015,6 +1058,8 @@
     "w-full rounded-md border px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:bg-gray-800 dark:text-white";
   const charTextareaClass =
     "w-full rounded-md border px-3 py-2 text-sm font-mono focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:bg-gray-800 dark:text-white";
+  const charDetailTextareaClass =
+    "w-full rounded-md border border-gray-300 dark:border-gray-700 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:bg-gray-800 dark:text-white";
   const charBorderClass = (feature: string): string => {
     if (charInvalid[feature]) return "border-red-500 dark:border-red-500";
     if (charChanged.has(feature)) return "border-amber-400 dark:border-amber-500";
@@ -1023,6 +1068,21 @@
   const clearCharInvalid = (feature: string): void => {
     if (charInvalid[feature]) charInvalid = { ...charInvalid, [feature]: false };
   };
+
+  // ── Characterization "detail" disclosure ────────────────────────────────
+  // A Show/Hide switch per field, collapsed by default (loadChars() never
+  // pre-expands it, even when a detail already exists) so the panel stays
+  // visually light. Purely a visibility toggle — hiding never clears the
+  // staged text, only showing it again does.
+  function toggleCharDetail(feature: string): void {
+    const next = !charDetailExpanded[feature];
+    charDetailExpanded = { ...charDetailExpanded, [feature]: next };
+    if (next) {
+      requestAnimationFrame(() => {
+        rootEl?.querySelector<HTMLTextAreaElement>(`#${idPrefix}-char-detail-${feature}`)?.focus();
+      });
+    }
+  }
 </script>
 
 <div bind:this={rootEl}>
@@ -1177,15 +1237,38 @@
       <div class="space-y-4">
         {#each loadedSpecs as spec (spec.feature)}
           <div class="rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-white/[0.02] p-3">
-            <div class="flex flex-wrap items-baseline justify-between gap-x-2 mb-1.5">
+            <div class="flex flex-wrap items-baseline justify-between gap-x-2 mb-1">
               <label class="block min-w-0 break-words text-sm font-semibold text-gray-800 dark:text-gray-200" for={`${idPrefix}-char-${spec.feature}`}>
                 {t(`features.${spec.feature}`, spec.featureObj.name || spec.feature)}{#if spec.required}<span class="ml-0.5 text-red-500" aria-hidden="true">*</span>{/if}
               </label>
-              <span class="shrink-0 text-[10px] uppercase tracking-wide text-gray-400">{spec.featureObj.type || ""}</span>
+              <span class="shrink-0 text-[10px] uppercase tracking-wide text-gray-400">{t("asset_detail_modal.characterization_type_label", "Type")}: {spec.featureObj.type || ""}</span>
             </div>
-            {#if spec.featureObj.description}
-              <p class="mb-2 text-xs text-gray-500 dark:text-gray-400 break-words">{spec.featureObj.description}</p>
-            {/if}
+            <div class="mb-2 flex items-start gap-2">
+              {#if spec.featureObj.description}
+                <p class="min-w-0 flex-1 text-xs text-gray-500 dark:text-gray-400 break-words">{spec.featureObj.description}</p>
+              {/if}
+              <button
+                type="button"
+                class="ml-auto flex shrink-0 items-center gap-1.5 text-[11px] font-medium text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400"
+                aria-pressed={charDetailExpanded[spec.feature] ? "true" : "false"}
+                onclick={() => toggleCharDetail(spec.feature)}
+              >
+                {#if charDetailExpanded[spec.feature]}
+                  <svg viewBox="0 0 20 20" fill="currentColor" class="h-3.5 w-3.5" aria-hidden="true">
+                    <path d="M2.53 2.47a.75.75 0 00-1.06 1.06l3.02 3.02C2.6 8.03 1.2 9.6.5 10.5c1.99 3 5.5 6.5 9.5 6.5 1.5 0 2.9-.35 4.15-.95l2.32 2.32a.75.75 0 101.06-1.06L2.53 2.47zM10 14.5a4.47 4.47 0 01-3.02-1.18l1.14-1.14A2.98 2.98 0 0010 13a3 3 0 003-3c0-.4-.08-.78-.22-1.12l1.14-1.14A4.47 4.47 0 0113.5 10 4.5 4.5 0 0110 14.5zM10 3.5c1.5 0 2.9.35 4.15.95l-1.24 1.24A6.98 6.98 0 0010 5.5a7 7 0 00-6.16 3.65L2.6 7.9C4.1 5.5 6.9 3.5 10 3.5z"></path>
+                  </svg>
+                {:else}
+                  <svg viewBox="0 0 20 20" fill="currentColor" class="h-3.5 w-3.5" aria-hidden="true">
+                    <path d="M10 3.5c-4.5 0-8 3.5-9.5 6.5C1.99 13 5.5 16.5 10 16.5s8.01-3.5 9.5-6.5C18 7 14.5 3.5 10 3.5zm0 11a4.5 4.5 0 110-9 4.5 4.5 0 010 9z"></path>
+                    <circle cx="10" cy="10" r="2"></circle>
+                  </svg>
+                {/if}
+                <span>{charDetailExpanded[spec.feature] ? t("asset_detail_modal.characterization_hide_detail", "Hide detail") : t("asset_detail_modal.characterization_show_detail", "Show detail")}</span>
+                <span class={`relative inline-block h-4 w-7 shrink-0 rounded-full transition ${charDetailExpanded[spec.feature] ? "bg-indigo-600" : "bg-gray-300 dark:bg-gray-600"}`}>
+                  <span class={`absolute top-0.5 left-0.5 h-3 w-3 rounded-full bg-white shadow transition ${charDetailExpanded[spec.feature] ? "translate-x-3" : ""}`}></span>
+                </span>
+              </button>
+            </div>
             {#if spec.listItems && spec.listItems.length > 0}
               <select
                 id={`${idPrefix}-char-${spec.feature}`}
@@ -1213,6 +1296,15 @@
               <p class="mt-1 text-xs text-red-600 dark:text-red-400">
                 {t("asset_detail_modal.characterization_required", "Please fill the required characterization fields.")}
               </p>
+            {/if}
+            {#if charDetailExpanded[spec.feature]}
+              <textarea
+                id={`${idPrefix}-char-detail-${spec.feature}`}
+                bind:value={charDetails[spec.feature]}
+                rows="2"
+                placeholder={t("asset_detail_modal.characterization_detail_placeholder", "Additional detail (optional)")}
+                class={`mt-2 ${charDetailTextareaClass}`}
+              ></textarea>
             {/if}
           </div>
         {/each}

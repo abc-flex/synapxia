@@ -111,10 +111,10 @@ const isPublished = (raw: unknown): boolean =>
 const rows = agents.filter((item) => isPublished(item.status)).map((item) => {
   const chars = charsByAsset.get(Number(item.id)) ?? {};
   const tags = Array.isArray(item.tags) ? item.tags : [];
-  // Tools + instructions live in the `detail` column (the array / full text);
-  // `value` is just a short summary.
-  const tools = parseList(chars.TOOLS?.detail || chars.TOOLS?.value);
-  const instructions = chars.INSTRUCTIONS?.detail || chars.INSTRUCTIONS?.value || "";
+  // Tools + instructions live in the `value` column (the array / full text);
+  // `detail`, if present, is just an optional user-entered elaboration.
+  const tools = parseList(chars.TOOLS?.value || chars.TOOLS?.detail);
+  const instructions = chars.INSTRUCTIONS?.value || chars.INSTRUCTIONS?.detail || "";
   return {
     id: item.id,
     name: item.name,

@@ -497,6 +497,10 @@ class ProposeRequest(SQLModel):
         description="Reviewer user id (administrator/REVIEWER/superuser); auto-assigned if omitted")
     values: Optional[Dict[str, str]] = Field(
         default=None, description="Optional per-feature characterization values (feature → value)")
+    details: Optional[Dict[str, str]] = Field(
+        default=None,
+        description="Optional per-feature characterization detail (feature → detail), "
+        "additional to `values`; a feature with no entry gets no detail")
 
 
 class ReviewerOption(SQLModel):
@@ -542,6 +546,11 @@ class VersionRequest(SQLModel):
     values: Optional[Dict[str, str]] = Field(
         default=None,
         description="Full desired characterization set (feature → value); None copies the current version forward")
+    details: Optional[Dict[str, str]] = Field(
+        default=None,
+        description="Optional per-feature `detail` companion to `values` (feature → detail); "
+        "a full desired detail set mirroring `values` (omitted/blank feature = no detail). "
+        "None leaves each feature's existing detail untouched.")
 
 
 class AssetVersion(SQLModel):

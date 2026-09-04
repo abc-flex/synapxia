@@ -2,16 +2,25 @@
  * catalogDetail — client controller for the reusable read-only "big card" view
  * (CatalogDetailModal.astro). Opened from a whole-card click via the gallery
  * controller (the card carries `data-detail-modal`), it hydrates on demand:
- * fetches the asset + its characterizations, renders the full description and a
- * configured list of sections (inline meta, prose blocks, code blocks with a
- * Copy button, tool chips), and wires the favorite star + Edit/Delete handoff.
+ * fetches the asset + its characterizations + the category's specifications,
+ * renders the full description and a configured list of sections (inline meta,
+ * prose blocks, code blocks, tool chips), and wires the favorite star +
+ * Edit/Delete handoff.
  *
  * Catalog-agnostic: each catalog passes its own `sections` describing which
- * characterization feature feeds each block and from which column (`value` for
- * short fields, `detail` for the rich payload — matching the seed).
+ * characterization feature feeds each block and from which column (default
+ * `value` — a feature's real payload regardless of type; `detail` is a
+ * separate, optional user-entered elaboration, never an alternate copy).
+ *
+ * Two per-feature affordances render independently of `sections`' static
+ * config, driven by data fetched at open() time: a Copy button when the
+ * category's `specifications.copyable` is true for that feature, and a
+ * collapsed-by-default Show/Hide switch when the characterization carries a
+ * non-blank `detail`.
  */
 import { getAsset } from "@/lib/assets";
 import { getCharacterizationsByAsset } from "@/lib/characterizations";
+import { getSpecificationsbyCategory } from "@/lib/specifications";
 import { isFavorite, setFavorite } from "@/lib/favorites";
 import { getVoteTally, setVote, getWorkflowStage, type VoteValue } from "@/lib/actions";
 import { mountRelated } from "@/lib/related";
@@ -21,6 +30,7 @@ import { mountVersions } from "@/lib/versions";
 import { styleVoteButton } from "@/lib/catalogGallery";
 import { getUser } from "@/lib/auth";
 import { statusTone } from "@/lib/datatable";
+import { buildDetailToggle } from "@/lib/detailToggle";
 import type { VoteTally } from "@/types/api";
 
 export interface DetailSection {
@@ -78,31 +88,127 @@ function labelEl(text: string): HTMLElement {
   return h;
 }
 
+/** A section's label + an optional right-side cluster of controls (Copy
+ * button / Show-Hide detail switch), sharing one row across every section
+ * type so the two per-feature affordances behave identically everywhere. */
+function buildHeader(label: string, controls: HTMLElement[]): HTMLElement {
+  const head = document.createElement("div");
+  head.className = "mb-2 flex flex-wrap items-center justify-between gap-2";
+  head.appendChild(labelEl(label));
+  if (controls.length) {
+    const right = document.createElement("div");
+    right.className = "flex shrink-0 items-center gap-2";
+    right.append(...controls);
+    head.appendChild(right);
+  }
+  return head;
+}
+
+/** Copy button for a section's raw value — shown whenever the category's
+ * specification marks this feature `copyable`, independent of section type. */
+function buildCopyButton(rawValue: string, copyOkKey?: string): HTMLButtonElement {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.dataset.action = "copy";
+  btn.dataset.copy = rawValue;
+  btn.dataset.copyOk = trGlobal(copyOkKey ?? "catalog_detail.copied", "Copied");
+  btn.className =
+    "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800";
+  btn.textContent = trGlobal("catalog_detail.copy", "Copy");
+  return btn;
+}
+
+/** Shaded box for a copyable section's value — the same visual treatment a
+ * `type:"code"` section always uses, generalized so ANY copyable feature
+ * (inline/block/tools alike) reads as "this is the copyable content", not
+ * just code blocks. An explicit border (not just a background tint) keeps it
+ * visible even when it sits on a similarly-toned surface (e.g. nested inside
+ * the per-characteristic card, or dark mode's near-transparent card fill).
+ * `extra` appends type-specific classes (e.g. code's monospace/scroll). */
+function shadedBoxClass(extra = ""): string {
+  return `rounded-lg border border-gray-200 bg-gray-100 p-3 dark:border-gray-700 dark:bg-gray-900 ${extra}`.trim();
+}
+
+/** The collapsed-by-default block a Show/Hide switch reveals — visually
+ * distinct (dashed border, muted italic) from the section's main content so
+ * it always reads as a secondary elaboration, never the primary value. */
+function buildDetailBlock(detail: string): HTMLElement {
+  const block = document.createElement("div");
+  block.className =
+    "mt-2 hidden rounded-md border border-dashed border-gray-200 bg-gray-50/60 p-2 text-xs italic text-gray-500 dark:border-gray-700 dark:bg-white/[0.02] dark:text-gray-400";
+  block.textContent = detail;
+  return block;
+}
+
 /** Build one section's DOM node from its raw value (inline meta / prose block /
- * copyable code / tool chips). Pure + XSS-safe (all text via textContent). */
-function renderSection(sec: DetailSection, value: string): HTMLElement | null {
+ * code / tool chips), plus the shared optional Copy button and Show/Hide
+ * "detail" switch. Pure + XSS-safe (all text via textContent). */
+function renderSection(
+  sec: DetailSection,
+  value: string,
+  extra: { detail?: string; copyable?: boolean } = {},
+): HTMLElement | null {
   const v = (value ?? "").trim();
   if (!v && sec.type !== "tools") return null;
   const label = trGlobal(sec.labelKey, sec.labelKey);
+  const detail = (extra.detail ?? "").trim();
 
-  if (sec.type === "inline") {
+  // Built once, appended wherever the section's layout puts its header/body.
+  const controls: HTMLElement[] = [];
+  let detailBlock: HTMLElement | null = null;
+  if (extra.copyable) controls.push(buildCopyButton(v, sec.copyOkKey));
+  if (detail) {
+    detailBlock = buildDetailBlock(detail);
+    controls.push(buildDetailToggle(detailBlock, { tr: trGlobal }));
+  }
+
+  if (sec.type === "inline" && !extra.copyable) {
+    // Compact one-line "Label: value" — unchanged for the (still-common)
+    // non-copyable case. A copyable inline feature falls through below to
+    // the header + shaded-box layout every other copyable type uses.
+    const wrap = document.createElement("div");
     const row = document.createElement("div");
-    row.className = "flex flex-wrap items-baseline gap-2 text-sm";
+    row.className = "flex flex-wrap items-center justify-between gap-2 text-sm";
+    const text = document.createElement("span");
+    text.className = "flex flex-wrap items-baseline gap-2";
     const l = document.createElement("span");
     l.className = "font-medium text-gray-500 dark:text-gray-400";
     l.textContent = `${label}:`;
     const val = document.createElement("span");
     val.className = "text-gray-900 dark:text-gray-100";
     val.textContent = v;
-    row.append(l, val);
-    return row;
+    text.append(l, val);
+    row.appendChild(text);
+    if (controls.length) {
+      const right = document.createElement("div");
+      right.className = "ml-auto flex shrink-0 items-center gap-2";
+      right.append(...controls);
+      row.appendChild(right);
+    }
+    wrap.appendChild(row);
+    if (detailBlock) wrap.appendChild(detailBlock);
+    return wrap;
+  }
+
+  if (sec.type === "inline") {
+    const wrap = document.createElement("div");
+    wrap.appendChild(buildHeader(label, controls));
+    const box = document.createElement("div");
+    box.className = shadedBoxClass();
+    const val = document.createElement("span");
+    val.className = "text-sm text-gray-900 dark:text-gray-100";
+    val.textContent = v;
+    box.appendChild(val);
+    wrap.appendChild(box);
+    if (detailBlock) wrap.appendChild(detailBlock);
+    return wrap;
   }
 
   if (sec.type === "tools") {
     const items = parseList(v);
     if (items.length === 0) return null;
     const wrap = document.createElement("div");
-    wrap.appendChild(labelEl(label));
+    wrap.appendChild(buildHeader(label, controls));
     const chips = document.createElement("div");
     chips.className = "flex flex-wrap gap-1.5";
     for (const t of items) {
@@ -112,61 +218,87 @@ function renderSection(sec: DetailSection, value: string): HTMLElement | null {
       chip.textContent = t;
       chips.appendChild(chip);
     }
-    wrap.appendChild(chips);
+    if (extra.copyable) {
+      const box = document.createElement("div");
+      box.className = shadedBoxClass();
+      box.appendChild(chips);
+      wrap.appendChild(box);
+    } else {
+      wrap.appendChild(chips);
+    }
+    if (detailBlock) wrap.appendChild(detailBlock);
     return wrap;
   }
 
   if (sec.type === "code") {
+    // Code sections are always shaded/monospace regardless of `copyable` —
+    // that treatment is about content format, not copyability. Only the
+    // Copy button itself is gated (handled above via `controls`).
     const wrap = document.createElement("div");
-    const head = document.createElement("div");
-    head.className = "mb-2 flex items-center justify-between gap-2";
-    head.appendChild(labelEl(label));
-    const copyBtn = document.createElement("button");
-    copyBtn.type = "button";
-    copyBtn.dataset.action = "copy";
-    copyBtn.dataset.copy = v;
-    copyBtn.dataset.copyOk = trGlobal(sec.copyOkKey ?? "catalog_detail.copied", "Copied");
-    copyBtn.className =
-      "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800";
-    copyBtn.textContent = trGlobal("catalog_detail.copy", "Copy");
-    head.appendChild(copyBtn);
-    wrap.appendChild(head);
+    wrap.appendChild(buildHeader(label, controls));
     const pre = document.createElement("pre");
-    pre.className =
-      "max-h-80 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-gray-50 p-3 font-mono text-xs text-gray-800 dark:bg-gray-800 dark:text-gray-200";
+    pre.className = shadedBoxClass(
+      "max-h-80 overflow-auto whitespace-pre-wrap break-words font-mono text-xs text-gray-800 dark:text-gray-200",
+    );
     pre.textContent = v;
     wrap.appendChild(pre);
+    if (detailBlock) wrap.appendChild(detailBlock);
     return wrap;
   }
 
   // block
   const wrap = document.createElement("div");
-  wrap.appendChild(labelEl(label));
+  wrap.appendChild(buildHeader(label, controls));
   const p = document.createElement("p");
   p.className = "whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300";
   p.textContent = v;
-  wrap.appendChild(p);
+  if (extra.copyable) {
+    const box = document.createElement("div");
+    box.className = shadedBoxClass();
+    box.appendChild(p);
+    wrap.appendChild(box);
+  } else {
+    wrap.appendChild(p);
+  }
+  if (detailBlock) wrap.appendChild(detailBlock);
   return wrap;
 }
 
 /** Render a configured section list into `container` from a feature→char map
  * (the same rendering the Detail tab uses). Reused by the Versions tab to show
  * a historical version's snapshot identically. `description` feeds any section
- * with `field: "description"`. */
+ * with `field: "description"`. `copyableByFeature` (feature → `specifications
+ * .copyable`) gates each section's Copy button; a feature absent from the map
+ * (e.g. the Versions tab, which doesn't fetch specifications) simply gets no
+ * Copy button. The Show/Hide "detail" switch needs no such gate — it shows
+ * whenever the characterization itself carries a non-blank `detail`.
+ *
+ * Each rendered section is wrapped in its own bordered card (same visual
+ * language as `AssetDetailTabs.svelte`'s characterization cards) so it's
+ * unambiguous which characteristic a "Show detail" toggle belongs to — this
+ * matters most once several features are stacked in the same panel. */
 export function renderCharacterizationSections(
   container: HTMLElement,
   sections: DetailSection[],
   byFeature: Record<string, { value?: string; detail?: string } | undefined>,
   description = "",
+  copyableByFeature: Record<string, boolean> = {},
 ): void {
   container.innerHTML = "";
   for (const sec of sections) {
+    const entry = sec.feature ? byFeature[sec.feature] : undefined;
     const raw =
-      sec.field === "description"
-        ? description
-        : ((byFeature[sec.feature ?? ""]?.[sec.column ?? "value"] as string) ?? "");
-    const el = renderSection(sec, raw);
-    if (el) container.appendChild(el);
+      sec.field === "description" ? description : ((entry?.[sec.column ?? "value"] as string) ?? "");
+    const el = renderSection(sec, raw, {
+      detail: sec.field === "description" ? "" : entry?.detail,
+      copyable: !!(sec.feature && copyableByFeature[sec.feature]),
+    });
+    if (!el) continue;
+    const card = document.createElement("div");
+    card.className =
+      "rounded-lg border border-gray-200 bg-gray-50/50 p-3 dark:border-gray-800 dark:bg-white/[0.02]";
+    card.appendChild(el);
+    container.appendChild(card);
   }
 }
 
@@ -475,9 +607,17 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
         }
       }
 
-      const chars = await getCharacterizationsByAsset(assetId);
+      const [chars, specs] = await Promise.all([
+        getCharacterizationsByAsset(assetId),
+        asset.category
+          ? getSpecificationsbyCategory(asset.category).catch(() => [])
+          : Promise.resolve([]),
+      ]);
       if (seq !== openSeq) return; // superseded by a newer open()
       const byFeature = Object.fromEntries(chars.map((c) => [c.feature, c]));
+      const copyableByFeature = Object.fromEntries(
+        specs.map((s) => [s.feature, !!s.copyable]),
+      );
 
       let hasDesc = false;
       let hasReference = false;
@@ -520,7 +660,7 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
         for (const tag of tags) {
           const chip = document.createElement("span");
           chip.className =
-            "inline-flex items-center rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300";
+            "inline-flex items-center rounded-md border border-indigo-200 bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:border-indigo-400/30 dark:bg-indigo-500/25 dark:text-indigo-200";
           chip.textContent = `#${tag}`;
           tagsEl.appendChild(chip);
         }
@@ -534,7 +674,7 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
 
       if (sectionsEl) {
         renderCharacterizationSections(
-          sectionsEl, sections, byFeature, asset.description ?? "");
+          sectionsEl, sections, byFeature, asset.description ?? "", copyableByFeature);
       }
     } catch {
       if (nameEl) nameEl.textContent = tr("catalog_detail.error_load", "Could not load.");

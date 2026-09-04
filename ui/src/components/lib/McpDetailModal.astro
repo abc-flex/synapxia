@@ -32,9 +32,9 @@ const { modalId = "mcp-view-modal", statuses = [] } = Astro.props as Props;
     editModalId: "mcp-detail-modal",
     sections: [
       { type: "inline", labelKey: "mcp_modal.mode", feature: "MODE" },
-      { type: "tools", labelKey: "mcp_modal.tools", feature: "TOOLS", column: "detail" },
-      { type: "block", labelKey: "mcp_modal.content", feature: "CONTENT", column: "detail" },
-      { type: "code", labelKey: "mcp_modal.server_config", feature: "SERVER_CONFIG", column: "detail", copyOkKey: "mcp_card.copied" },
+      { type: "tools", labelKey: "mcp_modal.tools", feature: "TOOLS" },
+      { type: "block", labelKey: "mcp_modal.content", feature: "CONTENT" },
+      { type: "code", labelKey: "mcp_modal.server_config", feature: "SERVER_CONFIG", copyOkKey: "mcp_card.copied" },
     ],
   });
 </script>

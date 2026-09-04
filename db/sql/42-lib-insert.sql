@@ -54,8 +54,8 @@ INSERT INTO characterizations (asset, feature, value, detail) VALUES
 (1, 'PLATFORM', 'VSCode', 'The development environment used for creating web applications.'),
 (1, 'SUGGESTED_MODEL', 'GPT-5', 'The AI model recommended for generating web application code.'),
 (1, 'SUGGESTED_TEMPERATURE', '0.2', 'The temperature setting recommended for generating web application code, where lower values result in more focused and deterministic outputs.'),
-(1, 'EXAMPLE_OUTPUT', 'An example of a simple web page generated using the prompt.', '<html>...</html>'),
-(1, 'PROMPT_TEMPLATE', 'Incremental Development Template',
+(1, 'EXAMPLE_OUTPUT', '<html>...</html>', 'An example of a simple web page generated using the prompt.'),
+(1, 'PROMPT_TEMPLATE',
 $$---
 description: 'Prompt para generar el incremento necesario tanto en el backend como en el frontend para implementar la funcionalidad descrita en una historia de usuario'
 name: python-web-increment
@@ -76,15 +76,14 @@ tools: ['edit', 'search', 'problems', 'changes', 'fetch', 'new']
 2. Conserva el LookAndFeel del resto de la aplicación.
 3. Evita generar nuevos estilos de código.
 4. Asegúrate de que el código generado siga las mejores prácticas de desarrollo en Python.
-5. Asegúrate de que el código generado sea compatible con las versiones de las librerías y frameworks utilizados en el proyecto.
-$$);
+5. Asegúrate de que el código generado sea compatible con las versiones de las librerías y frameworks utilizados en el proyecto.$$, 'Incremental Development Template');
 
 -- ===== Features for SQL Query Optimization Prompt (PROMPTS) =====
 INSERT INTO characterizations (asset, feature, value, detail) VALUES
 (4, 'PLATFORM', 'VSCode', 'The development environment used to run the prompt.'),
 (4, 'SUGGESTED_MODEL', 'GPT-5', 'The AI model recommended for query analysis and rewriting.'),
 (4, 'SUGGESTED_TEMPERATURE', '0.1', 'A low temperature keeps the SQL output deterministic and faithful to the original semantics.'),
-(4, 'EXAMPLE_OUTPUT', 'A rewritten query with an added composite index suggestion.',
+(4, 'EXAMPLE_OUTPUT',
 $$-- Suggested index
 CREATE INDEX idx_orders_customer_created ON orders (customer_id, created_at);
 
@@ -94,8 +93,8 @@ FROM orders o
 WHERE o.customer_id = $1
   AND o.created_at >= NOW() - INTERVAL '30 days'
 ORDER BY o.created_at DESC
-LIMIT 50;$$),
-(4, 'PROMPT_TEMPLATE', 'Query Optimization Template',
+LIMIT 50;$$, 'A rewritten query with an added composite index suggestion.'),
+(4, 'PROMPT_TEMPLATE',
 $$---
 description: 'Prompt para analizar una consulta SQL y proponer una versión optimizada con índices y reescrituras.'
 name: sql-query-optimization
@@ -113,15 +112,14 @@ tools: ['search', 'problems', 'fetch']
 ## Consideraciones
 1. No cambies el resultado lógico de la consulta.
 2. Justifica cada índice propuesto con la cláusula que lo aprovecha.
-3. Prefiere índices compuestos en el orden correcto de selectividad.
-$$);
+3. Prefiere índices compuestos en el orden correcto de selectividad.$$, 'Query Optimization Template');
 
 -- ===== Features for React Component Generator Prompt (PROMPTS) =====
 INSERT INTO characterizations (asset, feature, value, detail) VALUES
 (5, 'PLATFORM', 'VSCode', 'The development environment used to run the prompt.'),
 (5, 'SUGGESTED_MODEL', 'GPT-5', 'The AI model recommended for generating React/TypeScript components.'),
 (5, 'SUGGESTED_TEMPERATURE', '0.3', 'A slightly higher temperature gives some flexibility in naming and structure while staying coherent.'),
-(5, 'EXAMPLE_OUTPUT', 'A typed, accessible button component.',
+(5, 'EXAMPLE_OUTPUT',
 $$export interface ButtonProps {
   label: string;
   onClick: () => void;
@@ -134,8 +132,8 @@ export function Button({ label, onClick, disabled = false }: ButtonProps) {
       {label}
     </button>
   );
-}$$),
-(5, 'PROMPT_TEMPLATE', 'Component Generation Template',
+}$$, 'A typed, accessible button component.'),
+(5, 'PROMPT_TEMPLATE',
 $$---
 description: 'Prompt para generar componentes React accesibles y tipados a partir de una descripción funcional.'
 name: react-component-generator
@@ -153,15 +151,14 @@ tools: ['edit', 'new', 'search']
 ## Consideraciones
 1. Usa componentes funcionales y hooks, nunca clases.
 2. Mantén el LookAndFeel del resto de la aplicación.
-3. No introduzcas dependencias nuevas sin justificarlo.
-$$);
+3. No introduzcas dependencias nuevas sin justificarlo.$$, 'Component Generation Template');
 
 -- ===== Features for Unit Test Generation Prompt (PROMPTS) =====
 INSERT INTO characterizations (asset, feature, value, detail) VALUES
 (6, 'PLATFORM', 'VSCode', 'The development environment used to run the prompt.'),
 (6, 'SUGGESTED_MODEL', 'GPT-5', 'The AI model recommended for generating thorough unit tests.'),
 (6, 'SUGGESTED_TEMPERATURE', '0.2', 'A low temperature keeps the generated tests focused and deterministic.'),
-(6, 'EXAMPLE_OUTPUT', 'A pytest test covering the happy path and an edge case.',
+(6, 'EXAMPLE_OUTPUT',
 $$import pytest
 from app.utils import discount
 
@@ -170,8 +167,8 @@ def test_discount_applies_percentage():
 
 def test_discount_rejects_negative_rate():
     with pytest.raises(ValueError):
-        discount(100, -0.1)$$),
-(6, 'PROMPT_TEMPLATE', 'Unit Test Generation Template',
+        discount(100, -0.1)$$, 'A pytest test covering the happy path and an edge case.'),
+(6, 'PROMPT_TEMPLATE',
 $$---
 description: 'Prompt para generar pruebas unitarias con casos límite y mocks para una función o módulo dado.'
 name: unit-test-generation
@@ -189,15 +186,14 @@ tools: ['search', 'problems', 'edit', 'runTasks']
 ## Consideraciones
 1. Una aserción principal por prueba; nombres descriptivos.
 2. Cubre valores nulos, vacíos y fuera de rango.
-3. No pruebes detalles de implementación, prueba el comportamiento observable.
-$$);
+3. No pruebes detalles de implementación, prueba el comportamiento observable.$$, 'Unit Test Generation Template');
 
 -- ===== Features for GitHub MCP Server (MCPS) =====
 INSERT INTO characterizations (asset, feature, value, detail) VALUES
-(2, 'MODE', 'Remote', 'The mode of operation for the MCP, indicating that it is accessed remotely via API calls.'),
+(2, 'MODE', 'REMOTE', 'The mode of operation for the MCP, indicating that it is accessed remotely via API calls.'),
 (2, 'OVERVIEW', 'An MCP providing services of the GitHub platform, such as code search, repository management and issue tracking.', NULL),
-(2, 'TOOLS', 'List of tools provided by the MCP for interacting with GitHub services.', $$['Actions', 'Code Security', 'Context', 'Copilot', 'Dependabot', 'Discussions', 'Gists', 'Git', 'Issues', 'Labels', 'Notifications', 'Organizations', 'Projects', 'Pull Requests', 'Repositories', 'Secret Protection', 'Security Advisories', 'Stargazers' , 'Users']$$),
-(2, 'CONTENT', 'The content of the MCP includes the available endpoints, their functionalities, and any relevant documentation or resources for developers to effectively utilize the MCP.',
+(2, 'TOOLS', $$['Actions', 'Code Security', 'Context', 'Copilot', 'Dependabot', 'Discussions', 'Gists', 'Git', 'Issues', 'Labels', 'Notifications', 'Organizations', 'Projects', 'Pull Requests', 'Repositories', 'Secret Protection', 'Security Advisories', 'Stargazers' , 'Users']$$, 'List of tools provided by the MCP for interacting with GitHub services.'),
+(2, 'CONTENT',
 $$# GitHub MCP Server
 The GitHub MCP Server connects AI tools directly to GitHub platform. This gives AI agents, assistants, and chatbots the ability to read repositories and code files, manage issues and PRs, analyze code, and automate workflows. All through natural language interactions.
 ## Use Cases
@@ -205,11 +201,10 @@ The GitHub MCP Server connects AI tools directly to GitHub platform. This gives 
 - Issue & PR Automation
 - CI/CD & Workflow Intelligence
 - Code Analysis
-- Team Collaboration
-$$),
-(2, 'SERVER_CONFIG', 'JSON for quick installation and configuration of the MCP in AI agents or tools.',
-$$
-{
+- Team Collaboration$$, 
+'The content of the MCP includes the available endpoints, their functionalities, and any relevant documentation or resources for developers to effectively utilize the MCP.'),
+(2, 'SERVER_CONFIG',
+$${
 	"servers": {
 		"io.github.github/github-mcp-server": {
 			"type": "http",
@@ -219,16 +214,14 @@ $$
 		}
 	},
 	"inputs": []
-}
-$$);
+}$$, 'JSON for quick installation and configuration of the MCP in AI agents or tools.');
 
 -- ===== Features for PostgreSQL MCP Server (MCPS) =====
 INSERT INTO characterizations (asset, feature, value, detail) VALUES
-(7, 'MODE', 'Local', 'The MCP runs locally and connects to a PostgreSQL instance via a connection string.'),
+(7, 'MODE', 'LOCAL', 'The MCP runs locally and connects to a PostgreSQL instance via a connection string.'),
 (7, 'OVERVIEW', 'Read-only PostgreSQL access for AI tools: inspect schemas, list tables and run safe SELECT queries.', NULL),
-(7, 'TOOLS', 'List of tools exposed by the PostgreSQL MCP server.',
-$$['query', 'list_schemas', 'list_tables', 'describe_table', 'list_relations']$$),
-(7, 'CONTENT', 'Capabilities and usage notes for the PostgreSQL MCP server.',
+(7, 'TOOLS', $$['query', 'list_schemas', 'list_tables', 'describe_table', 'list_relations']$$, 'List of tools exposed by the PostgreSQL MCP server.'),
+(7, 'CONTENT',
 $$# PostgreSQL MCP Server
 Exposes a connected PostgreSQL database to AI tools as resources and read-only query tools.
 ## Use Cases
@@ -237,27 +230,23 @@ Exposes a connected PostgreSQL database to AI tools as resources and read-only q
 - Query prototyping before writing application code
 ## Safety
 - Runs every statement inside a READ ONLY transaction.
-- Never exposes write/DDL operations.
-$$),
-(7, 'SERVER_CONFIG', 'JSON for quick installation and configuration of the MCP in AI agents or tools.',
-$$
-{
+- Never exposes write/DDL operations.$$, 'Capabilities and usage notes for the PostgreSQL MCP server.'),
+(7, 'SERVER_CONFIG',
+$${
     "mcpServers": {
         "postgres": {
             "command": "npx",
             "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://localhost/synapxia"]
         }
     }
-}
-$$);
+}$$, 'JSON for quick installation and configuration of the MCP in AI agents or tools.');
 
 -- ===== Features for Filesystem MCP Server (MCPS) =====
 INSERT INTO characterizations (asset, feature, value, detail) VALUES
-(8, 'MODE', 'Local', 'The MCP runs locally with access scoped to explicitly allowed directories.'),
+(8, 'MODE', 'LOCAL', 'The MCP runs locally with access scoped to explicitly allowed directories.'),
 (8, 'OVERVIEW', 'Controlled local filesystem access for AI tools: read, write and search files within allowed directories.', NULL),
-(8, 'TOOLS', 'List of tools exposed by the Filesystem MCP server.',
-$$['read_file', 'write_file', 'edit_file', 'list_directory', 'search_files', 'move_file']$$),
-(8, 'CONTENT', 'Capabilities and usage notes for the Filesystem MCP server.',
+(8, 'TOOLS', $$['read_file', 'write_file', 'edit_file', 'list_directory', 'search_files', 'move_file']$$, 'List of tools exposed by the Filesystem MCP server.'),
+(8, 'CONTENT',
 $$# Filesystem MCP Server
 Provides AI tools with sandboxed access to the local filesystem.
 ## Use Cases
@@ -266,27 +255,23 @@ Provides AI tools with sandboxed access to the local filesystem.
 - Generating new files from templates
 ## Safety
 - Access is restricted to the directories passed as arguments.
-- Path traversal outside the allowed roots is rejected.
-$$),
-(8, 'SERVER_CONFIG', 'JSON for quick installation and configuration of the MCP in AI agents or tools.',
-$$
-{
+- Path traversal outside the allowed roots is rejected.$$, 'Capabilities and usage notes for the Filesystem MCP server.'),
+(8, 'SERVER_CONFIG',
+$${
     "mcpServers": {
         "filesystem": {
             "command": "npx",
             "args": ["-y", "@modelcontextprotocol/server-filesystem", "/workspace/synapxia"]
         }
     }
-}
-$$);
+}$$, 'JSON for quick installation and configuration of the MCP in AI agents or tools.');
 
 -- ===== Features for Brave Search MCP Server (MCPS) =====
 INSERT INTO characterizations (asset, feature, value, detail) VALUES
-(9, 'MODE', 'Remote', 'The MCP calls the remote Brave Search API and requires an API key.'),
+(9, 'MODE', 'REMOTE', 'The MCP calls the remote Brave Search API and requires an API key.'),
 (9, 'OVERVIEW', 'Web and local search for AI tools through the Brave Search API, returning ranked results with snippets.', NULL),
-(9, 'TOOLS', 'List of tools exposed by the Brave Search MCP server.',
-$$['brave_web_search', 'brave_local_search']$$),
-(9, 'CONTENT', 'Capabilities and usage notes for the Brave Search MCP server.',
+(9, 'TOOLS', $$['brave_web_search', 'brave_local_search']$$, 'List of tools exposed by the Brave Search MCP server.'),
+(9, 'CONTENT',
 $$# Brave Search MCP Server
 Gives AI tools access to web and local search results via the Brave Search API.
 ## Use Cases
@@ -294,11 +279,9 @@ Gives AI tools access to web and local search results via the Brave Search API.
 - Finding local businesses and points of interest
 - Research and fact-checking workflows
 ## Requirements
-- A Brave Search API key set in the BRAVE_API_KEY environment variable.
-$$),
-(9, 'SERVER_CONFIG', 'JSON for quick installation and configuration of the MCP in AI agents or tools.',
-$$
-{
+- A Brave Search API key set in the BRAVE_API_KEY environment variable.$$, 'Capabilities and usage notes for the Brave Search MCP server.'),
+(9, 'SERVER_CONFIG',
+$${
     "mcpServers": {
         "brave-search": {
             "command": "npx",
@@ -306,16 +289,15 @@ $$
             "env": { "BRAVE_API_KEY": "<your-api-key>" }
         }
     }
-}
-$$);
+}$$, 'JSON for quick installation and configuration of the MCP in AI agents or tools.');
 
 -- ===== Features for Python Web Developer Agent (AGENTS) =====
 INSERT INTO characterizations (asset, feature, value, detail) VALUES
 (3, 'PLATFORM', 'VSCode', 'The platform where the AI agent operates.'),
 (3, 'SUGGESTED_MODEL', 'GPT-5', 'The AI model recommended for generating web application code.'),
 (3, 'SUGGESTED_TEMPERATURE', '0.2', 'The temperature setting recommended for generating web application code, where lower values result in more focused and deterministic outputs.'),
-(3, 'TOOLS', 'List of tools that agent can use.', $$['search/codebase', 'usages', 'problems', 'changes', 'edit/editFiles', 'search', 'new', 'runTasks']$$),
-(3, 'INSTRUCTIONS', 'Incremental Development Instructions',
+(3, 'TOOLS', $$['search/codebase', 'usages', 'problems', 'changes', 'edit/editFiles', 'search', 'new', 'runTasks']$$, 'List of tools exposed by the Brave Search MCP server.'),
+(3, 'INSTRUCTIONS',
 $$---
 description: 'Este agente customizado está diseñado para permitir al Desarrollador Python generar el backend y el frontend de una aplicación web utilizando una arquitectura de microservicios.'
 name: python-web-dev
@@ -352,17 +334,16 @@ La implementación de los métodos de acceso a datos se realiza con SQLAlchemy c
 - Nota: para los demás elementos del backend toma las decisiones que consideres prudentes y genera los archivos y componentes necesarios.
 
 ## Frontend
-El frontend usa Python con la versión 2.3.3 del framework Flask y necesita de la generación de varios tipos de componentes en los que puedes tomar las decisiones que consideres prudentes y genera los archivos y componentes necesarios.
-$$);
+El frontend usa Python con la versión 2.3.3 del framework Flask y necesita de la generación de varios tipos de componentes en los que puedes tomar las decisiones que consideres prudentes y genera los archivos y componentes necesarios.$$, 
+'Incremental Development Instructions');
 
 -- ===== Features for Code Review Agent (AGENTS) =====
 INSERT INTO characterizations (asset, feature, value, detail) VALUES
 (10, 'PLATFORM', 'VSCode', 'The platform where the AI agent operates.'),
 (10, 'SUGGESTED_MODEL', 'GPT-5', 'The AI model recommended for reviewing code and reasoning about defects.'),
 (10, 'SUGGESTED_TEMPERATURE', '0.2', 'A low temperature keeps the review focused and consistent.'),
-(10, 'TOOLS', 'List of tools that the agent can use.',
-$$['search/codebase', 'usages', 'problems', 'changes', 'fetch', 'runTasks']$$),
-(10, 'INSTRUCTIONS', 'Code Review Instructions',
+(10, 'TOOLS', $$['search/codebase', 'usages', 'problems', 'changes', 'fetch', 'runTasks']$$, 'List of tools that the agent can use.'),
+(10, 'INSTRUCTIONS',
 $$---
 description: 'Agente customizado que revisa cambios de código, detecta defectos, problemas de seguridad y desviaciones de estilo, y propone correcciones.'
 name: code-review
@@ -384,18 +365,16 @@ Revisar el diff de un cambio (pull request) y producir hallazgos accionables.
 ## Consideraciones
 1. No reescribas código que ya es correcto.
 2. Respeta las convenciones del repositorio.
-3. Señala explícitamente cuando no encuentres problemas.
-$$);
+3. Señala explícitamente cuando no encuentres problemas.$$, 'Code Review Instructions');
 
 -- ===== Features for Technical Documentation Writer Agent (AGENTS) =====
 INSERT INTO characterizations (asset, feature, value, detail) VALUES
 (11, 'PLATFORM', 'VSCode', 'The platform where the AI agent operates.'),
 (11, 'SUGGESTED_MODEL', 'GPT-5', 'The AI model recommended for generating clear technical documentation.'),
 (11, 'SUGGESTED_TEMPERATURE', '0.4', 'A moderate temperature helps produce natural, readable prose.'),
-(11, 'TOOLS', 'List of tools that the agent can use.',
-$$['search/codebase', 'fetch', 'edit/editFiles', 'new']$$),
-(11, 'INSTRUCTIONS', 'Documentation Writing Instructions',
-$$---
+(11, 'TOOLS', $$['search/codebase', 'fetch', 'edit/editFiles', 'new']$$, 'List of tools that the agent can use.'),
+(11, 'INSTRUCTIONS',
+$$---|
 description: 'Agente customizado que genera y mantiene documentación técnica (READMEs, documentación de API, ADRs) a partir del código fuente y briefs cortos.'
 name: doc-writer
 model: GPT-5
@@ -416,17 +395,15 @@ Producir y mantener documentación técnica precisa y legible.
 ## Consideraciones
 1. No inventes APIs, parámetros o comportamientos: documenta solo lo verificable.
 2. Conserva el estilo y la estructura de la documentación existente.
-3. Incluye ejemplos ejecutables siempre que sea posible.
-$$);
+3. Incluye ejemplos ejecutables siempre que sea posible.$$, 'Documentation Writing Instructions');
 
 -- ===== Features for Test Automation Agent (AGENTS) =====
 INSERT INTO characterizations (asset, feature, value, detail) VALUES
 (12, 'PLATFORM', 'VSCode', 'The platform where the AI agent operates.'),
 (12, 'SUGGESTED_MODEL', 'GPT-5', 'The AI model recommended for designing and maintaining automated test suites.'),
 (12, 'SUGGESTED_TEMPERATURE', '0.2', 'A low temperature keeps the generated tests reliable and reproducible.'),
-(12, 'TOOLS', 'List of tools that the agent can use.',
-$$['search/codebase', 'problems', 'changes', 'edit/editFiles', 'new', 'runTasks']$$),
-(12, 'INSTRUCTIONS', 'Test Automation Instructions',
+(12, 'TOOLS', $$['search/codebase', 'problems', 'changes', 'edit/editFiles', 'new', 'runTasks']$$, 'List of tools that the agent can use.'),
+(12, 'INSTRUCTIONS',
 $$---
 description: 'Agente customizado que diseña y mantiene suites de pruebas automatizadas, genera casos de prueba y los integra en el pipeline de CI.'
 name: test-automation
@@ -448,8 +425,7 @@ Diseñar, generar y mantener suites de pruebas automatizadas integradas en CI.
 ## Consideraciones
 1. Prioriza la cobertura del comportamiento crítico de negocio.
 2. Aísla las pruebas de dependencias externas mediante mocks o fixtures.
-3. Falla de forma clara y accionable cuando una prueba no pasa.
-$$);
+3. Falla de forma clara y accionable cuando una prueba no pasa.$$, 'Test Automation Instructions');
 
 -- **********************************
 -- ****** Table related_assets ******

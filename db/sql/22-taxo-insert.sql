@@ -59,7 +59,7 @@ INSERT INTO features (code, name, type, description) VALUES
     ('CONTENT', 'Content', 'TECHNICAL',
     'The content of the digital asset, such as avaliable resources, examples and/or documentation.'),
     ('TOOLS', 'Tools used', 'TECHNICAL',
-    'List of asset tools and their available functions or capabilities.'),
+    $$List of asset management tools and their available functions or capabilities. i.e.: ['tool1', 'tool2'].$$),
     ('SERVER_CONFIG', 'JSON Server configuration', 'TECHNICAL',
     'Server Config Streamable Http in JSON format.'),
 
@@ -71,24 +71,24 @@ INSERT INTO features (code, name, type, description) VALUES
 -- ****** Table specifications ******
 -- **********************************
 
-INSERT INTO specifications (category, feature, default_value, required, sort_order) VALUES
+INSERT INTO specifications (category, feature, default_value, required, copyable, sort_order) VALUES
     -- Features for a PROMPT category
-    ('PROMPTS', 'PROMPT_TEMPLATE', NULL, TRUE, 10),
-    ('PROMPTS', 'PLATFORM', 'VSCode', FALSE, 20),
-    ('PROMPTS', 'SUGGESTED_MODEL', 'GPT-5', FALSE, 30),
-    ('PROMPTS', 'SUGGESTED_TEMPERATURE', '0.2', FALSE, 40),
-    ('PROMPTS', 'EXAMPLE_OUTPUT', NULL, FALSE, 50),
+    ('PROMPTS', 'PLATFORM', 'VSCode', FALSE, FALSE, 10),
+    ('PROMPTS', 'SUGGESTED_MODEL', 'GPT-5', FALSE, FALSE, 20),
+    ('PROMPTS', 'SUGGESTED_TEMPERATURE', '0.2', FALSE, FALSE, 30),
+    ('PROMPTS', 'PROMPT_TEMPLATE', NULL, TRUE, TRUE, 40),
+    ('PROMPTS', 'EXAMPLE_OUTPUT', NULL, FALSE, TRUE, 50),
 
     -- Features for a MCPS category
-    ('MCPS', 'OVERVIEW', NULL, TRUE, 10),
-    ('MCPS', 'CONTENT', NULL, FALSE, 20),
-    ('MCPS', 'MODE', 'Remote', FALSE, 30),
-    ('MCPS', 'TOOLS', NULL, FALSE, 40),
-    ('MCPS', 'SERVER_CONFIG', NULL, FALSE, 50),
+    ('MCPS', 'OVERVIEW', NULL, TRUE, FALSE, 10),
+    ('MCPS', 'MODE', 'REMOTE', FALSE, FALSE, 20),
+    ('MCPS', 'TOOLS', NULL, FALSE, FALSE, 30),
+    ('MCPS', 'CONTENT', NULL, FALSE, TRUE, 40),
+    ('MCPS', 'SERVER_CONFIG', NULL, FALSE, TRUE, 50),
 
     -- Features for a AGENT category
-    ('AGENTS', 'INSTRUCTIONS', NULL, TRUE, 10),
-    ('AGENTS', 'PLATFORM', 'VSCode', FALSE, 20),
-    ('AGENTS', 'SUGGESTED_MODEL', 'GPT-5', FALSE, 30),
-    ('AGENTS', 'SUGGESTED_TEMPERATURE', '0.2', FALSE, 40),
-    ('AGENTS', 'TOOLS', NULL, FALSE, 50);
+    ('AGENTS', 'PLATFORM', 'VSCode', FALSE, FALSE, 10),
+    ('AGENTS', 'SUGGESTED_MODEL', 'GPT-5', FALSE, FALSE, 20),
+    ('AGENTS', 'SUGGESTED_TEMPERATURE', '0.2', FALSE, FALSE, 30),
+    ('AGENTS', 'TOOLS', NULL, FALSE, FALSE, 40),
+    ('AGENTS', 'INSTRUCTIONS', NULL, TRUE, FALSE, 50);

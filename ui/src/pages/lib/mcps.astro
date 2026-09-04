@@ -42,8 +42,9 @@ try {
 }
 
 // ── Characterizations → map<assetId, {feature: value}> for the card chips ──
-// Stores both columns per feature: `value` (short summary) + `detail` (rich
-// payload — e.g. TOOLS array, SERVER_CONFIG JSON).
+// Stores both columns per feature, but `value` is the field's real payload
+// (e.g. TOOLS array, SERVER_CONFIG JSON) for every feature — `detail` is a
+// separate, optional user-entered elaboration, not an alternate/richer copy.
 type CharCols = { value: string; detail: string };
 let charsByAsset = new Map<number, Record<string, CharCols>>();
 try {
@@ -108,9 +109,9 @@ const isPublished = (raw: unknown): boolean =>
 const rows = mcps.filter((item) => isPublished(item.status)).map((item) => {
   const chars = charsByAsset.get(Number(item.id)) ?? {};
   const tags = Array.isArray(item.tags) ? item.tags : [];
-  // Tools + server config live in the `detail` column (the array / JSON);
-  // `value` is just a human summary.
-  const tools = parseList(chars.TOOLS?.detail || chars.TOOLS?.value);
+  // Tools + server config live in the `value` column (the array / JSON);
+  // `detail`, if present, is just an optional user-entered elaboration.
+  const tools = parseList(chars.TOOLS?.value || chars.TOOLS?.detail);
   const overview = chars.OVERVIEW?.value;
   return {
     id: item.id,
@@ -127,7 +128,7 @@ const rows = mcps.filter((item) => isPublished(item.status)).map((item) => {
     discussCount: discussByAsset.get(Number(item.id)) ?? 0,
     mode: chars.MODE?.value,
     tools,
-    serverConfig: chars.SERVER_CONFIG?.detail || chars.SERVER_CONFIG?.value,
+    serverConfig: chars.SERVER_CONFIG?.value || chars.SERVER_CONFIG?.detail,
     tags,
     version: item.current_version ?? "1.0.0",
     searchText: [item.name, overview, item.description, tools.join(" "), tags.join(" ")]

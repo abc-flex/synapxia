@@ -213,6 +213,22 @@ const {
               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             />
           </div>
+
+          <div class="md:col-span-2">
+            <label
+              for={`${modalId}-detail`}
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              data-i18n="asset_modal.detail"
+            >Detail</label>
+            <textarea
+              id={`${modalId}-detail`}
+              name="detail"
+              rows={3}
+              data-i18n-placeholder="asset_detail_modal.detail_placeholder"
+              placeholder="Additional detail (optional)"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            ></textarea>
+          </div>
         </div>
       </section>
 
@@ -363,6 +379,7 @@ const {
     const descField = document.getElementById(`${modalId}-description`) as HTMLTextAreaElement;
     const refField = document.getElementById(`${modalId}-reference`) as HTMLInputElement;
     const tagsField = document.getElementById(`${modalId}-tags`) as HTMLInputElement;
+    const detailField = document.getElementById(`${modalId}-detail`) as HTMLTextAreaElement;
     const titleEl = document.getElementById(`${modalId}-title-text`) as HTMLElement;
     const titleNameEl = document.getElementById(`${modalId}-title-name`) as HTMLElement;
     const versionBadge = document.getElementById(`${modalId}-version`) as HTMLElement;
@@ -403,6 +420,7 @@ const {
         tags: tagsField.value
           ? tagsField.value.split(",").map((t) => t.trim()).filter(Boolean)
           : undefined,
+        detail: detailField.value.trim() || undefined,
         is_active: true,
       };
     }
@@ -553,6 +571,7 @@ const {
       [descField, "description"],
       [refField, "reference"],
       [tagsField, "tags"],
+      [detailField, "detail"],
     ];
     function coreChangedFields(): HTMLElement[] {
       const baseline = originalCoreSnapshot ? (JSON.parse(originalCoreSnapshot) as Record<string, unknown>) : {};
@@ -699,6 +718,7 @@ const {
         tagsField.value = Array.isArray(asset.tags)
           ? asset.tags.join(", ")
           : (asset.tags ?? "");
+        detailField.value = asset.detail ?? "";
         categorySel.value = asset.category ?? "";
         currentVersionLabel = asset.current_version ?? "1.0.0";
         if (versionBadge) {
@@ -861,6 +881,7 @@ const {
               const saved = await createAssetVersion(assetId, {
                 change_type: changeType,
                 values: tabs.charSnapshot(),
+                details: tabs.charDetailSnapshot(),
               });
               savedMsg = tr(
                 "asset_detail_modal.version_saved",

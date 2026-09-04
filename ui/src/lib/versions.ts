@@ -20,6 +20,8 @@ import { apiGet } from "./api";
 import { formatRelative } from "./datatable";
 import { translate } from "@/utils/i18nClient";
 import { renderCharacterizationSections, type DetailSection } from "@/lib/catalogDetail";
+import { getAsset } from "@/lib/assets";
+import { getSpecificationsbyCategory } from "@/lib/specifications";
 import type { AssetVersion, Characterization } from "@/types/api";
 
 // ── Services ─────────────────────────────────────────────────────────────────
@@ -87,7 +89,11 @@ export function mountVersions(cfg: VersionsConfig): void {
     statusEl.classList.toggle("hidden", !text);
   };
 
-  function versionRow(assetId: number, v: AssetVersion): HTMLElement {
+  function versionRow(
+    assetId: number,
+    v: AssetVersion,
+    copyableByFeature: Record<string, boolean>,
+  ): HTMLElement {
     const row = document.createElement("div");
     row.className = "border-b border-gray-100 py-1.5 last:border-0 dark:border-gray-800";
 
@@ -147,7 +153,7 @@ export function mountVersions(cfg: VersionsConfig): void {
         const byFeature = Object.fromEntries(
           chars.map((c) => [c.feature, { value: c.value, detail: c.detail }]),
         );
-        renderCharacterizationSections(snapshot, sections, byFeature);
+        renderCharacterizationSections(snapshot, sections, byFeature, "", copyableByFeature);
         if (!snapshot.childElementCount) {
           snapshot.textContent = tr("versions.empty_snapshot", "No details for this version.");
         }
@@ -165,13 +171,27 @@ export function mountVersions(cfg: VersionsConfig): void {
     listEl.innerHTML = "";
     setStatus(tr("versions.loading", "Loading versions…"));
     try {
-      const items = await getAssetVersions(id);
+      const [items, asset] = await Promise.all([
+        getAssetVersions(id),
+        getAsset(id).catch(() => null),
+      ]);
       setStatus("");
       if (!items.length) {
         setStatus(tr("versions.empty", "No versions yet."));
         return;
       }
-      for (const v of items) listEl.appendChild(versionRow(id, v));
+      // The category (and so its specs' `copyable` flags) is locked for the
+      // lifetime of the asset, so one fetch covers every version's snapshot.
+      let copyableByFeature: Record<string, boolean> = {};
+      if (asset?.category) {
+        try {
+          const specs = await getSpecificationsbyCategory(asset.category);
+          copyableByFeature = Object.fromEntries(specs.map((s) => [s.feature, !!s.copyable]));
+        } catch {
+          copyableByFeature = {};
+        }
+      }
+      for (const v of items) listEl.appendChild(versionRow(id, v, copyableByFeature));
     } catch {
       setStatus(tr("versions.error", "Could not load the versions."));
     }

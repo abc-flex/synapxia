@@ -129,7 +129,11 @@ def create_version(
                 if value is None or not str(value).strip():
                     continue
                 old = by_feature.get(feature)
-                snapshot[feature] = (value, old.detail if old else None)
+                if data.details is not None:
+                    detail = (data.details.get(feature) or "").strip() or None
+                else:
+                    detail = old.detail if old else None
+                snapshot[feature] = (value, detail)
         for feature, (value, detail) in snapshot.items():
             session.add(Characterization(
                 asset=asset_id, feature=feature, version_label=new_label,

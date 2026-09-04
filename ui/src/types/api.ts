@@ -378,6 +378,7 @@ export interface Specification {
   feature: string;
   default_value?: string | null;
   required?: boolean;
+  copyable?: boolean;
   sort_order?: number;
   is_active?: boolean;
   created_at?: string;
@@ -389,6 +390,7 @@ export interface SpecificationCreate {
   feature: string;
   default_value?: string | null;
   required?: boolean;
+  copyable?: boolean;
   sort_order?: number;
   is_active?: boolean;
 }
@@ -396,6 +398,7 @@ export interface SpecificationCreate {
 export interface SpecificationUpdate {
   default_value?: string | null;
   required?: boolean;
+  copyable?: boolean;
   sort_order?: number;
   is_active?: boolean;
 }
@@ -627,6 +630,9 @@ export interface ProposeRequest {
   detail?: string;
   reviewer_id?: number;
   values?: Record<string, string>;
+  // Optional per-feature characterization `detail`, additional to `values`
+  // (feature → detail); a feature with no entry gets no detail.
+  details?: Record<string, string>;
 }
 
 // Reviewer decision on a PROPOSED asset (HU-Review): approve → PUBLISHED,
@@ -666,6 +672,12 @@ export interface AssetVersionRequest {
   tags?: string[];
   detail?: string;
   values?: Record<string, string>;
+  // Optional per-feature `detail` companion to `values` (feature→detail);
+  // a FULL desired detail set mirroring `values` — an omitted/blank entry
+  // means "no detail" for that feature. Undefined preserves the previous
+  // version's details unchanged (matches `values: undefined`'s copy-forward
+  // behavior for a core-only save).
+  details?: Record<string, string>;
 }
 
 // One entry in an asset's version history (read side; GET /api/assets/{id}/versions).

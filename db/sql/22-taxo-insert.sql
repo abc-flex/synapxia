@@ -11,14 +11,14 @@ INSERT INTO categories (code, name, description, parent, option) VALUES
     ('DATASETS', 'Datasets', 'Category for Datasets', 'CLASSIC_AI', NULL),
     -- Generative AI
     ('GEN_AI', 'Generative AI', 'Category for Generative AI assets', 'AI_ASSETS', NULL),
-    ('PROMPTS', 'Prompts', 'Category for Prompt', 'GEN_AI', '/lib/prompts'),
-    ('MCPS', 'Model Context Protocol', 'Category for MCPs servers and clients definitions', 'GEN_AI', '/lib/mcps'),
-    ('AGENTS', 'Agents', 'Category for AI Agents', 'GEN_AI', '/lib/agents'),
-    ('FLOWS', 'AI Flows', 'Category for Generative AI Flows in N8n', 'GEN_AI', NULL),
-    ('SKILLS', 'Skills', 'Category for AI Skills in Generative AI tools', 'GEN_AI', NULL),
-    ('ASSISTANTS', 'Assistants aka GPTs', 'Category for AI Assistants in ChatGPT', 'GEN_AI', NULL),
-    ('RAG_APPS', 'RAG Apps', 'Category for Retrieval-Augmented Generation applications', 'GEN_AI', NULL),
-    ('MODELS', 'Gen AI Models', 'Category for Gen AI Models', 'GEN_AI', NULL);
+    ('PROMPTS', 'Prompts', 'Category for Prompt', 'GEN_AI', '/lib/explore?code=PROMPTS'),
+    ('MCPS', 'Model Context Protocol', 'Category for MCPs servers and clients definitions', 'GEN_AI', '/lib/explore?code=MCPS'),
+    ('AGENTS', 'Agents', 'Category for AI Agents', 'GEN_AI', '/lib/explore?code=AGENTS'),
+    ('FLOWS', 'AI Flows', 'Category for Generative AI Flows in N8n', 'GEN_AI', '/lib/explore?code=FLOWS'),
+    ('SKILLS', 'Skills', 'Category for AI Skills in Generative AI tools', 'GEN_AI', '/lib/explore?code=SKILLS'),
+    ('ASSISTANTS', 'Assistants aka GPTs', 'Category for AI Assistants in ChatGPT', 'GEN_AI', '/lib/explore?code=ASSISTANTS'),
+    ('RAG_APPS', 'RAG Apps', 'Category for Retrieval-Augmented Generation applications', 'GEN_AI', '/lib/explore?code=RAG_APPS'),
+    ('MODELS', 'Gen AI Models', 'Category for Gen AI Models', 'GEN_AI', '/lib/explore?code=MODELS');
 
 -- **********************************
 -- ******* Table features ****

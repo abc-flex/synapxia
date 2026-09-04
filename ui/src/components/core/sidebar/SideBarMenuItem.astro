@@ -61,14 +61,7 @@ const chevronIcon = getIcon("chevron-down");
         <ul class="flex flex-col gap-1.5 mt-2 menu-dropdown pl-2.5">
           {options.map((option) => {
             const optIconSvg = option.icon ? getIcon(option.icon) : "";
-            // `menu_options.${code}` collides across modules that reuse the same
-            // option code (e.g. LIB.EXPLORE vs INITS.EXPLORE) — special-case the
-            // one known collision to a module-qualified key instead of touching
-            // every option's key scheme.
-            const optI18n =
-              option.module === "LIB" && option.code === "EXPLORE"
-                ? "menu_options.lib_explore"
-                : `menu_options.${option.code.toLowerCase()}`;
+            const optI18n = `menu_options.${option.code.toLowerCase()}`;
             return (
               <li>
                 <a

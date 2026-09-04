@@ -180,14 +180,7 @@ const { groups, flatItems } = buildSidebarLayout(modules, options);
         const items = opts
           .map((o) => {
             const active = o.path === currentPath;
-            // `menu_options.${code}` collides across modules that reuse the same
-            // option code (e.g. LIB.EXPLORE vs INITS.EXPLORE) — special-case the
-            // one known collision to a module-qualified key instead of touching
-            // every option's key scheme.
-            const optI18n =
-              o.module === "LIB" && o.code === "EXPLORE"
-                ? "menu_options.lib_explore"
-                : `menu_options.${o.code.toLowerCase()}`;
+            const optI18n = `menu_options.${o.code.toLowerCase()}`;
             // Use option icon when present, otherwise the original bullet dot.
             const optIconSvg = o.icon ? (icons[o.icon] || "") : "";
             const leading = optIconSvg

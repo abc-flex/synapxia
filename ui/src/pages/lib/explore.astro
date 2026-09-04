@@ -2,11 +2,12 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumb from "../../components/core/Breadcrumb.astro";
 import Toast from "../../components/Toast.astro";
+import ComingSoon from "../../components/ComingSoon.astro";
 import CardGallery from "../../components/lib/gallery/CardGallery.astro";
 import ExploreCard from "../../components/lib/ExploreCard.astro";
 import ExploreDetailModal from "../../components/lib/ExploreDetailModal.astro";
 import { getAssetsByCategoryWithAccess } from "@/lib/assets";
-import { getOptions, getOption } from "@/lib/options";
+import { getOption } from "@/lib/options";
 import { getCurrentUser } from "@/lib/auth";
 import { getFavoritesByUser } from "@/lib/favorites";
 import { getActions, summarizeVotes } from "@/lib/actions";
@@ -14,25 +15,24 @@ import { summarizeDiscussionCounts } from "@/lib/foro";
 import { getLocale } from "@/utils/getLocale";
 import { formatRelative } from "@/lib/datatable";
 
-const icons = import.meta.glob("/src/images/icons/*.svg", {
-  query: "?raw",
-  import: "default",
-  eager: true,
-}) as Record<string, string>;
-function getIcon(name: string) {
-  return icons[`/src/images/icons/${name}.svg`] ?? "";
-}
-
 const locale = getLocale(Astro);
 const params = Astro.url.searchParams;
 const CATEGORY = params.get("code") ?? "";
+
+// Every AI Library category links here with its own `?code=`; there is no
+// picker mode anymore (retired alongside the LIB.EXPLORE sidebar option — see
+// memory/CHANGELOG.md). A bare `/lib/explore` has nothing to show.
+if (!CATEGORY) {
+  return Astro.redirect("/");
+}
+
 let categoryName = params.get("name") ?? "";
 let categoryIcon = params.get("icon") ?? "";
 
-// The picker links with a bare `?code=` (name/icon are optional overrides for
-// callers that already have them). Resolve them from the option itself so the
-// name/icon always match the sidebar's current values for that option.
-if (CATEGORY && (!categoryName || !categoryIcon)) {
+// name/icon are optional overrides for callers that already have them.
+// Resolve them from the option itself so they always match the sidebar's
+// current values for that option.
+if (!categoryName || !categoryIcon) {
   try {
     const opt = await getOption("LIB", CATEGORY);
     categoryName = categoryName || opt.name;
@@ -55,137 +55,93 @@ const PRIVILEGE_OPTIONS = [
   { value: "PROJECT", label: "My projects", i18n: "asset_table.perm_filter_project" },
 ];
 
-// ── Picker mode: no category selected yet ──────────────────────────────────
-let pickerOptions: { code: string; name: string; icon: string; description?: string }[] = [];
-if (!CATEGORY) {
-  try {
-    const opts = await getOptions("LIB");
-    pickerOptions = opts
-      .filter((o) => o.type === "CARD_GALLERY" && o.code !== "ASSETS" && o.code !== "EXPLORE")
-      .map((o) => ({ code: o.code, name: o.name, icon: o.icon || "search", description: o.description }));
-  } catch {
-    pickerOptions = [];
-  }
-}
-
-// ── Gallery mode: assets in the selected category ───────────────────────────
+// ── Assets in the selected category ─────────────────────────────────────────
 let errorMessage: string | null = null;
-let rows: any[] = [];
-
-if (CATEGORY) {
-  let assets: any[] = [];
-  try {
-    // Access-scoped (HU-LI08): only assets a grant reaches the caller through
-    // are returned, each carrying `permission_scopes` for the privileges
-    // filter below. Bumped limit (vs. the default 100) since this now doubles
-    // as the page's only fetch for the category.
-    assets = await getAssetsByCategoryWithAccess(CATEGORY, 0, 500);
-  } catch (error) {
-    console.error(`Failed to fetch assets for category ${CATEGORY}:`, error);
-    errorMessage = error instanceof Error ? error.message : "Failed to fetch assets from API";
-    assets = [];
-  }
-
-  let favIds = new Set<number>();
-  let myUserId: number | null = null;
-  try {
-    const me = await getCurrentUser();
-    myUserId = Number(me.id);
-    const favs = await getFavoritesByUser(myUserId);
-    favIds = new Set(favs.map((f) => Number(f.asset)));
-  } catch {
-    favIds = new Set();
-  }
-
-  let votesByAsset: Map<number, { score: number; positive: number; negative: number; myVote: string | null }> = new Map();
-  let discussByAsset = new Map<number, number>();
-  try {
-    const allActions = await getActions(0, 1000);
-    votesByAsset = summarizeVotes(allActions, myUserId ?? undefined);
-    discussByAsset = summarizeDiscussionCounts(allActions);
-  } catch {
-    votesByAsset = new Map();
-    discussByAsset = new Map();
-  }
-
-  const isPublished = (raw: unknown): boolean =>
-    String(raw ?? "").replace(/^\d+-/, "").toUpperCase() === "PUBLISHED";
-
-  rows = assets.filter((item) => isPublished(item.status)).map((item) => {
-    const tags = Array.isArray(item.tags) ? item.tags : [];
-    return {
-      id: item.id,
-      name: item.name,
-      description: item.description ?? "",
-      subtitle: formatRelative(item.updated_at ?? item.created_at, locale),
-      subtitleTs: item.updated_at ?? item.created_at,
-      statusValue: item.status,
-      favorite: favIds.has(item.id) ? "yes" : "no",
-      votePositive: votesByAsset.get(Number(item.id))?.positive ?? 0,
-      voteNegative: votesByAsset.get(Number(item.id))?.negative ?? 0,
-      myVote: votesByAsset.get(Number(item.id))?.myVote ?? "",
-      discussCount: discussByAsset.get(Number(item.id)) ?? 0,
-      tags,
-      version: item.current_version ?? "1.0.0",
-      searchText: [item.name, item.description, tags.join(" ")].filter(Boolean).join(" "),
-      // Comma-separated scope-types by which the current user is granted
-      // access — drives the toolbar's privileges filter (columnFilter4's
-      // gallery counterpart).
-      permissions: (item.permission_scopes ?? []).join(","),
-    };
-  });
+let assets: any[] = [];
+try {
+  // Access-scoped (HU-LI08): only assets a grant reaches the caller through
+  // are returned, each carrying `permission_scopes` for the privileges
+  // filter below. Bumped limit (vs. the default 100) since this now doubles
+  // as the page's only fetch for the category.
+  assets = await getAssetsByCategoryWithAccess(CATEGORY, 0, 500);
+} catch (error) {
+  console.error(`Failed to fetch assets for category ${CATEGORY}:`, error);
+  errorMessage = error instanceof Error ? error.message : "Failed to fetch assets from API";
+  assets = [];
 }
+
+let favIds = new Set<number>();
+let myUserId: number | null = null;
+try {
+  const me = await getCurrentUser();
+  myUserId = Number(me.id);
+  const favs = await getFavoritesByUser(myUserId);
+  favIds = new Set(favs.map((f) => Number(f.asset)));
+} catch {
+  favIds = new Set();
+}
+
+let votesByAsset: Map<number, { score: number; positive: number; negative: number; myVote: string | null }> = new Map();
+let discussByAsset = new Map<number, number>();
+try {
+  const allActions = await getActions(0, 1000);
+  votesByAsset = summarizeVotes(allActions, myUserId ?? undefined);
+  discussByAsset = summarizeDiscussionCounts(allActions);
+} catch {
+  votesByAsset = new Map();
+  discussByAsset = new Map();
+}
+
+const isPublished = (raw: unknown): boolean =>
+  String(raw ?? "").replace(/^\d+-/, "").toUpperCase() === "PUBLISHED";
+
+const rows = assets.filter((item) => isPublished(item.status)).map((item) => {
+  const tags = Array.isArray(item.tags) ? item.tags : [];
+  return {
+    id: item.id,
+    name: item.name,
+    description: item.description ?? "",
+    subtitle: formatRelative(item.updated_at ?? item.created_at, locale),
+    subtitleTs: item.updated_at ?? item.created_at,
+    statusValue: item.status,
+    favorite: favIds.has(item.id) ? "yes" : "no",
+    votePositive: votesByAsset.get(Number(item.id))?.positive ?? 0,
+    voteNegative: votesByAsset.get(Number(item.id))?.negative ?? 0,
+    myVote: votesByAsset.get(Number(item.id))?.myVote ?? "",
+    discussCount: discussByAsset.get(Number(item.id)) ?? 0,
+    tags,
+    version: item.current_version ?? "1.0.0",
+    searchText: [item.name, item.description, tags.join(" ")].filter(Boolean).join(" "),
+    // Comma-separated scope-types by which the current user is granted
+    // access — drives the toolbar's privileges filter (columnFilter4's
+    // gallery counterpart).
+    permissions: (item.permission_scopes ?? []).join(","),
+  };
+});
+
+// A category with no published assets yet (e.g. the still-unimplemented
+// Agentic Flows/Skills/Assistants/RAG Apps/Models catalogs) shows the same
+// "coming soon" placeholder every other unbuilt route falls back to, instead
+// of an empty gallery.
+const hasAssets = rows.length > 0;
 ---
 
 <BaseLayout>
   {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
 
   <div class="mx-auto w-full max-w-full">
-    {!CATEGORY ? (
-      <Fragment>
-        <Breadcrumb
-          moduleName="AI Library"
-          pageName="Explore Category"
-          pageTitle="Explore Category"
-          homeLink="/"
-          moduleNameKey="modules.LIB"
-          pageNameKey="menu_options.lib_explore"
-          pageTitleKey="menu_options.lib_explore"
-        />
-        <p class="mb-4 -mt-2 text-sm text-gray-500 dark:text-gray-400" data-i18n="explore.picker_subtitle">
-          Choose a category to browse its assets.
-        </p>
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
-          {pickerOptions.map((o) => (
-            <a
-              href={`/lib/explore?code=${encodeURIComponent(o.code)}`}
-              class="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-gray-800 dark:bg-gray-900"
-            >
-              <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
-                <span class="h-5 w-5 [&>svg]:h-5 [&>svg]:w-5">
-                  <Fragment set:html={getIcon(o.icon)} />
-                </span>
-              </span>
-              <span class="min-w-0">
-                <span class="block truncate font-semibold text-gray-900 dark:text-white">{o.name}</span>
-                {o.description && (
-                  <span class="block truncate text-xs text-gray-400">{o.description}</span>
-                )}
-              </span>
-            </a>
-          ))}
-        </div>
-      </Fragment>
+    <Breadcrumb
+      moduleName="AI Library"
+      pageName={categoryName}
+      pageTitle={categoryName}
+      homeLink="/"
+      moduleNameKey="modules.LIB"
+    />
+
+    {!hasAssets ? (
+      <ComingSoon />
     ) : (
       <Fragment>
-        <Breadcrumb
-          moduleName="AI Library"
-          pageName={categoryName}
-          pageTitle={categoryName}
-          homeLink="/"
-          moduleNameKey="modules.LIB"
-        />
-
         {/* Read-only "big card" view (opened by a whole-card click) */}
         <ExploreDetailModal modalId="explore-view-modal" icon={categoryIcon} categoryLabel={categoryName} />
 

@@ -1,6 +1,6 @@
 /**
- * assetSections — a category-agnostic superset of the per-catalog `DetailSection`
- * configs (defined inline in PromptDetailModal / McpDetailModal / AgentDetailModal).
+ * assetSections — a category-agnostic superset of every LIB category's
+ * `DetailSection` configs (one section per feature across PROMPTS/MCPS/AGENTS/…).
  *
  * Used by the /lib/assets edit modal's read-only "Versions" tab, which spans all
  * categories and so has no single per-category section list. `renderCharacterizationSections`

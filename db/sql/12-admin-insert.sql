@@ -58,33 +58,30 @@ INSERT INTO options (module, code, name, description, sort_order, type, path, ic
     ('LIB','ASSETS','Asset Management',
      'Manage and track digital assets throughout their entire lifecycle.',
      10,'CARD_GALLERY','/lib/assets','archive-box'),
-    ('LIB','EXPLORE','Explore Category',
-     'Browse and explore different categories of digital assets (e.g., Prompt, MCP, Agent, Flow, Skill, Assistant, RAG App, Model).',
-     15,'CARD_GALLERY','/lib/explore','search'),
     ('LIB','PROMPTS','Prompt Gallery',
      'Curated gallery of reusable GenAI prompts.',
-     20,'CARD_GALLERY','/lib/prompts','chat-bubble-bottom-center-text'),
+     20,'CARD_GALLERY','/lib/explore?code=PROMPTS','chat-bubble-bottom-center-text'),
     ('LIB','MCPS','MCP Directory',
      'Curated directory of tools compatible with Model Context Protocol.',
-     30,'CARD_GALLERY','/lib/mcps','server-stack'),
+     30,'CARD_GALLERY','/lib/explore?code=MCPS','server-stack'),
     ('LIB','AGENTS','Agent Repository',
      'Inventory of AI agents with higher autonomy.',
-     40,'CARD_GALLERY','/lib/agents','cpu-chip'),
+     40,'CARD_GALLERY','/lib/explore?code=AGENTS','cpu-chip'),
     ('LIB','FLOWS','Agentic Flows',
      'Registry of agentic flows with multiple agents and MCP tools.',
-     50,'CARD_GALLERY','/lib/agentic_flows','arrows-right-left'),
+     50,'CARD_GALLERY','/lib/explore?code=FLOWS','arrows-right-left'),
     ('LIB','SKILLS','Skill Catalog',
      'Curated catalog of reusable skills for AI agents.',
-     60,'CARD_GALLERY','/lib/skills','academic-cap'),
+     60,'CARD_GALLERY','/lib/explore?code=SKILLS','academic-cap'),
     ('LIB','ASSISTANTS','Assistants',
      'Index of assistants scope, tone and tools.',
-     70,'CARD_GALLERY','/lib/assistants','sparkles'),
+     70,'CARD_GALLERY','/lib/explore?code=ASSISTANTS','sparkles'),
     ('LIB','RAG_APPS','RAG Apps',
      'Directory of Retrieval-Augmented Generation applications.',
-     80,'CARD_GALLERY','/lib/rag_apps','document-magnifying-glass'),
+     80,'CARD_GALLERY','/lib/explore?code=RAG_APPS','document-magnifying-glass'),
     ('LIB','MODELS','Models',
      'Catalog of AI and ML models used in the platform.',
-     90,'CARD_GALLERY','/lib/models','beaker');
+     90,'CARD_GALLERY','/lib/explore?code=MODELS','beaker');
 
 -- ===== Module: INITIATIVES =====
 INSERT INTO options (module, code, name, description, sort_order, type, path, icon) VALUES
@@ -174,7 +171,6 @@ VALUES
 
     -- LIB
     ('ADMINISTRATOR','LIB','ASSETS',     TRUE),
-    ('ADMINISTRATOR','LIB','EXPLORE',    TRUE),
     ('ADMINISTRATOR','LIB','PROMPTS',    TRUE),
     ('ADMINISTRATOR','LIB','MCPS',       TRUE),
     ('ADMINISTRATOR','LIB','AGENTS',     TRUE),
@@ -216,7 +212,6 @@ VALUES
 
     -- LIB
     ('ADMINISTRATIVE','LIB','ASSETS',     TRUE),
-    ('ADMINISTRATIVE','LIB','EXPLORE',    TRUE),
     ('ADMINISTRATIVE','LIB','PROMPTS',    TRUE),
     ('ADMINISTRATIVE','LIB','MCPS',       TRUE),
     ('ADMINISTRATIVE','LIB','AGENTS',     TRUE),
@@ -246,7 +241,6 @@ INSERT INTO privileges (profile, module, option, can_edit)
 VALUES
 
     -- LIB
-    ('COLLABORATOR','LIB','EXPLORE',    TRUE),
     ('COLLABORATOR','LIB','PROMPTS',    TRUE),
     ('COLLABORATOR','LIB','MCPS',       TRUE),
     ('COLLABORATOR','LIB','AGENTS',     TRUE),
@@ -268,7 +262,6 @@ INSERT INTO privileges (profile, module, option, can_edit)
 VALUES
 
     -- LIB
-    ('REVIEWER','LIB','EXPLORE',    TRUE),
     ('REVIEWER','LIB','PROMPTS',    TRUE),
     ('REVIEWER','LIB','MCPS',       TRUE),
     ('REVIEWER','LIB','AGENTS',     TRUE),

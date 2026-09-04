@@ -56,18 +56,6 @@ export async function getAssetsSelect(): Promise<AssetSelectOption[]> {
 }
 
 /**
- * Fetch all assets by category with optional pagination
- * @param list_code - category code
- * @param skip - Number of records to skip (default: 0)
- * @param limit - Maximum number of records to return (default: 100)
- * @returns Promise with array of assets
- */
-export async function getAssetsbyCategory(category_code: string, skip: number = 0, limit: number = 100): Promise<Asset[]> {
-  const queryString = buildQueryString({ skip, limit });
-  return apiGet<Asset[]>(`/api/assets/category/${category_code}${queryString}`);
-}
-
-/**
  * Category-scoped counterpart of `getAssetsWithAccess`: the assets in one
  * category the CALLER can access, with the same per-asset access summary
  * (`access_levels` / `is_public` / `permission_scopes` / `my_access`). Drives

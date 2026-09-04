@@ -6,11 +6,11 @@
  * "show more" pager. Catalog-agnostic; the behavior is wired by
  * `lib/catalogGallery.ts` keyed off `galleryId`.
  *
- * USAGE:
- *   <CardGallery galleryId="prompts-gallery" newModalId="prompt-detail-modal"
- *                newLabelKey="prompt_modal.new" emptyKey="prompt_modal.empty"
+ * USAGE (see /lib/explore.astro, the sole current consumer — every LIB
+ * category browses through it now):
+ *   <CardGallery galleryId="explore-gallery" emptyKey="explore_modal.empty"
  *                statuses={statuses}>
- *     {rows.map((r) => <PromptCard {...r} editModalId="prompt-detail-modal" />)}
+ *     {rows.map((r) => <ExploreCard {...r} />)}
  *   </CardGallery>
  */
 import FavoritesPill from "@/components/lib/FavoritesPill.astro";
@@ -49,8 +49,8 @@ export interface Props {
 const {
   galleryId,
   newModalId,
-  newLabelKey = "prompt_modal.new",
-  emptyKey = "prompt_modal.empty",
+  newLabelKey,
+  emptyKey = "gallery.empty",
   showFavorites = true,
   statuses = [],
   searchPlaceholderKey = "gallery.search_placeholder",

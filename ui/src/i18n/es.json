@@ -105,7 +105,6 @@
     "assets": "Gestión de Activos",
     "characterizations": "Caracterización de Activos",
     "propose": "Proponer",
-    "lib_explore": "Explorar Categoría",
     "prompts": "Galería de Prompts",
     "mcps": "Directorio de MCPs",
     "agents": "Repositorio de Agentes",
@@ -854,10 +853,6 @@
     "discuss": "Comentar o preguntar",
     "proposed": "Tu activo ha sido propuesto y ahora está en revisión."
   },
-  "explore": {
-    "picker_title": "Explorar una categoría",
-    "picker_subtitle": "Elige una categoría para explorar sus activos."
-  },
   "foro": {
     "title": "Discusión",
     "tag_comment": "Comentario",
@@ -998,65 +993,8 @@
     "related_inits_hint": "Relaciona este activo con iniciativas relevantes (opcional).",
     "related_save_partial": "Activo propuesto para revisión, pero algunos elementos relacionados no se pudieron guardar."
   },
-  "prompt_modal": {
-    "title_create": "Nuevo Prompt",
-    "title_edit": "Editar Prompt",
-    "subtitle": "Campos principales + la configuración reutilizable del prompt.",
-    "new": "Nuevo Prompt",
-    "details_section": "Detalles del prompt",
-    "platform": "Plataforma",
-    "suggested_model": "Modelo sugerido",
-    "suggested_temperature": "Temperatura sugerida",
-    "prompt_template": "Plantilla del prompt",
-    "example_output": "Salida de ejemplo",
-    "favorite_add": "Agregar a favoritos",
-    "favorite_remove": "Quitar de favoritos",
-    "saved": "Prompt guardado.",
-    "error_save": "No se pudo guardar el prompt.",
-    "error_load": "No se pudo cargar el prompt.",
-    "empty": "No se encontraron prompts",
-    "one_title": "Prompt",
-    "many_title": "Prompts",
-    "add_new": "Nuevo Prompt",
-    "edit": "Editar Prompt",
-    "delete": "Eliminar Prompt",
-    "delete_confirmation": "¿Estás seguro de que deseas eliminar este Prompt"
-  },
-  "prompt_card": {
-    "model": "Modelo",
-    "platform": "Plataforma",
-    "temperature": "Temp"
-  },
   "explore_modal": {
     "empty": "No se encontraron activos en esta categoría."
-  },
-  "mcp_modal": {
-    "title_create": "Nuevo servidor MCP",
-    "title_edit": "Editar servidor MCP",
-    "subtitle": "Campos principales + los detalles de conexión del MCP.",
-    "new": "Nuevo MCP",
-    "details_section": "Detalles del MCP",
-    "mode": "Modo",
-    "overview": "Resumen",
-    "content": "Contenido",
-    "tools": "Herramientas",
-    "tools_help": "Lista de herramientas separada por comas o saltos de línea.",
-    "server_config": "Configuración del servidor (JSON)",
-    "saved": "MCP guardado.",
-    "error_save": "No se pudo guardar el MCP.",
-    "error_load": "No se pudo cargar el MCP.",
-    "empty": "No se encontraron servidores MCP",
-    "one_title": "MCP",
-    "many_title": "MCPs",
-    "add_new": "Nuevo MCP",
-    "edit": "Editar MCP",
-    "delete": "Eliminar MCP",
-    "delete_confirmation": "¿Estás seguro de que deseas eliminar este MCP"
-  },
-  "mcp_card": {
-    "copy_config": "Copiar config",
-    "copied": "Configuración del servidor copiada",
-    "tools_more": "más"
   },
   "catalog_detail": {
     "copy": "Copiar",
@@ -1080,36 +1018,6 @@
     "change_type_major": "Mayor",
     "change_type_minor": "Menor",
     "change_type_patch": "Parche"
-  },
-  "agent_modal": {
-    "title_create": "Nuevo agente",
-    "title_edit": "Editar agente",
-    "subtitle": "Campos principales + la configuración del modelo y el comportamiento del agente.",
-    "new": "Nuevo agente",
-    "model_settings": "Configuración del modelo",
-    "behavior": "Comportamiento",
-    "platform": "Plataforma",
-    "suggested_model": "Modelo sugerido",
-    "suggested_temperature": "Temperatura sugerida",
-    "tools": "Herramientas",
-    "tools_help": "Lista de herramientas separada por comas o saltos de línea.",
-    "instructions": "Instrucciones",
-    "saved": "Agente guardado.",
-    "error_save": "No se pudo guardar el agente.",
-    "error_load": "No se pudo cargar el agente.",
-    "empty": "No se encontraron agentes",
-    "one_title": "Agente",
-    "many_title": "Agentes",
-    "add_new": "Nuevo agente",
-    "edit": "Editar agente",
-    "delete": "Eliminar agente",
-    "delete_confirmation": "¿Estás seguro de que deseas eliminar este agente"
-  },
-  "agent_card": {
-    "model": "Modelo",
-    "tools_more": "más",
-    "instructions": "Instrucciones",
-    "instructions_copied": "Instrucciones copiadas"
   },
   "feature": {
     "LANGUAGE": "Lenguaje de programación",

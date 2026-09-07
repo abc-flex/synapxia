@@ -105,6 +105,40 @@ def check_any_privilege(
     )
 
 
+def has_any_module_privilege(session: Session, user: User, module: str, can_edit: bool = False) -> bool:
+    """Non-raising check: does ``user`` hold ANY active privilege row under
+    ``module``, regardless of which option — for module-wide capabilities that
+    aren't naturally expressed as a fixed options allowlist (e.g. "can propose
+    an asset in some LIB category", which any of a dozen per-category
+    privileges satisfies). Superusers always do."""
+    if user.is_superuser:
+        return True
+    rows = session.exec(
+        select(Privilege).where(
+            Privilege.profile == user.profile,
+            Privilege.module == module,
+            Privilege.is_active == True,  # noqa: E712
+        )
+    ).all()
+    if can_edit:
+        return any(r.can_edit for r in rows)
+    return len(rows) > 0
+
+
+def check_any_module_privilege(session: Session, user: User, module: str, can_edit: bool = False) -> None:
+    """Raises HTTPException(403) unless ``has_any_module_privilege(...)`` is True."""
+    if has_any_module_privilege(session, user, module, can_edit):
+        return
+    logger.warning(
+        f"✗ {user.username} (profile={user.profile}) denied access to "
+        f"{module}/* (can_edit={can_edit})"
+    )
+    raise HTTPException(
+        status_code=403,
+        detail=f"Access denied to {module}. Check your profile privileges.",
+    )
+
+
 def require_privilege(module: str, option: str, can_edit: bool = False) -> Callable:
     """
     Dependency factory: returns an async callable suitable for
@@ -139,4 +173,5 @@ def require_privilege(module: str, option: str, can_edit: bool = False) -> Calla
 __all__ = [
     "require_privilege", "has_privilege", "check_privilege",
     "has_any_privilege", "check_any_privilege",
+    "has_any_module_privilege", "check_any_module_privilege",
 ]

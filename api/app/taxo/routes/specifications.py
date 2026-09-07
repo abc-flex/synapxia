@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from ..internal.models import Specification, SpecificationCreate, SpecificationUpdate, Category, Feature
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
-from ...internal.permissions import require_privilege
+from ...internal.permissions import require_privilege, check_any_privilege
 from ...admin.internal.models import User
 
 logger = logging.getLogger(__name__)
@@ -40,13 +40,22 @@ def get_by_category(
     skip: int = 0,
     limit: int = 100,
     session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("TAXO", "SPECIFICATIONS", can_edit=False)),
+    current_user: User = Depends(current_active_user),
 ) -> List[Specification]:
     """
     List specifications belonging to a category — used by the Propose / Modify /
     asset-detail forms to know which feature inputs to render, in the configured
     display order (``sort_order``, then feature code as a stable tiebreaker).
+
+    Read access: `LIB/ASSETS` OR a privilege on this specific category
+    (`LIB/<category_code>`) — the same OR-with-category rule already used by
+    `assets.get_by_category` — rather than `TAXO/SPECIFICATIONS`, which is never
+    seeded to any profile (see memory/MEMORY.md "Known blockers") and would
+    403 every non-superuser including ADMINISTRATOR. This lets a
+    proposer/reviewer who only holds the catalog-specific LIB privilege still
+    render the Characteristics step for that category.
     """
+    check_any_privilege(session, current_user, "LIB", ["ASSETS", category_code])
     return session.exec(
         select(Specification)
         .where(

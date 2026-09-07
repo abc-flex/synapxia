@@ -106,7 +106,7 @@ def get(
 @router.post("/", response_model=AssetInit, status_code=201)
 def create(
     relation: AssetInitCreate, session: Session = Depends(get_db_session),
-    current: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
+    current: User = Depends(current_active_user),
 ) -> AssetInit:
     """
     Create a new asset-initiative relation.
@@ -116,6 +116,12 @@ def create(
     - **type**: Relation type (required)
     - **rationale**: Optional note on why the asset and initiative are related
     - **is_active**: Active/inactive status (default: True)
+
+    Write access: `LIB/ASSETS` OR a write privilege on the asset's own category
+    (mirrors `get_by_asset`'s read rule) — lets a proposer flush the Propose
+    wizard's staged "Related Inits" rows against the just-created asset, then
+    `_ensure_manage` still enforces per-asset MANAGE (satisfied here since
+    propose auto-grants the creator MANAGE on their new asset).
     """
     asset = session.get(Asset, relation.asset)
     if not asset:
@@ -131,6 +137,11 @@ def create(
             detail=f"Initiative with id '{relation.init}' does not exist"
         )
 
+    check_any_privilege(
+        session, current, "LIB",
+        ["ASSETS"] + ([asset.category] if asset.category else []),
+        can_edit=True,
+    )
     _ensure_manage(session, current, relation.asset)
 
     existing = session.exec(

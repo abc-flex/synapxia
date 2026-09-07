@@ -67,6 +67,20 @@ export async function getAssetsByCategoryWithAccess(category_code: string, skip:
 }
 
 /**
+ * All assets in one category the caller's PRIVILEGE lets them query — NOT
+ * scoped by per-asset `asset_permissions` grants (unlike
+ * `getAssetsByCategoryWithAccess`). Used only to answer "does this category
+ * have any content at all", independent of which specific assets this caller
+ * happens to be granted, e.g. to tell an unbuilt catalog (never has assets)
+ * apart from a real catalog this user simply has no grants in (should show an
+ * empty gallery, not "coming soon").
+ */
+export async function getAssetsByCategory(category_code: string, skip: number = 0, limit: number = 100): Promise<Asset[]> {
+  const queryString = buildQueryString({ skip, limit });
+  return apiGet<Asset[]>(`/api/assets/category/${category_code}${queryString}`);
+}
+
+/**
  * Fetch a single asset by its id
  * @param id - Unique asset id
  * @returns Promise with asset data

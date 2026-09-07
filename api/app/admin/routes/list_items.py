@@ -36,11 +36,19 @@ def get_all(
 def get_by_list(
     list_code: str,
     session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("ADMIN", "LIST_ITEMS", can_edit=False))
+    _: User = Depends(current_active_user),
 ) -> List[ListItem]:
     """
     Obtener todos los elementos de una lista específica.
     - **list_code**: Código de la lista para filtrar
+
+    Read access: any authenticated user — this is reference/enum data (e.g.
+    RELATION_TYPE, PLATFORM, MODE, MODEL), not owner-controlled content, and it
+    backs dropdowns reached from non-admin surfaces (Propose wizard, asset
+    detail Related Assets/Inits tabs, characterization selects). `ADMIN/LIST_ITEMS`
+    is never seeded to any profile (see memory/MEMORY.md "Known blockers"), so a
+    fixed gate here 403'd for every non-superuser, ADMINISTRATOR included.
+    Writes (POST/PUT/DELETE) below are unchanged — still `ADMIN/LIST_ITEMS`-gated.
     """
     # Validar primero si la lista existe (opcional, pero recomendado por integridad)
     list_exists = session.get(ListModel, list_code)

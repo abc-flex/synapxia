@@ -33,12 +33,16 @@ class CategoryWithAssets(SQLModel):
 @router.get("/select", response_model=List[CategoryBasic])
 def get_list(
     session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("TAXO", "CATEGORIES", can_edit=False))
+    current_user: User = Depends(current_active_user),
 ) -> List[CategoryBasic]:
     """
-    Returns a categories list optimized for selects with value (code) and label (name). 
+    Returns a categories list optimized for selects with value (code) and label (name).
     Only active categories.
+
+    Read access: `TAXO/CATEGORIES` OR `TAXO/TAXONOMY` — same OR as
+    `get_with_assets_count` (COLLABORATOR/REVIEWER hold the latter).
     """
+    check_any_privilege(session, current_user, "TAXO", ["CATEGORIES", "TAXONOMY"])
     statement = (
         select(
             Category.code.label("value"), 
@@ -102,14 +106,20 @@ def get_with_assets_count(
 @router.get("/", response_model=List[Category])
 def get_all(
     skip: int = 0, limit: int = 100, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("TAXO", "CATEGORIES", can_edit=False))
+    current_user: User = Depends(current_active_user),
 ) -> List[Category]:
     """
     List all categories with pagination.
 
+    Read access: `TAXO/CATEGORIES` OR `TAXO/TAXONOMY` — same OR as
+    `get_with_assets_count`. Used (among others) by the Propose wizard to
+    resolve/lock the category passed in `?category=`, so COLLABORATOR/REVIEWER
+    (who hold only `TAXONOMY`) must be able to read this too.
+
     - **skip**: Number of records to skip (default: 0)
     - **limit**: Maximum number of records to return (default: 100)
     """
+    check_any_privilege(session, current_user, "TAXO", ["CATEGORIES", "TAXONOMY"])
     categories = session.exec(
         select(Category)
         .where(Category.is_active == True)

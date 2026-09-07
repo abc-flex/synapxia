@@ -60,12 +60,19 @@ def get_all(
 @router.get("/{code}", response_model=Feature)
 def get(
     code: str, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("TAXO", "FEATURES", can_edit=False))
+    _: User = Depends(current_active_user),
 ) -> Feature:
     """
     Get a feature by its code.
 
     - **code**: Unique feature code
+
+    Read access: any authenticated user. `TAXO/FEATURES` is only ever granted
+    to ADMINISTRATOR/ADMINISTRATIVE, but this single-feature lookup (name,
+    description, FEAT_TYPE, backing `list`) is metadata read by
+    `charFields.ts` for EVERY category's characterization form (Propose/Modify/
+    asset-detail) — including for COLLABORATOR/REVIEWER, who otherwise silently
+    lost each field's select options / description / type badge to a 403.
     """
     feature = session.get(Feature, code)
     if not feature:

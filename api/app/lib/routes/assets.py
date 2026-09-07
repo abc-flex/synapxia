@@ -20,7 +20,9 @@ from ..internal import permissions_service
 from ...taxo.internal.models import Category
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
-from ...internal.permissions import require_privilege, has_privilege, check_any_privilege
+from ...internal.permissions import (
+    require_privilege, has_privilege, check_any_privilege, check_any_module_privilege,
+)
 from ...admin.internal.models import User
 
 logger = logging.getLogger(__name__)
@@ -164,11 +166,18 @@ class AssetBasic(SQLModel):
 @router.get("/select", response_model=List[AssetBasic])
 def get_select(
     session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
+    current_user: User = Depends(current_active_user),
 ) -> List[AssetBasic]:
     """
     Lightweight list of active assets for UI dropdowns: value = id, label = name.
+
+    Read access: ANY active LIB privilege (module-wide, not `LIB/ASSETS` only) —
+    backs the Propose wizard's "Related Assets" target picker, reachable by
+    COLLABORATOR/REVIEWER who hold only per-category LIB privileges. Not
+    access-scoped by asset_permissions (same as before this change): it lists
+    every active asset's name, same as it already did for ADMINISTRATOR.
     """
+    check_any_module_privilege(session, current_user, "LIB")
     rows = session.exec(
         select(
             cast(Asset.id, String).label("value"),
@@ -279,14 +288,19 @@ def get_by_category_with_access(
 @router.get("/reviewers", response_model=List[ReviewerOption])
 def list_reviewers(
     session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
+    current_user: User = Depends(current_active_user),
 ) -> List[ReviewerOption]:
     """
     Eligible reviewers for a proposal — active users with an administrator or
     REVIEWER profile (or superusers), as ``{value: id, label: name}`` for the
     propose form's dropdown. Lives under LIB so a proposer doesn't need
     ADMIN/USERS access.
+
+    Read access: ANY active LIB privilege (module-wide) — every profile that
+    can reach the Propose wizard (via `LIB/ASSETS` or a per-category LIB
+    privilege) can see who the eligible reviewers are.
     """
+    check_any_module_privilege(session, current_user, "LIB")
     return [
         ReviewerOption(
             value=u.id,
@@ -301,7 +315,7 @@ def list_reviewers(
 @router.post("/propose", response_model=Asset, status_code=201)
 def propose(
     payload: ProposeRequest, session: Session = Depends(get_db_session),
-    current: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
+    current: User = Depends(current_active_user),
 ) -> Asset:
     """
     Propose an asset for review (HU-Propose). Atomically creates the asset
@@ -313,7 +327,13 @@ def propose(
     - **reviewer_id**: optional (auto-assigned to the first eligible reviewer —
       administrator, REVIEWER, or superuser)
     - **values**: optional per-feature characterization overrides
+
+    Write access: `LIB/ASSETS` OR a write privilege on the target category
+    (`LIB/<category>`) — COLLABORATOR/REVIEWER hold the latter (can_edit=TRUE)
+    but never the former, so a fixed `LIB/ASSETS` gate would 403 every
+    proposal from those profiles.
     """
+    check_any_privilege(session, current, "LIB", ["ASSETS", payload.category], can_edit=True)
     try:
         return propose_service.propose_asset(session, current.id, payload)
     except ValueError as exc:

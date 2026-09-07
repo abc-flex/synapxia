@@ -6,7 +6,7 @@ import ComingSoon from "../../components/ComingSoon.astro";
 import CardGallery from "../../components/lib/gallery/CardGallery.astro";
 import ExploreCard from "../../components/lib/ExploreCard.astro";
 import ExploreDetailModal from "../../components/lib/ExploreDetailModal.astro";
-import { getAssetsByCategoryWithAccess } from "@/lib/assets";
+import { getAssetsByCategory, getAssetsByCategoryWithAccess } from "@/lib/assets";
 import { getOption } from "@/lib/options";
 import { getCurrentUser } from "@/lib/auth";
 import { getFavoritesByUser } from "@/lib/favorites";
@@ -119,11 +119,23 @@ const rows = assets.filter((item) => isPublished(item.status)).map((item) => {
   };
 });
 
-// A category with no published assets yet (e.g. the still-unimplemented
+// A category with no published assets AT ALL (e.g. the still-unimplemented
 // Agentic Flows/Skills/Assistants/RAG Apps/Models catalogs) shows the same
 // "coming soon" placeholder every other unbuilt route falls back to, instead
-// of an empty gallery.
-const hasAssets = rows.length > 0;
+// of an empty gallery. This must NOT be confused with "this caller's
+// asset_permissions grants filtered every asset out" (HU-LI08) — that case is
+// a legitimately implemented, populated catalog the current user just can't
+// see into yet, and should render the normal (empty) gallery, not "coming
+// soon". So it's checked with a second, privilege-gated-but-NOT
+// access-scoped query (same read rule as the access-scoped one above, just
+// without the per-asset grant filter) rather than off `rows`.
+let hasAssets = false;
+try {
+  const allCategoryAssets = await getAssetsByCategory(CATEGORY, 0, 500);
+  hasAssets = allCategoryAssets.some((item) => isPublished(item.status));
+} catch {
+  hasAssets = false;
+}
 ---
 
 <BaseLayout>

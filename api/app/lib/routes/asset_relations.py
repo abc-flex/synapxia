@@ -201,7 +201,7 @@ def get(
 @router.post("/", response_model=AssetRelation, status_code=201)
 def create(
     relation: AssetRelationCreate, session: Session = Depends(get_db_session),
-    current: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
+    current: User = Depends(current_active_user),
 ) -> AssetRelation:
     """
     Create a new asset relation.
@@ -211,6 +211,12 @@ def create(
     - **type**: Relation type (required)
     - **rationale**: Optional note on why the assets are related
     - **is_active**: Active/inactive status (default: True)
+
+    Write access: `LIB/ASSETS` OR a write privilege on the source asset's own
+    category (mirrors `get_related`'s read rule) — lets a proposer flush the
+    Propose wizard's staged "Related Assets" rows against the just-created
+    asset, then `_ensure_manage` still enforces per-asset MANAGE (satisfied
+    here since propose auto-grants the creator MANAGE on their new asset).
     """
     # Validate that the source asset exists
     source_asset = session.get(Asset, relation.source)
@@ -235,6 +241,11 @@ def create(
             detail="Source and target assets cannot be the same"
         )
 
+    check_any_privilege(
+        session, current, "LIB",
+        ["ASSETS"] + ([source_asset.category] if source_asset.category else []),
+        can_edit=True,
+    )
     _ensure_manage(session, current, relation.source)
 
     # Validate that the relation does not already exist

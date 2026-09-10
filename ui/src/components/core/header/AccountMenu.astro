@@ -39,9 +39,9 @@ interface Props {
 // account_menu.* i18n string so a custom `menuItems` prop can opt in by
 // using the same labels (or pass its own glyphs).
 const ICONS: Record<string, string> = {
-  "account_menu.edit_profile": EditIcon,
+  "account_menu.edit_account": EditIcon,
   "account_menu.support": SupportIcon,
-  "account_menu.review_requests": ReviewRequestsIcon,
+  "account_menu.my_asset_requests": ReviewRequestsIcon,
 };
 
 const {
@@ -49,7 +49,7 @@ const {
   email = "—",
   avatarUrl,
   menuItems = [
-    { label: "account_menu.edit_profile", href: "/profile" },
+    { label: "account_menu.edit_account", href: "/profile" },
     { label: "account_menu.support", href: "/support" },
   ],
   workItems = [],
@@ -272,4 +272,13 @@ const initials = name
       await logout();
       window.location.href = "/login";
     });
+
+  // Close the dropdown on an outside click — native <details> only closes on
+  // its own summary/Esc, not on a click elsewhere on the page.
+  const accountDetails = document.querySelector<HTMLDetailsElement>(".account-menu");
+  document.addEventListener("mousedown", (e) => {
+    if (accountDetails?.open && !accountDetails.contains(e.target as Node)) {
+      accountDetails.removeAttribute("open");
+    }
+  });
 </script>

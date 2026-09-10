@@ -391,7 +391,12 @@ def _own_notification(session: Session, action_id: int, current: User) -> Action
 @router.get("/notifications", response_model=List[NotificationItem])
 def get_notifications(
     session: Session = Depends(get_db_session),
-    current: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=False))
+    # Any authenticated user, not just LIB/ACTIONS holders (that privilege row
+    # is never seeded to any profile — see get_review_requests below): this
+    # reads only the caller's own assignments (scoped by current.id), and a
+    # COLLABORATOR who proposed an asset needs to see its PUBLICATION/
+    # REJECTION/MODIFICATION notification just as much as a REVIEWER does.
+    current: User = Depends(current_active_user)
 ) -> List[NotificationItem]:
     """
     The current user's open workflow notifications (newest first): the latest row
@@ -404,11 +409,15 @@ def get_notifications(
 @router.get("/reviews", response_model=List[NotificationItem])
 def get_review_requests(
     session: Session = Depends(get_db_session),
-    current: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=False))
+    # Any authenticated user (see get_notifications above) — the LIB/ACTIONS
+    # option this used to gate on has no privilege row for ANY profile
+    # (ADMINISTRATOR included, unless superuser), so this 403'd for every real
+    # account. The result is already scoped to the caller's own assignments.
+    current: User = Depends(current_active_user)
 ) -> List[NotificationItem]:
     """
     The current user's open REVIEW assignments (newest first) — a persistent,
-    browsable queue backing the "Review Requests" page, independent of whatever
+    browsable queue backing the "My Asset Requests" page, independent of whatever
     has been opened/dismissed in the notification bell.
     """
     return actions_service.list_review_requests(session, current.id)
@@ -417,7 +426,7 @@ def get_review_requests(
 @router.get("/modifications", response_model=List[NotificationItem])
 def get_pending_modifications(
     session: Session = Depends(get_db_session),
-    current: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=False))
+    current: User = Depends(current_active_user)
 ) -> List[NotificationItem]:
     """
     The current user's open MODIFICATION assignments (newest first) — a
@@ -429,7 +438,7 @@ def get_pending_modifications(
 @router.post("/notifications/{id}/notified", response_model=Action)
 def mark_notification_notified(
     id: int, session: Session = Depends(get_db_session),
-    current: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=True))
+    current: User = Depends(current_active_user)
 ) -> Action:
     """
     Mark an ASSIGNED notification as seen (NOTIFIED) — removes the bold style.
@@ -449,7 +458,7 @@ def mark_notification_notified(
 @router.post("/notifications/{id}/dismiss", response_model=Action)
 def dismiss_notification(
     id: int, session: Session = Depends(get_db_session),
-    current: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=True))
+    current: User = Depends(current_active_user)
 ) -> Action:
     """
     Dismiss a notification (insert a FINISHED row) — removes it from the list.
@@ -472,15 +481,24 @@ def dismiss_notification(
 @router.get("/{id}", response_model=Action)
 def get(
     id: int, session: Session = Depends(get_db_session),
-    _: User = Depends(require_privilege("LIB", "ACTIONS", can_edit=False))
+    current: User = Depends(current_active_user)
 ) -> Action:
     """
-    Get an action by its ID.
+    Get an action by its ID — restricted to the caller's own action (or any
+    action for a superuser). Every current consumer (the Review/Modify/Show
+    Action pages, resolving a bell notification's `?action=` id) only ever
+    reads the caller's own row; a non-owner gets 404 (not 403) so this
+    doesn't disclose whether another user's action id exists. Like
+    `/notifications`, `/reviews`, `/modifications`, this used to gate on
+    `require_privilege("LIB","ACTIONS")` — a privilege row no profile has
+    ever held — which 403'd this for every non-superuser, including a
+    REVIEWER opening their own assigned review ("This review could not be
+    found").
 
     - **id**: Unique action ID
     """
     action = session.get(Action, id)
-    if not action:
+    if not action or (not current.is_superuser and action.user_id != current.id):
         raise HTTPException(status_code=404, detail="Action not found")
     elif not action.is_active:
         raise HTTPException(status_code=400, detail=f"Action with id '{id}' is inactive")

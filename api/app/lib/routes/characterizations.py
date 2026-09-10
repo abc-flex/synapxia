@@ -13,7 +13,7 @@ from ..internal import permissions_service
 from ...taxo.internal.models import Feature, Specification
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
-from ...internal.permissions import require_privilege, check_any_privilege
+from ...internal.permissions import require_privilege, check_any_privilege, check_any_module_privilege
 from ...admin.internal.models import User
 
 logger = logging.getLogger(__name__)
@@ -52,15 +52,20 @@ def get_all(
     Only the asset's CURRENT version's rows are listed (HU-LI09): prior
     ``version_label`` generations stay stored as history but are not returned.
 
-    Read access: `LIB/ASSETS` (asset managers) OR `LIB/EXPLORE` (the umbrella
-    browse privilege every catalog-viewer profile holds) — this is a
-    cross-asset read, so it can't be scoped to one category the way the
-    per-asset endpoints are.
+    Read access: ANY active LIB privilege (module-wide) — this is a cross-asset
+    read (used by the Review/Modify/Show Action pages and AssetDetailModal), so
+    it can't be scoped to one category the way the per-asset endpoints are.
+    Previously gated on `LIB/ASSETS` OR `LIB/EXPLORE`, but `LIB/EXPLORE` was
+    retired (2026-09-03, unified into `/lib/explore`) and never actually
+    existed as a privilege any profile held — this 403'd for every
+    COLLABORATOR/REVIEWER (silently, since callers swallow the error into an
+    empty list), including a reviewer trying to read the characterizations of
+    the very asset they're reviewing.
 
     - **skip**: Number of records to skip (default: 0)
     - **limit**: Maximum number of records to return (default: 100)
     """
-    check_any_privilege(session, current_user, "LIB", ["ASSETS", "EXPLORE"])
+    check_any_module_privilege(session, current_user, "LIB")
     characterizations = session.exec(
         select(Characterization)
         .join(Asset, Characterization.asset == Asset.id, isouter=True)

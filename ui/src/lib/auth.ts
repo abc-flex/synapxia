@@ -121,13 +121,6 @@ export function getUser(): UserRead | null {
 }
 
 /**
- * Check if user is authenticated
- */
-export function isAuthenticated(): boolean {
-  return getToken() !== null;
-}
-
-/**
  * Server-side auth check — reads the `auth_token` cookie set at login.
  * Use from page frontmatters that need to branch on auth state during SSR
  * (e.g. redirect logged-in users away from `/` into the app shell).

@@ -19,13 +19,13 @@
     "no_results": "Sin opciones coincidentes"
   },
   "account_menu": {
-    "edit_profile": "Editar perfil",
+    "edit_account": "Editar Cuenta",
     "support": "Soporte",
     "sign_out": "Cerrar sesión",
     "theme": "Tema",
     "language": "Idioma",
     "my_work": "Mi Espacio de Trabajo",
-    "review_requests": "Solicitudes de Revisión",
+    "my_asset_requests": "Mis Solicitudes de Activos",
     "my_modifications": "Mis Modificaciones"
   },
   "notification_menu": {
@@ -122,7 +122,7 @@
     "value_chain": "Cadena de Valor",
     "map": "Mapa de Procesos",
     "specifications": "Especificacion",
-    "review_requests": "Solicitudes de Revisión",
+    "my_asset_requests": "Mis Solicitudes de Activos",
     "modifications": "Mis Modificaciones",
     "support": "Soporte"
   },
@@ -850,8 +850,7 @@
     "vote_down": "No útil",
     "vote_remove": "Quitar voto",
     "vote_signin": "Inicia sesión para votar",
-    "discuss": "Comentar o preguntar",
-    "proposed": "Tu activo ha sido propuesto y ahora está en revisión."
+    "discuss": "Comentar o preguntar"
   },
   "foro": {
     "title": "Discusión",
@@ -973,8 +972,10 @@
     "submit": "Proponer para revisión",
     "back_to_gallery": "Volver a la galería",
     "required": "El nombre, la categoría y el revisor son obligatorios",
-    "success": "Activo propuesto para revisión",
+    "success": "Tu activo fue propuesto para revisión. Revisa tus Notificaciones o Mis Solicitudes de Activos para ver la respuesta del revisor.",
     "error": "No se pudo proponer el activo",
+    "dialog_title": "Propuesta enviada",
+    "dialog_ok": "Entendido",
     "title_prompts": "Proponer un Prompt",
     "title_mcps": "Proponer un MCP",
     "title_agents": "Proponer un Agente",
@@ -991,7 +992,7 @@
     "review_characterization": "Revisa la pestaña de Caracterización antes de proponer.",
     "related_hint": "Relaciona este activo con otros ya existentes en la biblioteca (opcional).",
     "related_inits_hint": "Relaciona este activo con iniciativas relevantes (opcional).",
-    "related_save_partial": "Activo propuesto para revisión, pero algunos elementos relacionados no se pudieron guardar."
+    "related_save_partial": "Tu activo fue propuesto para revisión, pero no se pudieron guardar algunos elementos relacionados. Revisa tus Notificaciones o Mis Solicitudes de Activos para ver la respuesta del revisor."
   },
   "explore_modal": {
     "empty": "No se encontraron activos en esta categoría."
@@ -1054,7 +1055,7 @@
     "not_found": "No se encontró esta notificación."
   },
   "review": {
-    "title": "Revisar activo",
+    "title": "Revisar Propuesta de Activo",
     "subtitle": "Revisa el activo propuesto y luego apruébalo, solicita cambios o recházalo.",
     "approve": "Aprobar",
     "request_changes": "Solicitar cambios",
@@ -1089,9 +1090,9 @@
     "not_a_modification": "Esta notificación no es una solicitud de modificación.",
     "not_actionable": "Este activo ya no está en espera de cambios."
   },
-  "review_requests": {
+  "my_asset_requests": {
     "subtitle": "Activos actualmente asignados a ti para revisión. Esta lista permanece aquí incluso después de abrirla o verla en la campana de notificaciones.",
-    "empty": "No tienes solicitudes de revisión pendientes.",
+    "empty": "No tienes solicitudes de activos pendientes.",
     "col_asset": "Activo",
     "col_status": "Estado",
     "col_assigned": "Asignado",

@@ -158,8 +158,13 @@
       {@html ICON_REVIEW}
     </span>
     <div class="min-w-0">
-      <h1 class="text-lg font-semibold">{t("review.title", "Review asset")}</h1>
-      <p class="mt-0.5 truncate text-sm text-white/85">{assetName}</p>
+      <!-- The generic "Review Asset Proposal" title already sits above this
+           card as the page's Breadcrumb heading — repeating it here just
+           pushed the actually-identifying text (the asset's name) down into
+           a smaller, dimmer line. The asset name is the headline now. -->
+      <h1 class="truncate text-lg font-bold text-white">
+        {assetName || t("common.loading", "Loading…")}
+      </h1>
     </div>
     {#if assetStatus}
       <span class="ml-auto shrink-0 rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-medium">

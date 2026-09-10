@@ -1,9 +1,10 @@
 ---
-// Review Requests (persistent reviewer queue) — gives an assigned reviewer a
-// durable place to find their open REVIEW assignments, independent of the
-// notification bell (whose entries can be opened/scrolled away without any
-// way to get back to them). Backed by GET /api/actions/reviews, the same
-// underlying data as the bell's REVIEW items, scoped to just that type.
+// My Asset Requests (persistent reviewer queue, formerly "Review Requests") —
+// gives an assigned reviewer a durable place to find their open REVIEW
+// assignments, independent of the notification bell (whose entries can be
+// opened/scrolled away without any way to get back to them). Backed by
+// GET /api/actions/reviews, the same underlying data as the bell's REVIEW
+// items, scoped to just that type.
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Breadcrumb from "@/components/core/Breadcrumb.astro";
 import { getReviewRequests } from "@/lib/notifications";
@@ -18,28 +19,28 @@ let items: NotificationItem[] = [];
 try {
   items = await getReviewRequests();
 } catch (error) {
-  console.error("Failed to fetch review requests:", error);
+  console.error("Failed to fetch asset requests:", error);
   items = [];
 }
 ---
 
-<BaseLayout title="Review Requests">
+<BaseLayout title="My Asset Requests">
   <div class="mx-auto w-full max-w-full md:p-0">
     <Breadcrumb
       moduleName="AI Library"
-      pageName="Review Requests"
-      pageTitle="Review Requests"
+      pageName="My Asset Requests"
+      pageTitle="My Asset Requests"
       homeLink="/"
       moduleNameKey="modules.LIB"
-      pageNameKey="menu_options.review_requests"
-      pageTitleKey="menu_options.review_requests"
+      pageNameKey="menu_options.my_asset_requests"
+      pageTitleKey="menu_options.my_asset_requests"
     />
 
     <p
       class="mb-4 text-sm text-gray-500 dark:text-gray-400"
-      data-i18n="review_requests.subtitle"
+      data-i18n="my_asset_requests.subtitle"
     >
-      {t(locale, "review_requests.subtitle")}
+      {t(locale, "my_asset_requests.subtitle")}
     </p>
 
     {
@@ -47,9 +48,9 @@ try {
         <div class="rounded-xl no-border p-4">
           <p
             class="text-sm text-gray-500 dark:text-gray-400"
-            data-i18n="review_requests.empty"
+            data-i18n="my_asset_requests.empty"
           >
-            {t(locale, "review_requests.empty")}
+            {t(locale, "my_asset_requests.empty")}
           </p>
         </div>
       ) : (
@@ -57,14 +58,14 @@ try {
           <table class="w-full text-left text-sm">
             <thead class="bg-gray-100 text-xs uppercase text-gray-700 border-b border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700">
               <tr>
-                <th class="px-4 py-2 font-semibold tracking-wide" data-i18n="review_requests.col_asset">
-                  {t(locale, "review_requests.col_asset")}
+                <th class="px-4 py-2 font-semibold tracking-wide" data-i18n="my_asset_requests.col_asset">
+                  {t(locale, "my_asset_requests.col_asset")}
                 </th>
-                <th class="px-4 py-2 font-semibold tracking-wide" data-i18n="review_requests.col_status">
-                  {t(locale, "review_requests.col_status")}
+                <th class="px-4 py-2 font-semibold tracking-wide" data-i18n="my_asset_requests.col_status">
+                  {t(locale, "my_asset_requests.col_status")}
                 </th>
-                <th class="px-4 py-2 font-semibold tracking-wide" data-i18n="review_requests.col_assigned">
-                  {t(locale, "review_requests.col_assigned")}
+                <th class="px-4 py-2 font-semibold tracking-wide" data-i18n="my_asset_requests.col_assigned">
+                  {t(locale, "my_asset_requests.col_assigned")}
                 </th>
                 <th class="px-4 py-2 font-semibold tracking-wide" />
               </tr>
@@ -83,8 +84,8 @@ try {
                           : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
                       }`}
                     >
-                      <span data-i18n={it.unread ? "review_requests.status_pending" : "review_requests.status_seen"}>
-                        {t(locale, it.unread ? "review_requests.status_pending" : "review_requests.status_seen")}
+                      <span data-i18n={it.unread ? "my_asset_requests.status_pending" : "my_asset_requests.status_seen"}>
+                        {t(locale, it.unread ? "my_asset_requests.status_pending" : "my_asset_requests.status_seen")}
                       </span>
                     </span>
                   </td>
@@ -95,9 +96,9 @@ try {
                     <a
                       href={`/lib/review?action=${encodeURIComponent(String(it.id))}`}
                       class="inline-flex items-center rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700"
-                      data-i18n="review_requests.open_action"
+                      data-i18n="my_asset_requests.open_action"
                     >
-                      {t(locale, "review_requests.open_action")}
+                      {t(locale, "my_asset_requests.open_action")}
                     </a>
                   </td>
                 </tr>

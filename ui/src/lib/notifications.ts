@@ -12,7 +12,7 @@
  *
  * The bell UI (list/click/dismiss/badge) lives in the Svelte island
  * `components/svelte/NotificationBell.svelte` (mounted from NotificationMenu.astro).
- * The persistent queue pages (`/lib/review_requests`, `/lib/modifications`) use the
+ * The persistent queue pages (`/lib/my_asset_requests`, `/lib/modifications`) use the
  * `getReviewRequests`/`getPendingModifications` variants below so a reviewer's/
  * proposer's open work stays reachable even after the matching bell entry is gone.
  */

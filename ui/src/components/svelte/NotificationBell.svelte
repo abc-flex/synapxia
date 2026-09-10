@@ -10,7 +10,6 @@
   import { onMount } from "svelte";
   import { getNotifications, markNotified, dismissNotification } from "@/lib/notifications";
   import { formatRelative } from "@/lib/datatable";
-  import { isAuthenticated } from "@/lib/auth";
   import { translate } from "@/utils/i18nClient";
   import { showToast } from "@/lib/toast";
   import BellIcon from "@/images/icons/bell.svg?raw";
@@ -38,11 +37,15 @@
     t(`notifications.type.${ty}`, ty.charAt(0) + ty.slice(1).toLowerCase());
 
   async function load(): Promise<void> {
-    // Only a real logged-in user's bell should hit the API (see lib/notifications).
-    if (!isAuthenticated()) {
-      items = [];
-      return;
-    }
+    // This island only ever mounts inside BaseLayout, which the Astro
+    // middleware already gates on the `auth_token` cookie before rendering —
+    // by the time we're here the caller is authenticated, so no separate
+    // client-side check is needed. (There used to be an `isAuthenticated()`
+    // pre-check here, but it read the legacy localStorage `auth_token`, which
+    // the current cookie-first login flow never populates on a fresh login —
+    // it silently hid every notification, including the caller's own open
+    // REVIEW/MODIFICATION assignments, regardless of profile.) A genuine auth
+    // failure (expired cookie) still degrades gracefully via the catch below.
     try {
       items = await getNotifications();
     } catch {
@@ -90,11 +93,24 @@
     }
   }
 
+  // Close the dropdown on an outside click — native <details> only closes on
+  // its own summary/Esc, not on a click elsewhere on the page (mirrors the
+  // account menu's identical fix and SearchPalette's existing pattern).
+  function onDocumentClick(e: MouseEvent): void {
+    if (detailsEl?.open && !detailsEl.contains(e.target as Node)) {
+      detailsEl.removeAttribute("open");
+    }
+  }
+
   onMount(() => {
     const onLang = () => (langTick += 1);
     window.addEventListener("languageChanged", onLang);
+    document.addEventListener("mousedown", onDocumentClick);
     void load();
-    return () => window.removeEventListener("languageChanged", onLang);
+    return () => {
+      window.removeEventListener("languageChanged", onLang);
+      document.removeEventListener("mousedown", onDocumentClick);
+    };
   });
 </script>
 

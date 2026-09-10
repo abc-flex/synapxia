@@ -299,8 +299,13 @@ def list_reviewers(
     Read access: ANY active LIB privilege (module-wide) — every profile that
     can reach the Propose wizard (via `LIB/ASSETS` or a per-category LIB
     privilege) can see who the eligible reviewers are.
+
+    A non-admin caller (not ADMINISTRATOR/ADMINISTRATIVE/superuser — e.g. a
+    REVIEWER proposing their own asset) never sees themselves in the list: a
+    reviewer can't meaningfully review their own proposal.
     """
     check_any_module_privilege(session, current_user, "LIB")
+    exclude_id = current_user.id if not propose_service.is_admin(current_user) else None
     return [
         ReviewerOption(
             value=u.id,
@@ -308,7 +313,7 @@ def list_reviewers(
             profile=u.profile,
             is_superuser=bool(u.is_superuser),
         )
-        for u in propose_service.list_reviewers(session)
+        for u in propose_service.list_reviewers(session, exclude_user_id=exclude_id)
     ]
 
 
@@ -348,7 +353,7 @@ def propose(
 @router.post("/{asset_id}/review", response_model=Asset)
 def review(
     asset_id: int, payload: ReviewRequest, session: Session = Depends(get_db_session),
-    current: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
+    current: User = Depends(current_active_user)
 ) -> Asset:
     """
     Record a reviewer's decision on a PROPOSED asset (HU-Review). In one
@@ -360,7 +365,12 @@ def review(
     - **feedback**: shown to the proposer (recommended for reject / changes)
 
     403 if the caller isn't the assigned/eligible reviewer; 409 if the asset is
-    no longer awaiting review.
+    no longer awaiting review. No module-level privilege gate here: REVIEWER
+    (the profile this feature exists for) never holds `LIB/ASSETS`, and
+    `review_service.review_asset` already enforces a strictly stronger,
+    per-asset check — the caller must be an eligible profile AND hold the
+    actual open REVIEW assignment for THIS asset — so a fixed privilege gate
+    only ever added a false rejection, never real protection.
     """
     try:
         return review_service.review_asset(
@@ -381,7 +391,7 @@ def review(
 @router.post("/{asset_id}/resubmit", response_model=Asset)
 def resubmit(
     asset_id: int, payload: ModifyRequest, session: Session = Depends(get_db_session),
-    current: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
+    current: User = Depends(current_active_user)
 ) -> Asset:
     """
     Resubmit an asset for re-review after a reviewer requested changes (HU-Modify).
@@ -393,7 +403,12 @@ def resubmit(
       characterization `values` (category is fixed).
 
     403 if the caller isn't the proposer holding the open MODIFICATION assignment;
-    409 if the asset is not awaiting modification (status != FEEDBACK).
+    409 if the asset is not awaiting modification (status != FEEDBACK). No
+    module-level privilege gate here: the proposer asked to fix things up can
+    be ANY profile (including COLLABORATOR, who never holds `LIB/ASSETS`), and
+    `modify_service.resubmit_asset` already enforces the real, per-asset check
+    — caller must hold the open MODIFICATION assignment AND be the original
+    proposer — so a fixed privilege gate only ever added a false rejection.
     """
     try:
         return modify_service.resubmit_asset(session, current, asset_id, payload)

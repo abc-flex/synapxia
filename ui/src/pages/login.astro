@@ -204,6 +204,7 @@ import "../styles/globals.css";
 
     <script>
       import { login } from "@/lib/auth";
+      import { getOptions } from "@/lib/options";
 
       const loginForm    = document.getElementById("login-form") as HTMLFormElement;
       const errorBanner  = document.getElementById("error-message") as HTMLDivElement;
@@ -299,8 +300,7 @@ import "../styles/globals.css";
           loginForm.reset();
           failedAttempts = 0;
           localStorage.removeItem("login_failed_attempts");
-          // Redirect to the app's main surface (AI Library).
-          window.location.href = "/lib/assets";
+          window.location.href = await resolveLandingPage();
         } catch (error) {
           setLoading(false);
           failedAttempts++;
@@ -337,6 +337,23 @@ import "../styles/globals.css";
       });
 
       // ── Helpers ─────────────────────────────────────────────────────────────
+      // Landing page after login: the first AI Library option the caller's
+      // profile actually holds a privilege for. GET /api/options is already
+      // scoped to the caller + sorted by module/sort_order server-side, but it
+      // ignores the `module` query param, so filter client-side. ADMINISTRATOR/
+      // ADMINISTRATIVE hold LIB.ASSETS (sort_order 10) so they still land on
+      // /lib/assets; COLLABORATOR/REVIEWER don't hold it, so they land on the
+      // next one (Prompt Gallery → /lib/explore?code=PROMPTS) instead of a
+      // page they can't use.
+      async function resolveLandingPage(): Promise<string> {
+        try {
+          const options = await getOptions();
+          const path = options.find((o) => o.module === "LIB")?.path;
+          if (path) return path;
+        } catch { /* fall through to the default */ }
+        return "/lib/assets";
+      }
+
       function setLoading(loading: boolean) {
         isSubmitting = loading;
         submitBtn.disabled = loading;

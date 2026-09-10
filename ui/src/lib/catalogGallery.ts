@@ -61,26 +61,6 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
   const root = document.getElementById(galleryId);
   if (!root) return;
 
-  // Arrived here from a successful Propose (propose.astro redirects with
-  // `?proposed=1`). Confirm on the gallery, then strip the param so a refresh
-  // doesn't re-toast.
-  const params = new URLSearchParams(window.location.search);
-  if (params.has("proposed")) {
-    const msg = translate("gallery.proposed");
-    // Import `showToast` directly (not `window.showToast`): this runs at page
-    // load, before `installGlobalToast()` defines the global, so the global
-    // would still be undefined here.
-    showToast(
-      msg && msg !== "gallery.proposed"
-        ? msg
-        : "Your asset has been proposed and is now under review.",
-      "success",
-    );
-    params.delete("proposed");
-    const qs = params.toString();
-    window.history.replaceState({}, "", window.location.pathname + (qs ? `?${qs}` : ""));
-  }
-
   const search = document.getElementById(`${galleryId}-search`) as HTMLInputElement | null;
   const statusSel = document.getElementById(`${galleryId}-status`) as HTMLSelectElement | null;
   const favToggle = document.getElementById(`${galleryId}-fav-filter`) as HTMLButtonElement | null;

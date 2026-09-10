@@ -19,13 +19,13 @@
     "no_results": "No matching options"
   },
   "account_menu": {
-    "edit_profile": "Edit profile",
+    "edit_account": "Edit Account",
     "support": "Support",
     "sign_out": "Sign out",
     "theme": "Theme",
     "language": "Language",
     "my_work": "My Workspace",
-    "review_requests": "Review Requests",
+    "my_asset_requests": "My Asset Requests",
     "my_modifications": "My Modifications"
   },
   "notification_menu": {
@@ -122,7 +122,7 @@
     "value_chain": "Value Chain",
     "map": "Process Map",
     "specifications": "Specification",
-    "review_requests": "Review Requests",
+    "my_asset_requests": "My Asset Requests",
     "modifications": "My Modifications",
     "support": "Support"
   },
@@ -850,8 +850,7 @@
     "vote_down": "Not helpful",
     "vote_remove": "Remove vote",
     "vote_signin": "Sign in to vote",
-    "discuss": "Comment or ask a question",
-    "proposed": "Your asset has been proposed and is now under review."
+    "discuss": "Comment or ask a question"
   },
   "foro": {
     "title": "Discussion",
@@ -973,8 +972,10 @@
     "submit": "Propose for review",
     "back_to_gallery": "Back to gallery",
     "required": "Name, category and reviewer are required",
-    "success": "Asset proposed for review",
+    "success": "Your asset was proposed for review. Check your Notifications or My Asset Requests to see the reviewer's decision.",
     "error": "Could not propose the asset",
+    "dialog_title": "Proposal submitted",
+    "dialog_ok": "Got it",
     "title_prompts": "Propose a Prompt",
     "title_mcps": "Propose an MCP",
     "title_agents": "Propose an Agent",
@@ -991,7 +992,7 @@
     "review_characterization": "Please review the Characterization tab before proposing.",
     "related_hint": "Relate this asset to others already in the library (optional).",
     "related_inits_hint": "Relate this asset to relevant initiatives (optional).",
-    "related_save_partial": "Asset proposed for review, but some related items could not be saved."
+    "related_save_partial": "Your asset was proposed for review, but some related items could not be saved. Check your Notifications or My Asset Requests to see the reviewer's decision."
   },
   "explore_modal": {
     "empty": "No assets found in this category."
@@ -1054,7 +1055,7 @@
     "not_found": "This notification could not be found."
   },
   "review": {
-    "title": "Review asset",
+    "title": "Review Asset Proposal",
     "subtitle": "Review the proposed asset, then approve, request changes, or reject it.",
     "approve": "Approve",
     "request_changes": "Request changes",
@@ -1089,9 +1090,9 @@
     "not_a_modification": "This notification is not a modification request.",
     "not_actionable": "This asset is no longer awaiting changes."
   },
-  "review_requests": {
+  "my_asset_requests": {
     "subtitle": "Assets currently assigned to you for review. This list stays here even after you've opened or seen it in the notification bell.",
-    "empty": "You have no pending review requests.",
+    "empty": "You have no pending asset requests.",
     "col_asset": "Asset",
     "col_status": "Status",
     "col_assigned": "Assigned",

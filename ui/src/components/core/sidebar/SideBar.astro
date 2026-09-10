@@ -7,10 +7,12 @@ import { buildSidebarLayout } from "@/lib/navigation";
 
 const locale = getLocale(Astro);
 
+// The sidebar brand text is fixed — it must never vary by page.
+const BRAND_TITLE = "SynapxIA";
+
 interface Props {
   modules?: NavModule[];
   options?: NavOption[];
-  brandTitle?: string;
   currentPath?: string;
   currentModuleName?: string;
 }
@@ -18,7 +20,6 @@ interface Props {
 const {
   modules = [],
   options = [],
-  brandTitle = "SynapxIA",
   currentPath = "",
   currentModuleName = "",
 } = Astro.props as Props;
@@ -64,7 +65,7 @@ const { groups, flatItems } = buildSidebarLayout(modules, options);
       </div>
       <div class="leading-tight">
         <p class="text-2xl font-semibold text-gray-900 dark:text-white">
-          {brandTitle}
+          {BRAND_TITLE}
         </p>
       </div>
     </a>

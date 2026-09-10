@@ -65,7 +65,10 @@ const currentModuleName = pathSegments[0] || "";
   <body class="bg-slate-50 text-slate-900 dark:bg-gray-950 dark:text-white">
     <ClientTranslations />
     <div class="min-h-screen flex">
-      <SideBar modules={primaryNav} options={itemsNav} brandTitle={title} currentPath={currentPath} currentModuleName={currentModuleName} />
+      {/* The sidebar brand text must never vary by page — SideBar's own
+          default ("SynapxIA") is used unconditionally. `title` only ever
+          feeds the <title> tag below (the browser tab). */}
+      <SideBar modules={primaryNav} options={itemsNav} currentPath={currentPath} currentModuleName={currentModuleName} />
 
       {/* Mobile drawer backdrop — shown only while the off-canvas sidebar is open (<lg). */}
       <div data-sidebar-backdrop class="fixed inset-0 z-[9998] hidden bg-black/40 lg:hidden"></div>

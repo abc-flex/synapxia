@@ -1,112 +1,191 @@
 # Appendix — State Machines & Type Catalogs
 
-Reference for the **workflows**, lifecycle **states** and classification **types** that the
-Library and Initiatives stories rely on. The workflow matrices come from the *Action Status*
-and *Collab Status* sheets of `Control H de U.xlsx`; the catalog values are as seeded in the
-database (`lists` / `list_items`, see [`db/sql/`](../../db/sql)).
+Reference for the **workflows**, the **tab behavior matrices**, and the lifecycle **states** and
+classification **types** that the AI Library and Initiatives stories rely on.
+
+Workflow and tab matrices come from the *Action Status*, *Collab Status*, *Asset Detail* and
+*Init Detail* sheets of `Control H de U.xlsx`; catalog values are as seeded in the database
+(`lists` / `list_items`, see [`db/sql/`](../../db/sql)).
 
 ---
 
-## Asset contribution & review workflow (actions)
+## Asset Action Workflows (Actions Table)
 
-The asset workflow is driven by the `actions` table's `type` and `workflow_status` columns
-(`WORKFLOW_STATUS` = `ASSIGNED` → `NOTIFIED` → `FINISHED`). Each cell names the user story
-that **inserts** a record with that `(type, workflow_status)`. The right column is the user
-the action is assigned to.
+Every asset event is a **new row** in `actions` — nothing is updated in place. A row carries
+the asset, the acting or assigned user, a `type` (→ `ACTION_TYPE`) and, for workflow events, a
+`workflow_status` (→ `WORKFLOW_STATUS`: `ASSIGNED` → `NOTIFIED` → `FINISHED`).
 
 ### Contribution workflow
 
+Each cell names the user story that **inserts** a row with that `(type, workflow_status)`.
+
 | `type` | ASSIGNED | NOTIFIED | FINISHED | Assigned to |
 |--------|----------|----------|----------|-------------|
-| PROPOSAL | — | — | HU-Propose | Proposer |
-| REVIEW | HU-Propose | HU-Notifications | HU-Review | Reviewer |
-| MODIFICATION | HU-Review | HU-Notifications | HU-Modify | Proposer |
-| PUBLICATION | HU-Review | HU-Notifications | HU-Show Action | Proposer |
-| REJECTION | HU-Review | HU-Notifications | HU-Show Action | Proposer |
-| VERSIONING | — | — | HU-Versioning | User |
-| DEPRECATION | — | — | HU-Versioning | User |
+| `PROPOSAL` | — | — | Propose Asset | Proposer |
+| `REVIEW` | Propose Asset | Asset Notifications | Review Asset Proposal | Reviewer |
+| `MODIFICATION` | Review Asset Proposal | Asset Notifications | Modify Asset Proposal | Proposer |
+| `PUBLICATION` | Review Asset Proposal | Asset Notifications | Asset Request Detail | Proposer |
+| `REJECTION` | Review Asset Proposal | Asset Notifications | Asset Request Detail | Proposer |
+| `VERSIONING` | — | — | Edit Asset | User |
+| `DEPRECATION` | — | — | Edit Asset | User |
 
 ### Community layer
 
-| `type` | Created by | Assigned to |
-|--------|------------|-------------|
-| USAGE | HU-Details | User |
-| VOTE | HU-Vote | User |
-| COMMENT | HU-Comment | User |
-| QUESTION | HU-Question | User |
-| ANSWER | HU-Answer | User |
+These carry **no** `workflow_status` — they are facts, not assignments.
 
-> Records for a single user story are inserted simultaneously. The workflow story names map
-> to the board as: HU-Propose → [HU-LI02](04-lib.md#hu-li02---propose), HU-Notifications →
-> [HU-LI11](04-lib.md#hu-li11--notifications), HU-Review → [HU-LI12](04-lib.md#hu-li12---review),
-> HU-Show Action → [HU-LI13](04-lib.md#hu-li13---show-action), HU-Modify →
-> [HU-LI14](04-lib.md#hu-li14---modify), HU-Versioning → [HU-LI09](04-lib.md#hu-li09---versioning-include-deprecation),
-> HU-Details/Vote/Comment/Question/Answer → [HU-LI03–HU-LI06](04-lib.md#hu-li03---details-include-report-usage).
+| `type` | Created by | Attributed to |
+|--------|------------|---------------|
+| `USAGE` | [Asset Tab] Characteristics | User |
+| `VOTE` | Explore Category / Asset Detail | User |
+| `COMMENT` | [Asset Tab] Discussion | User |
+| `QUESTION` | [Asset Tab] Discussion | User |
+| `ANSWER` | [Asset Tab] Discussion | User |
+
+> All the rows a single user story produces are inserted in **one transaction**.
+
+**Story codes:** [Propose Asset → HU-LI04](04-lib.md#hu-li04---propose-asset) ·
+[Edit Asset → HU-LI03](04-lib.md#hu-li03---edit-asset-include-versioning--deprecation) ·
+[Asset Notifications → HU-LI14](04-lib.md#hu-li14--notifications-asset-notifications) ·
+[Review Asset Proposal → HU-LI16](04-lib.md#hu-li16---review-asset-proposal) ·
+[Modify Asset Proposal → HU-LI17](04-lib.md#hu-li17---modify-asset-proposal) ·
+[Asset Request Detail → HU-LI18](04-lib.md#hu-li18---asset-request-detail) ·
+[Characteristics → HU-LI07](04-lib.md#hu-li07--asset-tab-characteristics-include-report-usage) ·
+[Discussion → HU-LI11](04-lib.md#hu-li11--asset-tab-discussion)
+
+### Asset status transitions
+
+| From | Event | To |
+|------|-------|----|
+| — | Propose Asset | `PROPOSED` |
+| `PROPOSED` | Review → approve | `PUBLISHED` |
+| `PROPOSED` | Review → reject | `REJECTED` |
+| `PROPOSED` | Review → request changes | `FEEDBACK` |
+| `FEEDBACK` | Modify → resubmit | `PROPOSED` |
+| `PUBLISHED` | Edit Asset → deprecate | `DEPRECATED` |
 
 ---
 
-## Initiative collaboration workflow (collaborations)
+## Asset tab options by user story
 
-The initiative workflow mirrors the asset one over the `collaborations` table's `type` and
-`workflow_status` columns.
+The same eight tabs back every asset surface; the parent story decides what each one does.
+(*Options for each User Story related to Asset Requests*.)
 
-### Contribution workflow
+| Asset Tab | New Asset *(Asset Management)* | Edit Asset *(Asset Management)* | Propose Asset *(Explore Category)* | Asset Detail *(Explore Category)* |
+|-----------|-------------------------------|---------------------------------|------------------------------------|-----------------------------------|
+| Core Fields | Save | Save core fields | Characteristics › | Unified in Detail tab |
+| Characteristics | Save | Save new version | Related assets › | Unified in Detail tab |
+| Related Assets | Save | Save related assets | Related inits › | Read-only |
+| Related Inits | Save | Save related inits | Request asset review | Read-only |
+| Permissions | Save | Save permissions | Not applicable | Not applicable |
+| Discussion | Not applicable | Multiple options | Not applicable | Multiple options |
+| History | Not applicable | Read-only | Not applicable | Read-only |
+| Versioning | Not applicable | Read-only | Not applicable | Read-only |
+
+- **Save** — the whole modal is persisted at once (create flow).
+- **Save …** — only that tab's slice is persisted; only *Save new version* bumps the version.
+- **›** — a wizard step: the button advances to the next tab; the last one submits.
+- **Multiple options** — post, ask, answer, vote or delete one's own entries.
+
+---
+
+## Initiative Collaboration Workflows (Collaborations Table)
+
+The initiative workflow mirrors the asset one over `collaborations`, with `type` (→
+`COLLAB_TYPE`) and the same `workflow_status` ladder.
+
+### Activation & diagnosis workflow
 
 | `type` | ASSIGNED | NOTIFIED | FINISHED | Assigned to |
 |--------|----------|----------|----------|-------------|
-| ACTIVATION | — | — | HU-Activate | Proposer |
-| DIAGNOSIS | HU-Activate | HU-Notifications | HU-Diagnosis | Reviewer |
-| ACCEPTANCE | HU-Diagnosis | HU-Notifications | HU-Show Collab | Proposer |
-| REJECTION | HU-Diagnosis | HU-Notifications | HU-Show Collab | Proposer |
-| DELIVERY | HU-Delivery | HU-Notifications | HU-Show Collab | Proposer |
-| VERSIONING | — | — | HU-Versioning | User |
-| ARCHIVING | — | — | HU-Versioning | User |
+| `ACTIVATION` | — | — | Propose Initiative | Proposer |
+| `DIAGNOSIS` | Propose Initiative | Initiative Notifications | Diagnosis of the Initiative | Reviewer |
+| `MODIFICATION` | Diagnosis of the Initiative | Initiative Notifications | Modify Initiative | Proposer |
+| `ACCEPTANCE` | Diagnosis of the Initiative | Initiative Notifications | Initiative Request Detail | Proposer |
+| `REJECTION` | Diagnosis of the Initiative | Initiative Notifications | Initiative Request Detail | Proposer |
+| `DELIVERY` | — | — | Edit Initiative | Proposer |
+| `ARCHIVING` | — | — | Edit Initiative | User |
 
 ### Community layer
 
-| `type` | Created by | Assigned to |
-|--------|------------|-------------|
-| VOTE | HU-Vote | User |
-| COMMENT | HU-Comment | User |
-| QUESTION | HU-Question | User |
-| ANSWER | HU-Answer | User |
+| `type` | Created by | Attributed to |
+|--------|------------|---------------|
+| `VOTE` | Explore Initiatives / Initiative Detail | User |
+| `COMMENT` | [Initiative Tab] Discussion | User |
+| `QUESTION` | [Initiative Tab] Discussion | User |
+| `ANSWER` | [Initiative Tab] Discussion | User |
 
-> Workflow story names map to the board as: HU-Activate → [HU-IN03](05-inits.md#hu-in03---propose-activation),
-> HU-Notifications → [HU-IN12](05-inits.md#hu-in12--notifications), HU-Diagnosis →
-> [HU-IN13](05-inits.md#hu-in13---diagnosis), HU-Show Collab → [HU-IN14](05-inits.md#hu-in14---show-collab),
-> HU-Delivery → [HU-IN04](05-inits.md#hu-in04---details-include-delivery).
+> All the rows a single user story produces are inserted in **one transaction**.
+
+**Story codes:** [Propose Initiative → HU-IN05](05-inits.md#hu-in05---propose-initiative) ·
+[Edit Initiative → HU-IN03](05-inits.md#hu-in03---edit-initiative-include-delivery--archiving) ·
+[Initiative Notifications → HU-IN13](05-inits.md#hu-in13--notifications-initiative-notifications) ·
+[Diagnosis of the Initiative → HU-IN15](05-inits.md#hu-in15---diagnosis-of-the-initiative) ·
+[Modify Initiative → HU-IN16](05-inits.md#hu-in16---modify-initiative) ·
+[Initiative Request Detail → HU-IN17](05-inits.md#hu-in17---initiative-request-detail) ·
+[Discussion → HU-IN11](05-inits.md#hu-in11--initiative-tab-discussion)
+
+### Initiative status transitions
+
+| From | Event | To |
+|------|-------|----|
+| — | Propose Initiative | `ACTIVATED` |
+| `ACTIVATED` | Diagnosis → accept | `ACCEPTED` |
+| `ACTIVATED` | Diagnosis → reject | `REJECTED` |
+| `ACTIVATED` | Diagnosis → request changes | `FEEDBACK` |
+| `FEEDBACK` | Modify → resubmit | `ACTIVATED` |
+| `ACCEPTED` | work starts | `IN_PROGRESS` |
+| `IN_PROGRESS` | Edit Initiative → deliver | `DELIVERED` |
+| any | Edit Initiative → archive | `ARCHIVED` |
+
+---
+
+## Initiative tab options by user story
+
+(*Options for each User Story related to Initiative Requests*.)
+
+| Initiative Tab | Edit Initiative *(Initiative Management)* | Propose Initiative *(Explore Initiatives)* | Initiative Detail *(Explore Initiatives)* |
+|----------------|------------------------------------------|--------------------------------------------|-------------------------------------------|
+| Core Fields | Save core fields | Go to diagnosis questions | Read-only |
+| Diagnosis Questions | Read-only | Request diagnosis | Read-only |
+| Related Assets | Save related assets | Not applicable | Read-only |
+| Permissions | Save permissions | Not applicable | Not applicable |
+| Discussion | Multiple options | Not applicable | Multiple options |
+| History | Read-only | Not applicable | Read-only |
 
 ---
 
 ## As seeded in the database
 
-Key catalogs (English labels are the seeded values; some lists are bilingual en/es):
+English labels are the seeded values; lists marked *(en/es)* are bilingual.
 
 | List code | Type | Used by | Values |
 |-----------|------|---------|--------|
+| `LIST_TYPE` | LIST_OF_VALUES | ADMIN lists *(en/es)* | List of Values, Scale, Feature, Criteria |
+| `OPTION_TYPE` | LIST_OF_VALUES | ADMIN options *(en/es)* | Content, Form, Report, Card Gallery |
+| `BIZ_UNIT_TYPE` | LIST_OF_VALUES | ADMIN business units *(en/es)* | Business Unit, Department, Area, Division |
+| `FEAT_TYPE` | LIST_OF_VALUES | TAXO features | General, Technical, Commercial, Usability, Documentation |
+| `PROJECT_STATUS` | LIST_OF_VALUES | COLLAB projects | Planned, In Progress, On Hold, Completed |
+| `DIMENSIONS_UNIT` | LIST_OF_VALUES | COLLAB dimensions | Percentage, Units, Count, Hours, Days |
+| `GENAI_DEV_ADOPTION`, `GENAI_QA_ADOPTION` | SCALE | COLLAB metrics *(en/es)* | 5-level adoption scales |
 | `ASSET_STATUS` | LIST_OF_VALUES | LIB assets | Proposed, Feedback Provided, Published, Rejected, Deprecated |
 | `ACTION_TYPE` | LIST_OF_VALUES | LIB actions | Proposal, Review, Modification, Publication, Rejection, Versioning, Deprecation, Usage, Vote, Comment, Question, Answer |
 | `WORKFLOW_STATUS` | LIST_OF_VALUES | LIB actions / INITS collaborations | Assigned, Notified, Finished |
 | `RELATION_TYPE` | LIST_OF_VALUES | LIB / INITS / PROC relations | Depends On, Related To, Similar To, Part Of, Used By, Extends, Contains, Inspired By |
-| `TARGET_TYPE` | LIST_OF_VALUES | permissions (all modules) | User, Role, Project, Team, Unit, Public |
+| `TARGET_TYPE` | LIST_OF_VALUES | permissions (all modules) | Users, Roles, Projects, Teams, Units, Public |
 | `ACCESS_LEVEL` | LIST_OF_VALUES | permissions (all modules) | View, Manage |
-| `FEAT_TYPE` | LIST_OF_VALUES | TAXO features | General, Technical, Commercial, Usability, Documentation |
-| `INITIATIVE_STATUS` | LIST_OF_VALUES | INITS | Activated, Accepted, Rejected, In Progress, Delivered, Archived |
-| `INITIATIVE_TYPE` | LIST_OF_VALUES | INITS | Exploration, …, Implementation |
-| `COLLAB_TYPE` | LIST_OF_VALUES | INITS collaborations | Activation, Diagnosis, Acceptance, Rejection, Delivery, Versioning, Archiving, Vote, Comment, Question, Answer |
-| `EXPECTED_IMPACT` | LIST_OF_VALUES | INITS | Time Reduction, Quality Improvement, Error Reduction, Decision Support, Improved UX, Cost Savings, Revenue Increase, Compliance Enhancement, Risk Reduction, Scalability Improvement, Innovation, Other |
+| `INITIATIVE_STATUS` | LIST_OF_VALUES | INITS | Activated, Feedback Provided, Accepted, Rejected, In Progress, Delivered, Archived |
+| `INITIATIVE_TYPE` | LIST_OF_VALUES | INITS | Exploration, Prototyping, Implementation |
+| `COLLAB_TYPE` | LIST_OF_VALUES | INITS collaborations | Activation, Diagnosis, Modification, Acceptance, Rejection, Delivery, Archiving, Vote, Comment, Question, Answer |
+| `EXPECTED_IMPACT` | LIST_OF_VALUES | INITS | Time Reduction, Quality Improvement, Error Reduction, Decision Support, Improved User Experience, Cost Savings, Revenue Increase, Compliance Enhancement, Risk Reduction, Scalability Improvement, Innovation, Other |
 | `PRIORITY_LEVEL` | LIST_OF_VALUES | INITS | High, Medium, Low |
-| `CLARITY_MATURITY`, `SUPPORT_OBJECTIVE`, `COMPLEXITY`, `DATA_INTEGRATIONS`, `RISK_IMPACT`, `SUSTAINABILITY` | CRITERIA | INITS diagnostics | 1–3 scale (en/es) per criterion |
+| `CLARITY_MATURITY`, `SUPPORT_OBJECTIVE`, `COMPLEXITY`, `DATA_INTEGRATIONS`, `RISK_IMPACT`, `SUSTAINABILITY` | CRITERIA | INITS diagnostics *(en/es)* | 1–3 scale per criterion |
 | `DASHBOARD_TYPE` | LIST_OF_VALUES | ANA | Dashboard, Report, Scorecard, KPI View, Analytical View |
 | `SOURCE_TYPE` | LIST_OF_VALUES | ANA | Internal Page, Power BI, Looker Studio, Tableau, Qlik Sense, Metabase, Superset, Custom Iframe |
 | `DASHBOARD_STATUS` | LIST_OF_VALUES | ANA | Draft, Published, Archived, Retired |
 | `PARAM_TYPE` | LIST_OF_VALUES | ANA parameters | String, Number, Boolean, Date |
 | `EXECUTION_STATUS` | LIST_OF_VALUES | ANA executions | Success, Failed, Cancelled, Timeout, Unauthorized |
-| `PROCESS_TYPE` | LIST_OF_VALUES | PROC | Primary, Support *(Porter's value chain)* |
-| `PROCESS_STATUS` | LIST_OF_VALUES | PROC | 1-Draft, 2-Review, 3-Published, 4-Deprecated |
-| `PROJECT_STATUS` | LIST_OF_VALUES | COLLAB projects | Planned, In Progress, On Hold, Completed |
-| `DIMENSIONS_UNIT` | LIST_OF_VALUES | COLLAB dimensions | Percentage, Units, Count, Hours, Days |
-| `GENAI_DEV_ADOPTION`, `GENAI_QA_ADOPTION` | SCALE | COLLAB metrics | 5-level adoption scales (en/es) |
+| `PROCESS_TYPE` | LIST_OF_VALUES | PROC *(en/es)* | Primary, Support *(Porter's value chain)* |
+| `PROCESS_STATUS` | LIST_OF_VALUES | PROC *(en/es)* | Draft, Review, Published, Deprecated |
 
-> Source of truth for these values is `db/sql/*.sql`. When a list changes there, update this
-> table.
+> The source of truth for these values is `db/sql/*.sql`. When a list changes there, update
+> this table.

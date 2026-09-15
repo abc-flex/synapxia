@@ -73,15 +73,12 @@ INSERT INTO options (module, code, name, description, sort_order, type, path, ic
     ('LIB','SKILLS','Skill Catalog',
      'Curated catalog of reusable skills for AI agents.',
      60,'CARD_GALLERY','/lib/explore?code=SKILLS','academic-cap'),
-    ('LIB','ASSISTANTS','Assistants',
-     'Index of assistants scope, tone and tools.',
-     70,'CARD_GALLERY','/lib/explore?code=ASSISTANTS','sparkles'),
     ('LIB','RAG_APPS','RAG Apps',
      'Directory of Retrieval-Augmented Generation applications.',
-     80,'CARD_GALLERY','/lib/explore?code=RAG_APPS','document-magnifying-glass'),
+     70,'CARD_GALLERY','/lib/explore?code=RAG_APPS','document-magnifying-glass'),
     ('LIB','MODELS','Models',
      'Catalog of AI and ML models used in the platform.',
-     90,'CARD_GALLERY','/lib/explore?code=MODELS','beaker');
+     80,'CARD_GALLERY','/lib/explore?code=MODELS','beaker');
 
 -- ===== Module: INITIATIVES =====
 INSERT INTO options (module, code, name, description, sort_order, type, path, icon) VALUES
@@ -176,7 +173,6 @@ VALUES
     ('ADMINISTRATOR','LIB','AGENTS',     TRUE),
     ('ADMINISTRATOR','LIB','FLOWS',      TRUE),
     ('ADMINISTRATOR','LIB','SKILLS',     TRUE),
-    ('ADMINISTRATOR','LIB','ASSISTANTS', TRUE),
     ('ADMINISTRATOR','LIB','RAG_APPS',   TRUE),
     ('ADMINISTRATOR','LIB','MODELS',     TRUE),
 
@@ -217,7 +213,6 @@ VALUES
     ('ADMINISTRATIVE','LIB','AGENTS',     TRUE),
     ('ADMINISTRATIVE','LIB','FLOWS',      TRUE),
     ('ADMINISTRATIVE','LIB','SKILLS',     TRUE),
-    ('ADMINISTRATIVE','LIB','ASSISTANTS', TRUE),
     ('ADMINISTRATIVE','LIB','RAG_APPS',   TRUE),
     ('ADMINISTRATIVE','LIB','MODELS',     TRUE),
 
@@ -246,7 +241,6 @@ VALUES
     ('COLLABORATOR','LIB','AGENTS',     TRUE),
     ('COLLABORATOR','LIB','FLOWS',      TRUE),
     ('COLLABORATOR','LIB','SKILLS',     TRUE),
-    ('COLLABORATOR','LIB','ASSISTANTS', TRUE),
     ('COLLABORATOR','LIB','RAG_APPS',   TRUE),
     ('COLLABORATOR','LIB','MODELS',     TRUE),
 
@@ -267,7 +261,6 @@ VALUES
     ('REVIEWER','LIB','AGENTS',     TRUE),
     ('REVIEWER','LIB','FLOWS',      TRUE),
     ('REVIEWER','LIB','SKILLS',     TRUE),
-    ('REVIEWER','LIB','ASSISTANTS', TRUE),
     ('REVIEWER','LIB','RAG_APPS',   TRUE),
     ('REVIEWER','LIB','MODELS',     TRUE),
 

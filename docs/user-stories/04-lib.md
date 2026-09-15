@@ -1,204 +1,303 @@
-# Asset Library — User Stories
+# AI Library — User Stories
 
 > Module `LIB` · API domain [`api/app/lib`](../../api/app) · DB band 40s
 > ([`41-lib-ddl.sql`](../../db/sql/41-lib-ddl.sql)) · Diagram [4-lib.png](../diagrams/4-lib.png)
 
-The Asset Library manages the reusable digital and AI-asset repository: assets are proposed,
-reviewed and published through a workflow, then characterized, discussed, voted, related,
-favorited, permissioned and versioned. On top of the generic repository, the module exposes
-curated catalogs per asset family (prompts, MCPs, agents, flows, skills, assistants, RAG
-apps, models).
+The AI Library is the reusable asset repository: assets are **proposed → reviewed →
+published**, then characterized, discussed, voted, related, permissioned and versioned. Two
+surfaces share one data model and one set of tabs — **Asset Management** (governance, full
+edit) and **Explore Category** (discovery, read-mostly).
 
-| Code | Story |
-|------|-------|
-| HU-LI01 | Asset Repository |
-| HU-LI02 | – Propose |
-| HU-LI03 | – Details (Include Report Usage) |
-| HU-LI04 | –– Favorite |
-| HU-LI05 | –– Vote |
-| HU-LI06 | –– Discussion (Comments / Questions) |
-| HU-LI07 | –– Related Assets |
-| HU-LI08 | –– Permission |
-| HU-LI09 | –– Versioning (Include Deprecation) |
-| HU-LI10 | –– History |
-| HU-LI11 | Notifications |
-| HU-LI12 | – Review |
-| HU-LI13 | – Show Action |
-| HU-LI14 | – Modify |
-| HU-LI15 | Prompt Gallery |
-| HU-LI16 | MCP Directory |
-| HU-LI17 | Agent Index |
-| HU-LI18 | Agentic Flows |
-| HU-LI19 | Skill Catalog |
-| HU-LI20 | Assistants |
-| HU-LI21 | RAG Apps |
-| HU-LI22 | Models |
+| Code | Story | | Code | Story |
+|------|-------|-|------|-------|
+| HU-LI01 | Asset Management | | HU-LI13 | [Asset Tab] Versioning |
+| HU-LI02 | – New Asset | | HU-LI14 | [Notifications] Asset Notifications |
+| HU-LI03 | – Edit Asset (Include Versioning / Deprecation) | | HU-LI15 | [Account Menu] My Asset Requests |
+| HU-LI03 | Explore Category (Include Favorite / Vote) | | HU-LI16 | – Review Asset Proposal |
+| HU-LI04 | – Propose Asset | | HU-LI17 | – Modify Asset Proposal |
+| HU-LI05 | – Asset Detail (Include Favorite / Vote) | | HU-LI18 | – Asset Request Detail |
+| HU-LI06 | [Asset Tab] Core Fields | | HU-LI19 | [Explore Category] Prompt Gallery |
+| HU-LI07 | [Asset Tab] Characteristics (Include Report Usage) | | HU-LI20 | [Explore Category] MCP Directory |
+| HU-LI08 | [Asset Tab] Related Assets | | HU-LI21 | [Explore Category] Agent Repository |
+| HU-LI09 | [Asset Tab] Related Inits | | HU-LI22 | [Explore Category] Agentic Flows |
+| HU-LI10 | [Asset Tab] Permissions | | HU-LI23 | [Explore Category] Skill Catalog |
+| HU-LI11 | [Asset Tab] Discussion | | HU-LI24 | [Explore Category] RAG Apps |
+| HU-LI12 | [Asset Tab] History | | HU-LI25 | [Explore Category] Models |
 
-> The contribution/review workflow runs on the `actions` table via its `type` and
-> `workflow_status` (`ASSIGNED` → `NOTIFIED` → `FINISHED`) columns. The full type ×
-> status → story matrix is in the [States & Types appendix](appendix-states-and-types.md#asset-contribution--review-workflow-actions).
+> **Codes as on the board.** `Control H de U.xlsx` assigns `HU-LI03` twice — to *Edit Asset*
+> and to *Explore Category*. Both are kept verbatim here; the two stories are distinguished by
+> name.
+
+> The contribution/review workflow runs on the `actions` table through `type` and
+> `workflow_status` (`ASSIGNED` → `NOTIFIED` → `FINISHED`). Full matrix:
+> [Asset Action Workflows](states-and-types.md#asset-action-workflows-actions-table).
+> What each tab does per parent story:
+> [Asset tab options](states-and-types.md#asset-tab-options-by-user-story).
 
 ---
 
-## Asset repository & contribution
+## Asset Management
 
-### HU-LI01 · Asset Repository
-> As a **contributor**, I want to **browse and manage reusable assets** classified by
-> taxonomy category **so that** the organization has a single discoverable catalog of AI and
-> digital assets.
+### HU-LI01 · Asset Management
+> As an **asset owner**, I want to **manage the assets I am responsible for**, filtered by
+> category, status, privileges and favorites, **so that** the catalog stays curated across the
+> whole asset lifecycle.
 - **Data:** `assets` — `id`, `name`, `description`, `category` (FK → `categories.code`),
   `reference`, `status` (→ `ASSET_STATUS`: Proposed, Feedback Provided, Published, Rejected,
-  Deprecated), `tags` (JSONB), `detail`
-- **UI:** [`ui/src/pages/lib/assets.astro`](../../ui/src/pages/lib/assets.astro)
+  Deprecated), `tags` (JSONB), `detail`, `current_version`. The list is scoped to the assets
+  the user can reach through `asset_permissions`; rows the user can only *view* hide the edit
+  actions.
+- **UI:** [`lib/assets.astro`](../../ui/src/pages/lib/assets.astro)
 
-### HU-LI02 · – Propose
-> As a **contributor**, I want to **propose a new asset and request a reviewer** **so that**
-> it enters the review workflow before being published.
-- **Data:** transactionally creates, on save: an `assets` row (`status = PROPOSED`); one
-  `characterizations` row per feature in the category's `specifications`; an `actions` row
-  for the proposer (`type = PROPOSAL`, `workflow_status = FINISHED`); an `actions` row for
-  the chosen reviewer — a user with the `ADMINISTRATIVE` role (`type = REVIEW`,
-  `workflow_status = ASSIGNED`); and two `asset_permissions` rows (`access_level = MANAGE`,
-  open validity) for the proposer and the reviewer.
-- **UI:** propose flow in `lib/assets.astro`
+### HU-LI02 · – New Asset
+> As an **asset owner**, I want to **create an asset directly**, filling every tab before
+> saving, **so that** an asset that needs no review can be registered in one pass.
+- **Behavior:** all tabs are staged in the modal and persisted together on save — core fields,
+  characteristics, related assets, related inits and permissions (Discussion / History /
+  Versioning do not apply yet). The creator is granted `MANAGE` on the new asset.
+- **Data:** `assets` + `characterizations` + `related_assets` + `asset_inits` +
+  `asset_permissions`
+- **UI:** create mode of [`AssetDetailModal.astro`](../../ui/src/components/lib/AssetDetailModal.astro)
+  + [`AssetDetailTabs.svelte`](../../ui/src/components/svelte/AssetDetailTabs.svelte).
+  Detail of **HU-LI01**.
 
-### HU-LI03 · – Details (Include Report Usage)
-> As any **user**, I want to **open an asset's detail view** (full description,
-> characterizations and activity) and **report that I used it** **so that** I can evaluate it
-> for reuse and usage is tracked.
-- **Data:** read view over `assets` + `characterizations`; "report usage" inserts an
-  `actions` row (`type = USAGE`). Parent of the detail panels HU-LI04…HU-LI10.
-- **UI:** detail modal in `lib/assets.astro` (and the curated catalogs below)
-
-### HU-LI04 · –– Favorite
-> As any **user**, I want to **favorite an asset** so that I can quickly find the ones I care
-> about.
-- **Data:** `favorite_assets` — PK `(user_id, asset)`. Detail panel of **HU-LI03**.
-
-### HU-LI05 · –– Vote
-> As a **community member**, I want to **vote on an asset** so that the most valuable assets
-> surface.
-- **Data:** `actions` of `type = VOTE`. Detail panel of **HU-LI03**.
-
-### HU-LI06 · –– Discussion (Comments / Questions)
-> As a **community member**, I want to **comment on and ask/answer questions about an asset**
-> so that knowledge about it is captured alongside it.
-- **Data:** `actions` of `type = COMMENT` / `QUESTION` / `ANSWER`, threaded via `parent`.
-  Detail panel of **HU-LI03**.
-
-### HU-LI07 · –– Related Assets
-> As a **contributor**, I want to **link an asset to related assets** (depends-on, extends,
-> similar-to, …) **so that** users can navigate between connected assets.
-- **Data:** `related_assets` — PK `(source, target, type)`, `type` (→ `RELATION_TYPE`),
-  `rationale`. Detail panel of **HU-LI03**.
-
-### HU-LI08 · –– Permission
-> As an **owner**, I want to **grant view/manage access to users, roles, teams or units**
-> **so that** asset visibility and editing are controlled per audience.
-- **Data:** `asset_permissions` — `asset`, `target_type` (→ `TARGET_TYPE`), `target_code`,
-  `access_level` (→ `ACCESS_LEVEL`: View, Manage), validity window. Detail panel of **HU-LI03**.
-
-### HU-LI09 · –– Versioning (Include Deprecation)
-> As an **owner**, I want to **create a new version of an asset, or deprecate it** **so that**
-> improvements are tracked without losing history and obsolete assets are retired.
-- **Data:** `actions` of `type = VERSIONING` / `DEPRECATION` (`workflow_status = FINISHED`);
-  a new version creates a new `assets` row with `reference` to the previous one and a
-  `related_assets` link of `type = EXTENDS`; deprecation sets `status = DEPRECATED`. Detail
-  panel of **HU-LI03**.
-
-### HU-LI10 · –– History
-> As any **user**, I want to **see an asset's activity timeline** (proposal, review, votes,
-> comments, versioning, …) **so that** I understand how it evolved.
-- **Data:** read-only view over `actions` for the asset, newest first. Detail panel of **HU-LI03**.
+### HU-LI03 · – Edit Asset (Include Versioning / Deprecation)
+> As an **asset owner**, I want to **edit an asset one tab at a time**, **publish a new
+> version** when its characteristics change, and **deprecate** it when it is superseded,
+> **so that** improvements are tracked without losing history and obsolete assets are retired.
+- **Behavior:** each tab saves **its own slice only**. Saving the **Characteristics** tab asks
+  for a change type (Major / Minor / Patch), bumps `assets.current_version` accordingly,
+  snapshots the characterizations under the new `version_label` and records a `VERSIONING`
+  action. Core fields, related assets, related inits and permissions save in place with no
+  version bump. Setting the status to *Deprecated* records a `DEPRECATION` action.
+- **Data:** `assets`, `characterizations` (per `version_label`), `actions`
+  (`VERSIONING` / `DEPRECATION`, `workflow_status = FINISHED`)
+- **UI:** edit mode of [`AssetDetailModal.astro`](../../ui/src/components/lib/AssetDetailModal.astro).
+  Detail of **HU-LI01**.
 
 ---
 
-## Review workflow & notifications
+## Explore Category
 
-These stories implement the asset contribution/review workflow on `actions`
-(`workflow_status` = `ASSIGNED` → `NOTIFIED` → `FINISHED`). See the
-[workflow matrix](appendix-states-and-types.md#asset-contribution--review-workflow-actions).
+### HU-LI03 · Explore Category (Include Favorite / Vote)
+> As any **user**, I want to **browse the published assets of a category as a card gallery**,
+> search and filter them, **favorite** the ones I care about and **vote** on them, **so that**
+> I can discover and reuse what the organization already has.
+- **Behavior:** one generic page driven by the option's own `code` / `name` / `icon`
+  (`/lib/explore?code=<CATEGORY>`); every AI Library sidebar entry and every taxonomy leaf
+  points here. Cards show icon, name, status, version, description, tags and the vote /
+  discussion counters. The gallery is scoped by `asset_permissions`; a category with no assets
+  yet shows a *coming soon* placeholder. A **Propose** call to action leads to **HU-LI04**.
+- **Data:** `assets` (published, by category) + `favorite_assets` + `actions` of `type = VOTE`
+  (one active vote per user and asset, `content` = `POSITIVE` / `NEGATIVE`)
+- **UI:** [`lib/explore.astro`](../../ui/src/pages/lib/explore.astro),
+  [`ExploreCard.astro`](../../ui/src/components/lib/ExploreCard.astro),
+  [`gallery/CardGallery.astro`](../../ui/src/components/lib/gallery/CardGallery.astro)
 
-### HU-LI11 · Notifications
-> As an **assignee** (reviewer or proposer), I want a **list of my pending workflow actions**
-> **so that** I know what needs my attention.
-- **Behavior:** lists the user's `actions` grouped by asset whose latest `workflow_status`
-  is `ASSIGNED` (shown **bold**) or `NOTIFIED` (not bold, with a dismiss option), for
-  `type` in `REVIEW` / `MODIFICATION` / `PUBLICATION` / `REJECTION`. Opening an action routes
-  to **HU-LI12 Review** (`REVIEW`), **HU-LI14 Modify** (`MODIFICATION`) or **HU-LI13 Show
-  Action** (`PUBLICATION` / `REJECTION`). Dismissing a `NOTIFIED` action removes it from the
-  list and inserts the action with `workflow_status = FINISHED`.
-- **Data:** `actions` (`type`, `workflow_status`).
+### HU-LI04 · – Propose Asset
+> As a **collaborator**, I want to **propose a new asset for a category and request a
+> reviewer** **so that** it enters the review workflow before being published.
+- **Behavior:** a wizard whose steps are the asset tabs — **Core Fields → Characteristics →
+  Related Assets → Related Inits**, the last one submitting the proposal. The category is
+  locked when the page is reached from a gallery; required characteristics (from
+  `specifications.required`) must be filled. A proposer who is not an administrator cannot
+  pick themselves as reviewer. On success an acknowledgement dialog reports the outcome before
+  returning to the category.
+- **Data:** one transaction inserts — an `assets` row (`status = PROPOSED`); one
+  `characterizations` row per feature in the category's `specifications`; an `actions` row for
+  the proposer (`type = PROPOSAL`, `workflow_status = FINISHED`); an `actions` row for the
+  chosen reviewer (`type = REVIEW`, `workflow_status = ASSIGNED`); and `asset_permissions`
+  rows (`access_level = MANAGE`, open validity) for the proposer and the reviewer.
+- **UI:** [`lib/propose.astro`](../../ui/src/pages/lib/propose.astro). Detail of **HU-LI03
+  Explore Category**.
 
-### HU-LI12 · – Review
-> As a **reviewer**, I want to **review a proposed asset and give feedback, approve or
-> reject it** **so that** only vetted assets are published.
-- **Behavior:** on open, if the action is `ASSIGNED`, un-bold it in notifications and insert
-  the `REVIEW` action as `NOTIFIED`. On save (feedback / approve / reject): insert the
-  `REVIEW` action as `FINISHED`; set the asset `status` to `FEEDBACK` / `PUBLISHED` /
-  `REJECTED` respectively; and insert a new action for the proposer of `type` `MODIFICATION`
-  / `PUBLICATION` / `REJECTION` (respectively) with `workflow_status = ASSIGNED`.
-- **Data:** `actions`, `assets.status`.
-
-### HU-LI13 · – Show Action
-> As a **proposer**, I want to **see the outcome of my proposal** (published or rejected)
-> **so that** I learn the result and clear the notification.
-- **Behavior:** on open, if the action is `ASSIGNED`, un-bold it in notifications and insert
-  the `PUBLICATION` / `REJECTION` action as `NOTIFIED`.
-- **Data:** `actions`.
-
-### HU-LI14 · – Modify
-> As a **proposer**, I want to **modify my asset after a reviewer requested changes** and
-> resubmit it **so that** the review cycle can continue.
-- **Behavior:** on open, if the action is `ASSIGNED`, un-bold it in notifications and insert
-  the `MODIFICATION` action as `NOTIFIED`. On save: remove it from notifications and insert
-  the `MODIFICATION` action as `FINISHED`; and insert a new action for the reviewer of
-  `type = REVIEW`, `workflow_status = ASSIGNED`.
-- **Data:** `actions`, `assets`, `characterizations`.
+### HU-LI05 · – Asset Detail (Include Favorite / Vote)
+> As any **user**, I want to **open an asset's full detail** from the gallery — description,
+> characteristics, relations, discussion, history and versions — and **favorite** or **vote**
+> on it from there, **so that** I can judge whether to reuse it.
+- **Behavior:** read-mostly modal. Core fields and characteristics are unified in a single
+  **Detail** tab; Related Assets, Related Inits, History and Versions are read-only; Discussion
+  stays fully interactive; Permissions is not shown.
+- **Data:** read view over `assets` + `characterizations` (current version) + relations +
+  `actions`; writes only `favorite_assets` and `actions` of `type = VOTE`.
+- **UI:** [`ExploreDetailModal.astro`](../../ui/src/components/lib/ExploreDetailModal.astro)
+  over [`gallery/CatalogDetailModal.astro`](../../ui/src/components/lib/gallery/CatalogDetailModal.astro).
+  Detail of **HU-LI03 Explore Category**.
 
 ---
 
-## Curated asset catalogs
+## Asset tabs
 
-These are specialized, category-scoped views of the **Asset Repository** (`assets` filtered
-by the matching `GEN_AI` taxonomy category). They share the asset data model and the detail
-panels above.
+The same eight tabs back every asset surface; what each one *does* depends on the parent story
+(New Asset / Edit Asset / Propose Asset / Asset Detail) — see the
+[asset tab matrix](states-and-types.md#asset-tab-options-by-user-story).
 
-### HU-LI15 · Prompt Gallery
-> As a **contributor**, I want a **gallery of reusable prompts** so that I can discover and
-> reuse proven prompts.
-- **Category:** `PROMPTS`
-
-### HU-LI16 · MCP Directory
-> As a **contributor**, I want a **directory of MCP servers** so that I can find connectors
-> to plug into AI tools.
-- **Category:** `MCPS`
-
-### HU-LI17 · Agent Index
-> As a **contributor**, I want an **index of agents** so that I can reuse existing agents.
-- **Category:** `AGENTS`
-
-### HU-LI18 · Agentic Flows
-> As a **contributor**, I want a **catalog of agentic flows** so that multi-step automations
-> can be discovered and reused.
-- **Category:** `FLOWS`
-
-### HU-LI19 · Skill Catalog
-> As a **contributor**, I want a **catalog of skills** so that reusable capabilities are
+### HU-LI06 · [Asset Tab] Core Fields
+> As a **contributor**, I want to **fill an asset's core identity** — name, category, status,
+> description, repository reference, tags and detail — **so that** it is identifiable and
 > findable.
-- **Category:** `SKILLS`
+- **Data:** `assets` — `name`, `category`, `status`, `description`, `reference`, `tags`,
+  `detail`
+- **Options:** New Asset → *Save* · Edit Asset → *Save core fields* · Propose Asset →
+  *Characteristics ›* · Asset Detail → unified in the *Detail* tab
 
-### HU-LI20 · Assistants
-> As a **contributor**, I want a **catalog of assistants** so that purpose-built assistants
-> can be shared.
-- **Category:** `ASSISTANTS`
+### HU-LI07 · [Asset Tab] Characteristics (Include Report Usage)
+> As a **contributor**, I want to **fill the features the asset's category declares** — each
+> with a value and an optional detail note — and, as a **consumer**, **copy a characteristic's
+> content** so that its **usage is reported** and the most-used assets can be identified.
+- **Data:** `characterizations` — PK `(asset, version_label, feature)`, `value` (the payload),
+  `detail` (optional elaboration). The form is built from `specifications` for the asset's
+  category: `required` blocks the save, `copyable` renders the value in a copy box, `sort_order`
+  fixes the order, `default_value` pre-fills it. Copying a value inserts an `actions` row of
+  `type = USAGE`.
+- **Options:** New Asset → *Save* · Edit Asset → *Save new version* (see **HU-LI13**) ·
+  Propose Asset → *Related assets ›* · Asset Detail → read-only, inside the *Detail* tab
 
-### HU-LI21 · RAG Apps
-> As a **contributor**, I want a **catalog of RAG applications** so that retrieval-augmented
-> apps can be reused.
-- **Category:** `RAG_APPS`
+### HU-LI08 · [Asset Tab] Related Assets
+> As a **contributor**, I want to **link an asset to other assets** (depends on, extends,
+> similar to, …) with a rationale **so that** users can navigate between connected assets.
+- **Data:** `related_assets` — PK `(source, target, type)`, `type` (→ `RELATION_TYPE`),
+  `rationale`. Shown in both directions and de-duplicated.
+- **Options:** New Asset → *Save* · Edit Asset → *Save related assets* · Propose Asset →
+  *Related inits ›* · Asset Detail → read-only
 
-### HU-LI22 · Models
-> As a **contributor**, I want a **catalog of models** so that available models are
-> documented and discoverable.
-- **Category:** `MODELS`
+### HU-LI09 · [Asset Tab] Related Inits
+> As a **contributor**, I want to **link an asset to the initiatives it supports or came from**
+> **so that** the library and the initiative portfolio stay connected.
+- **Data:** `asset_inits` — PK `(asset, init, type)`, `type` (→ `RELATION_TYPE`), `rationale`;
+  target initiatives come from `initiatives`.
+- **Options:** New Asset → *Save* · Edit Asset → *Save related inits* · Propose Asset →
+  *Request asset review* (final step) · Asset Detail → read-only
+
+### HU-LI10 · [Asset Tab] Permissions
+> As an **asset owner**, I want to **grant view or manage access to users, roles, projects,
+> teams, units or everyone**, for a validity window, **so that** visibility and editing are
+> controlled per audience.
+- **Data:** `asset_permissions` — `asset`, `target_type` (→ `TARGET_TYPE`), `target_code`,
+  `access_level` (→ `ACCESS_LEVEL`: View / Manage), `valid_from`, `valid_to`. A grant is
+  **revoked**, never deleted: revoking stamps `valid_to`. A grant is live while
+  `valid_to IS NULL OR valid_to > now()`.
+- **Options:** New Asset → *Save* · Edit Asset → *Save permissions* · Propose Asset → not
+  applicable · Asset Detail → not applicable
+
+### HU-LI11 · [Asset Tab] Discussion
+> As a **community member**, I want to **comment on an asset and ask or answer questions about
+> it** **so that** knowledge about the asset stays attached to the asset.
+- **Data:** `actions` of `type = COMMENT` / `QUESTION` / `ANSWER`; answers are threaded to
+  their question through `parent`.
+- **Options:** New Asset → not applicable · Edit Asset → read-only (participation belongs to
+  the Explore surface) · Propose Asset → not applicable · Asset Detail → fully interactive
+- **UI:** [`Foro.svelte`](../../ui/src/components/svelte/Foro.svelte)
+
+### HU-LI12 · [Asset Tab] History
+> As any **user**, I want to **see an asset's activity timeline** — proposal, review,
+> publication, votes, comments, usage, versioning, deprecation — **so that** I understand how
+> it evolved.
+- **Data:** read-only view over `actions` for the asset, newest first, with the acting user.
+- **Options:** read-only wherever it is shown (Edit Asset, Asset Detail); not applicable while
+  creating or proposing.
+- **UI:** [`gallery/HistoryTimeline.astro`](../../ui/src/components/lib/gallery/HistoryTimeline.astro)
+
+### HU-LI13 · [Asset Tab] Versioning
+> As any **user**, I want to **see every version of an asset** — date, author, change type and
+> the characteristics as they were — **so that** I can compare generations and understand what
+> changed.
+- **Data:** read-only view over `characterizations` grouped by `version_label` (one entry per
+  label, including the initial `1.0.0`), enriched with the matching `VERSIONING` actions and
+  flagged against `assets.current_version`.
+- **Options:** read-only wherever it is shown (Edit Asset, Asset Detail); the *write* side —
+  bumping the version — lives in **HU-LI03 Edit Asset**.
+- **UI:** [`gallery/VersionsTimeline.astro`](../../ui/src/components/lib/gallery/VersionsTimeline.astro)
+
+---
+
+## Review workflow
+
+These stories implement the contribution/review loop on `actions`. See the
+[workflow matrix](states-and-types.md#asset-action-workflows-actions-table).
+
+### HU-LI14 · [Notifications] Asset Notifications
+> As an **assignee** (reviewer or proposer), I want a **notification bell listing the workflow
+> actions waiting on me** **so that** I know what needs my attention.
+- **Behavior:** lists the user's `actions` grouped by asset whose **latest** `workflow_status`
+  is `ASSIGNED` (bold) or `NOTIFIED` (not bold), for `type` in `REVIEW` / `MODIFICATION` /
+  `PUBLICATION` / `REJECTION`. Opening one routes to **HU-LI16 Review Asset Proposal**
+  (`REVIEW`), **HU-LI17 Modify Asset Proposal** (`MODIFICATION`) or **HU-LI18 Asset Request
+  Detail** (`PUBLICATION` / `REJECTION`). Dismissing is offered only for the informational
+  outcomes (`PUBLICATION` / `REJECTION`) and inserts that action with
+  `workflow_status = FINISHED`; `REVIEW` and `MODIFICATION` cannot be dismissed, since that
+  would silently drop the assignment.
+- **Data:** `actions` (`type`, `workflow_status`, `content`)
+- **UI:** [`NotificationBell.svelte`](../../ui/src/components/svelte/NotificationBell.svelte)
+
+### HU-LI15 · [Account Menu] My Asset Requests
+> As a **reviewer or proposer**, I want a **durable list of my asset requests** — open and
+> already resolved — **so that** I can find my pending work without depending on a transient
+> notification.
+- **Behavior:** lists the user's `actions` grouped by asset with status `ASSIGNED` (bold),
+  `NOTIFIED` (plain) or `FINISHED` (muted), for `type` in `REVIEW` / `MODIFICATION` /
+  `PUBLICATION` / `REJECTION`. Every `FINISHED` action — and every `PUBLICATION` / `REJECTION`
+  — opens **HU-LI18 Asset Request Detail**; the rest open **HU-LI16** (`REVIEW`) or **HU-LI17**
+  (`MODIFICATION`). Reached from the account menu's *My Workspace* section.
+- **Data:** `actions` (`type`, `workflow_status`)
+- **UI:** [`lib/my_asset_requests.astro`](../../ui/src/pages/lib/my_asset_requests.astro)
+
+### HU-LI16 · – Review Asset Proposal
+> As a **reviewer**, I want to **review a proposed asset and approve it, reject it or request
+> changes** **so that** only vetted assets are published.
+- **Behavior:** on open, an `ASSIGNED` action is un-bolded in the notifications and re-inserted
+  as `NOTIFIED`. On decision, one transaction inserts the `REVIEW` action as `FINISHED`, sets
+  the asset `status` to `PUBLISHED` / `REJECTED` / `FEEDBACK`, and inserts an action for the
+  **proposer** of `type` `PUBLICATION` / `REJECTION` / `MODIFICATION` with
+  `workflow_status = ASSIGNED` and the feedback in `content`. Feedback is mandatory when
+  rejecting or requesting changes.
+- **Data:** `actions`, `assets.status`
+- **UI:** [`lib/review.astro`](../../ui/src/pages/lib/review.astro),
+  [`ReviewAction.svelte`](../../ui/src/components/svelte/ReviewAction.svelte).
+  Detail of **HU-LI15**.
+
+### HU-LI17 · – Modify Asset Proposal
+> As a **proposer**, I want to **apply the changes a reviewer asked for and resubmit** **so
+> that** the review cycle can continue.
+- **Behavior:** on open, an `ASSIGNED` action is un-bolded and re-inserted as `NOTIFIED`. On
+  save, one transaction updates the asset and its characterizations in place, inserts the
+  `MODIFICATION` action as `FINISHED`, flips the asset back to `PROPOSED`, and re-arms the
+  **same reviewer** with a new `REVIEW` action as `ASSIGNED`. The category is fixed (it decides
+  the characteristic set); the cycle is not capped.
+- **Data:** `actions`, `assets`, `characterizations`
+- **UI:** [`lib/modify.astro`](../../ui/src/pages/lib/modify.astro),
+  [`ModifyAction.svelte`](../../ui/src/components/svelte/ModifyAction.svelte).
+  Detail of **HU-LI15**.
+
+### HU-LI18 · – Asset Request Detail
+> As a **proposer**, I want to **see the outcome of my proposal** — published or rejected, with
+> the reviewer's message — **so that** I learn the result and can clear the notification.
+- **Behavior:** read-only outcome card (approval vs rejection styling, asset name, message,
+  timestamp). On open, an `ASSIGNED` action is un-bolded and re-inserted as `NOTIFIED`;
+  dismissing inserts it as `FINISHED`.
+- **Data:** `actions`, `assets`
+- **UI:** [`lib/show-action.astro`](../../ui/src/pages/lib/show-action.astro),
+  [`ShowAction.svelte`](../../ui/src/components/svelte/ShowAction.svelte).
+  Detail of **HU-LI15**.
+
+---
+
+## Category galleries
+
+Each of these is **HU-LI03 Explore Category** bound to one taxonomy category — same page, same
+cards, same detail modal, same tabs; only `?code=` changes. Adding a category is a seed change
+(`options` + `categories` + `specifications`), not a new page.
+
+| Code | Story | Category | Entry point |
+|------|-------|----------|-------------|
+| HU-LI19 | [Explore Category] Prompt Gallery | `PROMPTS` | `/lib/explore?code=PROMPTS` |
+| HU-LI20 | [Explore Category] MCP Directory | `MCPS` | `/lib/explore?code=MCPS` |
+| HU-LI21 | [Explore Category] Agent Repository | `AGENTS` | `/lib/explore?code=AGENTS` |
+| HU-LI22 | [Explore Category] Agentic Flows | `FLOWS` | `/lib/explore?code=FLOWS` |
+| HU-LI23 | [Explore Category] Skill Catalog | `SKILLS` | `/lib/explore?code=SKILLS` |
+| HU-LI24 | [Explore Category] RAG Apps | `RAG_APPS` | `/lib/explore?code=RAG_APPS` |
+| HU-LI25 | [Explore Category] Models | `MODELS` | `/lib/explore?code=MODELS` |
+
+> As a **contributor**, I want **one gallery per asset family** — reusable prompts, MCP
+> servers, agents, agentic flows, skills, RAG applications and models — **so that** I can
+> discover, reuse and propose assets within the family I work in.

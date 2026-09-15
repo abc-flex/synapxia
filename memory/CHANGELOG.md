@@ -20,6 +20,17 @@ Historical entries below (before the switchover) use a Keep-a-Changelog–style 
 
 ---
 
+## 2026-09-14 20:35 — docs(user-stories): rebuilt the HdeU specification from the current `Control H de U.xlsx`
+
+- **Regenerated every module file in `docs/user-stories/` from the board's *Dashboard* sheet**, using its codes and names verbatim. The catalog went from 67 to **85** stories and the numbering changed substantially in `LIB` (22 → 26) and `INITS` (14 → 17): the old "Repository / Details / –– Favorite / –– Vote …" nesting is gone, replaced by the board's current split — **Asset Management** (New Asset / Edit Asset) vs **Explore Category** (Propose Asset / Asset Detail), with the eight shared `[Asset Tab]` stories (Core Fields, Characteristics, Related Assets, Related Inits, Permissions, Discussion, History, Versioning) as first-class entries. `ADMIN` grew from 8 to 18 with the application-shell stories (login, landing, menu, search, theme, language, account menu, account settings, support, sign out). Each story is documented from the DDL in `db/sql/`, the models in `docs/diagrams/`, and what is actually built in `ui/src/`.
+- **`states-and-types.md` reworked**, with the two section titles renamed as requested: "Asset contribution & review workflow (actions)" → **"Asset Action Workflows (Actions Table)"**, "Initiative collaboration workflow (collaborations)" → **"Initiative Collaboration Workflows (Collaborations Table)"**. Both matrices now match the board's *Action Status* / *Collab Status* sheets (notably: `collaborations` has `MODIFICATION` and `ARCHIVING`, and **no** `VERSIONING` — the old table listed one that `COLLAB_TYPE` never seeded). Added the **tab option matrices** from the *Asset Detail* / *Init Detail* sheets, per-module status-transition tables, and refreshed the seeded-catalog list against `db/sql/`.
+- **Two source notes worth keeping:** (1) the board assigns **`HU-LI03` twice** — to *Edit Asset* and to *Explore Category*; both codes are kept verbatim and the collision is called out in `04-lib.md`. (2) `inits-status.md` says Modify Initiative re-arms the reviewer with a `REVIEW` collaboration, but `COLLAB_TYPE` has no `REVIEW` value — documented as `DIAGNOSIS`, mirroring the asset loop and the *Collab Status* sheet.
+- All cross-document links and heading anchors were validated programmatically (all resolve). Progress, owners and board observations are deliberately **not** carried into the docs.
+- Files affected: `docs/user-stories/README.md`, `01-admin.md`, `02-taxo.md`, `03-collab.md`, `04-lib.md`, `05-inits.md`, `06-ana.md`, `07-proc.md`, `states-and-types.md`
+- Not updated (out of scope, now uses the superseded LIB numbering): `docs/user-stories/lib-assets-roadmap.md`
+
+---
+
 ## 2026-09-09 18:20 — fix(lib): Review Asset page — title/emphasis + non-admin "could not be found" + the review/resubmit decision endpoints REVIEWER/COLLABORATOR couldn't actually reach
 
 - **Renamed the page title "Review asset" → "Review Asset Proposal"** (`review.title`, en+es) — this is the Breadcrumb's `<h2>` above the card.

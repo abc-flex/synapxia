@@ -19,7 +19,8 @@ Files run in lexical order. The numbering groups DDL then INSERT per domain:
 31-collab-ddl.sql  32-collab-insert.sql
 41-lib-ddl.sql     42-lib-insert.sql
 51-inits-ddl.sql   52-inits-insert.sql
-61-ana-ddl.sql
+61-ana-ddl.sql     62-ana-insert.sql
+71-proc-ddl.sql    72-proc-insert.sql
 manual/drop.sql / manual/delete.sql   # teardown / cleanup helpers (subdir; not auto-run on init)
 ```
 

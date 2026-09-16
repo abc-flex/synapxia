@@ -15,11 +15,12 @@ SynapxIA is a team-collaboration and performance-measurement platform built as a
 | Surface | Path | Stack | Port |
 |---------|------|-------|------|
 | API | [`api/`](api/CLAUDE.md) | Python ≥3.12, FastAPI + SQLModel, `uv` | 8001 (→80) |
-| UI | [`ui/`](ui/CLAUDE.md) | Astro 4 + Tailwind + Flowbite, Bun | 4321 |
+| UI | [`ui/`](ui/CLAUDE.md) | Astro 5 (SSR) + Vite 8 + Tailwind + Flowbite, Bun; Svelte 5 for heavy islands | 4321 |
 | DB | [`db/`](db/CLAUDE.md) | PostgreSQL 18, ordered SQL migrations | 5432 (host 5433) |
 
-API domains live under `api/app/`: `admin, auth, collab, taxo, genai, inits,
-insights, workflows`, with shared plumbing in `api/app/internal/`.
+API domains live under `api/app/`: `admin, auth, collab, taxo, lib, support`
+(implemented) and `genai, inits, insights, workflows` (stub/partial — see
+`memory/MEMORY.md` "In progress / stubs"), with shared plumbing in `api/app/internal/`.
 
 ## AI coding memory
 
@@ -51,7 +52,7 @@ Use 24-hour local time (Colombia/America for this team). If you're an agent and 
 
 **One PR / merge / direct-push = one entry.** Do not append a new entry per individual commit — squash the work into a single rollup entry covering everything that ships. If you commit again on the same branch (e.g. fixing a review comment), update the entry you already added on that branch instead of appending another one. A PR open for a week is still one entry, just with a richer summary.
 
-> Historical note: entries dated before 2026-06-10 use a `### Added / Changed / Fixed` auto-generated format produced by a now-removed `.githooks/post-commit` + `post-merge` flow. If your local clone previously ran `make hooks`, run `git config --unset core.hooksPath` once to stop pointing at the deleted directory.
+> Historical note: entries dated before 2026-06-10 use a `### Added / Changed / Fixed` auto-generated format produced by a now-removed `.githooks/post-commit` + `post-merge` flow, and live in [`memory/CHANGELOG.archive.md`](memory/CHANGELOG.archive.md) rather than the main file. If your local clone previously ran `make hooks`, run `git config --unset core.hooksPath` once to stop pointing at the deleted directory.
 
 ## Key commands (from repo root)
 

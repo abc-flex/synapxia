@@ -168,7 +168,7 @@ make down         # stop the stack (data is preserved)
 make backup-db    # back up the DB to ./backups/
 ```
 
-See [`MAKEFILE.md`](MAKEFILE.md) for the full command reference.
+Run `make help` for the full command reference (or read [`../Makefile`](../Makefile)).
 
 ---
 

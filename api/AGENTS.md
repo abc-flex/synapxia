@@ -6,7 +6,7 @@ binding Constitution rules. This file covers what is specific to the backend.
 ## Stack
 
 Python ≥3.12, FastAPI + SQLModel + SQLAlchemy, `fastapi-users` (JWT + bcrypt),
-managed by **`uv`**. Served at port 8000 (→ container 80). Entry point: `app/main.py`.
+managed by **`uv`**. Served at port 8001 (→ container 80). Entry point: `app/main.py`.
 
 ## Structure (modular monolith)
 
@@ -18,7 +18,8 @@ api/app/
     internal/      # data access for the domain
 ```
 
-Domains: `admin, auth, collab, taxo, genai, inits, insights, workflows`.
+Domains: `admin, auth, collab, taxo, lib, support` (implemented), plus
+stub/partial `genai, inits, insights, workflows`.
 New features go inside their owning domain — never add cross-domain plumbing per module.
 
 ## Commands
@@ -31,7 +32,7 @@ uv sync                # install/lock deps (inside api/)
 uv run fastapi dev     # run locally (as the container does)
 ```
 
-API docs: http://localhost:8000/docs · ReDoc http://localhost:8000/redoc.
+API docs: http://localhost:8001/docs · ReDoc http://localhost:8001/redoc.
 
 ## Deployment (Vercel)
 

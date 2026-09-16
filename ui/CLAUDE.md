@@ -310,12 +310,25 @@ document.addEventListener("crud-submit", async (e) => {
 
 ---
 
-## Design tokens (modals & forms)
+## Design tokens
 
 The values actually in use — verified against the components listed, not aspirational.
-Match these when building a new modal or form so surfaces stay consistent. Global
-palette/breakpoint tokens live in [`docs/responsive-ui-implementation-plan.md`](../docs/responsive-ui-implementation-plan.md);
-the CSS custom properties live in `ui/src/styles/globals.css`.
+Match these when building a new modal, form, or page so surfaces stay consistent. CSS
+custom properties live in `ui/src/styles/globals.css`.
+
+### Global palette & breakpoints
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| Primary | `indigo-600` (#4F46E5), soft `indigo-50`, ink `indigo-700` | buttons, active nav, accents |
+| Neutrals | `slate-50/100/200/500/900/950` | bg, borders, text, dark mode |
+| Success | `green-50` / `green-700` | "En uso" status chips |
+| Radius | `rounded-lg` (controls), `rounded-2xl` (cards/modals) | |
+| Type | Inter 400/500/600/700 | |
+| Touch target | ≥ 44px on mobile | hamburger, pagination, row actions |
+| Breakpoints | Tailwind default — `sm 640` (card view), `lg 1024` (sidebar/drawer) | no config change |
+
+### Modals & forms
 
 | Token | Value | Where |
 |-------|-------|-------|
@@ -348,8 +361,11 @@ buildQueryString(params: Record<string, unknown>): string  // "?skip=0&limit=100
 ```
 
 **Behavior:**
-- **Base URL** — `import.meta.env.PUBLIC_API_BASE_URL` (client) or `API_BASE_URL`
-  (server during build). Defaults to `http://localhost:8000`.
+- **Base URL** — **client-side**, always a relative path (`''`), routed through the Vite
+  proxy (dev) or the Vercel rewrite (prod) so cookies stay same-origin. **Server-side
+  (SSR)**, an absolute URL read in this precedence: `PROXY_API_TARGET` →
+  `import.meta.env.API_BASE_URL` → `import.meta.env.PUBLIC_API_BASE_URL` → falls back to
+  `http://synapxia-api:80` (the Compose service DNS name).
 - **Auth header** — auto-attaches `Authorization: Bearer ${getToken()}` from
   `localStorage`. No injection if token missing (anonymous endpoints).
 - **Error handling** — non-2xx parses `{ detail }` from the body and throws an `Error`.

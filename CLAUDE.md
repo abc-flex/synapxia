@@ -15,11 +15,10 @@ pointer.
 
 ## Repo at a glance
 
-SynapxIA is a modular monolith with three surfaces, run together via Docker Compose:
-
-- **API** — FastAPI + SQLModel (`uv`), port 8001 → see [`api/CLAUDE.md`](api/CLAUDE.md)
-- **UI** — Astro + Tailwind (Bun), port 4321 → see [`ui/CLAUDE.md`](ui/CLAUDE.md)
-- **DB** — PostgreSQL 18, SQL migrations, container port 5432 (host `5433`, via `DB_HOST_PORT`) → see [`db/CLAUDE.md`](db/CLAUDE.md)
+SynapxIA is a modular monolith with three surfaces (API, UI, DB), run together via
+Docker Compose. See the "What this is" stack/port table in [`AGENTS.md`](AGENTS.md) for
+exact versions and ports — kept there as the single source of truth. Per-surface details:
+[`api/CLAUDE.md`](api/CLAUDE.md), [`ui/CLAUDE.md`](ui/CLAUDE.md), [`db/CLAUDE.md`](db/CLAUDE.md).
 
 ## Everyday commands
 
@@ -39,7 +38,7 @@ As of PR #25, **all API endpoints are secured with JWT authentication + role-bas
 - ✅ Frontend routes protected with Astro middleware
 - ✅ Rate limiting on login (5 attempts = 15-min lockout)
 
-**For deployment to Vercel**, see [`SECURITY_DEPLOYMENT.md`](SECURITY_DEPLOYMENT.md) — requires:
+**For deployment to Vercel**, see [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — requires:
 - `SECRET_KEY` environment variable (generate: `openssl rand -hex 32`)
 - `CORS_ORIGINS` pointing to deployed UI URL
 - `APP_ENV=production`

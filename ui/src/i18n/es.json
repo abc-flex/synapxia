@@ -33,8 +33,9 @@
   },
   "notifications": {
     "empty": "Estás al día.",
-    "dismiss": "Descartar",
     "error": "No se pudo actualizar la notificación",
+    "view_all": "Ver todas mis solicitudes de activos",
+    "more_count": "y {n} más",
     "type": {
       "REVIEW": "Revisión",
       "MODIFICATION": "Modificación",
@@ -894,20 +895,17 @@
       "DEPRECATION": "marcó como obsoleto el activo",
       "VERSIONING": "creó una nueva versión",
       "USAGE": "usó el activo",
-      "PROPOSAL_ASSIGNED": "fue asignado para proponer el activo",
-      "PROPOSAL_NOTIFIED": "fue notificado para proponer el activo",
-      "PROPOSAL_FINISHED": "propuso el activo",
-      "REVIEW_ASSIGNED": "fue asignado para revisar el activo",
-      "REVIEW_NOTIFIED": "fue notificado para revisar el activo",
-      "REVIEW_FINISHED": "revisó el activo",
-      "PUBLICATION_ASSIGNED": "fue asignado para publicar el activo",
-      "PUBLICATION_NOTIFIED": "fue notificado para publicar el activo",
-      "PUBLICATION_FINISHED": "publicó el activo",
-      "MODIFICATION_ASSIGNED": "fue asignado a una modificación",
-      "MODIFICATION_NOTIFIED": "fue notificado de una modificación",
-      "MODIFICATION_FINISHED": "modificó el activo",
-      "REJECTION_FINISHED": "rechazó el activo",
-      "DEPRECATION_FINISHED": "marcó como obsoleto el activo"
+      "PROPOSAL_PENDING": "fue asignado para proponer el activo",
+      "PROPOSAL_HANDLED": "propuso el activo",
+      "REVIEW_PENDING": "fue asignado para revisar el activo",
+      "REVIEW_HANDLED": "revisó el activo",
+      "PUBLICATION_PENDING": "fue asignado para publicar el activo",
+      "PUBLICATION_HANDLED": "publicó el activo",
+      "MODIFICATION_PENDING": "fue asignado a una modificación",
+      "MODIFICATION_HANDLED": "modificó el activo",
+      "REJECTION_PENDING": "fue notificado de un rechazo",
+      "REJECTION_HANDLED": "rechazó el activo",
+      "DEPRECATION_HANDLED": "marcó como obsoleto el activo"
     }
   },
   "workflow_stage": {
@@ -919,9 +917,8 @@
     "REJECTION": "Rechazo",
     "DEPRECATION": "Obsolescencia",
     "VERSIONING": "Versionado",
-    "ASSIGNED": "Asignado",
-    "NOTIFIED": "Notificado",
-    "FINISHED": "Finalizado"
+    "PENDING": "Pendiente",
+    "HANDLED": "Atendido"
   },
   "asset_status": {
     "PROPOSED": "Propuesto",
@@ -1050,8 +1047,8 @@
     "message": "Mensaje",
     "no_message": "No se proporcionó ningún mensaje.",
     "back": "Volver",
-    "dismiss": "Descartar",
-    "dismissed": "Notificación descartada",
+    "acknowledge": "Entendido",
+    "acknowledged": "Aviso atendido",
     "not_found": "No se encontró esta notificación."
   },
   "review": {
@@ -1091,23 +1088,22 @@
     "not_actionable": "Este activo ya no está en espera de cambios."
   },
   "my_asset_requests": {
-    "subtitle": "Activos actualmente asignados a ti para revisión. Esta lista permanece aquí incluso después de abrirla o verla en la campana de notificaciones.",
-    "empty": "No tienes solicitudes de activos pendientes.",
+    "subtitle": "Todos los activos en los que has participado — lo que te espera a ti, lo que esperas de otros, y todo lo ya atendido.",
+    "tab_pending": "Pendientes",
+    "tab_handled": "Atendidas",
+    "empty_pending": "No tienes solicitudes de activos en curso.",
+    "empty_handled": "Todavía no hay nada atendido.",
     "col_asset": "Activo",
-    "col_status": "Estado",
-    "col_assigned": "Asignado",
-    "status_pending": "Pendiente",
-    "status_seen": "Visto",
-    "open_action": "Abrir"
-  },
-  "modifications": {
-    "subtitle": "Activos devueltos a ti para hacer cambios. Esta lista permanece aquí incluso después de abrirla o verla en la campana de notificaciones.",
-    "empty": "No tienes activos en espera de cambios.",
-    "col_asset": "Activo",
-    "col_status": "Estado",
-    "col_assigned": "Asignado",
-    "status_pending": "Pendiente",
-    "status_seen": "Visto",
+    "col_kind": "Solicitud",
+    "col_status": "Estado del activo",
+    "col_awaiting": "En espera de",
+    "col_updated": "Actualizado",
+    "awaiting_you": "Ti",
+    "awaiting_other": "Otra persona",
+    "role_proposer": "Propuesto por mí",
+    "role_reviewer": "Revisado por mí",
+    "acknowledge": "Entendido",
+    "acknowledge_error": "No se pudo confirmar la lectura de este aviso",
     "open_action": "Abrir"
   },
   "tree_chart": {

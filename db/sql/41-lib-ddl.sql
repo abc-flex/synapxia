@@ -193,10 +193,13 @@ INSERT INTO lists (code, name, description, type, module) VALUES (
     'WORKFLOW_STATUS', 'List of action or initiative statuses for system configuration',
     'List that classifies the statuses of actions or initiatives in SynapxIA.',
     'LIST_OF_VALUES', NULL);
+-- Two states only: a workflow step either still awaits someone's action (PENDING)
+-- or it no longer does (HANDLED). There is deliberately NO "seen/notified" state --
+-- viewing an item is read state, not work state, and mixing the two is what made
+-- a notification dismissable in a way that silently revoked the assignee's turn.
 INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
-    ('WORKFLOW_STATUS', 'en', 'ASSIGNED', 'Assigned', 10),
-    ('WORKFLOW_STATUS', 'en', 'NOTIFIED', 'Notified', 20),
-    ('WORKFLOW_STATUS', 'en', 'FINISHED', 'Finished', 30);
+    ('WORKFLOW_STATUS', 'en', 'PENDING', 'Pending', 10),
+    ('WORKFLOW_STATUS', 'en', 'HANDLED', 'Handled', 20);
 
 -- ===== List: Asset Relation Type =====
 INSERT INTO lists (code, name, description, type, module) VALUES (

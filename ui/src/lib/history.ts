@@ -76,7 +76,7 @@ export function mountHistory(cfg: HistoryConfig): void {
     statusEl.classList.toggle("hidden", !text);
   };
 
-  // Prefer a workflow-aware key (`history.action.REVIEW_FINISHED`) so each
+  // Prefer a workflow-aware key (`history.action.REVIEW_HANDLED`) so each
   // workflow step reads distinctly; fall back to the type key, then the
   // server-derived summary.
   const actionLabel = (e: HistoryEntry): string => {

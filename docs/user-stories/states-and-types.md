@@ -13,21 +13,34 @@ Workflow and tab matrices come from the *Action Status*, *Collab Status*, *Asset
 
 Every asset event is a **new row** in `actions` — nothing is updated in place. A row carries
 the asset, the acting or assigned user, a `type` (→ `ACTION_TYPE`) and, for workflow events, a
-`workflow_status` (→ `WORKFLOW_STATUS`: `ASSIGNED` → `NOTIFIED` → `FINISHED`).
+`workflow_status` (→ `WORKFLOW_STATUS`: `PENDING` → `HANDLED`).
+
+There are exactly two states. A row is `PENDING` while it still awaits its recipient's action
+and `HANDLED` once it no longer does. There is deliberately no "seen/notified" state: that
+recorded only that a user had *looked* at an item, which is read state rather than work state.
+Mixing the two meant a notification could be cleared in a way that silently revoked the
+assignee's turn. Read state now lives in the client, per device, and is never recorded here.
 
 ### Contribution workflow
 
 Each cell names the user story that **inserts** a row with that `(type, workflow_status)`.
 
-| `type` | ASSIGNED | NOTIFIED | FINISHED | Assigned to |
-|--------|----------|----------|----------|-------------|
-| `PROPOSAL` | — | — | Propose Asset | Proposer |
-| `REVIEW` | Propose Asset | Asset Notifications | Review Asset Proposal | Reviewer |
-| `MODIFICATION` | Review Asset Proposal | Asset Notifications | Modify Asset Proposal | Proposer |
-| `PUBLICATION` | Review Asset Proposal | Asset Notifications | Asset Request Detail | Proposer |
-| `REJECTION` | Review Asset Proposal | Asset Notifications | Asset Request Detail | Proposer |
-| `VERSIONING` | — | — | Edit Asset | User |
-| `DEPRECATION` | — | — | Edit Asset | User |
+| `type` | PENDING | HANDLED | Assigned to |
+|--------|---------|---------|-------------|
+| `PROPOSAL` | — | Propose Asset | Proposer |
+| `REVIEW` | Propose Asset | Review Asset Proposal | Reviewer |
+| `MODIFICATION` | Review Asset Proposal | Modify Asset Proposal | Proposer |
+| `PUBLICATION` | Review Asset Proposal | My Asset Requests (acknowledge) | Proposer |
+| `REJECTION` | Review Asset Proposal | My Asset Requests (acknowledge) | Proposer |
+| `VERSIONING` | — | Edit Asset | User |
+| `DEPRECATION` | — | Edit Asset | User |
+
+Types with no `PENDING` cell are written already terminal — they record that something
+happened rather than that somebody owes an action, so nobody is ever waiting on them.
+
+`PUBLICATION` and `REJECTION` are informational: the recipient has nothing to do but take
+note, and the notice becomes `HANDLED` only when they explicitly acknowledge it. Opening it is
+not acknowledging it, so an outcome can never pass unread.
 
 ### Community layer
 
@@ -48,7 +61,7 @@ These carry **no** `workflow_status` — they are facts, not assignments.
 [Asset Notifications → HU-LI14](04-lib.md#hu-li14--notifications-asset-notifications) ·
 [Review Asset Proposal → HU-LI16](04-lib.md#hu-li16---review-asset-proposal) ·
 [Modify Asset Proposal → HU-LI17](04-lib.md#hu-li17---modify-asset-proposal) ·
-[Asset Request Detail → HU-LI18](04-lib.md#hu-li18---asset-request-detail) ·
+[User Acknowledgment of Asset Notification → HU-LI18](04-lib.md#hu-li18---user-acknowledgment-of-asset-notification) ·
 [Characteristics → HU-LI07](04-lib.md#hu-li07--asset-tab-characteristics-include-report-usage) ·
 [Discussion → HU-LI11](04-lib.md#hu-li11--asset-tab-discussion)
 
@@ -95,15 +108,19 @@ The initiative workflow mirrors the asset one over `collaborations`, with `type`
 
 ### Activation & diagnosis workflow
 
-| `type` | ASSIGNED | NOTIFIED | FINISHED | Assigned to |
-|--------|----------|----------|----------|-------------|
-| `ACTIVATION` | — | — | Propose Initiative | Proposer |
-| `DIAGNOSIS` | Propose Initiative | Initiative Notifications | Diagnosis of the Initiative | Reviewer |
-| `MODIFICATION` | Diagnosis of the Initiative | Initiative Notifications | Modify Initiative | Proposer |
-| `ACCEPTANCE` | Diagnosis of the Initiative | Initiative Notifications | Initiative Request Detail | Proposer |
-| `REJECTION` | Diagnosis of the Initiative | Initiative Notifications | Initiative Request Detail | Proposer |
-| `DELIVERY` | — | — | Edit Initiative | Proposer |
-| `ARCHIVING` | — | — | Edit Initiative | User |
+| `type` | PENDING | HANDLED | Assigned to |
+|--------|---------|---------|-------------|
+| `ACTIVATION` | — | Propose Initiative | Proposer |
+| `DIAGNOSIS` | Propose Initiative | Diagnosis of the Initiative | Reviewer |
+| `MODIFICATION` | Diagnosis of the Initiative | Modify Initiative | Proposer |
+| `ACCEPTANCE` | Diagnosis of the Initiative | User Acknowledgment of Initiative Notification | Proposer |
+| `REJECTION` | Diagnosis of the Initiative | User Acknowledgment of Initiative Notification | Proposer |
+| `DELIVERY` | — | Edit Initiative | Proposer |
+| `ARCHIVING` | — | Edit Initiative | User |
+
+`inits` shares the `WORKFLOW_STATUS` list with `lib`, so the two-state model applies here too.
+The domain is still a stub — these rows exist as seed data only, with no application code
+reading them yet.
 
 ### Community layer
 
@@ -121,7 +138,7 @@ The initiative workflow mirrors the asset one over `collaborations`, with `type`
 [Initiative Notifications → HU-IN13](05-inits.md#hu-in13--notifications-initiative-notifications) ·
 [Diagnosis of the Initiative → HU-IN15](05-inits.md#hu-in15---diagnosis-of-the-initiative) ·
 [Modify Initiative → HU-IN16](05-inits.md#hu-in16---modify-initiative) ·
-[Initiative Request Detail → HU-IN17](05-inits.md#hu-in17---initiative-request-detail) ·
+[User Acknowledgment of Initiative Notification → HU-IN17](05-inits.md#hu-in17---user-acknowledgment-of-initiative-notification) ·
 [Discussion → HU-IN11](05-inits.md#hu-in11--initiative-tab-discussion)
 
 ### Initiative status transitions

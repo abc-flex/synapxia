@@ -33,8 +33,9 @@
   },
   "notifications": {
     "empty": "You're all caught up.",
-    "dismiss": "Dismiss",
     "error": "Could not update the notification",
+    "view_all": "View all my asset requests",
+    "more_count": "and {n} more",
     "type": {
       "REVIEW": "Review",
       "MODIFICATION": "Modification",
@@ -894,20 +895,17 @@
       "DEPRECATION": "deprecated the asset",
       "VERSIONING": "created a new version",
       "USAGE": "used the asset",
-      "PROPOSAL_ASSIGNED": "was assigned to propose the asset",
-      "PROPOSAL_NOTIFIED": "was notified to propose the asset",
-      "PROPOSAL_FINISHED": "proposed the asset",
-      "REVIEW_ASSIGNED": "was assigned to review the asset",
-      "REVIEW_NOTIFIED": "was notified to review the asset",
-      "REVIEW_FINISHED": "reviewed the asset",
-      "PUBLICATION_ASSIGNED": "was assigned to publish the asset",
-      "PUBLICATION_NOTIFIED": "was notified to publish the asset",
-      "PUBLICATION_FINISHED": "published the asset",
-      "MODIFICATION_ASSIGNED": "was assigned a modification",
-      "MODIFICATION_NOTIFIED": "was notified of a modification",
-      "MODIFICATION_FINISHED": "modified the asset",
-      "REJECTION_FINISHED": "rejected the asset",
-      "DEPRECATION_FINISHED": "deprecated the asset"
+      "PROPOSAL_PENDING": "was assigned to propose the asset",
+      "PROPOSAL_HANDLED": "proposed the asset",
+      "REVIEW_PENDING": "was assigned to review the asset",
+      "REVIEW_HANDLED": "reviewed the asset",
+      "PUBLICATION_PENDING": "was assigned to publish the asset",
+      "PUBLICATION_HANDLED": "published the asset",
+      "MODIFICATION_PENDING": "was assigned a modification",
+      "MODIFICATION_HANDLED": "modified the asset",
+      "REJECTION_PENDING": "was notified of a rejection",
+      "REJECTION_HANDLED": "rejected the asset",
+      "DEPRECATION_HANDLED": "deprecated the asset"
     }
   },
   "workflow_stage": {
@@ -919,9 +917,8 @@
     "REJECTION": "Rejection",
     "DEPRECATION": "Deprecation",
     "VERSIONING": "Versioning",
-    "ASSIGNED": "Assigned",
-    "NOTIFIED": "Notified",
-    "FINISHED": "Finished"
+    "PENDING": "Pending",
+    "HANDLED": "Handled"
   },
   "asset_status": {
     "PROPOSED": "Proposed",
@@ -1050,8 +1047,8 @@
     "message": "Message",
     "no_message": "No message provided.",
     "back": "Back",
-    "dismiss": "Dismiss",
-    "dismissed": "Notification dismissed",
+    "acknowledge": "Got it",
+    "acknowledged": "Outcome acknowledged",
     "not_found": "This notification could not be found."
   },
   "review": {
@@ -1091,23 +1088,22 @@
     "not_actionable": "This asset is no longer awaiting changes."
   },
   "my_asset_requests": {
-    "subtitle": "Assets currently assigned to you for review. This list stays here even after you've opened or seen it in the notification bell.",
-    "empty": "You have no pending asset requests.",
+    "subtitle": "Every asset you have taken part in — what is waiting on you, what you are waiting on, and everything already handled.",
+    "tab_pending": "Pending",
+    "tab_handled": "Handled",
+    "empty_pending": "You have no asset requests in progress.",
+    "empty_handled": "Nothing has been handled yet.",
     "col_asset": "Asset",
-    "col_status": "Status",
-    "col_assigned": "Assigned",
-    "status_pending": "Pending",
-    "status_seen": "Seen",
-    "open_action": "Open"
-  },
-  "modifications": {
-    "subtitle": "Assets sent back to you for changes. This list stays here even after you've opened or seen it in the notification bell.",
-    "empty": "You have no assets awaiting changes.",
-    "col_asset": "Asset",
-    "col_status": "Status",
-    "col_assigned": "Assigned",
-    "status_pending": "Pending",
-    "status_seen": "Seen",
+    "col_kind": "Request",
+    "col_status": "Asset status",
+    "col_awaiting": "Waiting on",
+    "col_updated": "Updated",
+    "awaiting_you": "You",
+    "awaiting_other": "Someone else",
+    "role_proposer": "Proposed by me",
+    "role_reviewer": "Reviewed by me",
+    "acknowledge": "Got it",
+    "acknowledge_error": "Could not acknowledge this notice",
     "open_action": "Open"
   },
   "tree_chart": {

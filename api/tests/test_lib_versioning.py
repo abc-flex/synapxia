@@ -4,7 +4,7 @@ Saving an edit to an existing asset creates a NEW VERSION on the same asset
 row: ``version_service.create_version`` bumps ``assets.current_version`` by the
 caller-chosen change type (major/minor/patch), applies the core edits, writes
 the new version's characterization rows under the bumped ``version_label``
-(prior generations stay untouched = history), and logs a VERSIONING/FINISHED
+(prior generations stay untouched = history), and logs a VERSIONING/HANDLED
 action. The (asset, feature)-keyed characterization CRUD must only ever see the
 CURRENT version's rows. These tests drive a proposed asset through the service
 and the ``POST /api/assets/{id}/versions`` route.
@@ -112,12 +112,12 @@ def test_create_version_core_only_copies_chars_forward(session):
     # 2. characterizations copied unchanged to the new label; old label intact
     assert _chars(session, asset.id, "1.1.0")["OVERVIEW"].value == "orig overview"
     assert _chars(session, asset.id, "1.0.0")["OVERVIEW"].value == "orig overview"
-    # 3. one VERSIONING/FINISHED action logged with both labels in the detail
+    # 3. one VERSIONING/HANDLED action logged with both labels in the detail
     actions = session.exec(
         select(Action).where(Action.asset == asset.id, Action.type == "VERSIONING")
     ).all()
     assert len(actions) == 1
-    assert actions[0].workflow_status == "FINISHED"
+    assert actions[0].workflow_status == "HANDLED"
     assert actions[0].content == "1.1.0"
     assert "1.0.0" in (actions[0].detail or "")
 

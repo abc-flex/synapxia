@@ -544,10 +544,10 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
         .then((stage) => {
           if (seq !== openSeq || !stage) return; // a newer open() superseded this
           // The badge surfaces *pending* review activity. Once the latest action
-          // is FINISHED it just echoes the status pill (a published asset's
-          // PUBLICATION·FINISHED == "Published"), so hide it for finished stages —
+          // is HANDLED it just echoes the status pill (a published asset's
+          // PUBLICATION·Handled == "Published"), so hide it for handled stages —
           // it only shows while an asset is still moving through review.
-          if (stage.workflow_status === "FINISHED") return;
+          if (stage.workflow_status === "HANDLED") return;
           const typeLabel = tr(`workflow_stage.${stage.type}`, stage.type);
           const statusLabel = stage.workflow_status
             ? tr(`workflow_stage.${stage.workflow_status}`, stage.workflow_status)

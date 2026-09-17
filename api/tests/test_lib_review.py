@@ -1,9 +1,9 @@
 """Review tests (HU-Review) — Constitution Principle II/III.
 
 A reviewer's decision on a PROPOSED asset is a single transaction that closes the
-reviewer's REVIEW assignment (REVIEW/FINISHED), flips the asset status
+reviewer's REVIEW assignment (REVIEW/HANDLED), flips the asset status
 (PUBLISHED / REJECTED / FEEDBACK), and raises a proposer-directed notification
-(PUBLICATION / REJECTION / MODIFICATION, ASSIGNED) carrying the feedback. These
+(PUBLICATION / REJECTION / MODIFICATION, PENDING) carrying the feedback. These
 tests build a proposed asset via ``propose_service`` and then exercise
 ``review_service`` + the ``/api/assets/{id}/review`` route.
 """
@@ -83,8 +83,8 @@ def test_review_decision_flips_status_and_notifies_proposer(session, decision, s
 
     # 1. asset status flipped
     assert updated.status == status
-    # 2. the reviewer's REVIEW assignment is closed (latest row FINISHED)
-    assert _latest_review_status(session, asset.id, reviewer.id) == "FINISHED"
+    # 2. the reviewer's REVIEW assignment is closed (latest row HANDLED)
+    assert _latest_review_status(session, asset.id, reviewer.id) == "HANDLED"
     # 3. the proposer got a notification of the right type carrying the feedback
     proposer_actions = session.exec(
         select(Action).where(
@@ -92,13 +92,13 @@ def test_review_decision_flips_status_and_notifies_proposer(session, decision, s
         )
     ).all()
     assert len(proposer_actions) == 1
-    assert proposer_actions[0].workflow_status == "ASSIGNED"
+    assert proposer_actions[0].workflow_status == "PENDING"
     assert proposer_actions[0].content == "Please note this"
 
-    # 4. it surfaces in the proposer's notifications; the reviewer's is gone
-    proposer_notifs = actions_service.list_notifications(session, PROPOSER_ID)
-    assert any(n["type"] == proposer_type and n["unread"] for n in proposer_notifs)
-    assert actions_service.list_notifications(session, reviewer.id) == []
+    # 4. it surfaces in the proposer's feed; the reviewer's is gone
+    proposer_feed = actions_service.list_notifications(session, PROPOSER_ID)
+    assert any(n["type"] == proposer_type for n in proposer_feed["items"])
+    assert actions_service.list_notifications(session, reviewer.id)["total"] == 0
 
 
 def test_review_feedback_optional_blank_stored_as_none(session):

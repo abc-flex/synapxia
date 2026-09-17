@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from ..internal.models import (
     Action, ActionCreate, ActionUpdate, Asset, VoteRequest, VoteTally,
     ParticipationCreate, AnswerCreate, DiscussionItem, HistoryEntry,
-    NotificationItem, WorkflowStage,
+    NotificationItem, NotificationFeed, AssetRequest, WorkflowStage,
 )
 from ..internal import actions_service
 from ..internal.dependencies import get_db_session
@@ -388,94 +388,74 @@ def _own_notification(session: Session, action_id: int, current: User) -> Action
     return action
 
 
-@router.get("/notifications", response_model=List[NotificationItem])
+@router.get("/requests", response_model=List[AssetRequest])
+def get_asset_requests(
+    state: str = "PENDING",
+    skip: int = 0,
+    limit: int = 50,
+    session: Session = Depends(get_db_session),
+    # Any authenticated user, with no module privilege gate: this reads only the
+    # caller's own rows (scoped by current.id), so there is nothing a privilege
+    # could usefully protect. The LIB/ACTIONS option these endpoints used to gate
+    # on has no privilege row for ANY profile, so it 403'd every real account.
+    current: User = Depends(current_active_user)
+) -> List[AssetRequest]:
+    """
+    Every asset the current user has taken part in — requests directed at them
+    plus assets they proposed — one entry per asset, newest change first.
+
+    Backs the "My Asset Requests" page. The user is taken from the JWT; a user
+    only ever sees their own.
+
+    - **state**: `PENDING` (still in motion) or `HANDLED` (closed)
+    - **skip** / **limit**: pagination, applied after grouping so the bounds
+      count entries the caller sees rather than raw rows
+    """
+    return actions_service.list_participations(
+        session, current.id, state=state, skip=skip, limit=limit)
+
+
+@router.get("/notifications", response_model=NotificationFeed)
 def get_notifications(
-    session: Session = Depends(get_db_session),
-    # Any authenticated user, not just LIB/ACTIONS holders (that privilege row
-    # is never seeded to any profile — see get_review_requests below): this
-    # reads only the caller's own assignments (scoped by current.id), and a
-    # COLLABORATOR who proposed an asset needs to see its PUBLICATION/
-    # REJECTION/MODIFICATION notification just as much as a REVIEWER does.
-    current: User = Depends(current_active_user)
-) -> List[NotificationItem]:
-    """
-    The current user's open workflow notifications (newest first): the latest row
-    of each (asset, type) assignment thread whose status is ASSIGNED or NOTIFIED.
-    The user is taken from the JWT — a user only ever sees their own.
-    """
-    return actions_service.list_notifications(session, current.id)
-
-
-@router.get("/reviews", response_model=List[NotificationItem])
-def get_review_requests(
-    session: Session = Depends(get_db_session),
-    # Any authenticated user (see get_notifications above) — the LIB/ACTIONS
-    # option this used to gate on has no privilege row for ANY profile
-    # (ADMINISTRATOR included, unless superuser), so this 403'd for every real
-    # account. The result is already scoped to the caller's own assignments.
-    current: User = Depends(current_active_user)
-) -> List[NotificationItem]:
-    """
-    The current user's open REVIEW assignments (newest first) — a persistent,
-    browsable queue backing the "My Asset Requests" page, independent of whatever
-    has been opened/dismissed in the notification bell.
-    """
-    return actions_service.list_review_requests(session, current.id)
-
-
-@router.get("/modifications", response_model=List[NotificationItem])
-def get_pending_modifications(
+    limit: int = 5,
     session: Session = Depends(get_db_session),
     current: User = Depends(current_active_user)
-) -> List[NotificationItem]:
+) -> NotificationFeed:
     """
-    The current user's open MODIFICATION assignments (newest first) — a
-    persistent, browsable queue backing the "My Modifications" page.
+    The current user's attention feed: exactly the requests still awaiting THEM.
+
+    A strict subset of GET /requests — anything waiting on someone else
+    (an asset the caller proposed, say) is deliberately absent, because nothing
+    is being asked of them. `total` reports how many are outstanding so the panel
+    can cap `items` at `limit` and still show that more exist.
     """
-    return actions_service.list_pending_modifications(session, current.id)
+    return actions_service.list_notifications(session, current.id, limit=limit)
 
 
-@router.post("/notifications/{id}/notified", response_model=Action)
-def mark_notification_notified(
+@router.post("/notifications/{id}/acknowledge", response_model=Action)
+def acknowledge_notification(
     id: int, session: Session = Depends(get_db_session),
     current: User = Depends(current_active_user)
 ) -> Action:
     """
-    Mark an ASSIGNED notification as seen (NOTIFIED) — removes the bold style.
-    Idempotent: a no-op if the thread is already past ASSIGNED.
+    Acknowledge an outcome notice — the caller has taken note, so it is handled.
 
-    - **id**: The notification's latest action id (from GET /notifications)
+    Only PUBLICATION/REJECTION qualify: they are informational, and reading them
+    IS resolving them. REVIEW/MODIFICATION are resolved by reviewing or
+    resubmitting and return 400 here — writing the terminal row for one of those
+    would consume the assignee's turn without the work being done.
+
+    - **id**: The pending action's id (from GET /notifications or /requests)
     """
     action = _own_notification(session, id, current)
     try:
-        return actions_service.mark_notified(session, action)
-    except IntegrityError:
-        session.rollback()
-        raise HTTPException(
-            status_code=409, detail="Could not update the notification due to a data conflict")
-
-
-@router.post("/notifications/{id}/dismiss", response_model=Action)
-def dismiss_notification(
-    id: int, session: Session = Depends(get_db_session),
-    current: User = Depends(current_active_user)
-) -> Action:
-    """
-    Dismiss a notification (insert a FINISHED row) — removes it from the list.
-    Only PUBLICATION/REJECTION (informational) notifications can be dismissed;
-    REVIEW/MODIFICATION must be resolved via review/resubmit instead (400).
-
-    - **id**: The notification's latest action id (from GET /notifications)
-    """
-    action = _own_notification(session, id, current)
-    try:
-        return actions_service.dismiss_notification(session, action)
-    except actions_service.NotificationNotDismissible as exc:
+        return actions_service.acknowledge_notification(session, action)
+    except actions_service.NotificationNotAcknowledgeable as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except IntegrityError:
         session.rollback()
         raise HTTPException(
-            status_code=409, detail="Could not dismiss the notification due to a data conflict")
+            status_code=409, detail="Could not acknowledge the notification due to a data conflict")
 
 
 @router.get("/{id}", response_model=Action)

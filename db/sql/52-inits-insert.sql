@@ -111,16 +111,13 @@ INSERT INTO diagnostics (init, criteria, creator_score, reviewer_score, rational
 -- **********************************
 
 INSERT INTO collaborations (id, init, user_id, type, workflow_status, content, parent) VALUES
-    (1, 1, 1,  'ACTIVATION', 'FINISHED', 'Initiative created to consolidate organizational knowledge into a single platform.', NULL),
-    (2, 1, 0,  'DIAGNOSIS',  'ASSIGNED', NULL, NULL),
-    (3, 1, 0,  'DIAGNOSIS',  'NOTIFIED', NULL, NULL),
-    (4, 1, 0,  'DIAGNOSIS',  'FINISHED', 'Assessed scope, criteria and expected impact with stakeholders; prioritized as HIGH.', NULL),
-    (5, 1, 1,  'ACCEPTANCE', 'ASSIGNED', NULL, NULL),
-    (6, 1, 1,  'ACCEPTANCE', 'NOTIFIED', NULL, NULL),
-    (7, 1, 1,  'ACCEPTANCE', 'FINISHED', 'Built a proof of concept for the RAG assistant over a sample of documented assets.', NULL),
-    (8, 1, 1,  'DELIVERY',   'ASSIGNED', NULL, NULL),
-    (9, 1, 1,  'DELIVERY',   'NOTIFIED', NULL, NULL),
-    (10, 1, 1, 'DELIVERY',   'FINISHED', NULL, NULL),
+    (1, 1, 1,  'ACTIVATION', 'HANDLED', 'Initiative created to consolidate organizational knowledge into a single platform.', NULL),
+    (2, 1, 0,  'DIAGNOSIS',  'PENDING', NULL, NULL),
+    (4, 1, 0,  'DIAGNOSIS',  'HANDLED', 'Assessed scope, criteria and expected impact with stakeholders; prioritized as HIGH.', NULL),
+    (5, 1, 1,  'ACCEPTANCE', 'PENDING', NULL, NULL),
+    (7, 1, 1,  'ACCEPTANCE', 'HANDLED', 'Built a proof of concept for the RAG assistant over a sample of documented assets.', NULL),
+    (8, 1, 1,  'DELIVERY',   'PENDING', NULL, NULL),
+    (10, 1, 1, 'DELIVERY',   'HANDLED', NULL, NULL),
     (11, 1, 7,  'QUESTION',  NULL, 'Will the assistant cite the original source for every answer?', NULL),
     (12, 1, 1,  'ANSWER',    NULL, 'Yes; every answer must ground its response and link back to the source asset.', 5),
     (13, 1, 10, 'COMMENT',   NULL, 'Capturing tacit knowledge from senior staff should be part of the rollout plan.', NULL);

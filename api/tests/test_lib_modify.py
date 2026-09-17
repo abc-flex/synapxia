@@ -1,11 +1,11 @@
 """Modify/resubmit tests (HU-Modify) — Constitution Principle II/III.
 
-After a reviewer requests changes (asset → FEEDBACK + a MODIFICATION/ASSIGNED
+After a reviewer requests changes (asset → FEEDBACK + a MODIFICATION/PENDING
 action for the proposer), the proposer edits the asset + its characterizations and
 resubmits. ``modify_service.resubmit_asset`` is one transaction that updates the
 asset + characterizations, closes the proposer's MODIFICATION assignment
-(MODIFICATION/FINISHED), flips the status back to PROPOSED, and re-arms the
-original reviewer (REVIEW/ASSIGNED). These tests drive a proposed asset through
+(MODIFICATION/HANDLED), flips the status back to PROPOSED, and re-arms the
+original reviewer (REVIEW/PENDING). These tests drive a proposed asset through
 ``review_service`` ("changes") and then exercise ``modify_service`` + the
 ``/api/assets/{id}/resubmit`` route.
 """
@@ -109,8 +109,8 @@ def test_resubmit_updates_asset_and_chars_and_rearms_reviewer(session):
     ).first()
     assert char.value == "updated overview"
     # 3. proposer's MODIFICATION assignment closed; reviewer re-armed
-    assert _latest_status(session, asset.id, PROPOSER_ID, "MODIFICATION") == "FINISHED"
-    assert _latest_status(session, asset.id, reviewer.id, "REVIEW") == "ASSIGNED"
+    assert _latest_status(session, asset.id, PROPOSER_ID, "MODIFICATION") == "HANDLED"
+    assert _latest_status(session, asset.id, reviewer.id, "REVIEW") == "PENDING"
 
 
 def test_resubmit_notifications_flip(session):
@@ -119,14 +119,15 @@ def test_resubmit_notifications_flip(session):
     asset = _propose(session, reviewer)
     _request_changes(session, reviewer, asset.id)
     # before: proposer has the MODIFICATION notification, reviewer has none
-    assert any(n["type"] == "MODIFICATION" for n in actions_service.list_notifications(session, PROPOSER_ID))
+    assert any(n["type"] == "MODIFICATION"
+               for n in actions_service.list_notifications(session, PROPOSER_ID)["items"])
 
     svc.resubmit_asset(session, _proposer(), asset.id, ModifyRequest(name="X"))
 
-    # after: proposer's MODIFICATION is gone; reviewer has a fresh unread REVIEW
-    assert actions_service.list_notifications(session, PROPOSER_ID) == []
-    rev_notifs = actions_service.list_notifications(session, reviewer.id)
-    assert any(n["type"] == "REVIEW" and n["unread"] for n in rev_notifs)
+    # after: proposer's MODIFICATION is gone; reviewer has a fresh pending REVIEW
+    assert actions_service.list_notifications(session, PROPOSER_ID)["total"] == 0
+    rev_feed = actions_service.list_notifications(session, reviewer.id)
+    assert any(n["type"] == "REVIEW" for n in rev_feed["items"])
 
 
 def test_resubmit_missing_char_is_created(session):

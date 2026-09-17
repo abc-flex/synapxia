@@ -4,8 +4,8 @@ Per docs/user-stories/lib-status.md, proposing an asset is an all-or-nothing
 operation that, in a single transaction, inserts:
   1. the asset (status PROPOSED),
   2. one characterization per feature in the category's specifications,
-  3. a PROPOSAL action (FINISHED) for the proposer,
-  4. a REVIEW action (ASSIGNED) for a reviewer (an administrative or REVIEWER user),
+  3. a PROPOSAL action (HANDLED) for the proposer,
+  4. a REVIEW action (PENDING) for a reviewer (an administrative or REVIEWER user),
   5. MANAGE asset_permissions for the proposer and the reviewer.
 
 Step 4 is the action the notifications menu (HU-LI11) surfaces to the reviewer —
@@ -38,8 +38,8 @@ ADMIN_PROFILES = ("ADMINISTRATOR", "ADMINISTRATIVE")
 STATUS_PROPOSED = "PROPOSED"
 TYPE_PROPOSAL = "PROPOSAL"
 TYPE_REVIEW = "REVIEW"
-WF_FINISHED = "FINISHED"
-WF_ASSIGNED = "ASSIGNED"
+WF_HANDLED = "HANDLED"
+WF_PENDING = "PENDING"
 TARGET_USER = "USER"
 ACCESS_MANAGE = "MANAGE"
 
@@ -151,10 +151,10 @@ def propose_asset(session: Session, proposer_id: int, data: ProposeRequest) -> A
         # 3 + 4. Proposal (finished) + review assignment (assigned).
         session.add(Action(
             asset=asset.id, user_id=proposer_id,
-            type=TYPE_PROPOSAL, workflow_status=WF_FINISHED))
+            type=TYPE_PROPOSAL, workflow_status=WF_HANDLED))
         session.add(Action(
             asset=asset.id, user_id=reviewer.id,
-            type=TYPE_REVIEW, workflow_status=WF_ASSIGNED))
+            type=TYPE_REVIEW, workflow_status=WF_PENDING))
 
         # 5. MANAGE permission for proposer + reviewer (deduped if they coincide).
         for target_id in {proposer_id, reviewer.id}:

@@ -3,7 +3,7 @@
    * ReviewAction — HU-Review as a Svelte island. The reviewer opens an assigned
    * PROPOSED asset (via `/lib/review?action={id}`), sees its details +
    * characterizations, leaves feedback, and Approves / Rejects / Requests
-   * changes. On open it marks the REVIEW notification seen (ASSIGNED→NOTIFIED);
+   * changes. Opening it records nothing — viewing is not deciding;
    * the decision posts to `reviewAsset` which flips the asset status and notifies
    * the proposer. Mirrors ShowAction's shell; reuses the existing services.
    */
@@ -11,7 +11,7 @@
   import { getAction } from "@/lib/actions";
   import { getAsset } from "@/lib/assets";
   import { getCharacterizationsByAsset } from "@/lib/characterizations";
-  import { markNotified } from "@/lib/notifications";
+  import { notifyChanged } from "@/lib/notificationsStore";
   import { reviewAsset } from "@/lib/review";
   import { translate } from "@/utils/i18nClient";
   import { showToast } from "@/lib/toast";
@@ -52,7 +52,7 @@
   const shownChars = $derived(chars.filter((c) => charText(c)));
 
   // Only a PROPOSED asset can be reviewed. The underlying REVIEW action stays
-  // ASSIGNED forever (every workflow step is a new row, never an update), so this
+  // PENDING until decided (every workflow step is a new row, never an update), so this
   // page is still reachable for an already-decided asset via a direct URL / the
   // back button / a stale tab — where a decision would just 409. Guard the form
   // so we don't render dead buttons. Only block when we positively know the
@@ -60,9 +60,23 @@
   // backend 409 be the fallback).
   const blocked = $derived(!!assetStatus && assetStatus !== "PROPOSED");
 
+  /** Leaving without deciding: back to wherever they came from. */
   function goHome(): void {
     if (window.history.length > 1) window.history.back();
     else window.location.href = "/";
+  }
+
+  /**
+   * After an actual decision, go to the requests page rather than back.
+   *
+   * `history.back()` is served from the browser's back/forward cache, which does
+   * NOT re-execute the page — so the previous screen would reappear showing the
+   * review still pending. It also lands wherever the user happened to be before,
+   * which may be unrelated. Going to their own list instead closes the loop:
+   * they see the item they just decided sitting in Handled.
+   */
+  function goToRequests(): void {
+    window.location.href = "/lib/my_asset_requests";
   }
 
   async function decide(decision: ReviewDecision): Promise<void> {
@@ -88,7 +102,11 @@
           : decision === "reject" ? "Asset rejected."
             : "Changes requested.";
       showToast(t(okKey, okFallback), "success");
-      setTimeout(goHome, 700);
+      // Tell every subscribed surface (the header bell, the requests page) that
+      // the caller's pending set just changed, so they update immediately rather
+      // than waiting out the poll interval.
+      notifyChanged();
+      setTimeout(goToRequests, 700);
     } catch (err) {
       submitting = false;
       showToast(
@@ -137,12 +155,8 @@
         chars = [];
       }
       loading = false;
-      // Opening the review marks it seen (ASSIGNED→NOTIFIED); idempotent.
-      try {
-        await markNotified(id);
-      } catch {
-        /* not the owner / already past ASSIGNED — non-fatal */
-      }
+      // Opening the review records nothing. Viewing is not deciding, and the
+      // assignment stays pending until an actual decision is made.
     })();
 
     return () => window.removeEventListener("languageChanged", onLang);

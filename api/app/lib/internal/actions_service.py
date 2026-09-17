@@ -327,25 +327,25 @@ _HISTORY_SUMMARIES = {
 }
 
 
-# Workflow actions carry a ``workflow_status`` (ASSIGNED/NOTIFIED/FINISHED); the
-# verb must reflect the *step*, otherwise the three PUBLICATION rows all read
-# "published the asset". The UI localizes by ``{type}_{workflow_status}`` and
-# falls back to these. FINISHED reuses the terminal verb in _HISTORY_SUMMARIES.
+# Workflow actions carry a ``workflow_status`` (PENDING/HANDLED); the verb must
+# reflect the *step*, otherwise both PUBLICATION rows read "published the asset".
+# The UI localizes by ``{type}_{workflow_status}`` and falls back to these.
+# HANDLED reuses the terminal verb in _HISTORY_SUMMARIES.
+#
+# There is deliberately no "notified" variant: viewing an item is read state, not
+# work state, and it is no longer recorded anywhere (see WORKFLOW_STATUS below).
 _WORKFLOW_SUMMARIES = {
-    ("PROPOSAL", "ASSIGNED"): "was assigned to propose the asset",
-    ("PROPOSAL", "NOTIFIED"): "was notified to propose the asset",
-    ("PROPOSAL", "FINISHED"): "proposed the asset",
-    ("REVIEW", "ASSIGNED"): "was assigned to review the asset",
-    ("REVIEW", "NOTIFIED"): "was notified to review the asset",
-    ("REVIEW", "FINISHED"): "reviewed the asset",
-    ("PUBLICATION", "ASSIGNED"): "was assigned to publish the asset",
-    ("PUBLICATION", "NOTIFIED"): "was notified to publish the asset",
-    ("PUBLICATION", "FINISHED"): "published the asset",
-    ("MODIFICATION", "ASSIGNED"): "was assigned a modification",
-    ("MODIFICATION", "NOTIFIED"): "was notified of a modification",
-    ("MODIFICATION", "FINISHED"): "modified the asset",
-    ("REJECTION", "FINISHED"): "rejected the asset",
-    ("DEPRECATION", "FINISHED"): "deprecated the asset",
+    ("PROPOSAL", "PENDING"): "was assigned to propose the asset",
+    ("PROPOSAL", "HANDLED"): "proposed the asset",
+    ("REVIEW", "PENDING"): "was assigned to review the asset",
+    ("REVIEW", "HANDLED"): "reviewed the asset",
+    ("PUBLICATION", "PENDING"): "was assigned to publish the asset",
+    ("PUBLICATION", "HANDLED"): "published the asset",
+    ("MODIFICATION", "PENDING"): "was assigned a modification",
+    ("MODIFICATION", "HANDLED"): "modified the asset",
+    ("REJECTION", "PENDING"): "was notified of a rejection",
+    ("REJECTION", "HANDLED"): "rejected the asset",
+    ("DEPRECATION", "HANDLED"): "deprecated the asset",
 }
 
 
@@ -458,54 +458,65 @@ def get_workflow_stage(session: Session, asset_id: int) -> Optional[dict]:
 
 
 # ---------------------------------------------------------------------------
-# Notifications (HU-LI11) — workflow assignments surfaced to the assignee.
+# Workflow requests — assignments surfaced to the user they are directed at.
 #
-# Per docs/user-stories/lib-status.md (HU-Notifications): an assignment is a
-# review-workflow action (REVIEW/MODIFICATION/PUBLICATION/REJECTION) directed at
-# a user, whose lifecycle is tracked by INSERTING successive ``actions`` rows
-# with workflow_status ASSIGNED → NOTIFIED → FINISHED (matching the seed — each
-# transition is a new row, never an update). A notification is the latest row of
-# a per-(asset, type) assignment thread whose status is still ASSIGNED (bold) or
-# NOTIFIED (seen, dismissible); FINISHED threads drop off the list.
+# An assignment is a review-workflow action (REVIEW/MODIFICATION/PUBLICATION/
+# REJECTION) directed at a user, whose lifecycle is tracked by INSERTING
+# successive ``actions`` rows — each transition is a new row, never an update,
+# so the activity history stays complete.
+#
+# There are exactly TWO states. A thread is PENDING while it still awaits its
+# recipient's action and HANDLED once it no longer does. There is deliberately
+# no third "seen/notified" state: that recorded only that the user had *looked*
+# at an item, which is read state, not work state. Mixing the two is what forced
+# the old dismiss carve-out — dismissing wrote the same terminal row that
+# review_asset()/resubmit_asset() use to mean "already decided", so hiding an
+# unresolved assignment silently revoked the assignee's ability to act. Read
+# state now lives entirely in the client (a per-device concern) and never here.
 #
 # This service is the read + transition side only. The actions that *generate*
-# assignments come from the propose/review workflow (HU-Propose/Review/Modify),
-# which is out of scope here — notifications display whatever assignments exist.
+# assignments come from the propose/review workflow (HU-Propose/Review/Modify).
 # ---------------------------------------------------------------------------
 
+TYPE_PROPOSAL = "PROPOSAL"
 TYPE_REVIEW = "REVIEW"
 TYPE_MODIFICATION = "MODIFICATION"
 TYPE_PUBLICATION = "PUBLICATION"
 TYPE_REJECTION = "REJECTION"
+# Types that can be directed at a user and awaited by them. PROPOSAL is
+# deliberately absent: it is written already-terminal and is never owed.
 NOTIFICATION_TYPES = (TYPE_REVIEW, TYPE_MODIFICATION, TYPE_PUBLICATION, TYPE_REJECTION)
+# Every type that counts as the caller having taken part in an asset.
+PARTICIPATION_TYPES = (TYPE_PROPOSAL,) + NOTIFICATION_TYPES
 
-WORKFLOW_ASSIGNED = "ASSIGNED"
-WORKFLOW_NOTIFIED = "NOTIFIED"
-WORKFLOW_FINISHED = "FINISHED"
-# Statuses that keep a thread in the notification list (FINISHED removes it).
-NOTIFICATION_OPEN_STATUSES = (WORKFLOW_ASSIGNED, WORKFLOW_NOTIFIED)
+WORKFLOW_PENDING = "PENDING"
+WORKFLOW_HANDLED = "HANDLED"
 
-# Types where FINISHED is purely informational (no further action is expected
-# of the assignee) — these are the only ones the bell may dismiss. REVIEW and
-# MODIFICATION assignments must be resolved by actually reviewing/resubmitting;
-# dismissing them would insert the same FINISHED row review_asset()/
-# resubmit_asset() use to mean "already decided", silently revoking the
-# assignee's ability to act (see NotificationNotDismissible below).
-DISMISSIBLE_TYPES = (TYPE_PUBLICATION, TYPE_REJECTION)
+# Asset statuses that mean the workflow is still moving. Anything else is
+# terminal. Mirrors the ASSET_STATUS list seeded in db/sql/41-lib-ddl.sql.
+IN_MOTION_ASSET_STATUSES = ("PROPOSED", "FEEDBACK")
 
+# Awaited-party values on a participation still in motion.
+AWAITED_SELF = "SELF"
+AWAITED_OTHER = "OTHER"
 
-class NotificationNotDismissible(Exception):
-    """Raised when dismissing a REVIEW/MODIFICATION notification is attempted
-    (→ 400) — those must be resolved via review/resubmit, not dismissed."""
+# Types whose terminal row is reached by the recipient simply taking note, with
+# no work to perform. Only these can be acknowledged; REVIEW and MODIFICATION
+# are resolved by actually reviewing or resubmitting.
+ACKNOWLEDGEABLE_TYPES = (TYPE_PUBLICATION, TYPE_REJECTION)
 
 
-def _list_open_actions(session: Session, user_id: int, types) -> List[dict]:
-    """The open workflow actions of ``types`` assigned to a user, newest first.
+class NotificationNotAcknowledgeable(Exception):
+    """Raised when acknowledging a REVIEW/MODIFICATION assignment is attempted
+    (→ 400) — those are resolved via review/resubmit, not acknowledged."""
 
-    Groups the user's workflow actions by (asset, type), takes the latest row of
-    each thread, and keeps those whose status is ASSIGNED or NOTIFIED. Asset
-    names are resolved with a single batched ``IN`` query (no N+1). ``unread`` is
-    True while the thread is still ASSIGNED (the "bold" state in the UI).
+
+def _latest_threads(session: Session, user_id: int, types) -> List[Action]:
+    """The latest row of each of the user's (asset, type) workflow threads.
+
+    Every transition inserts a new row rather than updating the previous one, so
+    a thread's current state is simply its newest row. Rows come back ascending,
+    so the last one seen per key wins.
     """
     rows = session.exec(
         select(Action)
@@ -518,55 +529,132 @@ def _list_open_actions(session: Session, user_id: int, types) -> List[dict]:
         .order_by(Action.created_at.asc(), Action.id.asc())
     ).all()
 
-    # Collapse each (asset, type) thread to its latest row (rows are ascending,
-    # so the last seen per key wins).
     latest: dict = {}
     for r in rows:
         latest[(r.asset, r.type)] = r
+    return list(latest.values())
 
-    threads = [
-        r for r in latest.values()
-        if r.workflow_status in NOTIFICATION_OPEN_STATUSES
-    ]
 
-    asset_ids = {r.asset for r in threads}
-    names: dict = {}
-    if asset_ids:
-        assets = session.exec(select(Asset).where(Asset.id.in_(asset_ids))).all()
-        names = {a.id: a.name for a in assets}
+def _participations(session: Session, user_id: int) -> List[dict]:
+    """Every asset the user has taken part in, one entry per asset.
 
-    items = [
-        {
-            "id": r.id,
-            "asset": r.asset,
-            "asset_name": names.get(r.asset),
-            "type": r.type,
-            "workflow_status": r.workflow_status,
-            "unread": r.workflow_status == WORKFLOW_ASSIGNED,
-            "created_at": r.created_at,
-        }
-        for r in threads
-    ]
-    items.sort(key=lambda i: i["created_at"], reverse=True)
+    Grouping by ASSET (not by (asset, type)) is what keeps a single asset from
+    appearing twice — e.g. once because the user proposed it and again because
+    they were sent its publication notice. Collapsing here rather than in the UI
+    also keeps the notification count honest, since the feed is defined as this
+    list filtered to the entries awaiting the caller.
+
+    Derivation, in this order (the order matters):
+      1. If any request thread for this user is still PENDING → the caller owes
+         something: in motion, awaited by SELF.
+      2. Otherwise, if the asset itself is still moving → in motion, awaited by
+         someone else (e.g. the user proposed it and the reviewer has not acted).
+      3. Otherwise → handled.
+
+    Step 1 MUST precede step 2: an asset that is already PUBLISHED but whose
+    publication notice the user has not acknowledged is still awaiting them. Were
+    the asset status checked first, that notice would read as closed and the user
+    would never learn the outcome.
+
+    Three statements total regardless of row count — the thread query, one
+    batched asset fetch, and nothing per row (no N+1).
+    """
+    threads = _latest_threads(session, user_id, PARTICIPATION_TYPES)
+    if not threads:
+        return []
+
+    assets = session.exec(
+        select(Asset).where(Asset.id.in_({t.asset for t in threads}))
+    ).all()
+    by_id = {a.id: a for a in assets}
+
+    grouped: dict = {}
+    for t in threads:
+        grouped.setdefault(t.asset, []).append(t)
+
+    items: List[dict] = []
+    for asset_id, rows in grouped.items():
+        asset = by_id.get(asset_id)
+
+        # The newest still-pending request directed at this user, if any. Only
+        # NOTIFICATION_TYPES qualify — a PROPOSAL is never owed by anyone.
+        pending = [
+            r for r in rows
+            if r.type in NOTIFICATION_TYPES and r.workflow_status == WORKFLOW_PENDING
+        ]
+        pending.sort(key=lambda r: (r.created_at, r.id), reverse=True)
+        owed = pending[0] if pending else None
+
+        if owed is not None:
+            state, awaited = WORKFLOW_PENDING, AWAITED_SELF
+        elif asset is not None and asset.status in IN_MOTION_ASSET_STATUSES:
+            state, awaited = WORKFLOW_PENDING, AWAITED_OTHER
+        else:
+            state, awaited = WORKFLOW_HANDLED, None
+
+        roles = []
+        if any(r.type == TYPE_PROPOSAL for r in rows):
+            roles.append("PROPOSER")
+        if any(r.type == TYPE_REVIEW for r in rows):
+            roles.append("REVIEWER")
+
+        items.append({
+            "asset": asset_id,
+            "asset_name": asset.name if asset else None,
+            "asset_status": asset.status if asset else None,
+            "category": asset.category if asset else None,
+            "roles": roles,
+            "state": state,
+            "awaited_party": awaited,
+            "pending_action_id": owed.id if owed else None,
+            "pending_action_type": owed.type if owed else None,
+            "last_change_at": max(r.created_at for r in rows),
+        })
+
+    items.sort(key=lambda i: i["last_change_at"], reverse=True)
     return items
 
 
-def list_notifications(session: Session, user_id: int) -> List[dict]:
-    """The open workflow notifications for a user, newest first (all four
-    notification types — the bell's data source)."""
-    return _list_open_actions(session, user_id, NOTIFICATION_TYPES)
+def list_participations(
+    session: Session,
+    user_id: int,
+    state: str = WORKFLOW_PENDING,
+    skip: int = 0,
+    limit: int = 50,
+) -> List[dict]:
+    """The user's participations in the requested state, newest change first.
+
+    Pagination is applied after grouping, so ``skip``/``limit`` bound entries the
+    caller actually sees rather than raw rows.
+    """
+    wanted = (state or WORKFLOW_PENDING).upper()
+    rows = [i for i in _participations(session, user_id) if i["state"] == wanted]
+    return rows[skip: skip + limit]
 
 
-def list_review_requests(session: Session, user_id: int) -> List[dict]:
-    """The open REVIEW assignments for a user, newest first — a persistent,
-    browsable queue independent of the (dismissible) notification bell."""
-    return _list_open_actions(session, user_id, (TYPE_REVIEW,))
+def list_notifications(session: Session, user_id: int, limit: int = 5) -> dict:
+    """The caller's feed: exactly the participations awaiting them.
 
-
-def list_pending_modifications(session: Session, user_id: int) -> List[dict]:
-    """The open MODIFICATION assignments for a user, newest first — a
-    persistent, browsable queue independent of the notification bell."""
-    return _list_open_actions(session, user_id, (TYPE_MODIFICATION,))
+    Returned as ``{items, total}`` so the panel can cap what it renders while
+    still reporting how many are outstanding. Deriving it from the same pass as
+    list_participations is what guarantees the feed can never contain something
+    the requests page does not show — it is a strict subset by construction.
+    """
+    owed = [
+        i for i in _participations(session, user_id)
+        if i["awaited_party"] == AWAITED_SELF
+    ]
+    items = [
+        {
+            "id": i["pending_action_id"],
+            "asset": i["asset"],
+            "asset_name": i["asset_name"],
+            "type": i["pending_action_type"],
+            "created_at": i["last_change_at"],
+        }
+        for i in owed[:limit]
+    ]
+    return {"items": items, "total": len(owed)}
 
 
 def _insert_status(session: Session, action: Action, new_status: str) -> Action:
@@ -597,24 +685,22 @@ def _insert_status(session: Session, action: Action, new_status: str) -> Action:
     return row
 
 
-def mark_notified(session: Session, action: Action) -> Action:
-    """Transition an ASSIGNED assignment to NOTIFIED (insert a NOTIFIED row).
-    Idempotent: if the thread isn't ASSIGNED, returns the action unchanged."""
-    if action.workflow_status != WORKFLOW_ASSIGNED:
-        return action
-    return _insert_status(session, action, WORKFLOW_NOTIFIED)
+def acknowledge_notification(session: Session, action: Action) -> Action:
+    """Record that the recipient has taken note of an outcome (insert HANDLED).
 
+    Acknowledging IS resolving, for the two types where there is nothing to do
+    but read: PUBLICATION and REJECTION. REVIEW and MODIFICATION are resolved by
+    actually reviewing or resubmitting, and attempting to acknowledge one raises
+    NotificationNotAcknowledgeable (mapped to 400 by the route) — writing the
+    terminal row here would mean the same thing review_asset()/resubmit_asset()
+    write to mean "already decided", silently consuming the assignee's turn.
 
-def dismiss_notification(session: Session, action: Action) -> Action:
-    """Dismiss an assignment (insert a FINISHED row), removing it from the list.
-
-    Only informational types (PUBLICATION/REJECTION) may be dismissed — REVIEW
-    and MODIFICATION must be resolved via review/resubmit instead, otherwise
-    dismissing would insert the same FINISHED row that marks them as already
-    decided (raises NotificationNotDismissible, mapped to 400 by the route).
+    Opening an item never calls this: viewing is not acknowledging.
     """
-    if action.type not in DISMISSIBLE_TYPES:
-        raise NotificationNotDismissible(
-            f"'{action.type}' notifications must be resolved, not dismissed."
+    if action.type not in ACKNOWLEDGEABLE_TYPES:
+        raise NotificationNotAcknowledgeable(
+            f"'{action.type}' assignments must be resolved, not acknowledged."
         )
-    return _insert_status(session, action, WORKFLOW_FINISHED)
+    if action.workflow_status == WORKFLOW_HANDLED:
+        return action  # idempotent — already acknowledged
+    return _insert_status(session, action, WORKFLOW_HANDLED)

@@ -4,7 +4,7 @@
    * MODIFICATION notification (`/lib/modify?action={id}`), reads the reviewer's
    * feedback, edits the asset (name/description) + its characterizations, and
    * resubmits for re-review. On open it marks the MODIFICATION notification seen
-   * (ASSIGNED→NOTIFIED); Resubmit posts to `resubmitAsset`, which flips the asset
+   * Opening it records nothing; Resubmit posts to `resubmitAsset`, which flips the asset
    * back to PROPOSED and re-arms the original reviewer. Mirrors ReviewAction's
    * shell; the characterization inputs mirror the Propose form but are prefilled
    * from the asset's existing values.
@@ -14,7 +14,7 @@
   import { getAsset } from "@/lib/assets";
   import { getCharacterizationsByAsset } from "@/lib/characterizations";
   import { buildCharFieldDefs, type CharFieldDef } from "@/lib/charFields";
-  import { markNotified } from "@/lib/notifications";
+  import { notifyChanged } from "@/lib/notificationsStore";
   import { resubmitAsset } from "@/lib/modify";
   import { translate } from "@/utils/i18nClient";
   import { showToast } from "@/lib/toast";
@@ -62,15 +62,25 @@
   const charId = (feature: string): string => `modify-char-${feature}`;
 
   // Only a FEEDBACK asset can be resubmitted. The MODIFICATION action stays
-  // ASSIGNED forever (new row per transition), so this page is reachable for an
+  // PENDING until resubmitted (new row per transition), so this page is reachable for an
   // asset that already moved on (e.g. resubmitted, or approved/rejected) via a
   // direct URL / back button / stale tab — where a resubmit would just 409.
   // Guard the form; only block when we positively know the status isn't FEEDBACK.
   const blocked = $derived(!!assetStatus && assetStatus !== "FEEDBACK");
 
+  /** Leaving without resubmitting: back to wherever they came from. */
   function goHome(): void {
     if (window.history.length > 1) window.history.back();
     else window.location.href = "/";
+  }
+
+  /**
+   * After an actual resubmit, go to the requests page rather than back.
+   * `history.back()` is served from the bfcache without re-executing the page,
+   * so the previous screen would reappear still showing the changes as pending.
+   */
+  function goToRequests(): void {
+    window.location.href = "/lib/my_asset_requests";
   }
 
   function fmtDate(iso: string): string {
@@ -121,7 +131,8 @@
         values: Object.keys(values).length ? values : undefined,
       });
       showToast(t("modify.resubmitted", "Asset resubmitted for review."), "success");
-      setTimeout(goHome, 700);
+      notifyChanged();
+      setTimeout(goToRequests, 700);
     } catch (err) {
       submitting = false;
       showToast(
@@ -195,12 +206,8 @@
       }
 
       loading = false;
-      // Opening the modify view marks it seen (ASSIGNED→NOTIFIED); idempotent.
-      try {
-        await markNotified(id);
-      } catch {
-        /* not the owner / already past ASSIGNED — non-fatal */
-      }
+      // Opening the modify view records nothing. Viewing is not resubmitting,
+      // and the assignment stays pending until the changes are sent back.
     })();
 
     return () => window.removeEventListener("languageChanged", onLang);

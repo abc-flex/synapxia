@@ -11,7 +11,7 @@ characterization set untouched. In one transaction this service:
   2. applies the core-field edits to the asset row,
   3. writes the new version's characterization rows at the new label
      (copying the current set forward when the request carries no ``values``),
-  4. logs a VERSIONING/FINISHED action (a NEW ``actions`` row, never an
+  4. logs a VERSIONING/HANDLED action (a NEW ``actions`` row, never an
      update — matching propose/review/modify_service; the history timeline
      already localizes it as "created a new version").
 
@@ -39,7 +39,7 @@ class VersionConflict(Exception):
 
 
 TYPE_VERSIONING = "VERSIONING"
-WF_FINISHED = "FINISHED"
+WF_HANDLED = "HANDLED"
 
 CHANGE_TYPES = ("major", "minor", "patch")
 DEFAULT_LABEL = "1.0.0"
@@ -142,11 +142,11 @@ def create_version(
         asset.current_version = new_label
         asset.updated_at = now
         session.add(asset)
-        # 4. Log the versioning event (self-service — straight to FINISHED,
+        # 4. Log the versioning event (self-service — straight to HANDLED,
         #    no reviewer assignment, per docs/user-stories/states-and-types.md).
         session.add(Action(
             asset=asset_id, user_id=user.id,
-            type=TYPE_VERSIONING, workflow_status=WF_FINISHED,
+            type=TYPE_VERSIONING, workflow_status=WF_HANDLED,
             content=new_label,
             detail=f"{old_label} -> {new_label} ({data.change_type})"))
         session.commit()

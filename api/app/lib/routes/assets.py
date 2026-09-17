@@ -357,7 +357,7 @@ def review(
 ) -> Asset:
     """
     Record a reviewer's decision on a PROPOSED asset (HU-Review). In one
-    transaction: closes the reviewer's REVIEW assignment (REVIEW/FINISHED), sets
+    transaction: closes the reviewer's REVIEW assignment (REVIEW/HANDLED), sets
     the asset status, and notifies the proposer with the feedback.
 
     - **decision**: `approve` → PUBLISHED (+ PUBLICATION), `reject` → REJECTED
@@ -396,8 +396,8 @@ def resubmit(
     """
     Resubmit an asset for re-review after a reviewer requested changes (HU-Modify).
     In one transaction: updates the asset's editable fields + its characterizations,
-    closes the proposer's MODIFICATION assignment (MODIFICATION/FINISHED), sets the
-    asset status back to PROPOSED, and re-arms the original reviewer (REVIEW/ASSIGNED).
+    closes the proposer's MODIFICATION assignment (MODIFICATION/HANDLED), sets the
+    asset status back to PROPOSED, and re-arms the original reviewer (REVIEW/PENDING).
 
     - Editable: `name`, `description`, `reference`, `tags`, `detail`, and per-feature
       characterization `values` (category is fixed).
@@ -436,7 +436,7 @@ def create_version(
     (major → X+1.0.0 / minor → X.Y+1.0 / patch → X.Y.Z+1), applies the core
     edits, writes the new version's characterization rows under the bumped
     `version_label` (prior versions keep theirs untouched), and logs a
-    VERSIONING/FINISHED action.
+    VERSIONING/HANDLED action.
 
     - `values` is the FULL desired characterization set (feature → value);
       omit it entirely for a core-only save (current set is copied forward).

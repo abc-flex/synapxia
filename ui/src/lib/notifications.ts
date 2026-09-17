@@ -1,47 +1,53 @@
 /**
- * notifications — workflow-notifications service (HU-LI11): the read/transition
- * side of the header bell (REVIEW/MODIFICATION/PUBLICATION/REJECTION).
+ * notifications — the data layer for asset workflow requests.
  *
- *   GET  /api/actions/notifications               → open items (newest first)
- *   GET  /api/actions/reviews                      → open REVIEW items only
- *   GET  /api/actions/modifications                → open MODIFICATION items only
- *   POST /api/actions/notifications/{id}/notified → ASSIGNED → NOTIFIED (un-bold)
- *   POST /api/actions/notifications/{id}/dismiss  → insert FINISHED (remove;
- *     REVIEW/MODIFICATION reject this — they must be resolved, not dismissed)
+ *   GET  /api/actions/requests                        → everything I took part in
+ *   GET  /api/actions/notifications                   → just what awaits ME
+ *   POST /api/actions/notifications/{id}/acknowledge  → I've read this outcome
+ *
  * The current user comes from the JWT — no user id is sent. No new table.
  *
- * The bell UI (list/click/dismiss/badge) lives in the Svelte island
- * `components/svelte/NotificationBell.svelte` (mounted from NotificationMenu.astro).
- * The persistent queue pages (`/lib/my_asset_requests`, `/lib/modifications`) use the
- * `getReviewRequests`/`getPendingModifications` variants below so a reviewer's/
- * proposer's open work stays reachable even after the matching bell entry is gone.
+ * Two surfaces, two projections of the same data, never two copies:
+ *   - `MyAssetRequests.svelte` (/lib/my_asset_requests) lists EVERY asset the
+ *     caller took part in, open and closed, and says whose turn each one is.
+ *   - `NotificationBell.svelte` shows the strict subset awaiting the caller.
+ *
+ * There is no "mark as seen" call. Opening something is not resolving it, and
+ * read state is a per-device concern that never reaches the server — which is
+ * why the bell can no longer show you something you have already dealt with,
+ * and why nothing can be cleared without actually being resolved.
+ *
+ * Live refresh (polling, focus, bfcache) lives in `lib/notificationsStore.ts`;
+ * this module stays a thin service layer.
  */
 import { apiGet, apiPost } from "./api";
-import type { NotificationItem } from "@/types/api";
+import type { AssetRequest, NotificationFeed } from "@/types/api";
 
-/** The current user's open workflow notifications (newest first, all types). */
-export async function getNotifications(): Promise<NotificationItem[]> {
-  return apiGet<NotificationItem[]>("/api/actions/notifications");
+/** Everything the current user has taken part in, one entry per asset.
+ *  `state` selects the view: `PENDING` (still in motion) or `HANDLED`. */
+export async function getAssetRequests(
+  state: "PENDING" | "HANDLED" = "PENDING",
+  skip = 0,
+  limit = 50,
+): Promise<AssetRequest[]> {
+  const qs = new URLSearchParams({
+    state,
+    skip: String(skip),
+    limit: String(limit),
+  });
+  return apiGet<AssetRequest[]>(`/api/actions/requests?${qs}`);
 }
 
-/** The current user's open REVIEW assignments (newest first). */
-export async function getReviewRequests(): Promise<NotificationItem[]> {
-  return apiGet<NotificationItem[]>("/api/actions/reviews");
+/** The requests still awaiting the current user, plus the outstanding total. */
+export async function getNotifications(limit = 5): Promise<NotificationFeed> {
+  return apiGet<NotificationFeed>(
+    `/api/actions/notifications?limit=${encodeURIComponent(String(limit))}`);
 }
 
-/** The current user's open MODIFICATION assignments (newest first). */
-export async function getPendingModifications(): Promise<NotificationItem[]> {
-  return apiGet<NotificationItem[]>("/api/actions/modifications");
-}
-
-/** Mark an ASSIGNED notification as seen (NOTIFIED). */
-export async function markNotified(id: number): Promise<unknown> {
+/** Acknowledge an outcome notice — the caller has read it, so it is handled.
+ *  Only PUBLICATION/REJECTION qualify; a REVIEW/MODIFICATION returns 400,
+ *  because those are resolved by reviewing or resubmitting, not by reading. */
+export async function acknowledgeNotification(id: number): Promise<unknown> {
   return apiPost<unknown, Record<string, never>>(
-    `/api/actions/notifications/${encodeURIComponent(String(id))}/notified`, {});
-}
-
-/** Dismiss a notification (insert FINISHED → removed from the list). */
-export async function dismissNotification(id: number): Promise<unknown> {
-  return apiPost<unknown, Record<string, never>>(
-    `/api/actions/notifications/${encodeURIComponent(String(id))}/dismiss`, {});
+    `/api/actions/notifications/${encodeURIComponent(String(id))}/acknowledge`, {});
 }

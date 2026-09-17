@@ -1,25 +1,38 @@
 <script lang="ts">
   /**
-   * NotificationBell — the header workflow-notifications bell (HU-LI11) as a
-   * Svelte island. Second Svelte migration after ShowAction. Keeps the native
-   * `<details>` disclosure + the global `.notification-*` classes so the look is
-   * unchanged; reuses the existing services (getNotifications / markNotified /
-   * dismissNotification) and `translate()` i18n. Mounted manually (see
-   * NotificationMenu.astro) — not the @astrojs/svelte island mechanism.
+   * NotificationBell — the header attention feed.
+   *
+   * Shows ONLY what still awaits the caller. Anything waiting on somebody else
+   * (an asset they proposed, say) is deliberately absent, because nothing is
+   * being asked of them — that belongs on the requests page, which this panel
+   * links to. The bell is a strict subset of that page, never a second copy of
+   * it; showing the same list twice was the duplication this redesign removes.
+   *
+   * There is no dismiss control. An item leaves this list by being resolved —
+   * a review decided, changes resubmitted, an outcome acknowledged — and by
+   * nothing else. The old dismiss wrote the same terminal row that means
+   * "already decided", so hiding an unresolved assignment silently revoked the
+   * assignee's ability to act on it.
+   *
+   * State comes from the shared store, so the panel and the requests page can
+   * never disagree, and both stay current without a manual reload.
    */
   import { onMount } from "svelte";
-  import { getNotifications, markNotified, dismissNotification } from "@/lib/notifications";
+  import { subscribe, start } from "@/lib/notificationsStore";
   import { formatRelative } from "@/lib/datatable";
   import { translate } from "@/utils/i18nClient";
-  import { showToast } from "@/lib/toast";
   import BellIcon from "@/images/icons/bell.svg?raw";
   import type { NotificationItem } from "@/types/api";
 
+  /** How many entries the panel renders before deferring to "view all". */
+  const MAX_SHOWN = 5;
+
   let items = $state<NotificationItem[]>([]);
+  let total = $state(0);
   let detailsEl = $state<HTMLDetailsElement | undefined>(undefined);
   let langTick = $state(0); // bump on language switch → re-localize labels
 
-  const count = $derived(items.length);
+  const hidden = $derived(Math.max(0, total - items.length));
 
   const t = (key: string, fallback: string): string => {
     void langTick;
@@ -36,66 +49,21 @@
   const typeLabel = (ty: string): string =>
     t(`notifications.type.${ty}`, ty.charAt(0) + ty.slice(1).toLowerCase());
 
-  async function load(): Promise<void> {
-    // This island only ever mounts inside BaseLayout, which the Astro
-    // middleware already gates on the `auth_token` cookie before rendering —
-    // by the time we're here the caller is authenticated, so no separate
-    // client-side check is needed. (There used to be an `isAuthenticated()`
-    // pre-check here, but it read the legacy localStorage `auth_token`, which
-    // the current cookie-first login flow never populates on a fresh login —
-    // it silently hid every notification, including the caller's own open
-    // REVIEW/MODIFICATION assignments, regardless of profile.) A genuine auth
-    // failure (expired cookie) still degrades gracefully via the catch below.
-    try {
-      items = await getNotifications();
-    } catch {
-      items = [];
-    }
+  /** Every entry here awaits the caller, so each one has a screen to act on. */
+  function hrefFor(it: NotificationItem): string {
+    const id = encodeURIComponent(String(it.id));
+    if (it.type === "REVIEW") return `/lib/review?action=${id}`;
+    if (it.type === "MODIFICATION") return `/lib/modify?action=${id}`;
+    // PUBLICATION / REJECTION are outcomes: read and acknowledge.
+    return `/lib/show-action?action=${id}`;
   }
 
-  // Click a row → open the matching user story (HU-Notifications).
-  async function onItemClick(it: NotificationItem): Promise<void> {
-    if (it.type === "PUBLICATION" || it.type === "REJECTION") {
-      window.location.href = `/lib/show-action?action=${encodeURIComponent(String(it.id))}`;
-      return;
-    }
-    if (it.type === "REVIEW") {
-      // Reviewer's queue → the Review page (it marks the notification seen on open).
-      window.location.href = `/lib/review?action=${encodeURIComponent(String(it.id))}`;
-      return;
-    }
-    if (it.type === "MODIFICATION") {
-      // Proposer's "edit after changes" flow (HU-Modify); the Modify page marks
-      // the notification seen on open.
-      window.location.href = `/lib/modify?action=${encodeURIComponent(String(it.id))}`;
-      return;
-    }
-    // Unknown type → just mark it seen.
-    if (it.unread) {
-      try {
-        await markNotified(it.id);
-        await load();
-      } catch {
-        showToast(t("notifications.error", "Could not update the notification"), "error");
-      }
-    }
+  function onItemClick(it: NotificationItem): void {
+    window.location.href = hrefFor(it);
   }
 
-  async function onDismiss(it: NotificationItem, e: Event): Promise<void> {
-    e.preventDefault();
-    e.stopPropagation();
-    items = items.filter((i) => i.id !== it.id); // optimistic
-    try {
-      await dismissNotification(it.id);
-    } catch {
-      showToast(t("notifications.error", "Could not update the notification"), "error");
-      await load(); // re-sync on failure
-    }
-  }
-
-  // Close the dropdown on an outside click — native <details> only closes on
-  // its own summary/Esc, not on a click elsewhere on the page (mirrors the
-  // account menu's identical fix and SearchPalette's existing pattern).
+  // Close on an outside click — a native <details> only closes via its own
+  // summary or Esc (mirrors the account menu and SearchPalette).
   function onDocumentClick(e: MouseEvent): void {
     if (detailsEl?.open && !detailsEl.contains(e.target as Node)) {
       detailsEl.removeAttribute("open");
@@ -106,17 +74,27 @@
     const onLang = () => (langTick += 1);
     window.addEventListener("languageChanged", onLang);
     document.addEventListener("mousedown", onDocumentClick);
-    void load();
+
+    // This island only ever mounts inside BaseLayout, which the Astro
+    // middleware already gates on the auth cookie — by the time we're here the
+    // caller is authenticated, so no client-side auth check is needed.
+    const unsubscribe = subscribe((s) => {
+      items = s.feed.items.slice(0, MAX_SHOWN);
+      total = s.feed.total;
+    });
+    start();
+
     return () => {
       window.removeEventListener("languageChanged", onLang);
       document.removeEventListener("mousedown", onDocumentClick);
+      unsubscribe();
     };
   });
 </script>
 
 <details class="notification-menu relative" aria-label="Notifications" bind:this={detailsEl}>
   <summary class="notification-trigger group">
-    {#if count > 0}
+    {#if total > 0}
       <span class="notify-dot" aria-hidden="true"><span class="notify-ping"></span></span>
     {/if}
     {@html BellIcon}
@@ -126,8 +104,8 @@
     <div class="flex items-center justify-between pb-3">
       <h3 class="text-lg font-semibold text-gray-900 dark:text-white/90">
         <span>{t("notification_menu.title", "Notifications")}</span>
-        {#if count > 0}
-          <span class="ml-1 rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">{count}</span>
+        {#if total > 0}
+          <span class="ml-1 rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">{total}</span>
         {/if}
       </h3>
       <button
@@ -147,33 +125,33 @@
           onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onItemClick(it); } }}
         >
           <div class="notification-body">
-            <p class={it.unread ? "notification-title font-bold" : "notification-title"}>
+            <p class="notification-title font-semibold">
               {it.asset_name || `#${it.asset}`}
             </p>
             <p class="notification-meta">{typeLabel(it.type)} · {formatRelative(it.created_at, locale())}</p>
           </div>
-          {#if !it.unread && (it.type === "PUBLICATION" || it.type === "REJECTION")}
-            <!-- Only informational types can be dismissed. REVIEW/MODIFICATION
-                 must be resolved via review/resubmit — dismissing them would
-                 insert the same FINISHED row that marks the assignment as
-                 already decided, permanently blocking the assignee from
-                 acting on it. Those stay reachable via the "Review Requests" /
-                 "My Modifications" pages instead. -->
-            <button
-              type="button"
-              class="ml-auto shrink-0 rounded-md px-2 py-1 text-xs font-medium text-gray-400 hover:text-red-600 dark:hover:text-red-400"
-              title={t("notifications.dismiss", "Dismiss")}
-              onclick={(e) => onDismiss(it, e)}
-            >{t("notifications.dismiss", "Dismiss")}</button>
-          {/if}
         </div>
       {/each}
     </div>
 
-    {#if count === 0}
+    {#if total === 0}
       <p class="py-6 text-center text-sm text-gray-400 dark:text-gray-500">
         {t("notifications.empty", "You're all caught up.")}
       </p>
     {/if}
+
+    <div class="mt-2 border-t border-gray-100 pt-2 dark:border-gray-800">
+      {#if hidden > 0}
+        <p class="px-1 pb-1 text-xs text-gray-400 dark:text-gray-500">
+          {t("notifications.more_count", "and {n} more").replace("{n}", String(hidden))}
+        </p>
+      {/if}
+      <a
+        href="/lib/my_asset_requests"
+        class="block rounded-lg px-1 py-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+      >
+        {t("notifications.view_all", "View all my asset requests")} →
+      </a>
+    </div>
   </div>
 </details>

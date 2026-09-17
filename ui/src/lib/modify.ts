@@ -3,7 +3,7 @@
  * changes, the proposer edits the asset + its characterizations and resubmits.
  * A single `POST /api/assets/{id}/resubmit` applies the edits, closes the
  * proposer's MODIFICATION assignment, flips the asset back to PROPOSED, and
- * re-arms the original reviewer (REVIEW/ASSIGNED). Backs the `/lib/modify` page.
+ * re-arms the original reviewer (REVIEW/PENDING). Backs the `/lib/modify` page.
  */
 import { apiPost } from "./api";
 import type { Asset, ModifyRequest } from "../types/api";

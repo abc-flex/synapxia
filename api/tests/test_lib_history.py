@@ -129,10 +129,10 @@ def test_history_empty_asset_has_only_created_marker(session):
 def test_history_carries_workflow_status(session):
     asset = _mk_asset(session, created_at=T0)
     _mk_action(session, asset.id, 1, "REVIEW", T0 + timedelta(minutes=1),
-               workflow_status="ASSIGNED")
+               workflow_status="PENDING")
     review = next(e for e in svc.get_asset_history(session, asset.id) if e["type"] == "REVIEW")
-    assert review["workflow_status"] == "ASSIGNED"
-    # Summary is workflow-aware: ASSIGNED reads distinctly from FINISHED.
+    assert review["workflow_status"] == "PENDING"
+    # Summary is workflow-aware: PENDING reads distinctly from HANDLED.
     assert review["summary"] == "was assigned to review the asset"
 
 
@@ -143,14 +143,17 @@ def _summ(type, ws):
 
 
 def test_history_summary_distinguishes_workflow_steps():
-    assert _summ("REVIEW", "ASSIGNED") == "was assigned to review the asset"
-    assert _summ("REVIEW", "FINISHED") == "reviewed the asset"
-    assert _summ("PUBLICATION", "ASSIGNED") == "was assigned to publish the asset"
-    assert _summ("PUBLICATION", "FINISHED") == "published the asset"
-    assert _summ("PROPOSAL", "FINISHED") == "proposed the asset"
-    # The bug being fixed: the three PUBLICATION steps must not collapse.
-    assert _summ("PUBLICATION", "ASSIGNED") != _summ("PUBLICATION", "FINISHED")
-    assert _summ("PUBLICATION", "NOTIFIED") != _summ("PUBLICATION", "FINISHED")
+    assert _summ("REVIEW", "PENDING") == "was assigned to review the asset"
+    assert _summ("REVIEW", "HANDLED") == "reviewed the asset"
+    assert _summ("PUBLICATION", "PENDING") == "was assigned to publish the asset"
+    assert _summ("PUBLICATION", "HANDLED") == "published the asset"
+    assert _summ("PROPOSAL", "HANDLED") == "proposed the asset"
+    # The bug being fixed: the PUBLICATION steps must not collapse into one verb.
+    assert _summ("PUBLICATION", "PENDING") != _summ("PUBLICATION", "HANDLED")
+    # The retired "seen" state must not come back through the summaries table —
+    # viewing an item is read state and is no longer recorded anywhere.
+    assert ("PUBLICATION", "NOTIFIED") not in svc._WORKFLOW_SUMMARIES
+    assert not any(ws == "NOTIFIED" for _, ws in svc._WORKFLOW_SUMMARIES)
 
 
 def test_history_summary_falls_back_without_workflow_status():
@@ -162,14 +165,14 @@ def test_history_summary_falls_back_without_workflow_status():
 
 def test_get_workflow_stage_returns_latest(session):
     asset = _mk_asset(session, created_at=T0)
-    _mk_action(session, asset.id, 1, "PROPOSAL", T0 + timedelta(minutes=1), workflow_status="FINISHED")
-    _mk_action(session, asset.id, 1, "REVIEW", T0 + timedelta(minutes=2), workflow_status="FINISHED")
-    _mk_action(session, asset.id, 1, "PUBLICATION", T0 + timedelta(minutes=3), workflow_status="ASSIGNED")
+    _mk_action(session, asset.id, 1, "PROPOSAL", T0 + timedelta(minutes=1), workflow_status="HANDLED")
+    _mk_action(session, asset.id, 1, "REVIEW", T0 + timedelta(minutes=2), workflow_status="HANDLED")
+    _mk_action(session, asset.id, 1, "PUBLICATION", T0 + timedelta(minutes=3), workflow_status="PENDING")
 
     stage = svc.get_workflow_stage(session, asset.id)
     assert stage is not None
     assert stage["type"] == "PUBLICATION"
-    assert stage["workflow_status"] == "ASSIGNED"
+    assert stage["workflow_status"] == "PENDING"
 
 
 def test_get_workflow_stage_none_without_workflow_actions(session):

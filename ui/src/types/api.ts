@@ -1002,18 +1002,50 @@ export interface WorkflowStage {
   created_at: string;
 }
 
-// Workflow notification (HU-LI11): the latest row of a per-(asset,type)
-// assignment thread directed at the current user. `unread` is true while it is
-// still ASSIGNED (shown bold); NOTIFIED items are seen and dismissible. `id` is
-// that latest action's id, used to advance the thread (notified/dismiss).
+/**
+ * One entry in the header attention feed — a request still awaiting the caller.
+ * There is no `unread` flag: every entry here is by definition pending on you,
+ * so a second read/unread axis would be meaningless. Whether something looks
+ * "new" is a per-device presentation concern, never recorded server-side.
+ */
 export interface NotificationItem {
   id: number;
   asset: number;
   asset_name?: string | null;
   type: string;
-  workflow_status: string;
-  unread: boolean;
   created_at: string;
+}
+
+/** The feed plus how many requests are outstanding in total, so the panel can
+ *  cap what it renders and still say how many more there are. */
+export interface NotificationFeed {
+  items: NotificationItem[];
+  total: number;
+}
+
+/** Whose action a still-in-motion request is waiting on. */
+export type AwaitedParty = "SELF" | "OTHER";
+
+/**
+ * The caller's involvement with ONE asset — the unit the "My Asset Requests"
+ * page lists. Every request and proposal the caller has on an asset collapses
+ * into a single entry, so an asset they proposed and whose outcome they later
+ * acknowledged appears once rather than twice.
+ *
+ * `pending_action_id`/`_type` are set only when `awaited_party` is `"SELF"` —
+ * they are what the client opens the action screen with.
+ */
+export interface AssetRequest {
+  asset: number;
+  asset_name?: string | null;
+  asset_status?: string | null;
+  category?: string | null;
+  roles: string[];
+  state: "PENDING" | "HANDLED";
+  awaited_party?: AwaitedParty | null;
+  pending_action_id?: number | null;
+  pending_action_type?: string | null;
+  last_change_at: string;
 }
 
 // Initiative type — read-only for now (no Create/Update: the API only

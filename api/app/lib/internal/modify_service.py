@@ -3,15 +3,15 @@ reviewer requested changes.
 
 Per docs/user-stories/lib-status.md ("HU-Modify") + 04-lib.md (HU-LI14), when the
 reviewer picks "request changes" the asset goes to FEEDBACK and the proposer gets
-a MODIFICATION/ASSIGNED action carrying the feedback in ``content``. This service
+a MODIFICATION/PENDING action carrying the feedback in ``content``. This service
 is the resubmit: the proposer edits the asset + its characterizations and sends it
 back for re-review. In one transaction it:
   1. updates the asset's editable fields + its characterizations,
-  2. closes the proposer's assignment — inserts a MODIFICATION/FINISHED action,
+  2. closes the proposer's assignment — inserts a MODIFICATION/HANDLED action,
   3. sets the asset status back to PROPOSED (so HU-Review can accept it again —
      ``review_service`` guards ``status == "PROPOSED"``; there is no dedicated
      "resubmitted" status in the ASSET_STATUS enum),
-  4. re-arms the loop — inserts a fresh REVIEW/ASSIGNED action for the original
+  4. re-arms the loop — inserts a fresh REVIEW/PENDING action for the original
      reviewer (the one chosen at propose time).
 
 Every workflow transition is a NEW ``actions`` row (never an update), matching
@@ -44,9 +44,8 @@ STATUS_PROPOSED = "PROPOSED"
 TYPE_REVIEW = "REVIEW"
 TYPE_PROPOSAL = "PROPOSAL"
 TYPE_MODIFICATION = "MODIFICATION"
-WF_ASSIGNED = "ASSIGNED"
-WF_NOTIFIED = "NOTIFIED"
-WF_FINISHED = "FINISHED"
+WF_PENDING = "PENDING"
+WF_HANDLED = "HANDLED"
 
 # Asset columns the proposer may edit on resubmit (category is intentionally
 # excluded — it drives the spec/characterization set).
@@ -79,7 +78,7 @@ def resubmit_asset(
             Action.asset == asset_id,
             Action.user_id == proposer.id,
             Action.type == TYPE_MODIFICATION,
-            Action.workflow_status.in_((WF_ASSIGNED, WF_NOTIFIED)),  # type: ignore[attr-defined]
+            Action.workflow_status == WF_PENDING,
             Action.is_active == True,  # noqa: E712
         )
     ).first()
@@ -148,7 +147,7 @@ def resubmit_asset(
         # 3. Close the proposer's MODIFICATION assignment.
         session.add(Action(
             asset=asset_id, user_id=proposer.id,
-            type=TYPE_MODIFICATION, workflow_status=WF_FINISHED))
+            type=TYPE_MODIFICATION, workflow_status=WF_HANDLED))
         # 4. Send the asset back into review.
         asset.status = STATUS_PROPOSED
         if changed:
@@ -157,7 +156,7 @@ def resubmit_asset(
         # 5. Re-arm the reviewer's assignment.
         session.add(Action(
             asset=asset_id, user_id=reviewer_id,
-            type=TYPE_REVIEW, workflow_status=WF_ASSIGNED))
+            type=TYPE_REVIEW, workflow_status=WF_PENDING))
         session.commit()
         session.refresh(asset)
     except IntegrityError:

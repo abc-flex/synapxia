@@ -2,17 +2,22 @@
   /**
    * ShowAction — HU-Show Action as a Svelte island (the first framework pilot).
    * Read-only view of a PUBLICATION / REJECTION outcome action for the current
-   * user: fetches the action (+ asset name), renders a branded card, marks the
-   * notification seen on open, and offers Back / Dismiss.
+   * user: fetches the action (+ asset name), renders a branded card, and offers
+   * Back / Acknowledge.
    *
-   * Reuses the EXISTING vanilla services unchanged (getAction / getAsset /
-   * markNotified / dismissNotification / showToast / translate) — only the
-   * render + state layer is Svelte. Mounted `client:load` from show-action.astro.
+   * Opening this page records NOTHING. Acknowledging is a deliberate act — it is
+   * what resolves an outcome notice — so it stays behind the button. Auto-
+   * clearing on open would let an outcome pass unread and leave no trace that
+   * the user never actually registered it.
+   *
+   * Reuses the existing services (getAction / getAsset / acknowledgeNotification
+   * / showToast / translate); only the render + state layer is Svelte.
    */
   import { onMount } from "svelte";
   import { getAction } from "@/lib/actions";
   import { getAsset } from "@/lib/assets";
-  import { dismissNotification, markNotified } from "@/lib/notifications";
+  import { acknowledgeNotification } from "@/lib/notifications";
+  import { notifyChanged } from "@/lib/notificationsStore";
   import { formatRelative } from "@/lib/datatable";
   import { translate } from "@/utils/i18nClient";
   import { showToast } from "@/lib/toast";
@@ -60,14 +65,16 @@
     else window.location.href = "/";
   }
 
-  async function dismiss(): Promise<void> {
+  async function acknowledge(): Promise<void> {
     const id = actionId();
     if (!id) return goBack();
     dismissing = true;
     try {
-      await dismissNotification(id);
-      showToast(t("show_action.dismissed", "Notification dismissed"), "success");
-      setTimeout(goBack, 600);
+      await acknowledgeNotification(id);
+      showToast(t("show_action.acknowledged", "Outcome acknowledged"), "success");
+      // Update the header bell and the requests page immediately.
+      notifyChanged();
+      setTimeout(() => (window.location.href = "/lib/my_asset_requests"), 600);
     } catch {
       dismissing = false;
       showToast(t("notifications.error", "Could not update the notification"), "error");
@@ -108,12 +115,8 @@
       message = msg || t("show_action.no_message", "No message provided.");
       if (action.created_at) timeAgo = formatRelative(action.created_at, locale());
 
-      // Opening the outcome marks it seen (ASSIGNED → NOTIFIED); idempotent.
-      try {
-        await markNotified(id);
-      } catch {
-        /* not the owner / already past ASSIGNED — non-fatal */
-      }
+      // Reading is not acknowledging — the notice stays pending until the user
+      // presses the button below.
     })();
 
     return () => window.removeEventListener("languageChanged", onLang);
@@ -153,9 +156,9 @@
     >{t("show_action.back", "Back")}</button>
     <button
       type="button"
-      onclick={dismiss}
+      onclick={acknowledge}
       disabled={dismissing}
-      class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-60 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-    >{t("show_action.dismiss", "Dismiss")}</button>
+      class="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-60"
+    >{t("show_action.acknowledge", "Got it")}</button>
   </div>
 </article>

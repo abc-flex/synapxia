@@ -2,10 +2,10 @@
 
 Per docs/user-stories/lib-status.md ("HU-Review"), when the assigned reviewer
 approves / rejects / requests changes on a PROPOSED asset, one transaction:
-  1. closes the reviewer's assignment — inserts a REVIEW action (FINISHED),
+  1. closes the reviewer's assignment — inserts a REVIEW action (HANDLED),
   2. sets the asset status → PUBLISHED / REJECTED / FEEDBACK respectively,
   3. notifies the proposer — inserts a new action for the proposer of type
-     PUBLICATION / REJECTION / MODIFICATION (ASSIGNED), carrying the reviewer's
+     PUBLICATION / REJECTION / MODIFICATION (PENDING), carrying the reviewer's
      feedback in ``content`` (Show Action renders it).
 
 Every workflow transition is a NEW ``actions`` row (never an update), matching
@@ -35,9 +35,8 @@ class ReviewConflict(Exception):
 STATUS_PROPOSED = "PROPOSED"
 TYPE_REVIEW = "REVIEW"
 TYPE_PROPOSAL = "PROPOSAL"
-WF_ASSIGNED = "ASSIGNED"
-WF_NOTIFIED = "NOTIFIED"
-WF_FINISHED = "FINISHED"
+WF_PENDING = "PENDING"
+WF_HANDLED = "HANDLED"
 
 # decision → (new asset status, action type raised for the proposer)
 DECISIONS = {
@@ -80,7 +79,7 @@ def review_asset(
             Action.asset == asset_id,
             Action.user_id == reviewer.id,
             Action.type == TYPE_REVIEW,
-            Action.workflow_status.in_((WF_ASSIGNED, WF_NOTIFIED)),  # type: ignore[attr-defined]
+            Action.workflow_status == WF_PENDING,
             Action.is_active == True,  # noqa: E712
         )
     ).first()
@@ -112,14 +111,14 @@ def review_asset(
         # 1. Close the reviewer's assignment.
         session.add(Action(
             asset=asset_id, user_id=reviewer.id,
-            type=TYPE_REVIEW, workflow_status=WF_FINISHED))
+            type=TYPE_REVIEW, workflow_status=WF_HANDLED))
         # 2. Flip the asset status.
         asset.status = new_status
         session.add(asset)
         # 3. Notify the proposer with the outcome + feedback.
         session.add(Action(
             asset=asset_id, user_id=proposer_id,
-            type=proposer_type, workflow_status=WF_ASSIGNED, content=note))
+            type=proposer_type, workflow_status=WF_PENDING, content=note))
         session.commit()
         session.refresh(asset)
     except IntegrityError:

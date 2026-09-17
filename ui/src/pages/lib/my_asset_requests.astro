@@ -1,27 +1,24 @@
 ---
-// My Asset Requests (persistent reviewer queue, formerly "Review Requests") —
-// gives an assigned reviewer a durable place to find their open REVIEW
-// assignments, independent of the notification bell (whose entries can be
-// opened/scrolled away without any way to get back to them). Backed by
-// GET /api/actions/reviews, the same underlying data as the bell's REVIEW
-// items, scoped to just that type.
+/**
+ * My Asset Requests — the durable record of every asset the caller has taken
+ * part in: requests directed at them plus assets they proposed, open and closed.
+ *
+ * The table is the `MyAssetRequests.svelte` island, mounted manually via
+ * Svelte 5's `mount()` from a bundled `<script>` (not the @astrojs/svelte island
+ * mechanism — see astro.config.mjs). It was a server-rendered table before, but
+ * an SSR snapshot is stale the moment a review is decided anywhere, which is the
+ * exact defect this feature fixes; the island subscribes to the shared
+ * notifications store instead, so this page and the header bell always agree.
+ *
+ * Absorbs the former `/lib/modifications` page, which listed a single request
+ * type and was already unreachable from every menu.
+ */
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Breadcrumb from "@/components/core/Breadcrumb.astro";
-import { getReviewRequests } from "@/lib/notifications";
 import { getLocale } from "@/utils/getLocale";
 import { t } from "@/i18n";
-import { formatDate } from "@/lib/datatable";
-import type { NotificationItem } from "@/types/api";
 
 const locale = getLocale(Astro);
-
-let items: NotificationItem[] = [];
-try {
-  items = await getReviewRequests();
-} catch (error) {
-  console.error("Failed to fetch asset requests:", error);
-  items = [];
-}
 ---
 
 <BaseLayout title="My Asset Requests">
@@ -43,70 +40,15 @@ try {
       {t(locale, "my_asset_requests.subtitle")}
     </p>
 
-    {
-      items.length === 0 ? (
-        <div class="rounded-xl no-border p-4">
-          <p
-            class="text-sm text-gray-500 dark:text-gray-400"
-            data-i18n="my_asset_requests.empty"
-          >
-            {t(locale, "my_asset_requests.empty")}
-          </p>
-        </div>
-      ) : (
-        <div class="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
-          <table class="w-full text-left text-sm">
-            <thead class="bg-gray-100 text-xs uppercase text-gray-700 border-b border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700">
-              <tr>
-                <th class="px-4 py-2 font-semibold tracking-wide" data-i18n="my_asset_requests.col_asset">
-                  {t(locale, "my_asset_requests.col_asset")}
-                </th>
-                <th class="px-4 py-2 font-semibold tracking-wide" data-i18n="my_asset_requests.col_status">
-                  {t(locale, "my_asset_requests.col_status")}
-                </th>
-                <th class="px-4 py-2 font-semibold tracking-wide" data-i18n="my_asset_requests.col_assigned">
-                  {t(locale, "my_asset_requests.col_assigned")}
-                </th>
-                <th class="px-4 py-2 font-semibold tracking-wide" />
-              </tr>
-            </thead>
-            <tbody class="[&>tr:nth-child(even)]:bg-gray-50 [&>tr:hover]:bg-gray-100 dark:[&>tr:nth-child(even)]:bg-gray-800/40 dark:[&>tr:hover]:bg-gray-800/70">
-              {items.map((it) => (
-                <tr class="border-b border-gray-200 dark:border-gray-800">
-                  <td class="px-4 py-2 font-medium text-gray-900 dark:text-white/90">
-                    {it.asset_name || `#${it.asset}`}
-                  </td>
-                  <td class="px-4 py-2">
-                    <span
-                      class={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        it.unread
-                          ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300"
-                          : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
-                      }`}
-                    >
-                      <span data-i18n={it.unread ? "my_asset_requests.status_pending" : "my_asset_requests.status_seen"}>
-                        {t(locale, it.unread ? "my_asset_requests.status_pending" : "my_asset_requests.status_seen")}
-                      </span>
-                    </span>
-                  </td>
-                  <td class="px-4 py-2 text-gray-500 dark:text-gray-400">
-                    {formatDate(it.created_at, locale)}
-                  </td>
-                  <td class="px-4 py-2 text-right">
-                    <a
-                      href={`/lib/review?action=${encodeURIComponent(String(it.id))}`}
-                      class="inline-flex items-center rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700"
-                      data-i18n="my_asset_requests.open_action"
-                    >
-                      {t(locale, "my_asset_requests.open_action")}
-                    </a>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )
-    }
+    <div id="my-asset-requests-root"></div>
   </div>
+
+  <script>
+    // Mount the Svelte component manually (bundled @/ script, no island codegen).
+    import { mount } from "svelte";
+    import MyAssetRequests from "@/components/svelte/MyAssetRequests.svelte";
+
+    const target = document.getElementById("my-asset-requests-root");
+    if (target) mount(MyAssetRequests, { target });
+  </script>
 </BaseLayout>

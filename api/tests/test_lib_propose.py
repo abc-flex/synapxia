@@ -2,8 +2,8 @@
 
 Proposing an asset is the review-workflow entry point: a single transaction that
 creates the asset (PROPOSED) + one characterization per category spec + a
-PROPOSAL/FINISHED action (proposer) + a REVIEW/ASSIGNED action (reviewer) +
-MANAGE asset_permissions for both. The REVIEW/ASSIGNED action is what the
+PROPOSAL/HANDLED action (proposer) + a REVIEW/PENDING action (reviewer) +
+MANAGE asset_permissions for both. The REVIEW/PENDING action is what the
 notifications feature (HU-LI11) then surfaces — covered here by an integration
 assertion against ``actions_service.list_notifications``.
 
@@ -84,12 +84,12 @@ def test_propose_creates_asset_and_workflow_records(session):
     assert {c.feature for c in chars} == {"PLATFORM", "SUGGESTED_MODEL"}
     assert {c.value for c in chars} == {"OpenAI", "gpt-4"}
 
-    # 3 + 4. PROPOSAL/FINISHED (proposer) + REVIEW/ASSIGNED (reviewer)
+    # 3 + 4. PROPOSAL/HANDLED (proposer) + REVIEW/PENDING (reviewer)
     actions = session.exec(select(Action).where(Action.asset == asset.id)).all()
     proposal = next(a for a in actions if a.type == "PROPOSAL")
     review = next(a for a in actions if a.type == "REVIEW")
-    assert proposal.user_id == 42 and proposal.workflow_status == "FINISHED"
-    assert review.user_id == reviewer.id and review.workflow_status == "ASSIGNED"
+    assert proposal.user_id == 42 and proposal.workflow_status == "HANDLED"
+    assert review.user_id == reviewer.id and review.workflow_status == "PENDING"
 
     # 5. MANAGE permission for proposer + reviewer
     perms = session.exec(select(AssetPermission).where(AssetPermission.asset == asset.id)).all()
@@ -98,18 +98,16 @@ def test_propose_creates_asset_and_workflow_records(session):
 
 
 def test_proposal_generates_reviewer_notification(session):
-    """End-to-end with Phase 5: the REVIEW/ASSIGNED action shows up as a
+    """End-to-end with Phase 5: the REVIEW/PENDING action shows up as a
     notification for the reviewer."""
     _mk_category(session)
     reviewer = _mk_user(session, 7, "rev")
 
     svc.propose_asset(session, proposer_id=42, data=_req(reviewer_id=reviewer.id))
 
-    notifs = actions_service.list_notifications(session, reviewer.id)
-    assert len(notifs) == 1
-    assert notifs[0]["type"] == "REVIEW"
-    assert notifs[0]["workflow_status"] == "ASSIGNED"
-    assert notifs[0]["unread"] is True
+    feed = actions_service.list_notifications(session, reviewer.id)
+    assert feed["total"] == 1
+    assert feed["items"][0]["type"] == "REVIEW"
 
 
 def test_values_override_spec_default(session):

@@ -18,11 +18,11 @@ scored criteria** instead of a review. Accepted initiatives feed the library thr
 | HU-IN05 | – Propose Initiative | | HU-IN14 | [Account Menu] My Initiative Requests |
 | HU-IN06 | – Initiative Detail | | HU-IN15 | – Diagnosis of the Initiative |
 | HU-IN07 | [Initiative Tab] Core Fields | | HU-IN16 | – Modify Initiative |
-| HU-IN08 | [Initiative Tab] Diagnosis Questions | | HU-IN17 | – Initiative Request Detail |
+| HU-IN08 | [Initiative Tab] Diagnosis Questions | | HU-IN17 | – User Acknowledgment of Initiative Notification |
 | HU-IN09 | [Initiative Tab] Related Assets | | | |
 
 > The activation/diagnosis workflow runs on the `collaborations` table through `type` and
-> `workflow_status` (`ASSIGNED` → `NOTIFIED` → `FINISHED`). Full matrix:
+> `workflow_status` (`PENDING` → `HANDLED`). Full matrix:
 > [Initiative Collaboration Workflows](states-and-types.md#initiative-collaboration-workflows-collaborations-table).
 > What each tab does per parent story:
 > [Initiative tab options](states-and-types.md#initiative-tab-options-by-user-story).
@@ -57,7 +57,7 @@ scored criteria** instead of a review. Accepted initiatives feed the library thr
 - **Behavior:** each tab saves its own slice — core fields, related assets, permissions;
   diagnosis questions and history are read-only here. Moving the initiative to *Delivered*
   records a `DELIVERY` collaboration; archiving sets `status = ARCHIVED` and records an
-  `ARCHIVING` collaboration. Both are terminal records (`workflow_status = FINISHED`), not
+  `ARCHIVING` collaboration. Both are terminal records (`workflow_status = HANDLED`), not
   assignments.
 - **Data:** `initiatives`, `collaborations` (`DELIVERY` / `ARCHIVING`)
 - Detail of **HU-IN02**.
@@ -81,8 +81,8 @@ scored criteria** instead of a review. Accepted initiatives feed the library thr
   second step scoring every criterion and submitting the request.
 - **Data:** one transaction inserts — an `initiatives` row (`status = ACTIVATED`); one
   `diagnostics` row per criterion carrying the proposer's `creator_score`; a `collaborations`
-  row for the proposer (`type = ACTIVATION`, `workflow_status = FINISHED`); a `collaborations`
-  row for the chosen reviewer (`type = DIAGNOSIS`, `workflow_status = ASSIGNED`); and
+  row for the proposer (`type = ACTIVATION`, `workflow_status = HANDLED`); a `collaborations`
+  row for the chosen reviewer (`type = DIAGNOSIS`, `workflow_status = PENDING`); and
   `init_permissions` rows (`access_level = MANAGE`, open validity) for the proposer and the
   reviewer.
 - Detail of **HU-IN04**.
@@ -168,21 +168,22 @@ These stories implement the activation/diagnosis loop on `collaborations`. See t
 > As an **assignee** (reviewer or proposer), I want a **notification bell listing the
 > collaborations waiting on me** **so that** I know what needs my attention.
 - **Behavior:** lists the user's `collaborations` grouped by initiative whose **latest**
-  `workflow_status` is `ASSIGNED` (bold) or `NOTIFIED` (not bold), for `type` in `DIAGNOSIS` /
+  `workflow_status` is `PENDING` (bold) or `PENDING` (not bold), for `type` in `DIAGNOSIS` /
   `MODIFICATION` / `ACCEPTANCE` / `REJECTION` / `DELIVERY`. Opening one routes to **HU-IN15
   Diagnosis of the Initiative** (`DIAGNOSIS`), **HU-IN16 Modify Initiative** (`MODIFICATION`)
-  or **HU-IN17 Initiative Request Detail** (`ACCEPTANCE` / `REJECTION` / `DELIVERY`).
-  Dismissing is offered only for the informational outcomes and inserts that collaboration with
-  `workflow_status = FINISHED`.
+  or **HU-IN17 User Acknowledgment of Initiative Notification** (`ACCEPTANCE` / `REJECTION` /
+  `DELIVERY`). There is no dismiss: an entry leaves the list by being resolved. For the
+  informational outcomes, resolving means the user explicitly acknowledging them, which inserts
+  that collaboration with `workflow_status = HANDLED`.
 - **Data:** `collaborations` (`type`, `workflow_status`, `content`)
 
 ### HU-IN14 · [Account Menu] My Initiative Requests
 > As a **reviewer or proposer**, I want a **durable list of my initiative requests** — open and
 > already resolved — **so that** I can find my pending work without depending on a transient
 > notification.
-- **Behavior:** lists the user's `collaborations` grouped by initiative with status `ASSIGNED`
-  (bold), `NOTIFIED` (plain) or `FINISHED` (muted), for `type` in `DIAGNOSIS` / `MODIFICATION`
-  / `ACCEPTANCE` / `REJECTION` / `DELIVERY`. Every `FINISHED` collaboration — and every
+- **Behavior:** lists the user's `collaborations` grouped by initiative with status `PENDING`
+  (bold), `PENDING` (plain) or `HANDLED` (muted), for `type` in `DIAGNOSIS` / `MODIFICATION`
+  / `ACCEPTANCE` / `REJECTION` / `DELIVERY`. Every `HANDLED` collaboration — and every
   `ACCEPTANCE` / `REJECTION` / `DELIVERY` — opens **HU-IN17**; the rest open **HU-IN15**
   (`DIAGNOSIS`) or **HU-IN16** (`MODIFICATION`). Reached from the account menu's *My Workspace*
   section.
@@ -191,12 +192,12 @@ These stories implement the activation/diagnosis loop on `collaborations`. See t
 ### HU-IN15 · – Diagnosis of the Initiative
 > As a **reviewer**, I want to **score an activated initiative against the criteria and accept
 > it, reject it or request changes** **so that** only viable initiatives proceed.
-- **Behavior:** on open, an `ASSIGNED` collaboration is un-bolded in the notifications and
-  re-inserted as `NOTIFIED`. On decision, one transaction writes the `reviewer_score` and
-  rationale per criterion, inserts the `DIAGNOSIS` collaboration as `FINISHED`, sets the
+- **Behavior:** opening the page records nothing — viewing is not deciding, so the collaboration
+  stays `PENDING`. On decision, one transaction writes the `reviewer_score` and
+  rationale per criterion, inserts the `DIAGNOSIS` collaboration as `HANDLED`, sets the
   initiative `status` to `ACCEPTED` / `REJECTED` / `FEEDBACK`, and inserts a collaboration for
   the **proposer** of `type` `ACCEPTANCE` / `REJECTION` / `MODIFICATION` with
-  `workflow_status = ASSIGNED` and the feedback in `content`.
+  `workflow_status = PENDING` and the feedback in `content`.
 - **Data:** `collaborations`, `diagnostics` (`creator_score` / `reviewer_score`),
   `initiatives.status` / `.score`
 - Detail of **HU-IN14**.
@@ -204,19 +205,21 @@ These stories implement the activation/diagnosis loop on `collaborations`. See t
 ### HU-IN16 · – Modify Initiative
 > As a **proposer**, I want to **apply the changes a reviewer asked for and resubmit** **so
 > that** the diagnosis cycle can continue.
-- **Behavior:** on open, an `ASSIGNED` collaboration is un-bolded and re-inserted as
-  `NOTIFIED`. On save, one transaction updates the initiative and its diagnosis answers in
-  place, inserts the `MODIFICATION` collaboration as `FINISHED`, returns the initiative to
+- **Behavior:** opening the page records nothing — viewing is not resubmitting, so the
+  collaboration stays `PENDING`. On save, one transaction updates the initiative and its diagnosis answers in
+  place, inserts the `MODIFICATION` collaboration as `HANDLED`, returns the initiative to
   `ACTIVATED`, and re-arms the **same reviewer** with a new `DIAGNOSIS` collaboration as
-  `ASSIGNED`.
+  `PENDING`.
 - **Data:** `collaborations`, `initiatives`, `diagnostics`
 - Detail of **HU-IN14**.
 
-### HU-IN17 · – Initiative Request Detail
+### HU-IN17 · – User Acknowledgment of Initiative Notification
 > As a **proposer**, I want to **see the outcome of my initiative** — accepted, rejected or
 > delivered, with the reviewer's message — **so that** I learn the result and can clear the
 > notification.
-- **Behavior:** read-only outcome card. On open, an `ASSIGNED` collaboration is un-bolded and
-  re-inserted as `NOTIFIED`; dismissing inserts it as `FINISHED`.
+- **Behavior:** read-only outcome card. Opening it records **nothing** — reading is not
+  acknowledging, so an outcome can never pass unregistered. The collaboration stays `PENDING`
+  until the user presses the acknowledge button, which inserts it as `HANDLED`. Mirrors
+  **HU-LI18** on the asset side.
 - **Data:** `collaborations`, `initiatives`
 - Detail of **HU-IN14**.

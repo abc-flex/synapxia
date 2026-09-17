@@ -43,6 +43,21 @@ directives: the only version installable from our registry (`9.0.0`) mis-compile
 islands reuse the existing `lib/*` services and read i18n via `translate()` (not `data-i18n`).
 Template comments inside `.svelte` are `<!-- -->`, **not** JSX `{/* */}`. No React/Vue.
 
+**Shared client state across islands — `lib/notificationsStore.ts` is the reference.** When two
+surfaces must never disagree (the header bell and `/lib/my_asset_requests` show projections of
+the same data), don't have each one fetch on mount. Put the state in a **framework-free module**
+under `lib/` with `subscribe()` / `refresh()` / `start()` / `stop()`, and let each island
+subscribe in `onMount` and assign into its own `$state`. Keeping it plain TS (not `.svelte.ts`)
+means `.astro` shells can use it too, and matches the `lib/*` = services split.
+
+That store also carries the repo's **staleness playbook**, worth copying for anything that must
+stay current: refresh on mount, on `visibilitychange`→visible, on `pageshow` (the *only* event a
+bfcache restore fires — `history.back()` does not re-execute the page, so `onMount` never re-runs),
+on a timer **gated on visibility** so hidden tabs cost nothing, and on a custom `notifications:changed`
+event dispatched after same-tab mutations. A failed refresh must keep the last known state, never
+blank it. Server-sent events and websockets are **not** available — the API deploys serverless and
+cannot hold long-lived connections.
+
 **Migrating a vanilla `mount*(cfg)` controller to Svelte:** move the render/state layer to
 `components/svelte/X.svelte`, self-mount it from the controller's `.astro` shell (render
 `<div data-x-root data-…>` + a bundled `<script>` that `mount()`s the island, reading its

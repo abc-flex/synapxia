@@ -154,7 +154,7 @@ class ActionBase(SQLModel):
     type: str = Field(max_length=100)
     # `workflow_status` is a VARCHAR(100) nullable column already present in the
     # DDL (db/sql/41-lib-ddl.sql) referencing the WORKFLOW_STATUS list
-    # (ASSIGNED/NOTIFIED/FINISHED). It drives the review workflow + notifications;
+    # (PENDING/HANDLED). It drives the review workflow + notifications;
     # exposing it here is additive (no migration).
     workflow_status: Optional[str] = Field(default=None, max_length=100)
     content: Optional[str] = Field(default=None)
@@ -277,7 +277,7 @@ class WorkflowStage(SQLModel):
     """The asset's current review stage — the latest review-workflow action
     (PROPOSAL/REVIEW/PUBLICATION/…) with its ``workflow_status``. Read-only and
     distinct from ``asset.status``; surfaced as a badge in the detail view so the
-    review step (assigned / notified / finished) is visible."""
+    review step (pending / handled) is visible."""
     type: str
     workflow_status: Optional[str] = None
     actor: Optional[str] = None
@@ -285,17 +285,48 @@ class WorkflowStage(SQLModel):
 
 
 class NotificationItem(SQLModel):
-    """An open workflow notification (HU-LI11) — the latest row of a per-(asset,
-    type) assignment thread directed at the current user, with status ASSIGNED
-    (``unread`` True, shown bold) or NOTIFIED (seen, dismissible). ``id`` is that
-    latest action's id, used to advance the thread (notified/dismiss)."""
+    """One entry in the caller's attention feed — a request still awaiting them.
+
+    There is no ``unread`` field: every entry in this feed is by definition
+    pending on the caller, so a second read/unread axis would be meaningless.
+    Whether something looks "new" is a per-device presentation concern and is
+    never recorded server-side. ``id`` is the pending action's id, used to open
+    the action screen or to acknowledge an outcome."""
     id: int
     asset: int
     asset_name: Optional[str] = None
     type: str
-    workflow_status: str
-    unread: bool
     created_at: datetime
+
+
+class NotificationFeed(SQLModel):
+    """The feed plus how many requests are outstanding in total, so the panel can
+    cap what it renders and still say how many more there are."""
+    items: List[NotificationItem] = []
+    total: int = 0
+
+
+class AssetRequest(SQLModel):
+    """The caller's involvement with ONE asset — the unit the requests page lists.
+
+    Collapses every request and proposal the caller has on an asset into a single
+    entry, so an asset they proposed and whose outcome they later acknowledged
+    appears once rather than twice.
+
+    ``awaited_party`` is ``SELF`` when the caller owes the next action, ``OTHER``
+    when someone else does (they proposed it and the reviewer has not acted), and
+    ``None`` once the entry is handled. ``pending_action_id``/``_type`` are set
+    only when ``awaited_party`` is ``SELF`` — they are what the client opens."""
+    asset: int
+    asset_name: Optional[str] = None
+    asset_status: Optional[str] = None
+    category: Optional[str] = None
+    roles: List[str] = []
+    state: str
+    awaited_party: Optional[str] = None
+    pending_action_id: Optional[int] = None
+    pending_action_type: Optional[str] = None
+    last_change_at: datetime
 
 # Asset Relations Models
 
@@ -526,7 +557,7 @@ class VersionRequest(SQLModel):
     """Request body for saving a new version of an asset (HU-LI09, versioning
     half). One transaction: apply the core-field edits, snapshot the
     characterizations under the bumped ``version_label``, set the asset's
-    ``current_version`` and log a VERSIONING/FINISHED action. ``change_type``
+    ``current_version`` and log a VERSIONING/HANDLED action. ``change_type``
     picks which digit of the semver label bumps (major → X+1.0.0,
     minor → X.Y+1.0, patch → X.Y.Z+1). ``values`` is the FULL desired
     characterization set (feature → value): omitted or blank features are not
@@ -573,8 +604,8 @@ class ModifyRequest(SQLModel):
     """Request body for the proposer resubmitting an asset after a reviewer
     requested changes (HU-Modify). Edits the asset + its characterizations and
     resubmits for re-review in one transaction: the asset returns to PROPOSED,
-    the proposer's MODIFICATION assignment is closed (FINISHED), and a fresh
-    REVIEW/ASSIGNED is raised for the original reviewer. ``category`` is NOT
+    the proposer's MODIFICATION assignment is closed (HANDLED), and a fresh
+    REVIEW/PENDING is raised for the original reviewer. ``category`` is NOT
     editable (it drives the spec/characterization set). ``values`` overrides
     characterization values per feature (feature code → value)."""
     name: Optional[str] = Field(default=None, max_length=100, description="Asset name")

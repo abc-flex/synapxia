@@ -15,7 +15,7 @@ edit) and **Explore Category** (discovery, read-mostly).
 | HU-LI03 | – Edit Asset (Include Versioning / Deprecation) | | HU-LI15 | [Account Menu] My Asset Requests |
 | HU-LI03 | Explore Category (Include Favorite / Vote) | | HU-LI16 | – Review Asset Proposal |
 | HU-LI04 | – Propose Asset | | HU-LI17 | – Modify Asset Proposal |
-| HU-LI05 | – Asset Detail (Include Favorite / Vote) | | HU-LI18 | – Asset Request Detail |
+| HU-LI05 | – Asset Detail (Include Favorite / Vote) | | HU-LI18 | – User Acknowledgment of Asset Notification |
 | HU-LI06 | [Asset Tab] Core Fields | | HU-LI19 | [Explore Category] Prompt Gallery |
 | HU-LI07 | [Asset Tab] Characteristics (Include Report Usage) | | HU-LI20 | [Explore Category] MCP Directory |
 | HU-LI08 | [Asset Tab] Related Assets | | HU-LI21 | [Explore Category] Agent Repository |
@@ -29,7 +29,7 @@ edit) and **Explore Category** (discovery, read-mostly).
 > name.
 
 > The contribution/review workflow runs on the `actions` table through `type` and
-> `workflow_status` (`ASSIGNED` → `NOTIFIED` → `FINISHED`). Full matrix:
+> `workflow_status` (`PENDING` → `HANDLED`). Full matrix:
 > [Asset Action Workflows](states-and-types.md#asset-action-workflows-actions-table).
 > What each tab does per parent story:
 > [Asset tab options](states-and-types.md#asset-tab-options-by-user-story).
@@ -71,7 +71,7 @@ edit) and **Explore Category** (discovery, read-mostly).
   action. Core fields, related assets, related inits and permissions save in place with no
   version bump. Setting the status to *Deprecated* records a `DEPRECATION` action.
 - **Data:** `assets`, `characterizations` (per `version_label`), `actions`
-  (`VERSIONING` / `DEPRECATION`, `workflow_status = FINISHED`)
+  (`VERSIONING` / `DEPRECATION`, `workflow_status = HANDLED`)
 - **UI:** edit mode of [`AssetDetailModal.astro`](../../ui/src/components/lib/AssetDetailModal.astro).
   Detail of **HU-LI01**.
 
@@ -105,8 +105,8 @@ edit) and **Explore Category** (discovery, read-mostly).
   returning to the category.
 - **Data:** one transaction inserts — an `assets` row (`status = PROPOSED`); one
   `characterizations` row per feature in the category's `specifications`; an `actions` row for
-  the proposer (`type = PROPOSAL`, `workflow_status = FINISHED`); an `actions` row for the
-  chosen reviewer (`type = REVIEW`, `workflow_status = ASSIGNED`); and `asset_permissions`
+  the proposer (`type = PROPOSAL`, `workflow_status = HANDLED`); an `actions` row for the
+  chosen reviewer (`type = REVIEW`, `workflow_status = PENDING`); and `asset_permissions`
   rows (`access_level = MANAGE`, open validity) for the proposer and the reviewer.
 - **UI:** [`lib/propose.astro`](../../ui/src/pages/lib/propose.astro). Detail of **HU-LI03
   Explore Category**.
@@ -220,12 +220,12 @@ These stories implement the contribution/review loop on `actions`. See the
 > As an **assignee** (reviewer or proposer), I want a **notification bell listing the workflow
 > actions waiting on me** **so that** I know what needs my attention.
 - **Behavior:** lists the user's `actions` grouped by asset whose **latest** `workflow_status`
-  is `ASSIGNED` (bold) or `NOTIFIED` (not bold), for `type` in `REVIEW` / `MODIFICATION` /
+  is `PENDING` (bold) or `PENDING` (not bold), for `type` in `REVIEW` / `MODIFICATION` /
   `PUBLICATION` / `REJECTION`. Opening one routes to **HU-LI16 Review Asset Proposal**
   (`REVIEW`), **HU-LI17 Modify Asset Proposal** (`MODIFICATION`) or **HU-LI18 Asset Request
   Detail** (`PUBLICATION` / `REJECTION`). Dismissing is offered only for the informational
   outcomes (`PUBLICATION` / `REJECTION`) and inserts that action with
-  `workflow_status = FINISHED`; `REVIEW` and `MODIFICATION` cannot be dismissed, since that
+  `workflow_status = HANDLED`; `REVIEW` and `MODIFICATION` cannot be dismissed, since that
   would silently drop the assignment.
 - **Data:** `actions` (`type`, `workflow_status`, `content`)
 - **UI:** [`NotificationBell.svelte`](../../ui/src/components/svelte/NotificationBell.svelte)
@@ -234,10 +234,10 @@ These stories implement the contribution/review loop on `actions`. See the
 > As a **reviewer or proposer**, I want a **durable list of my asset requests** — open and
 > already resolved — **so that** I can find my pending work without depending on a transient
 > notification.
-- **Behavior:** lists the user's `actions` grouped by asset with status `ASSIGNED` (bold),
-  `NOTIFIED` (plain) or `FINISHED` (muted), for `type` in `REVIEW` / `MODIFICATION` /
-  `PUBLICATION` / `REJECTION`. Every `FINISHED` action — and every `PUBLICATION` / `REJECTION`
-  — opens **HU-LI18 Asset Request Detail**; the rest open **HU-LI16** (`REVIEW`) or **HU-LI17**
+- **Behavior:** lists the user's `actions` grouped by asset with status `PENDING` (bold),
+  `PENDING` (plain) or `HANDLED` (muted), for `type` in `REVIEW` / `MODIFICATION` /
+  `PUBLICATION` / `REJECTION`. Every `HANDLED` action — and every `PUBLICATION` / `REJECTION`
+  — opens **HU-LI18 User Acknowledgment of Asset Notification**; the rest open **HU-LI16** (`REVIEW`) or **HU-LI17**
   (`MODIFICATION`). Reached from the account menu's *My Workspace* section.
 - **Data:** `actions` (`type`, `workflow_status`)
 - **UI:** [`lib/my_asset_requests.astro`](../../ui/src/pages/lib/my_asset_requests.astro)
@@ -245,11 +245,11 @@ These stories implement the contribution/review loop on `actions`. See the
 ### HU-LI16 · – Review Asset Proposal
 > As a **reviewer**, I want to **review a proposed asset and approve it, reject it or request
 > changes** **so that** only vetted assets are published.
-- **Behavior:** on open, an `ASSIGNED` action is un-bolded in the notifications and re-inserted
-  as `NOTIFIED`. On decision, one transaction inserts the `REVIEW` action as `FINISHED`, sets
+- **Behavior:** opening the page records nothing — viewing is not deciding, so the action stays
+  `PENDING`. On decision, one transaction inserts the `REVIEW` action as `HANDLED`, sets
   the asset `status` to `PUBLISHED` / `REJECTED` / `FEEDBACK`, and inserts an action for the
   **proposer** of `type` `PUBLICATION` / `REJECTION` / `MODIFICATION` with
-  `workflow_status = ASSIGNED` and the feedback in `content`. Feedback is mandatory when
+  `workflow_status = PENDING` and the feedback in `content`. Feedback is mandatory when
   rejecting or requesting changes.
 - **Data:** `actions`, `assets.status`
 - **UI:** [`lib/review.astro`](../../ui/src/pages/lib/review.astro),
@@ -259,22 +259,24 @@ These stories implement the contribution/review loop on `actions`. See the
 ### HU-LI17 · – Modify Asset Proposal
 > As a **proposer**, I want to **apply the changes a reviewer asked for and resubmit** **so
 > that** the review cycle can continue.
-- **Behavior:** on open, an `ASSIGNED` action is un-bolded and re-inserted as `NOTIFIED`. On
-  save, one transaction updates the asset and its characterizations in place, inserts the
-  `MODIFICATION` action as `FINISHED`, flips the asset back to `PROPOSED`, and re-arms the
-  **same reviewer** with a new `REVIEW` action as `ASSIGNED`. The category is fixed (it decides
+- **Behavior:** opening the page records nothing — viewing is not resubmitting, so the action
+  stays `PENDING`. On save, one transaction updates the asset and its characterizations in place, inserts the
+  `MODIFICATION` action as `HANDLED`, flips the asset back to `PROPOSED`, and re-arms the
+  **same reviewer** with a new `REVIEW` action as `PENDING`. The category is fixed (it decides
   the characteristic set); the cycle is not capped.
 - **Data:** `actions`, `assets`, `characterizations`
 - **UI:** [`lib/modify.astro`](../../ui/src/pages/lib/modify.astro),
   [`ModifyAction.svelte`](../../ui/src/components/svelte/ModifyAction.svelte).
   Detail of **HU-LI15**.
 
-### HU-LI18 · – Asset Request Detail
+### HU-LI18 · – User Acknowledgment of Asset Notification
 > As a **proposer**, I want to **see the outcome of my proposal** — published or rejected, with
-> the reviewer's message — **so that** I learn the result and can clear the notification.
+> the reviewer's message — **so that** I learn the result and can confirm I have read it.
 - **Behavior:** read-only outcome card (approval vs rejection styling, asset name, message,
-  timestamp). On open, an `ASSIGNED` action is un-bolded and re-inserted as `NOTIFIED`;
-  dismissing inserts it as `FINISHED`.
+  timestamp). Opening it records **nothing** — reading is not acknowledging, so an outcome can
+  never pass unregistered. The action stays `PENDING` until the user presses the acknowledge
+  button, which inserts it as `HANDLED`. Acknowledgement is also offered inline on
+  *My Asset Requests*, so clearing a notice never requires navigating here.
 - **Data:** `actions`, `assets`
 - **UI:** [`lib/show-action.astro`](../../ui/src/pages/lib/show-action.astro),
   [`ShowAction.svelte`](../../ui/src/components/svelte/ShowAction.svelte).

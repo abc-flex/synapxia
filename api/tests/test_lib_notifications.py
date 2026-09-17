@@ -1,11 +1,14 @@
-"""Notification tests (HU-LI11) — Constitution Principle II/III.
+"""Notification feed tests — Constitution Principle II/III.
 
-Workflow notifications are ``actions`` of type REVIEW/MODIFICATION/PUBLICATION/
-REJECTION directed at a user, whose lifecycle is tracked by INSERTING successive
-rows with workflow_status ASSIGNED → NOTIFIED → FINISHED (matching the seed). A
-notification is the latest row of a (asset, type) thread whose status is still
-ASSIGNED or NOTIFIED. This is the read + transition side only (the generating
-review workflow is out of scope).
+The feed is the caller's attention list: exactly the requests still awaiting
+THEM. Workflow assignments are ``actions`` of type REVIEW/MODIFICATION/
+PUBLICATION/REJECTION directed at a user, whose lifecycle is tracked by
+INSERTING successive rows. There are two states — PENDING while the recipient
+still owes an action, HANDLED once they do not.
+
+There is deliberately no "seen/notified" state. Viewing an item is read state,
+not work state; it now lives in the client and is never recorded here. The tests
+below pin that down, because it is the invariant the whole redesign rests on.
 
 Two layers, like the history/foro suites:
 1. Service logic against the in-memory SQLite ``session`` fixture (explicit
@@ -26,8 +29,8 @@ from app.admin.internal.models import User
 T0 = datetime(2026, 1, 1, 12, 0, 0)
 
 
-def _mk_asset(session, name="Asset"):
-    asset = Asset(name=name, status="PROPOSED")
+def _mk_asset(session, name="Asset", status="PROPOSED"):
+    asset = Asset(name=name, status=status)
     session.add(asset)
     session.commit()
     session.refresh(asset)
@@ -65,254 +68,231 @@ def _user(uid=1):
 
 # --- Service logic ---------------------------------------------------------
 
-def test_assigned_thread_is_unread_notification(session):
+def test_pending_thread_is_in_the_feed(session):
     asset = _mk_asset(session, "A")
-    _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, "ASSIGNED", T0)
+    _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, svc.WORKFLOW_PENDING, T0)
 
-    items = svc.list_notifications(session, 1)
-    assert len(items) == 1
-    assert items[0]["type"] == "REVIEW"
-    assert items[0]["workflow_status"] == "ASSIGNED"
-    assert items[0]["unread"] is True
-    assert items[0]["asset_name"] == "A"
+    feed = svc.list_notifications(session, 1)
+    assert feed["total"] == 1
+    assert feed["items"][0]["type"] == "REVIEW"
+    assert feed["items"][0]["asset_name"] == "A"
 
 
-def test_latest_status_wins_notified_not_unread(session):
+def test_feed_has_no_unread_axis(session):
+    """Every entry is pending on the caller, so a read/unread flag would be
+    meaningless. Its absence is the contract, not an oversight."""
     asset = _mk_asset(session)
-    a = _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, "ASSIGNED", T0)
-    _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, "NOTIFIED", T0 + timedelta(minutes=1))
+    _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, svc.WORKFLOW_PENDING, T0)
 
-    items = svc.list_notifications(session, 1)
-    assert len(items) == 1
-    assert items[0]["workflow_status"] == "NOTIFIED"
-    assert items[0]["unread"] is False
-    # The latest row's id is surfaced (not the original ASSIGNED row).
-    assert items[0]["id"] != a.id
+    item = svc.list_notifications(session, 1)["items"][0]
+    assert "unread" not in item
+    assert "workflow_status" not in item
 
 
-def test_finished_thread_is_excluded(session):
+def test_handled_thread_is_excluded(session):
     asset = _mk_asset(session)
-    _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, "ASSIGNED", T0)
-    _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, "NOTIFIED", T0 + timedelta(minutes=1))
-    _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, "FINISHED", T0 + timedelta(minutes=2))
+    _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, svc.WORKFLOW_PENDING, T0)
+    _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, svc.WORKFLOW_HANDLED,
+               T0 + timedelta(minutes=1))
 
-    assert svc.list_notifications(session, 1) == []
+    assert svc.list_notifications(session, 1)["total"] == 0
+
+
+def test_latest_row_wins(session):
+    """A thread's state is its newest row — transitions insert, never update."""
+    asset = _mk_asset(session)
+    first = _mk_action(session, asset.id, 1, svc.TYPE_REVIEW,
+                       svc.WORKFLOW_HANDLED, T0)
+    latest = _mk_action(session, asset.id, 1, svc.TYPE_REVIEW,
+                        svc.WORKFLOW_PENDING, T0 + timedelta(minutes=1))
+
+    item = svc.list_notifications(session, 1)["items"][0]
+    assert item["id"] == latest.id != first.id
 
 
 def test_type_filtering_excludes_non_workflow_actions(session):
     asset = _mk_asset(session)
-    # A vote/comment carry no workflow status and must never be a notification.
+    # A vote/comment carry no workflow status and must never reach the feed.
     _mk_action(session, asset.id, 1, svc.TYPE_VOTE, None, T0)
     _mk_action(session, asset.id, 1, svc.TYPE_COMMENT, None, T0 + timedelta(minutes=1))
-    # A PROPOSAL is FINISHED and not a notification type.
-    _mk_action(session, asset.id, 1, "PROPOSAL", "FINISHED", T0 + timedelta(minutes=2))
+    # A PROPOSAL is born HANDLED and is never owed by anyone.
+    _mk_action(session, asset.id, 1, "PROPOSAL", svc.WORKFLOW_HANDLED,
+               T0 + timedelta(minutes=2))
 
-    assert svc.list_notifications(session, 1) == []
+    assert svc.list_notifications(session, 1)["total"] == 0
 
 
 def test_per_user_isolation(session):
     asset = _mk_asset(session)
-    _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, "ASSIGNED", T0)
-    _mk_action(session, asset.id, 2, svc.TYPE_PUBLICATION, "ASSIGNED", T0 + timedelta(minutes=1))
+    _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, svc.WORKFLOW_PENDING, T0)
+    _mk_action(session, asset.id, 2, svc.TYPE_PUBLICATION, svc.WORKFLOW_PENDING, T0)
 
-    u1 = svc.list_notifications(session, 1)
-    u2 = svc.list_notifications(session, 2)
-    assert [i["type"] for i in u1] == ["REVIEW"]
-    assert [i["type"] for i in u2] == ["PUBLICATION"]
+    assert svc.list_notifications(session, 1)["total"] == 1
+    assert svc.list_notifications(session, 2)["total"] == 1
+    assert svc.list_notifications(session, 3)["total"] == 0
 
 
-def test_distinct_types_on_same_asset_are_separate_threads(session):
+def test_waiting_on_someone_else_is_not_in_the_feed(session):
+    """An asset the caller proposed is still moving, but nothing is being asked
+    of them — it belongs on the requests page, never in the attention feed."""
+    asset = _mk_asset(session, "Mine", status="PROPOSED")
+    _mk_action(session, asset.id, 1, "PROPOSAL", svc.WORKFLOW_HANDLED, T0)
+    # The review is assigned to somebody else.
+    _mk_action(session, asset.id, 2, svc.TYPE_REVIEW, svc.WORKFLOW_PENDING, T0)
+
+    assert svc.list_notifications(session, 1)["total"] == 0
+    # ...but the proposer still sees it on the page, marked as awaiting another.
+    page = svc.list_participations(session, 1, state=svc.WORKFLOW_PENDING)
+    assert len(page) == 1 and page[0]["awaited_party"] == svc.AWAITED_OTHER
+
+
+def test_feed_is_a_strict_subset_of_the_page(session):
+    """INV-2: the indicator can never contain something the page does not."""
+    asset_a = _mk_asset(session, "A", status="PROPOSED")
+    asset_b = _mk_asset(session, "B", status="PUBLISHED")
+    _mk_action(session, asset_a.id, 1, svc.TYPE_REVIEW, svc.WORKFLOW_PENDING, T0)
+    _mk_action(session, asset_b.id, 1, svc.TYPE_PUBLICATION, svc.WORKFLOW_PENDING, T0)
+
+    feed = svc.list_notifications(session, 1, limit=50)
+    page = svc.list_participations(session, 1, state=svc.WORKFLOW_PENDING, limit=50)
+    owed = {p["pending_action_id"] for p in page
+            if p["awaited_party"] == svc.AWAITED_SELF}
+
+    assert {i["id"] for i in feed["items"]} <= owed
+
+
+def test_limit_caps_items_but_not_total(session):
+    asset_ids = []
+    for n in range(4):
+        a = _mk_asset(session, f"A{n}")
+        _mk_action(session, a.id, 1, svc.TYPE_REVIEW, svc.WORKFLOW_PENDING,
+                   T0 + timedelta(minutes=n))
+        asset_ids.append(a.id)
+
+    feed = svc.list_notifications(session, 1, limit=2)
+    assert len(feed["items"]) == 2
+    assert feed["total"] == 4
+
+
+# --- Acknowledgement -------------------------------------------------------
+
+def test_acknowledge_inserts_handled_and_clears_the_feed(session):
+    asset = _mk_asset(session, status="PUBLISHED")
+    a = _mk_action(session, asset.id, 1, svc.TYPE_PUBLICATION,
+                   svc.WORKFLOW_PENDING, T0)
+
+    row = svc.acknowledge_notification(session, a)
+    assert row.workflow_status == svc.WORKFLOW_HANDLED
+    assert svc.list_notifications(session, 1)["total"] == 0
+
+
+def test_acknowledge_rejects_review(session):
+    """A review is resolved by deciding it. Acknowledging would write the same
+    terminal row review_asset() uses for 'already decided', consuming the
+    reviewer's turn without the work being done."""
     asset = _mk_asset(session)
-    _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, "ASSIGNED", T0)
-    _mk_action(session, asset.id, 1, svc.TYPE_MODIFICATION, "ASSIGNED", T0 + timedelta(minutes=1))
-
-    types = {i["type"] for i in svc.list_notifications(session, 1)}
-    assert types == {"REVIEW", "MODIFICATION"}
-
-
-def test_mark_notified_inserts_notified_and_unbolds(session):
-    asset = _mk_asset(session)
-    a = _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, "ASSIGNED", T0)
-
-    svc.mark_notified(session, a)
-    items = svc.list_notifications(session, 1)
-    assert len(items) == 1  # still one thread, now NOTIFIED
-    assert items[0]["workflow_status"] == "NOTIFIED"
-    assert items[0]["unread"] is False
-
-
-def test_mark_notified_is_noop_when_not_assigned(session):
-    asset = _mk_asset(session)
-    a = _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, "NOTIFIED", T0)
-    result = svc.mark_notified(session, a)
-    assert result is a  # unchanged
-    # Only the original row exists — no extra NOTIFIED inserted.
-    assert len(svc.list_notifications(session, 1)) == 1
-
-
-def test_dismiss_inserts_finished_and_removes(session):
-    # PUBLICATION/REJECTION are informational — no further action is expected,
-    # so they remain dismissible.
-    asset = _mk_asset(session)
-    a = _mk_action(session, asset.id, 1, svc.TYPE_PUBLICATION, "NOTIFIED", T0)
-
-    svc.dismiss_notification(session, a)
-    assert svc.list_notifications(session, 1) == []
-
-
-def test_dismiss_review_is_rejected(session):
-    # REVIEW must be resolved via review_asset(), not dismissed — dismissing it
-    # would insert the same FINISHED row review_asset() uses to mean "already
-    # decided", permanently blocking the reviewer from acting on it.
-    asset = _mk_asset(session)
-    a = _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, "NOTIFIED", T0)
+    a = _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, svc.WORKFLOW_PENDING, T0)
 
     try:
-        svc.dismiss_notification(session, a)
-        assert False, "expected NotificationNotDismissible"
-    except svc.NotificationNotDismissible:
+        svc.acknowledge_notification(session, a)
+        raise AssertionError("expected NotificationNotAcknowledgeable")
+    except svc.NotificationNotAcknowledgeable:
         pass
-    # The assignment must still be open (ASSIGNED/NOTIFIED), not FINISHED.
-    items = svc.list_notifications(session, 1)
-    assert len(items) == 1
-    assert items[0]["workflow_status"] == "NOTIFIED"
+    # Still reachable, not silently closed.
+    assert svc.list_notifications(session, 1)["total"] == 1
 
 
-def test_dismiss_modification_is_rejected(session):
+def test_acknowledge_rejects_modification(session):
     asset = _mk_asset(session)
-    a = _mk_action(session, asset.id, 1, svc.TYPE_MODIFICATION, "NOTIFIED", T0)
+    a = _mk_action(session, asset.id, 1, svc.TYPE_MODIFICATION,
+                   svc.WORKFLOW_PENDING, T0)
 
     try:
-        svc.dismiss_notification(session, a)
-        assert False, "expected NotificationNotDismissible"
-    except svc.NotificationNotDismissible:
+        svc.acknowledge_notification(session, a)
+        raise AssertionError("expected NotificationNotAcknowledgeable")
+    except svc.NotificationNotAcknowledgeable:
         pass
-    assert len(svc.list_notifications(session, 1)) == 1
+    assert svc.list_notifications(session, 1)["total"] == 1
 
 
-def test_list_review_requests_scoped_to_review_type(session):
-    asset = _mk_asset(session)
-    _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, "ASSIGNED", T0)
-    _mk_action(session, asset.id, 1, svc.TYPE_MODIFICATION, "ASSIGNED", T0 + timedelta(minutes=1))
+def test_acknowledge_is_idempotent(session):
+    asset = _mk_asset(session, status="PUBLISHED")
+    a = _mk_action(session, asset.id, 1, svc.TYPE_REJECTION,
+                   svc.WORKFLOW_HANDLED, T0)
 
-    items = svc.list_review_requests(session, 1)
-    assert [i["type"] for i in items] == ["REVIEW"]
-
-
-def test_list_pending_modifications_scoped_to_modification_type(session):
-    asset = _mk_asset(session)
-    _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, "ASSIGNED", T0)
-    _mk_action(session, asset.id, 1, svc.TYPE_MODIFICATION, "ASSIGNED", T0 + timedelta(minutes=1))
-
-    items = svc.list_pending_modifications(session, 1)
-    assert [i["type"] for i in items] == ["MODIFICATION"]
+    assert svc.acknowledge_notification(session, a) is a
 
 
 # --- Route contract --------------------------------------------------------
 
-def test_notifications_require_auth(client):
-    assert client.get("/api/actions/notifications").status_code in (401, 403)
-
-
-def test_notification_routes_in_openapi(client):
-    paths = client.get("/openapi.json").json()["paths"]
+def test_notification_routes_in_openapi():
+    paths = app.openapi()["paths"]
     assert "/api/actions/notifications" in paths
-    assert "/api/actions/notifications/{id}/notified" in paths
-    assert "/api/actions/notifications/{id}/dismiss" in paths
-    assert "/api/actions/reviews" in paths
-    assert "/api/actions/modifications" in paths
+    assert "/api/actions/notifications/{id}/acknowledge" in paths
+    assert "/api/actions/requests" in paths
+
+
+def test_retired_routes_are_gone():
+    """The endpoints this redesign removed must not linger: `notified` recorded
+    read state (FR-002/FR-003), and reviews/modifications were partial
+    duplicates of the unified requests page (FR-027)."""
+    paths = app.openapi()["paths"]
+    assert "/api/actions/notifications/{id}/notified" not in paths
+    assert "/api/actions/reviews" not in paths
+    assert "/api/actions/modifications" not in paths
+    assert "/api/actions/notifications/{id}/dismiss" not in paths
 
 
 def test_get_notifications_returns_current_user_only(session, client):
     asset = _mk_asset(session)
-    _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, "ASSIGNED", T0)
-    _mk_action(session, asset.id, 2, svc.TYPE_PUBLICATION, "ASSIGNED", T0)
+    _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, svc.WORKFLOW_PENDING, T0)
+    _mk_action(session, asset.id, 2, svc.TYPE_PUBLICATION, svc.WORKFLOW_PENDING, T0)
     app.dependency_overrides[current_active_user] = lambda: _user(1)
 
     r = client.get("/api/actions/notifications")
     assert r.status_code == 200
     body = r.json()["data"]
-    assert len(body) == 1 and body[0]["type"] == "REVIEW"
+    assert body["total"] == 1
+    assert len(body["items"]) == 1 and body["items"][0]["type"] == "REVIEW"
 
 
-def test_notified_route_transitions(session, client):
-    asset = _mk_asset(session)
-    a = _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, "ASSIGNED", T0)
+def test_acknowledge_route_removes_from_feed(session, client):
+    asset = _mk_asset(session, status="PUBLISHED")
+    a = _mk_action(session, asset.id, 1, svc.TYPE_PUBLICATION,
+                   svc.WORKFLOW_PENDING, T0)
     app.dependency_overrides[current_active_user] = lambda: _user(1)
 
-    r = client.post(f"/api/actions/notifications/{a.id}/notified")
+    r = client.post(f"/api/actions/notifications/{a.id}/acknowledge")
     assert r.status_code == 200
-    assert r.json()["data"]["workflow_status"] == "NOTIFIED"
-    # The thread is now seen (not unread).
-    items = client.get("/api/actions/notifications").json()["data"]
-    assert items[0]["unread"] is False
+    assert r.json()["data"]["workflow_status"] == svc.WORKFLOW_HANDLED
+    assert client.get("/api/actions/notifications").json()["data"]["total"] == 0
 
 
-def test_dismiss_route_removes_from_list(session, client):
+def test_acknowledge_route_rejects_review_with_400(session, client):
     asset = _mk_asset(session)
-    a = _mk_action(session, asset.id, 1, svc.TYPE_PUBLICATION, "NOTIFIED", T0)
+    a = _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, svc.WORKFLOW_PENDING, T0)
     app.dependency_overrides[current_active_user] = lambda: _user(1)
 
-    r = client.post(f"/api/actions/notifications/{a.id}/dismiss")
-    assert r.status_code == 200
-    assert r.json()["data"]["workflow_status"] == "FINISHED"
-    assert client.get("/api/actions/notifications").json()["data"] == []
-
-
-def test_dismiss_route_rejects_review_with_400(session, client):
-    asset = _mk_asset(session)
-    a = _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, "NOTIFIED", T0)
-    app.dependency_overrides[current_active_user] = lambda: _user(1)
-
-    r = client.post(f"/api/actions/notifications/{a.id}/dismiss")
+    r = client.post(f"/api/actions/notifications/{a.id}/acknowledge")
     assert r.status_code == 400
     # The assignment must still be reachable, not silently closed.
-    items = client.get("/api/actions/notifications").json()["data"]
-    assert len(items) == 1 and items[0]["type"] == "REVIEW"
+    body = client.get("/api/actions/notifications").json()["data"]
+    assert body["total"] == 1 and body["items"][0]["type"] == "REVIEW"
 
 
-def test_dismiss_route_rejects_modification_with_400(session, client):
+def test_acknowledge_route_rejects_modification_with_400(session, client):
     asset = _mk_asset(session)
-    a = _mk_action(session, asset.id, 1, svc.TYPE_MODIFICATION, "NOTIFIED", T0)
+    a = _mk_action(session, asset.id, 1, svc.TYPE_MODIFICATION,
+                   svc.WORKFLOW_PENDING, T0)
     app.dependency_overrides[current_active_user] = lambda: _user(1)
 
-    r = client.post(f"/api/actions/notifications/{a.id}/dismiss")
+    r = client.post(f"/api/actions/notifications/{a.id}/acknowledge")
     assert r.status_code == 400
+    assert client.get("/api/actions/notifications").json()["data"]["total"] == 1
 
 
-def test_cannot_transition_another_users_notification(session, client):
-    asset = _mk_asset(session)
-    other = _mk_action(session, asset.id, 2, svc.TYPE_REVIEW, "ASSIGNED", T0)
+def test_acknowledge_route_404_for_unknown_id(session, client):
     app.dependency_overrides[current_active_user] = lambda: _user(1)
 
-    assert client.post(f"/api/actions/notifications/{other.id}/notified").status_code == 404
-    assert client.post(f"/api/actions/notifications/{other.id}/dismiss").status_code == 404
-
-
-def test_reviews_route_returns_only_review_type(session, client):
-    asset = _mk_asset(session)
-    _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, "ASSIGNED", T0)
-    _mk_action(session, asset.id, 1, svc.TYPE_MODIFICATION, "ASSIGNED", T0 + timedelta(minutes=1))
-    app.dependency_overrides[current_active_user] = lambda: _user(1)
-
-    r = client.get("/api/actions/reviews")
-    assert r.status_code == 200
-    body = r.json()["data"]
-    assert len(body) == 1 and body[0]["type"] == "REVIEW"
-
-
-def test_modifications_route_returns_only_modification_type(session, client):
-    asset = _mk_asset(session)
-    _mk_action(session, asset.id, 1, svc.TYPE_REVIEW, "ASSIGNED", T0)
-    _mk_action(session, asset.id, 1, svc.TYPE_MODIFICATION, "ASSIGNED", T0 + timedelta(minutes=1))
-    app.dependency_overrides[current_active_user] = lambda: _user(1)
-
-    r = client.get("/api/actions/modifications")
-    assert r.status_code == 200
-    body = r.json()["data"]
-    assert len(body) == 1 and body[0]["type"] == "MODIFICATION"
-
-
-def test_reviews_and_modifications_require_auth(client):
-    assert client.get("/api/actions/reviews").status_code in (401, 403)
-    assert client.get("/api/actions/modifications").status_code in (401, 403)
+    r = client.post("/api/actions/notifications/999999/acknowledge")
+    assert r.status_code == 404

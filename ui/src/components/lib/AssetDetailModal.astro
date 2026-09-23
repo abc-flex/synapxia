@@ -52,14 +52,21 @@ const {
           >{/* Edit mode appends ": <asset name>" right after the title, same
                font/size — no separate line. */}<span id={`${modalId}-title-name`}></span>
         </h3>
-        {/* Current version badge — filled + shown only in edit mode. Sits on
-            its own line below the title (was previously inline beside it). */}
-        <span
-          id={`${modalId}-version`}
-          class="hidden mt-1 inline-block rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300"
-          title="Current version"
-          data-i18n-title="asset_detail_modal.current_version"
-        ></span>
+        {/* Current version badge + usage count — filled + shown only in edit
+            mode. They share a line below the title. */}
+        <div class="mt-1 flex flex-wrap items-center gap-1.5">
+          <span
+            id={`${modalId}-version`}
+            class="hidden inline-block rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300"
+            title="Current version"
+            data-i18n-title="asset_detail_modal.current_version"
+          ></span>
+          {/* Usage count (HU-LI07) — hydrated by mountUsageTracking. */}
+          <span
+            id={`${modalId}-usage-pill`}
+            class="hidden items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+          ></span>
+        </div>
       </div>
       <div class="flex items-center gap-1">
         <button
@@ -371,6 +378,7 @@ const {
   import { mountVersions } from "@/lib/versions";
   import { ALL_DETAIL_SECTIONS } from "@/lib/assetSections";
   import { createStatusBanner } from "@/lib/statusBanner";
+  import { mountUsageTracking, paintUsagePill } from "@/lib/usageTracking";
 
   const modalId = "asset-detail-modal";
 
@@ -389,6 +397,7 @@ const {
     const titleEl = document.getElementById(`${modalId}-title-text`) as HTMLElement;
     const titleNameEl = document.getElementById(`${modalId}-title-name`) as HTMLElement;
     const versionBadge = document.getElementById(`${modalId}-version`) as HTMLElement;
+    const usagePill = document.getElementById(`${modalId}-usage-pill`) as HTMLElement | null;
     const changeTypeFieldset = document.getElementById(`${modalId}-change-type`) as HTMLFieldSetElement;
     const statusBanner = document.getElementById(`${modalId}-status`) as HTMLElement;
     const submitBtn = document.getElementById(`${modalId}-submit`) as HTMLButtonElement;
@@ -432,6 +441,15 @@ const {
     }
 
     let editingAssetId: number | null = null;
+
+    // Copy buttons live in the Versions tab snapshots (rendered by the shared
+    // section renderer). Copying records a USAGE action and repaints the count
+    // pill — the same behaviour as the Explore detail modal (HU-LI07).
+    const usage = mountUsageTracking({
+      root: dialog,
+      pill: usagePill,
+      currentAssetId: () => editingAssetId,
+    });
     // The loaded asset's version label — drives the "old → new" preview.
     let currentVersionLabel = "1.0.0";
     // Snapshot of the core-field payload as last loaded/saved — lets submit
@@ -720,6 +738,7 @@ const {
       paintFavorite();
       tabs.reset();
       versionBadge?.classList.add("hidden");
+      paintUsagePill(usagePill, null);
       changeTypeFieldset?.classList.add("hidden");
       activeDetailTab = "core";
       // The modal always opens on the Core Fields tab, so its inputs start
@@ -756,6 +775,7 @@ const {
     async function openEdit(assetId: number | string) {
       resetForm();
       editingAssetId = Number(assetId);
+      void usage.refresh(editingAssetId);
       titleEl.setAttribute("data-i18n", "asset_detail_modal.title_edit");
       titleEl.textContent = tr("asset_detail_modal.title_edit", "Edit Asset");
       // The category drives which characterization spec set applies to this

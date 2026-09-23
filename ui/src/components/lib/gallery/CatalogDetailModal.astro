@@ -98,6 +98,9 @@ const tagsIcon = getFieldIcon("tag");
               <span id={`${modalId}-status-pill`} class="hidden w-fit items-center rounded-full px-2.5 py-0.5 text-xs font-medium"></span>
             )}
             <span id={`${modalId}-version-pill`} class="hidden w-fit items-center rounded-full bg-gray-100 px-2.5 py-0.5 font-mono text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300"></span>
+            {/* Usage count (HU-LI07) — how many times this asset has been
+                copied/used. Hydrated by mountUsageTracking; hidden until known. */}
+            <span id={`${modalId}-usage-pill`} class="hidden w-fit items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300"></span>
             <span id={`${modalId}-stage-pill`} class="hidden w-fit items-center rounded-full border border-gray-300 px-2.5 py-0.5 text-xs font-medium text-gray-600 dark:border-gray-600 dark:text-gray-300"></span>
           </div>
         </div>

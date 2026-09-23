@@ -17,7 +17,7 @@ edit) and **Explore Category** (discovery, read-mostly).
 | HU-LI04 | – Propose Asset | | HU-LI17 | – Modify Asset Proposal |
 | HU-LI05 | – Asset Detail (Include Favorite / Vote) | | HU-LI18 | – User Acknowledgment of Asset Notification |
 | HU-LI06 | [Asset Tab] Core Fields | | HU-LI19 | [Explore Category] Prompt Gallery |
-| HU-LI07 | [Asset Tab] Characteristics (Include Report Usage) | | HU-LI20 | [Explore Category] MCP Directory |
+| HU-LI07 | [Asset Tab] Characteristics (Include Usage Tracking) | | HU-LI20 | [Explore Category] MCP Directory |
 | HU-LI08 | [Asset Tab] Related Assets | | HU-LI21 | [Explore Category] Agent Repository |
 | HU-LI09 | [Asset Tab] Related Inits | | HU-LI22 | [Explore Category] Agentic Flows |
 | HU-LI10 | [Asset Tab] Permissions | | HU-LI23 | [Explore Category] Skill Catalog |
@@ -141,15 +141,17 @@ The same eight tabs back every asset surface; what each one *does* depends on th
 - **Options:** New Asset → *Save* · Edit Asset → *Save core fields* · Propose Asset →
   *Characteristics ›* · Asset Detail → unified in the *Detail* tab
 
-### HU-LI07 · [Asset Tab] Characteristics (Include Report Usage)
+### HU-LI07 · [Asset Tab] Characteristics (Include Usage Tracking)
 > As a **contributor**, I want to **fill the features the asset's category declares** — each
 > with a value and an optional detail note — and, as a **consumer**, **copy a characteristic's
-> content** so that its **usage is reported** and the most-used assets can be identified.
+> content** so that its **usage is tracked** and the most-used assets can be identified.
 - **Data:** `characterizations` — PK `(asset, version_label, feature)`, `value` (the payload),
   `detail` (optional elaboration). The form is built from `specifications` for the asset's
   category: `required` blocks the save, `copyable` renders the value in a copy box, `sort_order`
   fixes the order, `default_value` pre-fills it. Copying a value inserts an `actions` row of
-  `type = USAGE`.
+  `type = USAGE` (one per copy, no per-user dedup — the count answers "how many times", not
+  "how many people"). USAGE rows are counted into a pill under the modal title, beside the
+  version, and are deliberately **excluded from the History timeline** (see **HU-LI12**).
 - **Options:** New Asset → *Save* · Edit Asset → *Save new version* (see **HU-LI13**) ·
   Propose Asset → *Related assets ›* · Asset Detail → read-only, inside the *Detail* tab
 
@@ -191,9 +193,11 @@ The same eight tabs back every asset surface; what each one *does* depends on th
 
 ### HU-LI12 · [Asset Tab] History
 > As any **user**, I want to **see an asset's activity timeline** — proposal, review,
-> publication, votes, comments, usage, versioning, deprecation — **so that** I understand how
+> publication, votes, comments, versioning, deprecation — **so that** I understand how
 > it evolved.
 - **Data:** read-only view over `actions` for the asset, newest first, with the acting user.
+  `USAGE` rows are excluded (`HISTORY_EXCLUDED_TYPES`): one entry per copy would bury the
+  asset's lifecycle under high-frequency noise. They are counted instead — see **HU-LI07**.
 - **Options:** read-only wherever it is shown (Edit Asset, Asset Detail); not applicable while
   creating or proposing.
 - **UI:** [`gallery/HistoryTimeline.astro`](../../ui/src/components/lib/gallery/HistoryTimeline.astro)

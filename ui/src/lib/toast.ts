@@ -7,14 +7,21 @@
  * corners + subtle shadow, anchored **bottom-right**, stacked with the newest
  * nearest the corner, sliding up + fading in and out.
  *
- * Why a `<dialog>`: the catalog detail view is a native `<dialog>.showModal()`,
+ * Why a popover: the catalog detail view is a native `<dialog>.showModal()`,
  * which the browser promotes into the *top layer* — a paint layer that sits
  * above the entire page regardless of `z-index`. A toast appended to
  * `document.body` with `z-50` therefore renders *behind* an open modal. The
- * only reliable fix is to put the toast into the top layer too: a non-modal
- * `<dialog>.show()` joins the top layer without a backdrop and without trapping
- * focus/clicks. We re-promote the container on every toast so it always sits
- * above whatever modal is currently open.
+ * only reliable fix is to put the toast into the top layer too.
+ *
+ * This container used to be a `<dialog>` opened with `.show()`. That was wrong:
+ * per the HTML spec only `showModal()` promotes a dialog to the top layer —
+ * `show()` renders it as an ordinary positioned element, so the toast still
+ * lost to any open modal no matter how large its `z-index`. The container is
+ * now a `popover="manual"` element, which *does* join the top layer, without a
+ * backdrop, without trapping focus and without light-dismiss. We re-promote it
+ * on every toast (hide + show) so it sits above whatever modal opened last.
+ * Browsers without the Popover API fall back to the plain fixed/z-index
+ * container — the pre-existing behaviour, no worse than before.
  *
  * Public API mirrors the legacy inline `showToast(message, variant)` so vote
  * handlers (`window.showToast`) and page delete handlers keep working
@@ -36,27 +43,37 @@ const VARIANT_ICONS: Record<ToastVariant, string> = {
 const CLOSE_ICON =
   `<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18" stroke-linecap="round" /></svg>`;
 
-let container: HTMLDialogElement | null = null;
+let container: HTMLElement | null = null;
+
+/** True when this browser implements the Popover API (the only reliable way to
+ * join the top layer without the focus-trap/backdrop of `showModal()`). */
+const supportsPopover = (el: HTMLElement): boolean =>
+  typeof (el as { showPopover?: unknown }).showPopover === "function";
 
 /** Lazily create (or recover) the single top-layer toast container. */
-function getContainer(): HTMLDialogElement {
+function getContainer(): HTMLElement {
   if (container && document.body.contains(container)) return container;
 
-  const dlg = document.createElement("dialog");
-  dlg.id = "toast-layer";
-  dlg.setAttribute("aria-live", "polite");
-  dlg.setAttribute("aria-atomic", "true");
-  // Neutralize the default <dialog> box and pin it bottom-right. `pointer-events:
-  // none` lets clicks pass through the empty container; each toast re-enables
-  // them for itself so its close button stays clickable. With `bottom` fixed and
-  // block-flow children, the box grows upward and the newest (last-appended)
-  // toast sits nearest the corner — matching Sonner.
-  Object.assign(dlg.style, {
+  const box = document.createElement("div");
+  box.id = "toast-layer";
+  box.setAttribute("aria-live", "polite");
+  box.setAttribute("aria-atomic", "true");
+  // `popover="manual"` joins the top layer and stays there until we hide it:
+  // no light-dismiss on outside clicks / Esc, which would otherwise kill a
+  // toast the moment the user clicked anywhere.
+  if (supportsPopover(box)) box.setAttribute("popover", "manual");
+  // Neutralize the UA popover box (which is centered, bordered and padded by
+  // default) and pin it bottom-right. `pointer-events: none` lets clicks pass
+  // through the empty container; each toast re-enables them for itself so its
+  // close button stays clickable. With `bottom` fixed and block-flow children,
+  // the box grows upward and the newest (last-appended) toast sits nearest the
+  // corner — matching Sonner. `display` is deliberately NOT set here: the UA
+  // toggles it between `none` and `block` as the popover opens and closes.
+  Object.assign(box.style, {
     position: "fixed",
+    inset: "auto",
     bottom: "1rem",
     right: "1rem",
-    top: "auto",
-    left: "auto",
     margin: "0",
     padding: "0",
     border: "0",
@@ -68,9 +85,41 @@ function getContainer(): HTMLDialogElement {
     pointerEvents: "none",
     zIndex: "2147483647",
   });
-  document.body.appendChild(dlg);
-  container = dlg;
-  return dlg;
+  document.body.appendChild(box);
+  container = box;
+  return box;
+}
+
+/** Put the container at the top of the top layer, above whatever modal opened
+ * last. Hiding then showing re-inserts it; both calls are synchronous, so
+ * already-visible toasts don't flicker. No-op where popovers are unsupported —
+ * the container then behaves like the plain fixed/z-index box it used to be. */
+function promote(box: HTMLElement): void {
+  if (!supportsPopover(box)) return;
+  const el = box as HTMLElement & {
+    showPopover: () => void;
+    hidePopover: () => void;
+  };
+  try {
+    el.hidePopover();
+  } catch {
+    /* not currently showing — nothing to hide */
+  }
+  try {
+    el.showPopover();
+  } catch {
+    /* detached or not yet connected; the next toast re-creates the container */
+  }
+}
+
+/** Drop the container out of the top layer once the last toast is gone. */
+function demote(box: HTMLElement): void {
+  if (!supportsPopover(box)) return;
+  try {
+    (box as HTMLElement & { hidePopover: () => void }).hidePopover();
+  } catch {
+    /* already hidden */
+  }
 }
 
 /**
@@ -84,7 +133,7 @@ export function showToast(message: string, variant: ToastVariant | string = "inf
       ? variant
       : "info";
 
-  const dlg = getContainer();
+  const box = getContainer();
 
   const toast = document.createElement("div");
   toast.setAttribute("role", "alert");
@@ -117,9 +166,8 @@ export function showToast(message: string, variant: ToastVariant | string = "inf
     if (removed) return;
     removed = true;
     toast.remove();
-    // Close the container when the last toast is gone so it leaves the top
-    // layer (and stops intercepting nothing).
-    if (dlg.children.length === 0 && dlg.open) dlg.close();
+    // Drop the container out of the top layer when the last toast is gone.
+    if (box.children.length === 0) demote(box);
   };
   const dismiss = () => {
     toast.style.opacity = "0";
@@ -128,17 +176,11 @@ export function showToast(message: string, variant: ToastVariant | string = "inf
   };
   closeBtn.addEventListener("click", dismiss);
 
-  dlg.appendChild(toast);
+  box.appendChild(toast);
 
-  // (Re)promote to the top of the top layer so we paint above any modal opened
-  // after the container was first created. close()+show() is synchronous, so
-  // existing toasts don't flicker.
-  try {
-    if (dlg.open) dlg.close();
-    dlg.show();
-  } catch {
-    /* show() can throw if the dialog was removed; the next toast re-creates it. */
-  }
+  // (Re)promote to the top of the top layer so we paint above any modal
+  // opened after the container was first created.
+  promote(box);
 
   // Animate in on the next frame (start state was set above).
   requestAnimationFrame(() => {

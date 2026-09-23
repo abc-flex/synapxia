@@ -953,6 +953,14 @@ export interface VoteTally {
   my_vote?: string | null;
 }
 
+// Usage tracking (HU-LI07) — how many times an asset has been used. Each use
+// is an `actions` row of type USAGE; they are counted here and deliberately
+// excluded from the History timeline.
+export interface UsageTally {
+  asset: number;
+  count: number;
+}
+
 // Foro (HU-LI06) — comments/questions/answers are `actions` of type
 // COMMENT/QUESTION/ANSWER; an answer threads to its question via `parent`.
 // `DiscussionItem` is the read shape (author username resolved server-side).

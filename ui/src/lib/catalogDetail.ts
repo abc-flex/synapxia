@@ -21,6 +21,7 @@
 import { getAsset } from "@/lib/assets";
 import { getCharacterizationsByAsset } from "@/lib/characterizations";
 import { getSpecificationsbyCategory } from "@/lib/specifications";
+import { mountUsageTracking, paintUsagePill } from "@/lib/usageTracking";
 import { isFavorite, setFavorite } from "@/lib/favorites";
 import { getVoteTally, setVote, getWorkflowStage, type VoteValue } from "@/lib/actions";
 import { mountRelated } from "@/lib/related";
@@ -106,11 +107,18 @@ function buildHeader(label: string, controls: HTMLElement[]): HTMLElement {
 
 /** Copy button for a section's raw value — shown whenever the category's
  * specification marks this feature `copyable`, independent of section type. */
-function buildCopyButton(rawValue: string, copyOkKey?: string): HTMLButtonElement {
+function buildCopyButton(
+  rawValue: string,
+  copyOkKey?: string,
+  feature?: string,
+): HTMLButtonElement {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.dataset.action = "copy";
   btn.dataset.copy = rawValue;
+  // Read back by the copy handlers to attribute the USAGE action to the
+  // characteristic that was actually copied (HU-LI07).
+  if (feature) btn.dataset.feature = feature;
   btn.dataset.copyOk = trGlobal(copyOkKey ?? "catalog_detail.copied", "Copied");
   btn.className =
     "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800";
@@ -156,7 +164,7 @@ function renderSection(
   // Built once, appended wherever the section's layout puts its header/body.
   const controls: HTMLElement[] = [];
   let detailBlock: HTMLElement | null = null;
-  if (extra.copyable) controls.push(buildCopyButton(v, sec.copyOkKey));
+  if (extra.copyable) controls.push(buildCopyButton(v, sec.copyOkKey, sec.feature));
   if (detail) {
     detailBlock = buildDetailBlock(detail);
     controls.push(buildDetailToggle(detailBlock, { tr: trGlobal }));
@@ -358,6 +366,7 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
   const nameEl = document.getElementById(`${modalId}-name`) as HTMLElement | null;
   const statusPill = document.getElementById(`${modalId}-status-pill`) as HTMLElement | null;
   const versionPill = document.getElementById(`${modalId}-version-pill`) as HTMLElement | null;
+  const usagePill = document.getElementById(`${modalId}-usage-pill`) as HTMLElement | null;
   const stagePill = document.getElementById(`${modalId}-stage-pill`) as HTMLElement | null;
   const descEl = document.getElementById(`${modalId}-desc`) as HTMLElement | null;
   const sectionsEl = document.getElementById(`${modalId}-sections`) as HTMLElement | null;
@@ -413,6 +422,15 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
   // so a slow response for a previously-viewed asset can't paint over the one
   // now shown (related-asset clicks re-open this same modal in place).
   let openSeq = 0;
+
+  // ── Copy buttons inside the dialog (the gallery copy handler is scoped to the
+  //    grid root, which the dialog sits outside of). Copying also records a
+  //    USAGE action and repaints the count pill (HU-LI07).
+  const usage = mountUsageTracking({
+    root: dialog,
+    pill: usagePill,
+    currentAssetId: () => currentId,
+  });
 
   function paintFavorite() {
     if (!favBtn || !favSvg) return;
@@ -531,7 +549,12 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
     if (sectionsEl) sectionsEl.innerHTML = "";
     if (statusPill) statusPill.classList.add("hidden");
     if (versionPill) versionPill.classList.add("hidden");
+    paintUsagePill(usagePill, null);
     if (stagePill) stagePill.classList.add("hidden");
+    // Independent of the asset load below: the count is its own endpoint, so a
+    // slow characterization fetch never delays it (and vice versa). Its own
+    // internal sequence guard handles a rapid re-open onto another asset.
+    void usage.refresh(assetId);
     // Guard: a related-asset click re-opens this same modal in place, so the
     // dialog may already be open — calling showModal() twice would throw.
     // The scrollable element is the inner body, not the <dialog> itself.
@@ -688,20 +711,6 @@ export function mountCatalogDetail(cfg: CatalogDetailConfig): void {
     }
     dialog!.close();
   }
-
-  // ── Copy buttons inside the dialog (the gallery copy handler is scoped to the
-  //    grid root, which the dialog sits outside of). ──────────────────────────
-  dialog.addEventListener("click", async (e) => {
-    const copyBtn = (e.target as HTMLElement).closest<HTMLElement>('[data-action="copy"]');
-    if (!copyBtn) return;
-    e.preventDefault();
-    try {
-      await navigator.clipboard.writeText(copyBtn.dataset.copy ?? "");
-      (window as any).showToast?.(copyBtn.dataset.copyOk || "Copied", "success");
-    } catch {
-      (window as any).showToast?.("Could not copy", "error");
-    }
-  });
 
   // ── Open / close wiring ──────────────────────────────────────────────────
   document.addEventListener("click", (e) => {

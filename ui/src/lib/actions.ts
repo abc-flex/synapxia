@@ -12,7 +12,7 @@
  * vote-tally endpoint is a future optimization if catalogs grow large.
  */
 import { apiGet, apiPost, apiDelete, buildQueryString } from "./api";
-import type { Action, VoteTally, WorkflowStage } from "../types/api";
+import type { Action, UsageTally, VoteTally, WorkflowStage } from "../types/api";
 
 export const VOTE_POSITIVE = "POSITIVE";
 export const VOTE_NEGATIVE = "NEGATIVE";
@@ -67,6 +67,35 @@ export async function clearVote(
 ): Promise<VoteTally> {
   return apiDelete<VoteTally>(
     `/api/actions/votes/${encodeURIComponent(String(userId))}/${encodeURIComponent(String(assetId))}`,
+  );
+}
+
+
+/* ── Usage tracking (HU-LI07) ────────────────────────────────────────────────
+   A "use" is one copy of a copyable characteristic. Every copy is its own
+   USAGE action — there is no per-user dedup, because the count answers "how
+   many times has this asset been used?". The actor is taken from the session
+   server-side, so neither call sends a user id. */
+
+/** How many times an asset has been used (copied). */
+export async function getUsageTally(assetId: number): Promise<UsageTally> {
+  return apiGet<UsageTally>(
+    `/api/actions/usage/asset/${encodeURIComponent(String(assetId))}`,
+  );
+}
+
+/**
+ * Record one usage event and return the refreshed count to repaint with.
+ * `feature` is the characterization feature code that was copied, when the
+ * trigger is feature-scoped.
+ */
+export async function recordUsage(
+  assetId: number,
+  feature?: string | null,
+): Promise<UsageTally> {
+  return apiPost<UsageTally, { asset: number; feature?: string | null }>(
+    "/api/actions/usage",
+    { asset: assetId, feature: feature ?? null },
   );
 }
 

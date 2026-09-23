@@ -1000,6 +1000,7 @@
   "catalog_detail": {
     "copy": "Copy",
     "copied": "Copied to clipboard",
+    "copy_error": "Could not copy",
     "error_load": "Could not load.",
     "tab_detail": "Details",
     "tab_related": "Related",
@@ -1008,6 +1009,9 @@
     "tab_discussion": "Discussion",
     "tab_history": "History",
     "tab_versions": "Versions"
+  },
+  "usage": {
+    "pill_title": "Times this asset has been used"
   },
   "versions": {
     "loading": "Loading versions…",

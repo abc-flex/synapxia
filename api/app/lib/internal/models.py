@@ -225,6 +225,27 @@ class VoteTally(SQLModel):
     my_vote: Optional[str] = None
 
 
+
+
+# Usage tracking (HU-LI07) — consumption events are `actions` rows of type
+# USAGE. No new table; these are just the request/response shapes.
+
+
+class UsageRequest(SQLModel):
+    """Body for recording one usage event on an asset."""
+    asset: int = Field(description="Asset id (FK to assets.id)")
+    feature: Optional[str] = Field(
+        default=None,
+        description="Characterization feature code that was copied, if any",
+    )
+
+
+class UsageTally(SQLModel):
+    """How many times an asset has been used."""
+    asset: int
+    count: int = 0
+
+
 # Foro DTOs (HU-LI06) — comments/questions/answers are `actions` rows of type
 # COMMENT/QUESTION/ANSWER; answers thread to their question via `parent`. No new
 # table: these are request/response shapes over the existing `actions` substrate.

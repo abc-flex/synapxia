@@ -1000,6 +1000,7 @@
   "catalog_detail": {
     "copy": "Copiar",
     "copied": "Copiado al portapapeles",
+    "copy_error": "No se pudo copiar",
     "error_load": "No se pudo cargar.",
     "tab_detail": "Detalles",
     "tab_related": "Relacionados",
@@ -1008,6 +1009,9 @@
     "tab_discussion": "Discusión",
     "tab_history": "Historial",
     "tab_versions": "Versiones"
+  },
+  "usage": {
+    "pill_title": "Veces que se ha usado este activo"
   },
   "versions": {
     "loading": "Cargando versiones…",

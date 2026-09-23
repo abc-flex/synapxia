@@ -25,6 +25,7 @@ TYPE_VOTE = "VOTE"
 TYPE_COMMENT = "COMMENT"
 TYPE_QUESTION = "QUESTION"
 TYPE_ANSWER = "ANSWER"
+TYPE_USAGE = "USAGE"
 
 # Vote values stored in ``actions.content``.
 VOTE_POSITIVE = "POSITIVE"
@@ -299,6 +300,60 @@ def add_answer(
 
 
 # ---------------------------------------------------------------------------
+# Usage tracking (HU-LI07) — actions of type USAGE.
+#
+# A USAGE row records one *consumption* event: the user copied a copyable
+# characteristic's value. Unlike votes there is no single row per (user, asset)
+# — every copy is its own event, because the question the count answers is "how
+# many times has this asset been used?", not "how many people used it".
+#
+# `workflow_status` stays NULL, matching the other interaction types
+# (VOTE/COMMENT/QUESTION/ANSWER). It is deliberately NOT "HANDLED": that value
+# belongs to the review-workflow types, where it marks a step that no longer
+# awaits anybody. A USAGE row is not a workflow step and must never surface in
+# "My Asset Requests" (`_latest_threads` filters on a non-NULL workflow_status).
+# ---------------------------------------------------------------------------
+
+
+def record_usage(
+    session: Session,
+    user_id: int,
+    asset_id: int,
+    feature: Optional[str] = None,
+) -> Action:
+    """Record one usage event on an asset.
+
+    ``feature`` is the characterization feature code that was copied, stored in
+    ``content`` so the raw log keeps *what* was used, not just that something
+    was. It is optional: a future usage trigger that isn't feature-scoped (a
+    download, an "open in…" action) records a bare event.
+    """
+    code = (feature or "").strip().upper() or None
+
+    action = Action(
+        asset=asset_id, user_id=user_id, type=TYPE_USAGE, content=code)
+    try:
+        session.add(action)
+        session.commit()
+        session.refresh(action)
+    except IntegrityError:
+        session.rollback()
+        logger.error(
+            "Integrity error recording usage: user=%s asset=%s", user_id, asset_id)
+        raise
+    logger.info(
+        "USAGE recorded: user=%s asset=%s feature=%s", user_id, asset_id, code)
+    return action
+
+
+def count_usage(session: Session, asset_id: int) -> int:
+    """Total active usage events for an asset."""
+    return len(
+        list_actions_for_asset(
+            session, asset_id, type=TYPE_USAGE, active_only=True))
+
+
+# ---------------------------------------------------------------------------
 # History (HU-LI10) — read-side timeline over the same ``actions`` substrate.
 #
 # Aggregates every active action on an asset (votes, comments, questions,
@@ -308,6 +363,12 @@ def add_answer(
 
 # A synthetic timeline entry (not an ``actions`` row) marking asset creation.
 HISTORY_CREATED = "CREATED"
+
+# Types the timeline deliberately leaves out. USAGE is high-frequency, low-signal
+# telemetry: one row per copy would bury the asset's actual lifecycle (proposal,
+# review, publication, versioning) under noise. It is counted instead -- see
+# ``count_usage`` and the usage pill in both detail modals.
+HISTORY_EXCLUDED_TYPES = (TYPE_USAGE,)
 
 # Canonical English summaries per action type (the UI localizes via
 # `history.action.{type}` and falls back to these for any unmapped type).
@@ -319,7 +380,6 @@ _HISTORY_SUMMARIES = {
     "REJECTION": "rejected the asset",
     "DEPRECATION": "deprecated the asset",
     "VERSIONING": "created a new version",
-    "USAGE": "used the asset",
     TYPE_COMMENT: "commented",
     TYPE_QUESTION: "asked a question",
     TYPE_ANSWER: "answered a question",
@@ -368,12 +428,16 @@ def _history_summary(action: Action) -> str:
 def get_asset_history(session: Session, asset_id: int) -> List[dict]:
     """Activity timeline for an asset, newest first.
 
-    Every active ``actions`` row (any type) becomes an entry; a synthetic
+    Every active ``actions`` row becomes an entry, except the types in
+    ``HISTORY_EXCLUDED_TYPES`` (USAGE); a synthetic
     CREATED entry is appended from the asset's ``created_at``. Actor usernames
     are resolved with a single batched ``IN`` query (no N+1). Comment/question/
     answer entries carry their ``content``; other types omit it.
     """
-    actions = list_actions_for_asset(session, asset_id, active_only=True)
+    actions = [
+        a for a in list_actions_for_asset(session, asset_id, active_only=True)
+        if a.type not in HISTORY_EXCLUDED_TYPES
+    ]
 
     user_ids = {a.user_id for a in actions if a.user_id is not None}
     authors: dict = {}

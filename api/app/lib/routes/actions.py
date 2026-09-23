@@ -10,6 +10,7 @@ from ..internal.models import (
     Action, ActionCreate, ActionUpdate, Asset, VoteRequest, VoteTally,
     ParticipationCreate, AnswerCreate, DiscussionItem, HistoryEntry,
     NotificationItem, NotificationFeed, AssetRequest, WorkflowStage,
+    UsageRequest, UsageTally,
 )
 from ..internal import actions_service
 from ..internal.dependencies import get_db_session
@@ -298,6 +299,87 @@ def _create_participation(session, current_user, label, create_fn, asset_id):
             detail=f"Could not add {label} due to a data conflict"
         )
     return actions_service.discussion_item(session, action)
+
+
+# ---------------------------------------------------------------------------
+# Usage tracking (HU-LI07) — actions of type USAGE.
+# Registered BEFORE the composite `/{id}` route so the literal "usage" segment
+# is not parsed as an integer action id.
+# ---------------------------------------------------------------------------
+
+
+def _usage_readable_asset(session: Session, current: User, asset_id: int) -> Asset:
+    """Resolve the asset and assert the caller may *read* it.
+
+    Read intent (`can_edit=False`) on purpose, unlike votes/comments: copying a
+    characteristic is consumption, not participation. A VIEW-only audience that
+    can legitimately open the asset must still have its usage counted, otherwise
+    the metric silently under-reports exactly the users it exists to measure.
+    """
+    asset = session.get(Asset, asset_id)
+    if not asset:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Asset with id '{asset_id}' does not exist"
+        )
+    check_any_privilege(
+        session, current, "LIB",
+        ["ASSETS"] + ([asset.category] if asset.category else []),
+    )
+    return asset
+
+
+@router.get("/usage/asset/{asset_id}", response_model=UsageTally)
+def get_usage_tally(
+    asset_id: int, session: Session = Depends(get_db_session),
+    current: User = Depends(current_active_user),
+) -> UsageTally:
+    """
+    How many times an asset has been used (copied). USAGE actions are counted
+    here and deliberately excluded from the asset history timeline.
+
+    Read access: `LIB/ASSETS` OR a privilege on the asset's own category.
+
+    - **asset_id**: Asset id
+    """
+    _usage_readable_asset(session, current, asset_id)
+    return UsageTally(
+        asset=asset_id, count=actions_service.count_usage(session, asset_id))
+
+
+@router.post("/usage", response_model=UsageTally, status_code=201)
+def record_usage(
+    payload: UsageRequest, session: Session = Depends(get_db_session),
+    current: User = Depends(current_active_user),
+) -> UsageTally:
+    """
+    Record one usage event on an asset and return the updated count.
+
+    Every call is its own event (no per-user dedup): the count answers "how many
+    times has this asset been used?". The actor is always the authenticated
+    caller — the body carries no `user_id`, so usage cannot be attributed to
+    somebody else.
+
+    - **asset**: Asset id (required)
+    - **feature**: characterization feature code that was copied (optional)
+    """
+    _usage_readable_asset(session, current, payload.asset)
+    try:
+        actions_service.record_usage(
+            session, current.id, payload.asset, payload.feature)
+    except IntegrityError:
+        session.rollback()
+        logger.error(
+            "Integrity error recording usage: user=%s asset=%s",
+            current.id, payload.asset)
+        raise HTTPException(
+            status_code=409,
+            detail="Could not register usage due to a data conflict"
+        )
+    return UsageTally(
+        asset=payload.asset,
+        count=actions_service.count_usage(session, payload.asset),
+    )
 
 
 # ---------------------------------------------------------------------------

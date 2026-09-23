@@ -20,6 +20,13 @@ Entries before the 2026-06-10 switchover (Keep-a-Changelog–style, auto-generat
 
 ---
 
+## 2026-09-22 18:58 — fix(ui): "My Asset Requests" hidden from COLLABORATORs in the account menu
+
+- **Removed the `ADMINISTRATOR`/`ADMINISTRATIVE`/`REVIEWER` allow-list on the account menu's "My Asset Requests" work item.** A `COLLABORATOR` (e.g. the seeded `adriana.velez`) never saw the entry — nor the "My Work" section, which hides itself when no item survives the gate — so the only page where a proposer can read the outcome of their own proposals was unreachable from the menu, whether the asset was approved or rejected. The bell worked because it has no such gate.
+- **Root cause is stale scoping, not a new regression:** the allow-list dates from 2026-07-08, when this menu slot held the reviewer-only "Review Requests" queue. SpecKit 003 (2026-09-16) redefined the page as every participant's durable record — requests directed at you *and* assets you proposed — which makes a proposer exactly its intended audience. Nothing else gated the page: `ui/src/middleware.ts` only checks the auth cookie, and `GET /api/actions/requests` is `current_active_user` + self-scoped to `current.id`, so the menu gate protected nothing.
+- The `workItems` `profiles` mechanism in `AccountMenu.astro` is untouched and still available for future entries.
+- Files affected: `ui/src/components/core/header/Header.astro`
+
 ## 2026-09-16 13:12 — feat(lib): asset notification scheme redesigned to two states + live refresh (SpecKit 003)
 
 - **`WORKFLOW_STATUS` collapsed from three values to two: `ASSIGNED`/`NOTIFIED`/`FINISHED` → `PENDING`/`HANDLED`** ("Pendiente"/"Atendido"), across `lib` **and** `inits` (they share the `list_items` list). The middle state recorded only that a user had *looked* at an item — read state masquerading as work state. That conflation was the direct cause of the `DISMISSIBLE_TYPES` carve-out: dismissing wrote the same terminal row `review_asset()`/`resubmit_asset()` use for "already decided", so hiding an unresolved assignment silently revoked the assignee's turn. Removing the state removed the carve-out. Read state now lives in the client, per device, and never reaches the server. **Seeds edited in place, no migration** (product unreleased, per the user's explicit call) — `make rebuild` is both the upgrade and the rollback.

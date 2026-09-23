@@ -90,9 +90,16 @@ import SearchBar from "./SearchBar.astro";
         avatarUrl={userAvatarUrl}
         workItems={[
           {
+            /* No `profiles` allow-list on purpose: since SpecKit 003 this page
+               is every participant's durable record — requests directed at you
+               AND assets you proposed — so a COLLABORATOR who proposed an asset
+               needs it exactly as much as a REVIEWER does. The old
+               ADMINISTRATOR/ADMINISTRATIVE/REVIEWER list dates from when this
+               slot held the reviewer-only "Review Requests" queue. The page and
+               `GET /api/actions/requests` are self-scoped to the caller, so
+               there is nothing here for a profile gate to protect. */
             label: "account_menu.my_asset_requests",
             href: "/lib/my_asset_requests",
-            profiles: ["ADMINISTRATOR", "ADMINISTRATIVE", "REVIEWER"],
           },
         ]}
         menuItems={[

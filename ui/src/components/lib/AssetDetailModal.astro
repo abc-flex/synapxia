@@ -168,6 +168,12 @@ const {
                 <option value={s.value}>{s.label}</option>
               ))}
             </select>
+            {/* Why the field is locked / which options survived — set by
+                applyStatusPolicy() below, which owns the whole rule. */}
+            <p
+              id={`${modalId}-status-hint`}
+              class="mt-1 text-xs text-gray-500 dark:text-gray-400"
+            ></p>
           </div>
 
           <div class="md:col-span-2">
@@ -626,11 +632,85 @@ const {
       }
     });
 
+    // ── Status policy ──────────────────────────────────────────────────────
+    // Asset Management is the MANAGER's surface, not the review workflow. Only
+    // two status moves happen here: a new asset is born PUBLISHED (it never
+    // went through propose → review), and a published one may be DEPRECATED.
+    // Every other status belongs to the review workflow and is read-only here.
+    // Enforced server-side in `status_service` — this only keeps the form
+    // honest (and logs PUBLICATION / DEPRECATION into the asset's history).
+    const STATUS_PUBLISHED = "PUBLISHED";
+    const STATUS_DEPRECATED = "DEPRECATED";
+    const LOCKED_CLASSES = ["!bg-gray-100", "dark:!bg-gray-800", "cursor-not-allowed"];
+    const statusHint = document.getElementById(`${modalId}-status-hint`) as HTMLElement | null;
+
+    // Bare status code — tolerates legacy/seeded rows that stored it without
+    // the list_items `N-` sort prefix (e.g. `PUBLISHED` vs `3-PUBLISHED`).
+    const bareStatus = (raw: string): string =>
+      String(raw ?? "").replace(/^\d+-/, "").trim().toUpperCase();
+
+    // A raw status → the matching <option> value (same prefix tolerance).
+    const resolveStatusValue = (raw: string): string => {
+      if (!raw) return "";
+      if ([...statusSel.options].some((o) => o.value === raw)) return raw;
+      const opt = [...statusSel.options].find(
+        (o) => bareStatus(o.value) === bareStatus(raw),
+      );
+      return opt?.value ?? raw;
+    };
+
+    // Narrows the dropdown to what this mode/status allows, locks it when
+    // that leaves nothing to choose, and explains why under the field.
+    function applyStatusPolicy(mode: "create" | "edit", currentStatus = "") {
+      const current = bareStatus(currentStatus);
+      let allowed: string[];
+      let hint: [string, string];
+      if (mode === "create") {
+        allowed = [STATUS_PUBLISHED];
+        hint = ["asset_detail_modal.status_hint_create",
+                "A new asset is created as Published."];
+      } else if (current === STATUS_PUBLISHED) {
+        allowed = [STATUS_PUBLISHED, STATUS_DEPRECATED];
+        hint = ["asset_detail_modal.status_hint_deprecate",
+                "A published asset can only be changed to Deprecated."];
+      } else {
+        allowed = current ? [current] : [];
+        hint = ["asset_detail_modal.status_hint_locked",
+                "This status is managed by the review workflow and cannot be changed here."];
+      }
+
+      // Hide every option outside the allowed set — the placeholder included,
+      // since the status is never a free choice here. `hidden` alone is not
+      // honored everywhere, so disable them too.
+      let selectable = 0;
+      for (const opt of [...statusSel.options]) {
+        const keep = allowed.includes(bareStatus(opt.value));
+        opt.hidden = !keep;
+        opt.disabled = !keep;
+        if (keep) selectable += 1;
+      }
+      if (mode === "create") statusSel.value = resolveStatusValue(STATUS_PUBLISHED);
+
+      // Nothing left to pick → lock the control outright (a disabled select
+      // still reports its value, so buildCorePayload keeps working).
+      const locked = selectable < 2;
+      statusSel.disabled = locked;
+      for (const c of LOCKED_CLASSES) statusSel.classList.toggle(c, locked);
+      if (statusHint) {
+        statusHint.setAttribute("data-i18n", hint[0]);
+        statusHint.textContent = tr(hint[0], hint[1]);
+      }
+    }
+
     // ── Reset / open / close ──────────────────────────────────────────────
     function resetForm() {
       form.reset(); // also re-checks the default "patch" change-type radio
       idField.value = "";
       editingAssetId = null;
+      // Create-mode default: locked to PUBLISHED. openEdit() re-applies the
+      // policy against the loaded asset's real status. Must run BEFORE the
+      // snapshot below, or the forced value reads as an unsaved change.
+      applyStatusPolicy("create");
       // Baseline for hasUnsavedChanges() in create mode — the blank form
       // right after reset. openEdit() overwrites this with the loaded
       // asset's real snapshot once fetched.
@@ -704,16 +784,10 @@ const {
         setTitleName(asset.name ?? "");
         descField.value = asset.description ?? "";
         refField.value = asset.reference ?? "";
-        // Tolerate legacy/seeded rows that stored the bare status code
-        // (e.g. `IN_USE`) without the list_items `N-` sort-prefix.
-        const resolveStatusValue = (raw: string): string => {
-          if (!raw) return "";
-          if ([...statusSel.options].some((o) => o.value === raw)) return raw;
-          const opt = [...statusSel.options].find(
-            (o) => o.value.replace(/^\d+-/, "") === raw,
-          );
-          return opt?.value ?? raw;
-        };
+        // Which statuses this asset may still move to (published → deprecated,
+        // or none at all) — must run before the value is set, since it is what
+        // un-hides the option that value refers to.
+        applyStatusPolicy("edit", asset.status ?? "");
         statusSel.value = resolveStatusValue(asset.status ?? "");
         tagsField.value = Array.isArray(asset.tags)
           ? asset.tags.join(", ")
@@ -857,6 +931,9 @@ const {
               // The title mirrors the asset's name — keep it in sync with
               // whatever was just saved instead of requiring a reload to see it.
               setTitleName(payload.name);
+              // A just-saved deprecation is terminal here: re-run the policy so
+              // the dropdown can't offer the way back it no longer allows.
+              applyStatusPolicy("edit", payload.status);
               originalCoreSnapshot = JSON.stringify(payload);
               updateCoreHighlight();
             }

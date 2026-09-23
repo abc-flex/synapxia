@@ -27,6 +27,7 @@ from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
+from . import status_service
 from .models import Action, Asset, AssetVersion, Characterization, VersionRequest
 from ...admin.internal.models import User
 from ...taxo.internal.models import Category
@@ -98,6 +99,16 @@ def create_version(
     if updates.get("category"):
         if not session.get(Category, updates["category"]):
             raise ValueError(f"Category '{updates['category']}' does not exist.")
+    # A version save is still an Asset Management edit, so the same status
+    # policy applies: unchanged, or PUBLISHED → DEPRECATED (logged), nothing
+    # else. Without this the rule enforced on `PUT /api/assets/{id}` could be
+    # sidestepped by sending `status` on a version save instead.
+    status_action = status_service.validate_transition(
+        asset.status, updates["status"]) if "status" in updates else None
+    if "status" in updates and status_action is None:
+        # Unchanged — don't write it back (an equivalent-but-differently-spelled
+        # or empty value must not rewrite/blank the stored status).
+        updates.pop("status")
 
     # The current version's characterization set — the snapshot source.
     current_chars = session.exec(
@@ -149,6 +160,10 @@ def create_version(
             type=TYPE_VERSIONING, workflow_status=WF_HANDLED,
             content=new_label,
             detail=f"{old_label} -> {new_label} ({data.change_type})"))
+        # 5. …and, when this save also deprecated the asset, that transition.
+        if status_action:
+            status_service.log_status_action(
+                session, asset_id, user.id, status_action)
         session.commit()
         session.refresh(asset)
     except IntegrityError as exc:

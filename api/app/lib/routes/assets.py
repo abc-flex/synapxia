@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Depends
@@ -17,6 +17,7 @@ from ..internal import review_service
 from ..internal import modify_service
 from ..internal import version_service
 from ..internal import permissions_service
+from ..internal import status_service
 from ...taxo.internal.models import Category
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
@@ -549,8 +550,13 @@ def create(
     (same as the propose flow) so the asset stays visible and editable to them
     under the caller-scoped repo listing.
 
+    A directly-created asset is born PUBLISHED — it never went through
+    propose → review, so no review status would be honest here. Any other
+    `status` is refused with 400, and the publication is logged as a
+    PUBLICATION/HANDLED action so it shows up in the asset's history.
+
     - **name**: Asset name (required)
-    - **status**: Asset status (required)
+    - **status**: Asset status (required — must be `PUBLISHED`)
     - **description**: Optional description
     - **category**: Category code (optional)
     - **reference**: Asset reference (optional)
@@ -558,6 +564,12 @@ def create(
     - **detail**: Asset detail (optional)
     - **is_active**: Active/inactive status (default: True)
     """
+    # Only PUBLISHED may be created here — the review path goes via /propose.
+    try:
+        publication_type = status_service.validate_create_status(asset.status)
+    except status_service.StatusTransitionForbidden as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
     # Validate that the category exists if provided
     if asset.category:
         category = session.get(Category, asset.category)
@@ -577,6 +589,9 @@ def create(
             target_code=str(current.id),
             access_level=permissions_service.ACCESS_MANAGE,
         ))
+        # History trail: this creation is what publishes the asset.
+        status_service.log_status_action(
+            session, db.id, current.id, publication_type)
         session.commit()
         session.refresh(db)
         logger.info(f"Asset created: {db.id}")
@@ -598,6 +613,12 @@ def update(
     """
     Update an existing asset. Requires MANAGE on the asset (or superuser).
 
+    The only status change allowed here is `PUBLISHED` → `DEPRECATED`, logged as
+    a DEPRECATION/HANDLED action so it shows in the asset's history; every other
+    transition belongs to the review workflow and is refused with 400. Sending
+    the current status unchanged is always fine — the edit form submits its
+    whole core-field set, changed or not.
+
     - **asset_id**: Unique asset id to update
     - Only provided fields are updated
     """
@@ -616,6 +637,22 @@ def update(
             )
 
     update_data = update.model_dump(exclude_unset=True)
+    # Status policy: unchanged → None; PUBLISHED → DEPRECATED → the action type
+    # to log; anything else → 400. Evaluated BEFORE the fields are applied, so
+    # the comparison still sees the stored status.
+    status_action: Optional[str] = None
+    if "status" in update_data:
+        try:
+            status_action = status_service.validate_transition(
+                asset.status, update_data["status"])
+        except status_service.StatusTransitionForbidden as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        if status_action is None:
+            # Nothing is changing — drop the field rather than write it back, so
+            # an empty/equivalent value can never blank or rewrite the stored
+            # status (the form always submits it, whatever it holds).
+            update_data.pop("status")
+
     for key, value in update_data.items():
         setattr(asset, key, value)
 
@@ -623,6 +660,9 @@ def update(
     asset.updated_at = datetime.utcnow()
 
     session.add(asset)
+    if status_action:
+        status_service.log_status_action(
+            session, asset_id, current.id, status_action)
     session.commit()
     session.refresh(asset)
     logger.info(f"Asset updated: {asset_id}")

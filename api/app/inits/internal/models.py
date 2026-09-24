@@ -125,6 +125,17 @@ class Collaboration(SQLModel, table=True):
     updated_at: Optional[datetime] = None
 
 
+class InitParticipationCreate(SQLModel):
+    """Body for posting a comment or question. The author is the signed-in
+    user — deliberately no `user_id` field."""
+    init: int = Field(description="Initiative id")
+    content: str = Field(description="Comment / question text")
+
+
+class InitAnswerCreate(InitParticipationCreate):
+    parent: int = Field(description="Id of the QUESTION collaboration being answered")
+
+
 class InitDiscussionItem(SQLModel):
     """A comment/question/answer collaboration enriched with the author's
     username — the same shape as lib's DiscussionItem with `init` for `asset`."""
@@ -214,7 +225,19 @@ class DiagnosticRow(SQLModel):
 class DiagnosticsResponse(SQLModel):
     init: int
     score: Optional[int] = None
+    # Overall score per party: the sum of that party's answers over the listed
+    # criteria, plus how many criteria they answered. `reviewer_total` is null
+    # while the reviewer has answered none.
+    creator_total: Optional[int] = None
+    creator_answered: int = 0
+    reviewer_total: Optional[int] = None
+    reviewer_answered: int = 0
     items: List[DiagnosticRow] = Field(default_factory=list)
+
+
+class FavoriteState(SQLModel):
+    init: int
+    is_favorite: bool
 
 
 # Favorite initiatives — read here only to flag the caller's favorites in the

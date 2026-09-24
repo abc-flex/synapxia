@@ -10,7 +10,6 @@ import Toast from "../../components/Toast.astro";
 import InitiativeDetailModal from "../../components/inits/InitiativeDetailModal.astro";
 import { getInitiativesWithAccess } from "@/lib/initiatives";
 import { getListItemsbyList } from "@/lib/list_items";
-import { ui } from "@/i18n";
 
 let initiatives: any[] = [];
 let errorMessage: string | null = null;
@@ -59,24 +58,20 @@ const labelOf = (field: keyof typeof LISTS, raw: unknown): string => {
   return hit?.en ?? hit?.es ?? String(raw);
 };
 
-const accessLabels = {
-  MANAGE: { en: ui.en.initiative_table.access_manage, es: ui.es.initiative_table.access_manage },
-  VIEW: { en: ui.en.initiative_table.access_view, es: ui.es.initiative_table.access_view },
-};
-
+// Visible order: name, type, priority, status, tags (+ the actions column the
+// DataTable appends). Expected impact and access level are filter-only (hidden
+// raw columns), so the filters can still match them.
 const columns = [
   { key: "name", label: "initiative_modal.name", as: "title", subtitleKey: "updated_at", subtitleFormat: "relative" },
-  { key: "status", label: "initiative_modal.status", visible: false },
-  { key: "status_name", label: "initiative_modal.status", as: "status" },
   { key: "type", label: "initiative_modal.type", visible: false },
   { key: "type_name", label: "initiative_modal.type" },
   { key: "priority_level", label: "initiative_modal.priority_level", visible: false },
   { key: "priority_name", label: "initiative_modal.priority_level" },
+  { key: "status", label: "initiative_modal.status", visible: false },
+  { key: "status_name", label: "initiative_modal.status", as: "status" },
+  { key: "tags_display", label: "initiative_modal.tags", as: "tags" },
   { key: "expected_impact", label: "initiative_modal.expected_impact", visible: false },
-  { key: "impact_name", label: "initiative_modal.expected_impact" },
-  { key: "score", label: "initiative_modal.score" },
   { key: "my_access", label: "initiative_modal.access", visible: false },
-  { key: "access_name", label: "initiative_modal.access", as: "badge" },
 ];
 
 const data = initiatives.map((item) => ({
@@ -90,10 +85,8 @@ const data = initiatives.map((item) => ({
   priority_level: item.priority_level,
   priority_name: labelOf("priority_level", item.priority_level),
   expected_impact: item.expected_impact,
-  impact_name: labelOf("expected_impact", item.expected_impact),
-  score: item.score ?? "",
   my_access: item.my_access,
-  access_name: accessLabels[item.my_access as "MANAGE" | "VIEW"]?.en ?? item.my_access,
+  tags_display: Array.isArray(item.tags) ? item.tags.join(", ") : item.tags || "",
   // Row action gating: only MANAGE holders get edit/delete (backend enforces too).
   can_manage: item.my_access === "MANAGE",
   // "yes"/"no" so the favorites toggle's equality check works.
@@ -106,18 +99,17 @@ const data = initiatives.map((item) => ({
 
 // Cell relabel maps for the client step: English label → {en, es}, per column.
 const cellLabels: Record<string, Record<string, Record<string, string>>> = {
-  status_name: {}, type_name: {}, priority_name: {}, impact_name: {}, access_name: {},
+  status_name: {}, type_name: {}, priority_name: {},
 };
 const colField = {
   status_name: "status", type_name: "type",
-  priority_name: "priority_level", impact_name: "expected_impact",
+  priority_name: "priority_level",
 } as const;
 for (const [col, field] of Object.entries(colField)) {
   for (const byLang of Object.values(labels[field])) {
     if (byLang.en) cellLabels[col][byLang.en] = byLang;
   }
 }
-for (const byLang of Object.values(accessLabels)) cellLabels.access_name[byLang.en] = byLang;
 
 // Filter-option relabel maps: select id suffix → value → {en, es}.
 const optionLabels = {
@@ -178,7 +170,7 @@ const modalLists = {
 
     <script>
       import { initCrudPage } from "@/lib/crudClient";
-      import { deleteInitiative } from "@/lib/initiatives";
+      import { deleteInitiative, setInitiativeFavorite } from "@/lib/initiatives";
       import { showToast, flashToast } from "@/lib/toast";
       import { translate } from "@/utils/i18nClient";
 
@@ -226,6 +218,40 @@ const modalLists = {
       };
       relabel();
       document.addEventListener("synapxia:locale-changed", relabel);
+
+      // ── Per-row favorite star (same behaviour as Asset Management): optimistic
+      // repaint, revert on failure. Capture phase so we beat advancedTable.
+      // Also patches the row data so an active "My favorites" filter updates at once.
+      const paintStar = (btn: HTMLElement, on: boolean) => {
+        document.dispatchEvent(new CustomEvent("datatable:row-update", {
+          detail: { tableId: "initiatives", id: btn.getAttribute("data-id"), changes: { favorite: on ? "yes" : "no" } },
+        }));
+        btn.setAttribute("data-fav", on ? "1" : "0");
+        btn.setAttribute("aria-pressed", on ? "true" : "false");
+        const span = btn.querySelector("span");
+        span?.classList.toggle("text-yellow-400", on);
+        span?.classList.toggle("text-gray-400", !on);
+        btn.querySelector("svg")?.setAttribute("fill", on ? "currentColor" : "none");
+      };
+      document.addEventListener(
+        "click",
+        async (e) => {
+          const favBtn = (e.target as HTMLElement).closest?.('#initiatives [data-action="favorite"]') as HTMLElement | null;
+          if (!favBtn) return;
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          const id = Number(favBtn.getAttribute("data-id"));
+          const wasOn = favBtn.getAttribute("data-fav") === "1";
+          paintStar(favBtn, !wasOn);
+          try {
+            await setInitiativeFavorite(id, !wasOn);
+          } catch (err) {
+            paintStar(favBtn, wasOn);
+            showToast(err instanceof Error ? err.message : "Could not update favorite", "error");
+          }
+        },
+        true,
+      );
 
       // ── Bridge: the row pencil (DataTable emits `initiative-edit-modal`) →
       // InitiativeDetailModal. Capture phase so we run before crudClient.
@@ -291,8 +317,10 @@ const modalLists = {
           ]}
           extraFilters={[
             { key: "priority_level", options: optionsEn.priority_level, headerColumn: "priority_name" },
-            { key: "expected_impact", options: optionsEn.expected_impact, headerColumn: "impact_name" },
+            { key: "expected_impact", options: optionsEn.expected_impact, allLabel: "initiative_table.all_impacts" },
           ]}
+          favoriteAction={true}
+          favoriteKey="favorite"
           manageKey="can_manage"
         />
       </div>

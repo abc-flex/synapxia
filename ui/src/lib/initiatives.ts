@@ -42,6 +42,14 @@ export async function getInitiativesWithAccess(skip = 0, limit = 500): Promise<I
   );
 }
 
+/** Mark (`on`) or clear the current user's favorite. */
+export async function setInitiativeFavorite(id: number, on: boolean): Promise<{ init: number; is_favorite: boolean }> {
+  const route = `/api/initiatives/${enc(id)}/favorite`;
+  return on
+    ? apiPut<{ init: number; is_favorite: boolean }, Record<string, never>>(route, {})
+    : apiDelete<{ init: number; is_favorite: boolean }>(route);
+}
+
 export async function updateInitiative(id: number, data: InitiativeUpdate): Promise<InitiativeWithAccess> {
   return apiPut<InitiativeWithAccess, InitiativeUpdate>(`/api/initiatives/${enc(id)}`, data);
 }

@@ -90,3 +90,21 @@ def test_rejects_unknown_lang(client, session):
     init = _setup(session)
     override(user(1))
     assert _get(client, init.id, lang="fr").status_code in (400, 422)
+
+
+def test_overall_score_per_party(client, session):
+    init = _setup(session)
+    mk_diag(session, init.id, "A", creator=2, reviewer=3)
+    mk_diag(session, init.id, "B", creator=1)
+    override(user(1))
+    body = data(_get(client, init.id))
+    assert (body["creator_total"], body["creator_answered"]) == (3, 2)
+    assert (body["reviewer_total"], body["reviewer_answered"]) == (3, 1)
+
+
+def test_reviewer_total_null_when_undiagnosed(client, session):
+    init = _setup(session)
+    mk_diag(session, init.id, "A", creator=2)
+    override(user(1))
+    body = data(_get(client, init.id))
+    assert body["reviewer_total"] is None and body["reviewer_answered"] == 0

@@ -321,7 +321,7 @@ export function initAdvancedTable(
     /* ======================
        FILTRO COMBINADO
     ====================== */
-    function applyFilters() {
+    function applyFilters(opts: { keepPage?: boolean } = {}) {
         // Collapse any open detail-expansion rows first so the index/data
         // alignment below stays 1:1 with `data`.
         purgeDetailRows();
@@ -392,7 +392,7 @@ export function initAdvancedTable(
 
             row.classList.toggle("hidden-by-filter", !visible);
         });
-        currentPage = 1;
+        if (!opts.keepPage) currentPage = 1;
         renderPagination();
         updateResetVisibility();
     }
@@ -646,6 +646,20 @@ export function initAdvancedTable(
                 })
             );
         }
+    });
+
+    // 🔹 Row updates from the page (e.g. a favorite star toggled in place):
+    // patch the row's data and re-run the filters so an active filter — "My
+    // favorites" — reflects the change at once, staying on the current page.
+    //   document.dispatchEvent(new CustomEvent("datatable:row-update",
+    //     { detail: { tableId, id, changes: { favorite: "yes" } } }));
+    document.addEventListener("datatable:row-update", (e) => {
+        const detail = (e as CustomEvent).detail || {};
+        if (detail.tableId !== tableId) return;
+        const row = data.find((r) => String(r.id) === String(detail.id));
+        if (!row) return;
+        Object.assign(row, detail.changes || {});
+        applyFilters({ keepPage: true });
     });
 
     // 🔹 Aplicar filtros iniciales después de renderizar

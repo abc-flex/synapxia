@@ -199,3 +199,28 @@ def test_delete_view_holder_forbidden(client, session):
     i = _owner_setup(session, access="VIEW")
     override(user(1))
     assert client.delete(f"/api/initiatives/{i.id}").status_code == 403
+
+
+# --- Review amendment: favorite star ---------------------------------------
+
+def test_favorite_toggle_is_personal_and_idempotent(client, session):
+    seed_privileges(session, can_edit=False)  # read-level is enough
+    i = mk_init(session, name="A")
+    mk_perm(session, i.id, "USER", "1", access_level="VIEW")
+    override(user(1))
+
+    assert data(client.put(f"/api/initiatives/{i.id}/favorite")) == {"init": i.id, "is_favorite": True}
+    assert client.put(f"/api/initiatives/{i.id}/favorite").status_code == 200  # idempotent
+    assert data(client.get(URL))[0]["is_favorite"] is True
+
+    assert data(client.delete(f"/api/initiatives/{i.id}/favorite"))["is_favorite"] is False
+    assert data(client.get(URL))[0]["is_favorite"] is False
+    assert data(client.put(f"/api/initiatives/{i.id}/favorite"))["is_favorite"] is True  # reactivated
+
+
+def test_favorite_requires_view(client, session):
+    seed_privileges(session, can_edit=False)
+    i = mk_init(session)
+    override(user(1))
+    assert client.put(f"/api/initiatives/{i.id}/favorite").status_code == 403
+    assert client.put("/api/initiatives/999/favorite").status_code == 404

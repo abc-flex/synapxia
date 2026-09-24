@@ -9,7 +9,7 @@ from sqlalchemy import cast, String
 from ..internal import permissions_service, status_service
 from ..internal.diagnostics_service import get_diagnostics
 from ..internal.models import (
-    DiagnosticsResponse, FavoriteInit, Initiative, InitiativeUpdate,
+    DiagnosticsResponse, FavoriteInit, FavoriteState, Initiative, InitiativeUpdate,
     InitiativeWithAccess,
 )
 from ..internal.dependencies import get_db_session
@@ -176,6 +176,45 @@ def get_initiative_diagnostics(
         raise HTTPException(status_code=404, detail="Initiative not found")
     _ensure_view(session, current, init_id)
     return get_diagnostics(session, initiative, lang)
+
+
+def _set_favorite(session: Session, user: User, init_id: int, on: bool) -> FavoriteState:
+    """Mark / clear the caller's favorite. Favoriting is personal, not an edit:
+    read-level module access + VIEW on the initiative suffice. Idempotent."""
+    check_any_privilege(session, user, "INITS", ["INITIATIVES", "EXPLORE"])
+    initiative = session.get(Initiative, init_id)
+    if not initiative or not initiative.is_active:
+        raise HTTPException(status_code=404, detail="Initiative not found")
+    _ensure_view(session, user, init_id)
+    row = session.get(FavoriteInit, (user.id, init_id))
+    if row is None and on:
+        session.add(FavoriteInit(user_id=user.id, init=init_id))
+    elif row is not None and row.is_active != on:
+        row.is_active = on
+        row.updated_at = datetime.utcnow()
+        session.add(row)
+    session.commit()
+    return FavoriteState(init=init_id, is_favorite=on)
+
+
+@router.put("/{init_id}/favorite", response_model=FavoriteState)
+def add_favorite(
+    init_id: int,
+    session: Session = Depends(get_db_session),
+    current: User = Depends(current_active_user),
+) -> FavoriteState:
+    """Mark the initiative as one of the caller's favorites."""
+    return _set_favorite(session, current, init_id, True)
+
+
+@router.delete("/{init_id}/favorite", response_model=FavoriteState)
+def remove_favorite(
+    init_id: int,
+    session: Session = Depends(get_db_session),
+    current: User = Depends(current_active_user),
+) -> FavoriteState:
+    """Remove the initiative from the caller's favorites."""
+    return _set_favorite(session, current, init_id, False)
 
 
 @router.get("/{init_id}", response_model=Initiative)

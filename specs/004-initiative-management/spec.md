@@ -32,7 +32,7 @@ As an initiative owner, I want a list of the initiatives I have access to — fi
 
 **Acceptance Scenarios**:
 
-1. **Given** a user holds manage or view access to some initiatives and none to others, **When** they open Initiative Management, **Then** only the initiatives they can access are listed, each showing its name, status, type, priority, expected impact and score.
+1. **Given** a user holds manage or view access to some initiatives and none to others, **When** they open Initiative Management, **Then** only the initiatives they can access are listed, with the columns name, type, priority, status, tags and actions (in that order); the actions include a favorite star.
 2. **Given** the list is open, **When** the user filters by one or more of status, type, priority, expected impact, access level or "my favorites", **Then** only initiatives matching every selected filter remain, and the visible count reflects the filtered set.
 3. **Given** the list is open, **When** the user types part of an initiative's name in search, **Then** matching initiatives remain and the rest are hidden.
 4. **Given** any user opens Initiative Management, **When** they look for a way to add an initiative, **Then** none is offered — no "New" button, no empty-state call to create one.
@@ -57,10 +57,10 @@ As an initiative owner, I want to open an initiative in a tabbed detail dialog �
 3. **Given** the Core Fields tab is open, **When** the user leaves a required field (name, expected impact, priority) empty and tries to save, **Then** the save is blocked and the field is flagged.
 4. **Given** the Related Assets tab is open, **When** the user adds a link to a library asset with a relation type and optional rationale, or removes an existing link, and saves, **Then** only the initiative's asset links change; the same link is visible from that asset's "Related Inits" tab in Asset Management.
 5. **Given** the Permissions tab is open, **When** the user grants view or manage access to a user, role, project, team, unit or everyone, with an optional validity window, or revokes an existing grant, and saves, **Then** only the initiative's grants change, and a revoked grant is kept as a record ending now rather than deleted.
-6. **Given** the Diagnosis Questions tab is open, **When** the user views it, **Then** every diagnosis criterion is listed with its question, the proposer's answer, the reviewer's answer (or an indication that it is not yet diagnosed) and the rationale, and none of it can be edited.
-7. **Given** the Discussion tab is open, **When** the user views it, **Then** the comments, questions and answers on the initiative are shown, and no posting, answering or deleting affordance is offered.
+6. **Given** the Diagnosis Questions tab is open, **When** the user views it, **Then** the criteria are shown as a table with the proposer's answers and the reviewer's answers in visually distinct columns (or an indication that the reviewer has not answered yet), an overall score for the proposer and another for the reviewer, and each criterion's rationale hidden until the user reveals it; none of it can be edited.
+7. **Given** the Discussion tab is open, **When** the user views it, **Then** the comments, questions and answers on the initiative are shown, and the user can post a comment or a question, answer a question, and delete their own entries, as in Asset Management.
 8. **Given** the History tab is open, **When** the user views it, **Then** the initiative's activity is listed newest first with the acting person, including activation, diagnosis, modifications, acceptance or rejection, delivery, archiving, votes, comments, questions and answers.
-9. **Given** the user switches to a read-only tab (Diagnosis Questions, Discussion, History), **When** that tab is shown, **Then** the dialog's save action is hidden.
+9. **Given** the user switches to Diagnosis Questions, Discussion or History, **When** that tab is shown, **Then** the dialog's save action is hidden (Discussion saves each post on its own).
 10. **Given** the user has unsaved edits in a tab, **When** they try to close the dialog, **Then** they are asked to confirm discarding them.
 
 ---
@@ -112,8 +112,9 @@ As an initiative owner, I want to mark an accepted initiative In Progress when w
 
 - **FR-001**: The system MUST provide an Initiative Management screen, reachable from the existing "Initiative Management" navigation option, listing the active initiatives the current user can access.
 - **FR-002**: A user MUST only see initiatives on which they hold a currently valid view or manage grant — directly, or through their role, project, team, unit, or a public grant; superusers MUST see all active initiatives.
-- **FR-003**: The list MUST show, per initiative, at least name, status, type, priority, expected impact, score and the user's own access level.
+- **FR-003**: The list MUST show, per initiative, the columns name, type, priority, status, tags and actions, in that order; expected impact, score and the user's access level are NOT shown as columns (they stay available as filters).
 - **FR-004**: The list MUST support filtering by status, type, priority, expected impact, access level and favorites, and searching by name; filters combine.
+- **FR-004a**: The actions column MUST include a favorite star on every listed initiative (manage or view access); toggling it saves the current user's favorite immediately and is reflected by the favorites filter.
 - **FR-005**: The screen MUST NOT offer any way to create an initiative.
 - **FR-006**: Edit and remove affordances MUST only be offered on initiatives the user can manage; view-only initiatives MUST open read-only.
 - **FR-007**: Removing an initiative MUST be a logical removal (the record is retained and hidden), available only to users who manage it, after confirmation.
@@ -122,7 +123,7 @@ As an initiative owner, I want to mark an accepted initiative In Progress when w
 
 - **FR-008**: Opening an initiative MUST show a dialog with the tabs Core Fields, Diagnosis Questions, Related Assets, Permissions, Discussion and History, in that order.
 - **FR-009**: Each editable tab (Core Fields, Related Assets, Permissions) MUST save only its own slice, with a save action labelled for that tab; saving one tab MUST NOT persist or discard another tab's pending edits.
-- **FR-010**: Diagnosis Questions, Discussion and History MUST be read-only in this dialog, and the save action MUST be hidden while they are shown.
+- **FR-010**: Diagnosis Questions and History MUST be read-only in this dialog; Discussion is interactive but saves each post on its own. The dialog's save action MUST be hidden while any of these three tabs is shown.
 - **FR-011**: The dialog MUST warn before discarding unsaved edits on close.
 
 **Core Fields**
@@ -132,9 +133,9 @@ As an initiative owner, I want to mark an accepted initiative In Progress when w
 
 **Diagnosis Questions**
 
-- **FR-014**: Diagnosis Questions MUST list every diagnosis criterion (active ones, plus any inactive one the initiative already has answers for), showing the criterion's question and description, the proposer's answer, the reviewer's answer and the rationale.
+- **FR-014**: Diagnosis Questions MUST list every diagnosis criterion (active ones, plus any inactive one the initiative already has answers for) as rows of a table showing the criterion's question and description, the proposer's answer and the reviewer's answer, with the two answer columns visually distinguishable at a glance. Each criterion's rationale MUST be hidden by default and revealed on demand with the same Show / Hide switch used for characteristic details in Asset Management.
 - **FR-015**: Each answer MUST be shown by its label from that criterion's own scale (not just the numeric value), in the user's language; missing answers MUST be shown as "not answered" / "pending diagnosis".
-- **FR-016**: The tab MUST show the initiative's overall score.
+- **FR-016**: The tab MUST show an overall score for the proposer and another for the reviewer — each the sum of that party's answers — indicating how many criteria each has answered, and "pending diagnosis" for the reviewer when they have not answered any.
 
 **Status transitions**
 
@@ -159,7 +160,7 @@ As an initiative owner, I want to mark an accepted initiative In Progress when w
 
 **Discussion & History**
 
-- **FR-027**: Discussion MUST show the initiative's comments, questions and answers (answers under their question), read-only.
+- **FR-027**: Discussion MUST show the initiative's comments, questions and answers (answers under their question) and let the user post comments and questions, answer questions and delete their own entries, as in Asset Management. Posts are attributed to the signed-in user (never to a user named in the request); only the author (or a superuser) may delete an entry.
 - **FR-028**: History MUST show all of the initiative's activity newest first, with the acting user, date and a localized description of each activity, including status-change activities recorded by FR-020.
 
 **General**
@@ -192,9 +193,9 @@ As an initiative owner, I want to mark an accepted initiative In Progress when w
 
 - **Status names.** The user's "Acceptance", "Delivery" and "Archiving" refer to the statuses Accepted, Delivered and Archived plus In Progress (recorded by the collaboration types Kickoff — new — Delivery and Archiving). **Amended by the user (2026-09-23):** the allowed transitions are Accepted → In Progress / Delivered / Archived, In Progress → Delivered / Archived, and Delivered → Archived. This supersedes the older docs' "any → Archived" row: Activated, Feedback Provided and Rejected initiatives cannot be archived from here.
 - **Diagnosis answers are read-only in Initiative Management.** The proposer's answers are written when proposing and the reviewer's when diagnosing (both out of scope here), matching the Edit Initiative column of the initiative tab matrix. Letting owners edit scores here would bypass the diagnosis.
-- **Discussion is read-only here**, as in Asset Management; participating belongs to Explore Initiatives.
+- **Discussion is interactive here**, as in Asset Management's edit dialog (user decision, 2026-09-23). Posting requires the edit-level Initiative Management privilege (or an edit-level Explore Initiatives privilege) plus access to the initiative.
 - **Access model** mirrors Asset Management: per-initiative grants (view/manage, validity window, revoke-not-delete); an initiative with no grant reaching the user is hidden. Access to the screen itself requires the existing "Initiative Management" privilege (today held by administrator and administrative profiles).
-- **Favorites filter** reads the existing initiative-favorites record; favoriting itself is done from Explore Initiatives (out of scope).
+- **Favorites**: the star in the list's actions column writes the existing initiative-favorites record for the current user (user decision, 2026-09-23); anyone who can see the initiative may favorite it.
 - **Seed data alignment.** Current seed initiatives carry status values outside the configured list (e.g. "3-ENGAGING"); the product is unreleased, so the seed will be realigned to the configured statuses as part of this work rather than migrated.
 - **Out of scope**: proposing an initiative (HU-IN05), diagnosing it (HU-IN15), modifying it after feedback (HU-IN16), acknowledging outcomes (HU-IN17), initiative notifications and "My Initiative Requests" (HU-IN13/14), Explore Initiatives and its detail view (HU-IN04/06), votes, and editing criteria (HU-IN01, already shipped). Until proposing exists, initiatives come only from seed data.
 - **Dependencies**: reuses the existing Asset Management dialog conventions (tab-scoped saves, read-only tab behaviour, discard confirmation), the shared value lists, and the existing relation-type and permission target-type lists.
@@ -208,3 +209,4 @@ As an initiative owner, I want to mark an accepted initiative In Progress when w
 - Q: Does delivery (or archiving) raise a pending notice for the proposer? → A: No. Both are recorded as completed activities only, visible in History (Option A).
 - Q: How is the move to In Progress recorded? → A: With a new collaboration type, recorded as completed (Option A); name chosen by the user: `KICKOFF` ("Kickoff" / "Arranque").
 - Q (2026-09-23, after implementation): May an initiative and an asset (and two assets) be linked more than once? → A: Yes — one link per relation type, in both Edit Initiative and Edit Asset. That is why the primary keys of `asset_inits` and `related_assets` include `type`. Supersedes the plan's earlier "one link per pair" reading.
+- Q (2026-09-23, review of the first implementation): list columns, favorites, diagnosis layout and discussion → A: columns name, type, priority, status, tags, actions (no expected impact, score or access); a favorite star in actions; Diagnosis Questions as a table distinguishing proposer vs reviewer answers, rationale behind a Show/Hide switch, an overall score for each party; Discussion interactive like Edit Asset.

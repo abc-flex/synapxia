@@ -182,7 +182,11 @@ const fieldKeys = deleteFields.map((f) => f.key);
           .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 
       // ── Per-row favorite star toggle ──────────────────────────────────────
+      // Also patches the row data so an active "My favorites" filter updates at once.
       const paintStar = (btn, on) => {
+        document.dispatchEvent(new CustomEvent("datatable:row-update", {
+          detail: { tableId: "assets", id: btn.getAttribute("data-id"), changes: { favorite: on ? "yes" : "no" } },
+        }));
         btn.setAttribute("data-fav", on ? "1" : "0");
         btn.setAttribute("aria-pressed", on ? "true" : "false");
         const span = btn.querySelector("span");

@@ -6,6 +6,7 @@ UI can reuse the same timeline and forum renderers — same response shapes,
 actor usernames resolved with one batched query (no N+1), a synthetic CREATED
 marker from ``initiatives.created_at``.
 """
+from datetime import datetime
 from typing import List, Optional
 
 from sqlmodel import Session, select
@@ -115,6 +116,75 @@ def get_initiative_history(session: Session, init_id: int) -> List[dict]:
         reverse=True,
     )
     return entries
+
+
+class ParticipationForbidden(Exception):
+    """The caller may not delete this entry (not its author) → 403."""
+
+
+def discussion_item(session: Session, row: Collaboration) -> dict:
+    author = session.get(User, row.user_id)
+    return {
+        "id": row.id,
+        "init": row.init,
+        "user_id": row.user_id,
+        "author": author.username if author else None,
+        "type": row.type,
+        "content": row.content,
+        "parent": row.parent,
+        "created_at": row.created_at,
+    }
+
+
+def _add_participation(session: Session, user_id: int, init_id: int, type_: str,
+                       content: Optional[str], parent: Optional[int] = None) -> Collaboration:
+    """Create a COMMENT/QUESTION/ANSWER row (workflow_status NULL — community
+    rows are not workflow items). Raises ValueError on empty content."""
+    text = (content or "").strip()
+    if not text:
+        raise ValueError("Content must not be empty.")
+    row = Collaboration(init=init_id, user_id=user_id, type=type_, content=text, parent=parent)
+    session.add(row)
+    session.commit()
+    session.refresh(row)
+    return row
+
+
+def add_comment(session: Session, user_id: int, init_id: int, content: str) -> Collaboration:
+    return _add_participation(session, user_id, init_id, TYPE_COMMENT, content)
+
+
+def add_question(session: Session, user_id: int, init_id: int, content: str) -> Collaboration:
+    return _add_participation(session, user_id, init_id, TYPE_QUESTION, content)
+
+
+def add_answer(session: Session, user_id: int, init_id: int, content: str,
+               parent: int) -> Collaboration:
+    """Answer a question. ``parent`` must be an active QUESTION on the *same*
+    initiative, otherwise ValueError (→ 400)."""
+    question = session.get(Collaboration, parent)
+    if (not question or not question.is_active or question.type != TYPE_QUESTION
+            or question.init != init_id):
+        raise ValueError("Answer parent must be an active question on the same initiative.")
+    return _add_participation(session, user_id, init_id, TYPE_ANSWER, content, parent=parent)
+
+
+def delete_participation(session: Session, user, row: Collaboration) -> Collaboration:
+    """Logically delete a comment/question/answer. Only its author (or a
+    superuser) may do so. Raises ValueError (not a discussion row / already
+    deleted → 400) or ParticipationForbidden (→ 403)."""
+    if row.type not in DISCUSSION_TYPES:
+        raise ValueError("Only comments, questions and answers can be deleted here.")
+    if not getattr(user, "is_superuser", False) and row.user_id != user.id:
+        raise ParticipationForbidden("You can only delete your own entries.")
+    if not row.is_active:
+        raise ValueError("This entry is already deleted.")
+    row.is_active = False
+    row.updated_at = datetime.utcnow()
+    session.add(row)
+    session.commit()
+    session.refresh(row)
+    return row
 
 
 def list_discussion(session: Session, init_id: int) -> List[dict]:

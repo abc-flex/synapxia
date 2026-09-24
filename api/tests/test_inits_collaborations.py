@@ -75,3 +75,66 @@ def test_reads_require_view_and_existing_initiative(client, session):
     for path in ("history", "discussion"):
         assert client.get(f"/api/collaborations/{path}/init/{init.id}").status_code == 403
         assert client.get(f"/api/collaborations/{path}/init/999").status_code == 404
+
+
+# --- Review amendment: interactive discussion --------------------------------
+
+def _writer(session):
+    """Upgrade the read-level privilege `_setup` seeded to edit level."""
+    from sqlmodel import select
+    from app.admin.internal.models import Privilege
+    for p in session.exec(select(Privilege).where(Privilege.module == "INITS")).all():
+        p.can_edit = True
+        session.add(p)
+    session.commit()
+
+
+def test_post_comment_question_answer_as_session_user(client, session):
+    init = _setup(session)
+    _writer(session)
+    override(user(1))
+    c = client.post("/api/collaborations/comments", json={"init": init.id, "content": " hi "})
+    assert c.status_code == 201 and data(c)["author"] == "owner" and data(c)["content"] == "hi"
+    q = data(client.post("/api/collaborations/questions", json={"init": init.id, "content": "Q?"}))
+    a = client.post("/api/collaborations/answers",
+                    json={"init": init.id, "content": "A.", "parent": q["id"]})
+    assert a.status_code == 201 and data(a)["parent"] == q["id"]
+    rows = data(client.get(f"/api/collaborations/discussion/init/{init.id}"))
+    assert [r["type"] for r in rows] == ["COMMENT", "QUESTION", "ANSWER"]
+    assert all(r["user_id"] == 1 for r in rows)
+
+
+def test_post_validation(client, session):
+    init = _setup(session)
+    _writer(session)
+    override(user(1))
+    assert client.post("/api/collaborations/comments", json={"init": init.id, "content": "  "}).status_code == 400
+    c = data(client.post("/api/collaborations/comments", json={"init": init.id, "content": "c"}))
+    assert client.post("/api/collaborations/answers",
+                       json={"init": init.id, "content": "x", "parent": c["id"]}).status_code == 400
+    assert client.post("/api/collaborations/comments", json={"init": 999, "content": "c"}).status_code == 400
+
+
+def test_post_requires_edit_privilege_and_view(client, session):
+    init = _setup(session, grant=False)  # read-level privilege, no grant
+    override(user(1))
+    assert client.post("/api/collaborations/comments", json={"init": init.id, "content": "c"}).status_code == 403
+    _writer(session)
+    assert client.post("/api/collaborations/comments", json={"init": init.id, "content": "c"}).status_code == 403
+
+
+def test_delete_own_only(client, session):
+    init = _setup(session)
+    _writer(session)
+    mk_perm(session, init.id, "USER", "2", access_level="VIEW")
+    override(user(1))
+    mine = data(client.post("/api/collaborations/comments", json={"init": init.id, "content": "mine"}))
+    override(user(2))
+    assert client.delete(f"/api/collaborations/{mine['id']}").status_code == 403
+    override(user(1))
+    assert client.delete(f"/api/collaborations/{mine['id']}").status_code == 200
+    assert client.delete(f"/api/collaborations/{mine['id']}").status_code == 400
+    assert data(client.get(f"/api/collaborations/discussion/init/{init.id}")) == []
+    kick = _collab(session, init.id, 1, "KICKOFF", ws="HANDLED")
+    assert client.delete(f"/api/collaborations/{kick.id}").status_code == 400
+    assert client.delete("/api/collaborations/99999").status_code == 404

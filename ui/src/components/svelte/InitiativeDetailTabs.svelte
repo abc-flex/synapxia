@@ -10,7 +10,8 @@
    * exported controller methods (Svelte 5 `mount()` returns them).
    *
    * - Core Fields is an empty shell the parent re-parents its own <section> into.
-   * - Diagnosis Questions, Discussion and History are read-only here.
+   * - Diagnosis Questions and History are read-only; Discussion is interactive
+   *   (Foro with the collaborations `api`) and saves each post on its own.
    * - Related Assets / Permissions stage edits and persist ONLY when the parent
    *   calls `flush()` for that tab (tab-scoped save).
    */
@@ -28,7 +29,7 @@
     createInitPermission,
     deleteInitPermission,
   } from "@/lib/init_permissions";
-  import { getInitiativeDiscussion } from "@/lib/collaborations";
+  import { initiativeForoApi } from "@/lib/collaborations";
   import { getUsersSelect } from "@/lib/users";
   import { getRolesSelect } from "@/lib/roles";
   import { getTeamsSelect } from "@/lib/teams";
@@ -110,7 +111,11 @@
 
   // Diagnosis (read-only)
   let diagItems = $state<DiagnosticRow[]>([]);
-  let diagScore = $state<number | null>(null);
+  let diagTotals = $state<{ creator: number | null; creatorN: number; reviewer: number | null; reviewerN: number }>({
+    creator: null, creatorN: 0, reviewer: null, reviewerN: 0,
+  });
+  // Rationale per criterion is collapsed by default (Show / Hide switch).
+  let rationaleOpen = $state<Record<string, boolean>>({});
   let diagLoading = $state(false);
   let diagError = $state("");
 
@@ -300,7 +305,11 @@
       const res = await getInitiativeDiagnostics(id, currentLang());
       if (initId !== id) return;
       diagItems = res.items;
-      diagScore = res.score ?? null;
+      diagTotals = {
+        creator: res.creator_total ?? null, creatorN: res.creator_answered ?? 0,
+        reviewer: res.reviewer_total ?? null, reviewerN: res.reviewer_answered ?? 0,
+      };
+      rationaleOpen = {};
     } catch {
       diagItems = [];
       diagError = t("initiative_detail_modal.error_diagnosis", "Could not load the diagnosis.");
@@ -500,7 +509,8 @@
     activeTab = "core";
     coreDirty = false;
     diagItems = [];
-    diagScore = null;
+    diagTotals = { creator: null, creatorN: 0, reviewer: null, reviewerN: 0 };
+    rationaleOpen = {};
     diagError = "";
     stagedLinks = [];
     initialLinkByKey = new Map();
@@ -542,6 +552,10 @@
     "rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-6 text-center text-sm text-gray-500 dark:text-gray-400";
   const answerClass = "text-sm text-gray-800 dark:text-gray-200";
   const mutedClass = "text-sm italic text-gray-400 dark:text-gray-500";
+  const answeredLabel = (n: number): string =>
+    t("initiative_detail_modal.diag_answered", "{n} of {m} answered")
+      .replace("{n}", String(n))
+      .replace("{m}", String(diagItems.length));
 </script>
 
 <div bind:this={rootEl}>
@@ -551,6 +565,41 @@
       title={t("initiative_detail_modal.unsaved_indicator", "Unsaved changes")}
       aria-hidden="true"
     ></span>
+  {/snippet}
+  {#snippet answerCell(score: number | null | undefined, label: string | null | undefined, missing: string, tone: "indigo" | "emerald")}
+    {#if label}
+      <div class="flex items-start gap-2">
+        <span class={`inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full px-1.5 text-xs font-bold text-white ${tone === "indigo" ? "bg-indigo-600" : "bg-emerald-600"}`}>{score}</span>
+        <span class={answerClass}>{label}</span>
+      </div>
+    {:else}
+      <span class={mutedClass}>{missing}</span>
+    {/if}
+  {/snippet}
+  <!-- Same Show / Hide switch as the characteristic details in Edit Asset:
+       icon + label + track, right-aligned, collapsed by default. -->
+  {#snippet rationaleToggle(key: string)}
+    <button
+      type="button"
+      class="flex shrink-0 items-center gap-1.5 text-[11px] font-medium text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400"
+      aria-pressed={rationaleOpen[key] ? "true" : "false"}
+      onclick={() => (rationaleOpen = { ...rationaleOpen, [key]: !rationaleOpen[key] })}
+    >
+      {#if rationaleOpen[key]}
+        <svg viewBox="0 0 20 20" fill="currentColor" class="h-3.5 w-3.5" aria-hidden="true">
+          <path d="M2.53 2.47a.75.75 0 00-1.06 1.06l3.02 3.02C2.6 8.03 1.2 9.6.5 10.5c1.99 3 5.5 6.5 9.5 6.5 1.5 0 2.9-.35 4.15-.95l2.32 2.32a.75.75 0 101.06-1.06L2.53 2.47zM10 14.5a4.47 4.47 0 01-3.02-1.18l1.14-1.14A2.98 2.98 0 0010 13a3 3 0 003-3c0-.4-.08-.78-.22-1.12l1.14-1.14A4.47 4.47 0 0113.5 10 4.5 4.5 0 0110 14.5zM10 3.5c1.5 0 2.9.35 4.15.95l-1.24 1.24A6.98 6.98 0 0010 5.5a7 7 0 00-6.16 3.65L2.6 7.9C4.1 5.5 6.9 3.5 10 3.5z"></path>
+        </svg>
+      {:else}
+        <svg viewBox="0 0 20 20" fill="currentColor" class="h-3.5 w-3.5" aria-hidden="true">
+          <path d="M10 3.5c-4.5 0-8 3.5-9.5 6.5C1.99 13 5.5 16.5 10 16.5s8.01-3.5 9.5-6.5C18 7 14.5 3.5 10 3.5zm0 11a4.5 4.5 0 110-9 4.5 4.5 0 010 9z"></path>
+          <circle cx="10" cy="10" r="2"></circle>
+        </svg>
+      {/if}
+      <span>{rationaleOpen[key] ? t("initiative_detail_modal.diag_hide_rationale", "Hide rationale") : t("initiative_detail_modal.diag_show_rationale", "Show rationale")}</span>
+      <span class={`relative inline-block h-4 w-7 shrink-0 rounded-full transition ${rationaleOpen[key] ? "bg-indigo-600" : "bg-gray-300 dark:bg-gray-600"}`}>
+        <span class={`absolute top-0.5 left-0.5 h-3 w-3 rounded-full bg-white shadow transition ${rationaleOpen[key] ? "translate-x-3" : ""}`}></span>
+      </span>
+    </button>
   {/snippet}
   {#snippet removeIcon()}
     <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
@@ -593,48 +642,74 @@
     {:else if diagItems.length === 0}
       <div class={emptyClass}>{t("initiative_detail_modal.diag_empty", "No diagnosis criteria are configured.")}</div>
     {:else}
-      <div class="flex items-center justify-between rounded-lg bg-indigo-50 px-4 py-2 dark:bg-indigo-500/10">
-        <span class="text-sm font-medium text-indigo-800 dark:text-indigo-200">{t("initiative_detail_modal.diag_score", "Overall score")}</span>
-        <span class="text-lg font-bold text-indigo-700 dark:text-indigo-300">{diagScore ?? "—"}</span>
+      <!-- Overall score, one card per party (same tints as their table columns). -->
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div class="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 dark:border-indigo-500/30 dark:bg-indigo-500/10">
+          <p class="text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-300">{t("initiative_detail_modal.diag_score_creator", "Proposer's overall score")}</p>
+          <p class="mt-1 text-2xl font-bold text-indigo-700 dark:text-indigo-200">{diagTotals.creator ?? "—"}</p>
+          <p class="text-xs text-indigo-600/80 dark:text-indigo-300/80">{answeredLabel(diagTotals.creatorN)}</p>
+        </div>
+        <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-500/30 dark:bg-emerald-500/10">
+          <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">{t("initiative_detail_modal.diag_score_reviewer", "Reviewer's overall score")}</p>
+          <p class="mt-1 text-2xl font-bold text-emerald-700 dark:text-emerald-200">{diagTotals.reviewer ?? "—"}</p>
+          <p class="text-xs text-emerald-700/80 dark:text-emerald-300/80">
+            {diagTotals.reviewer == null ? t("initiative_detail_modal.diag_pending", "Pending diagnosis") : answeredLabel(diagTotals.reviewerN)}
+          </p>
+        </div>
       </div>
-      <ul class="space-y-3">
-        {#each diagItems as row (row.criteria)}
-          <li class="rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-white/[0.02] p-3">
-            <div class="flex flex-wrap items-baseline justify-between gap-2">
-              <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{row.name}</p>
-              {#if !row.is_active_criteria}
-                <span class="rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-semibold uppercase text-gray-600 dark:bg-gray-700 dark:text-gray-300">{t("initiative_detail_modal.diag_inactive", "Retired criterion")}</span>
+
+      <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
+        <table class="w-full min-w-[640px] text-left text-sm">
+          <thead>
+            <tr class="border-b border-gray-200 text-xs font-semibold uppercase tracking-wide dark:border-gray-800">
+              <th class="px-3 py-2 text-gray-500 dark:text-gray-400">{t("initiative_detail_modal.diag_criterion", "Criterion")}</th>
+              <th class="w-[30%] bg-indigo-50 px-3 py-2 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300">{t("initiative_detail_modal.diag_creator", "Proposer's answer")}</th>
+              <th class="w-[30%] bg-emerald-50 px-3 py-2 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">{t("initiative_detail_modal.diag_reviewer", "Reviewer's answer")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each diagItems as row (row.criteria)}
+              <tr class="border-b border-gray-100 align-top last:border-0 dark:border-gray-800/60">
+                <td class="px-3 py-3">
+                  <div class="flex flex-wrap items-baseline gap-2">
+                    <span class="font-semibold text-gray-800 dark:text-gray-200">{row.name}</span>
+                    {#if !row.is_active_criteria}
+                      <span class="rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-semibold uppercase text-gray-600 dark:bg-gray-700 dark:text-gray-300">{t("initiative_detail_modal.diag_inactive", "Retired criterion")}</span>
+                    {/if}
+                  </div>
+                  {#if row.description}
+                    <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{row.description}</p>
+                  {/if}
+                  {#if row.rationale}
+                    <div class="mt-2 flex justify-end">
+                      {@render rationaleToggle(row.criteria)}
+                    </div>
+                  {/if}
+                </td>
+                <td class="bg-indigo-50/40 px-3 py-3 dark:bg-indigo-500/5">
+                  {@render answerCell(row.creator_score, row.creator_label, t("initiative_detail_modal.diag_not_answered", "Not answered"), "indigo")}
+                </td>
+                <td class="bg-emerald-50/40 px-3 py-3 dark:bg-emerald-500/5">
+                  {@render answerCell(
+                    row.reviewer_score,
+                    row.reviewer_label,
+                    row.creator_label ? t("initiative_detail_modal.diag_pending", "Pending diagnosis") : t("initiative_detail_modal.diag_not_answered", "Not answered"),
+                    "emerald",
+                  )}
+                </td>
+              </tr>
+              {#if row.rationale && rationaleOpen[row.criteria]}
+                <tr class="border-b border-gray-100 last:border-0 dark:border-gray-800/60">
+                  <td colspan="3" class="bg-gray-50 px-3 py-2 dark:bg-white/[0.02]">
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-400">{t("initiative_detail_modal.diag_rationale", "Rationale")}</p>
+                    <p class="text-sm text-gray-700 dark:text-gray-300">{row.rationale}</p>
+                  </td>
+                </tr>
               {/if}
-            </div>
-            {#if row.description}
-              <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{row.description}</p>
-            {/if}
-            <dl class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-              <div>
-                <dt class="text-[11px] font-semibold uppercase tracking-wide text-gray-400">{t("initiative_detail_modal.diag_creator", "Proposer's answer")}</dt>
-                <dd class={row.creator_label ? answerClass : mutedClass}>
-                  {#if row.creator_label}<span class="mr-1 font-mono text-xs text-gray-400">{row.creator_score}</span>{row.creator_label}
-                  {:else}{t("initiative_detail_modal.diag_not_answered", "Not answered")}{/if}
-                </dd>
-              </div>
-              <div>
-                <dt class="text-[11px] font-semibold uppercase tracking-wide text-gray-400">{t("initiative_detail_modal.diag_reviewer", "Reviewer's answer")}</dt>
-                <dd class={row.reviewer_label ? answerClass : mutedClass}>
-                  {#if row.reviewer_label}<span class="mr-1 font-mono text-xs text-gray-400">{row.reviewer_score}</span>{row.reviewer_label}
-                  {:else if row.creator_label}{t("initiative_detail_modal.diag_pending", "Pending diagnosis")}
-                  {:else}{t("initiative_detail_modal.diag_not_answered", "Not answered")}{/if}
-                </dd>
-              </div>
-              {#if row.rationale}
-                <div class="md:col-span-2">
-                  <dt class="text-[11px] font-semibold uppercase tracking-wide text-gray-400">{t("initiative_detail_modal.diag_rationale", "Rationale")}</dt>
-                  <dd class="text-sm text-gray-600 dark:text-gray-300">{row.rationale}</dd>
-                </div>
-              {/if}
-            </dl>
-          </li>
-        {/each}
-      </ul>
+            {/each}
+          </tbody>
+        </table>
+      </div>
     {/if}
   </div>
 
@@ -759,10 +834,10 @@
     </section>
   </div>
 
-  <!-- Discussion (read-only) — the Foro island loads the opened initiative's
+  <!-- Discussion (interactive, like Edit Asset) — the Foro island loads the opened initiative's
        thread off the same [data-modal-open] trigger (data-init-id). -->
   <div data-tabpanel="discussion" role="tabpanel" class="pt-4" class:hidden={activeTab !== "discussion"}>
-    <Foro modalId={idPrefix} readonly fetchDiscussion={getInitiativeDiscussion} idAttr="initId" />
+    <Foro modalId={idPrefix} api={initiativeForoApi} idAttr="initId" />
   </div>
 
   <!-- History (read-only) — hydrated by mountHistory from the parent .astro. -->

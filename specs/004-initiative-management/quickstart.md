@@ -73,7 +73,9 @@ Obtain a token for API calls from `/docs` (Authorize) or reuse the browser cooki
 3. As `admin` → all 5 initiatives.
 4. Filter by status, type, priority, impact, access level, favorites; search by name.
    ✅ Filters combine; the count updates.
-5. A VIEW-only initiative row shows no edit/delete buttons.
+5. Columns read name, type, priority, status, tags, actions (no impact, score or access). A
+   VIEW-only row shows no edit/delete buttons but does show the favorite star; toggling it
+   persists (reload → still starred) and the "My favorites" toggle filters by it.
 6. Switch language to Español. ✅ Status, type, priority and impact labels are in Spanish.
 
 ### S2 — Tabs save only their slice (US2)
@@ -81,7 +83,8 @@ Obtain a token for API calls from `/docs` (Authorize) or reuse the browser cooki
 Open a MANAGE initiative.
 
 1. ✅ Title reads "Edit initiative"; tabs in order Core Fields, Diagnosis Questions, Related
-   Assets, Permissions, Discussion, History.
+   Assets, Permissions, Discussion, History, sitting the same distance below the header line as
+   in Edit Asset.
 2. **Core Fields**: change description → *Save core fields*. ✅ Only the description changed; no
    History entry added. Clear the name → save is blocked, field flagged.
 3. **Related Assets**: add a link (asset + relation type + rationale) → *Save related assets*.
@@ -90,11 +93,14 @@ Open a MANAGE initiative.
 4. **Permissions**: grant VIEW to a user → *Save permissions*. Revoke it → ✅ gone from the list;
    `GET /api/init_permissions/init/{id}` no longer returns it; the DB row still exists with
    `valid_to` set.
-5. **Diagnosis Questions** on initiative 3 (diagnosed) → ✅ six criteria with proposer answer,
-   reviewer answer and rationale as labels, overall score shown, nothing editable, save hidden.
-   On initiative 4 → reviewer column "pending diagnosis". On initiative 5 → "not answered".
-6. **Discussion** on initiative 1 → ✅ question with its answer threaded beneath, comment
-   listed; no composer, no answer/delete links, save hidden.
+5. **Diagnosis Questions** on initiative 3 (diagnosed) → ✅ a table: criterion | proposer answer
+   (indigo) | reviewer answer (emerald), labels in the current language; two score cards (proposer
+   15, reviewer 15, "6 of 6 answered"); each rationale hidden until its Show rationale switch is
+   turned on; nothing editable, save hidden.
+   On initiative 4 → reviewer column and card "pending diagnosis". On initiative 5 → "not answered".
+6. **Discussion** on initiative 1 → ✅ question with its answer threaded beneath, comment listed;
+   post a comment and a question, answer a question, delete your own entry (others' entries offer
+   no delete); save button hidden (each post saves itself).
 7. **History** → ✅ newest first, actor per entry, localised labels, "created" marker last.
 8. Edit a field on one tab, then close → ✅ discard confirmation.
 

@@ -5,8 +5,8 @@
  *
  * Edit only — initiatives are never created by hand, so an opener without an
  * id does nothing. Each editable tab (Core Fields, Related Assets, Permissions)
- * saves ONLY its own slice; Diagnosis Questions, Discussion and History are
- * read-only. The status control offers exactly the statuses the API reports as
+ * saves ONLY its own slice; Diagnosis Questions and History are read-only;
+ * Discussion is interactive and saves each post itself. The status control offers exactly the statuses the API reports as
  * reachable (`allowed_statuses`): the current one plus the owner moves.
  *
  * USAGE (from a page):
@@ -120,7 +120,10 @@ const label = (o: ListOption) => o.byLang.en ?? o.byLang.es ?? o.value;
         </div>
       </section>
 
-      <div id={`${modalId}-detail-tabs`}></div>
+      {/* pt-6 = the gap Edit Asset gets from `space-y-6` (its hidden id input stays a
+          sibling there; here the core section is re-parented away, leaving the tabs
+          as the only child). */}
+      <div id={`${modalId}-detail-tabs`} class="pt-6"></div>
     </div>
 
     <div class="flex flex-wrap items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-800">

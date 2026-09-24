@@ -34,19 +34,26 @@
   // `readonly` renders the thread without any write affordance (no composer,
   // no Answer link, no Delete) — used by the Asset Management edit modal's
   // Discussion tab, which is view-only. The gallery leaves it false.
-  // `fetchDiscussion` / `idAttr` let another entity reuse the same thread view:
-  // Initiative Management passes the collaborations reader and `initId`
-  // (`data-init-id`). Writes still go through the asset services, so a
-  // non-asset caller must also pass `readonly`. Defaults = today's asset behaviour.
+  // `api` / `idAttr` let another entity reuse the same thread (read AND write):
+  // Initiative Management passes the collaborations services and `initId`
+  // (`data-init-id`). Defaults = today's asset behaviour.
+  interface ForoApi {
+    getDiscussion: (id: number) => Promise<DiscussionItem[]>;
+    addComment: (userId: number, id: number, content: string) => Promise<unknown>;
+    addQuestion: (userId: number, id: number, content: string) => Promise<unknown>;
+    addAnswer: (userId: number, id: number, content: string, parent: number) => Promise<unknown>;
+    deleteParticipation: (entryId: number) => Promise<unknown>;
+  }
+  const ASSET_API: ForoApi = { getDiscussion, addComment, addQuestion, addAnswer, deleteParticipation };
   let {
     modalId,
     readonly = false,
-    fetchDiscussion = getDiscussion,
+    api = ASSET_API,
     idAttr = "assetId",
   }: {
     modalId: string;
     readonly?: boolean;
-    fetchDiscussion?: (id: number) => Promise<DiscussionItem[]>;
+    api?: ForoApi;
     idAttr?: string;
   } = $props();
 
@@ -135,7 +142,7 @@
     answerDraft = {};
     statusText = t("foro.loading", "Loading discussion…");
     try {
-      const data = await fetchDiscussion(id);
+      const data = await api.getDiscussion(id);
       if (seq !== loadSeq) return; // superseded by a newer open()
       items = data;
       statusText = "";
@@ -163,8 +170,8 @@
     const text = draft.trim();
     if (!u || assetId == null || !text) return;
     try {
-      if (postType === "QUESTION") await addQuestion(u.id, assetId, text);
-      else await addComment(u.id, assetId, text);
+      if (postType === "QUESTION") await api.addQuestion(u.id, assetId, text);
+      else await api.addComment(u.id, assetId, text);
       draft = "";
       await reload();
     } catch (err) {
@@ -181,7 +188,7 @@
     const text = (answerDraft[qid] || "").trim();
     if (!u || assetId == null || !text) return;
     try {
-      await addAnswer(u.id, assetId, text, qid);
+      await api.addAnswer(u.id, assetId, text, qid);
       answerDraft = { ...answerDraft, [qid]: "" };
       answerOpen = { ...answerOpen, [qid]: false };
       await reload();
@@ -192,7 +199,7 @@
 
   async function remove(id: number): Promise<void> {
     try {
-      await deleteParticipation(id);
+      await api.deleteParticipation(id);
       await reload();
     } catch (err) {
       showToast(err instanceof Error ? err.message : t("foro.error", "Something went wrong"), "error");

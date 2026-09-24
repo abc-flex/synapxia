@@ -1112,6 +1112,11 @@ export interface DiagnosticRow {
 export interface DiagnosticsResponse {
   init: number;
   score?: number | null;
+  /** Overall score per party: sum of that party's answers + how many it answered. */
+  creator_total?: number | null;
+  creator_answered: number;
+  reviewer_total?: number | null;
+  reviewer_answered: number;
   items: DiagnosticRow[];
 }
 

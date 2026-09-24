@@ -75,4 +75,14 @@ def get_diagnostics(session: Session, initiative: Initiative, lang: str) -> Diag
             rationale=d.rationale if d else None,
         ))
 
-    return DiagnosticsResponse(init=initiative.id, score=initiative.score, items=items)
+    creator = [r.creator_score for r in items if r.creator_score is not None]
+    reviewer = [r.reviewer_score for r in items if r.reviewer_score is not None]
+    return DiagnosticsResponse(
+        init=initiative.id,
+        score=initiative.score,
+        creator_total=sum(creator) if creator else None,
+        creator_answered=len(creator),
+        reviewer_total=sum(reviewer) if reviewer else None,
+        reviewer_answered=len(reviewer),
+        items=items,
+    )

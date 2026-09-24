@@ -285,3 +285,23 @@ mapped before deciding:
 - **Alternatives considered**: replacing the pair routes — rejected (breaking change for a
   shipped contract); making pair routes act on all links of the pair — rejected (a PUT/DELETE
   that silently fans out is surprising and hard to undo).
+
+## R14 — Review amendments: list columns, favorites, diagnosis table, interactive discussion
+
+- **List**: columns name, type, priority, status, tags, actions. Expected impact and access level
+  stay as filters in the toolbar (their header funnels needed a visible column). The row star
+  uses the shared DataTable `favoriteAction`, backed by new `PUT`/`DELETE
+  /api/initiatives/{id}/favorite` (caller from session; VIEW is enough — favoriting is
+  personal, not an edit).
+- **Diagnosis Questions**: a real table — criterion | proposer answer | reviewer answer — with
+  the two answer columns tinted differently (indigo for the proposer, emerald for the reviewer)
+  and a two-card score header, one per party. The server adds totals/answered counts so the UI
+  never re-sums. Rationale sits behind the same Show / Hide switch as Asset Management's
+  characteristic details (icon + label + track, right-aligned, collapsed by default).
+- **Discussion**: interactive, reusing `Foro.svelte` with a full `api` object (fetch + three
+  posts + delete) instead of only `fetchDiscussion`. New write routes in
+  `inits/routes/collaborations.py` backed by `collaborations_service.add_*`. Unlike the asset
+  side (which takes `user_id` from the body), the author comes from the session, and delete is
+  author-or-superuser only.
+- **Alternatives considered**: reusing `/api/actions/*` for initiative posts — impossible
+  (`actions.asset` NOT NULL); keeping a single `score` — rejected, the user wants one per party.

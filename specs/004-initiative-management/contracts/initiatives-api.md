@@ -215,3 +215,29 @@ Additive routes (existing pair routes unchanged for single-link pairs; see resea
 | `…/asset_relations/{source}/{target}`, `…/asset_inits/{asset}/{init}` | **changed (compatible)** | act on the pair's single link; **409** when the pair holds several (use the typed route) |
 | `POST /api/asset_relations/`, `POST /api/asset_inits/` | **changed (compatible)** | duplicate = same pair AND type (409 if active); an inactive identical link is reactivated (201) |
 | `GET /api/asset_relations/related/{id}` | **changed (compatible)** | lists every outgoing link (one entry per type); incoming only for assets with no outgoing link |
+
+---
+
+## Amendment (2026-09-23, review) — favorites, diagnosis totals, interactive discussion
+
+| Endpoint | Status | Gate | Per-initiative |
+|----------|--------|------|----------------|
+| `PUT /api/initiatives/{id}/favorite` | **new** | `INITS` any of `INITIATIVES`,`EXPLORE` (read) | VIEW |
+| `DELETE /api/initiatives/{id}/favorite` | **new** | same | VIEW |
+| `POST /api/collaborations/comments` | **new** | `INITS` any of `INITIATIVES`,`EXPLORE`, **edit** | VIEW |
+| `POST /api/collaborations/questions` | **new** | same | VIEW |
+| `POST /api/collaborations/answers` | **new** | same | VIEW |
+| `DELETE /api/collaborations/{id}` | **new** | same | VIEW + author (or superuser) |
+| `GET /api/initiatives/{id}/diagnostics` | **changed (additive)** | — | — |
+
+- **Favorite**: `PUT` marks the initiative as the caller's favorite (creates or reactivates the
+  `favorite_inits` row), `DELETE` clears it (logical). Both are idempotent and return
+  `{ "init": 3, "is_favorite": true|false }`. The user always comes from the session.
+- **Discussion writes**: body `{ "init": 1, "content": "…" }` (answers add `"parent": <question id>`,
+  which must be an active QUESTION on the same initiative → else 400; blank content → 400).
+  `201` → the `InitDiscussionItem`. The author is the signed-in user — there is **no** `user_id`
+  in the body. `DELETE` is logical; `403` unless the caller wrote the entry (or is superuser);
+  `400` already deleted; only COMMENT/QUESTION/ANSWER rows can be deleted here (else 400).
+- **Diagnostics** gains `creator_total`, `creator_answered`, `reviewer_total`,
+  `reviewer_answered` (sums and counts over the listed criteria; `reviewer_total` is `null`
+  when the reviewer has answered none). `score` is unchanged.

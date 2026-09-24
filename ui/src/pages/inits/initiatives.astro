@@ -1,0 +1,301 @@
+---
+// Initiative Management (HU-IN02/HU-IN03, specs/004-initiative-management).
+// Lists the initiatives the caller can access and opens the tabbed edit dialog.
+// There is deliberately no "New" entry point: initiatives are only proposed.
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import DataTable from "../../components/table/DataTable.astro";
+import CrudModal from "../../components/forms/CrudModal.astro";
+import Toast from "../../components/Toast.astro";
+import InitiativeDetailModal from "../../components/inits/InitiativeDetailModal.astro";
+import { getInitiativesWithAccess } from "@/lib/initiatives";
+import { getListItemsbyList } from "@/lib/list_items";
+import { ui } from "@/i18n";
+
+let initiatives: any[] = [];
+let errorMessage: string | null = null;
+try {
+  initiatives = await getInitiativesWithAccess();
+} catch (error) {
+  console.error("Failed to fetch initiatives:", error);
+  errorMessage =
+    error instanceof Error ? error.message : "Failed to fetch initiatives from API";
+  initiatives = [];
+}
+
+// The four list-backed fields. `/api/list_items/list/{code}` returns every
+// language; the server renders English and a client step (below) relabels to
+// the viewer's language, since the language lives in localStorage.
+const LISTS = {
+  status: "INITIATIVE_STATUS",
+  type: "INITIATIVE_TYPE",
+  priority_level: "PRIORITY_LEVEL",
+  expected_impact: "EXPECTED_IMPACT",
+} as const;
+
+type Labels = Record<string, Record<string, string>>; // value → lang → label
+const labels: Record<string, Labels> = {};
+const optionsEn: Record<string, { value: string; label: string }[]> = {};
+for (const [field, list] of Object.entries(LISTS)) {
+  let items: any[] = [];
+  try {
+    items = await getListItemsbyList(list);
+  } catch {
+    items = [];
+  }
+  const map: Labels = {};
+  for (const it of items) (map[it.value] ??= {})[it.lang] = it.label;
+  labels[field] = map;
+  optionsEn[field] = items
+    .filter((it) => it.lang === "en")
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    .map((it) => ({ value: it.value, label: it.label }));
+}
+
+const bare = (v: unknown) => String(v ?? "").replace(/^\d+-/, "").toUpperCase();
+const labelOf = (field: keyof typeof LISTS, raw: unknown): string => {
+  if (!raw) return "";
+  const hit = labels[field][String(raw)] ?? labels[field][bare(raw)];
+  return hit?.en ?? hit?.es ?? String(raw);
+};
+
+const accessLabels = {
+  MANAGE: { en: ui.en.initiative_table.access_manage, es: ui.es.initiative_table.access_manage },
+  VIEW: { en: ui.en.initiative_table.access_view, es: ui.es.initiative_table.access_view },
+};
+
+const columns = [
+  { key: "name", label: "initiative_modal.name", as: "title", subtitleKey: "updated_at", subtitleFormat: "relative" },
+  { key: "status", label: "initiative_modal.status", visible: false },
+  { key: "status_name", label: "initiative_modal.status", as: "status" },
+  { key: "type", label: "initiative_modal.type", visible: false },
+  { key: "type_name", label: "initiative_modal.type" },
+  { key: "priority_level", label: "initiative_modal.priority_level", visible: false },
+  { key: "priority_name", label: "initiative_modal.priority_level" },
+  { key: "expected_impact", label: "initiative_modal.expected_impact", visible: false },
+  { key: "impact_name", label: "initiative_modal.expected_impact" },
+  { key: "score", label: "initiative_modal.score" },
+  { key: "my_access", label: "initiative_modal.access", visible: false },
+  { key: "access_name", label: "initiative_modal.access", as: "badge" },
+];
+
+const data = initiatives.map((item) => ({
+  id: item.id,
+  name: item.name,
+  description: item.description,
+  status: bare(item.status),
+  status_name: labelOf("status", item.status),
+  type: item.type ?? "",
+  type_name: labelOf("type", item.type),
+  priority_level: item.priority_level,
+  priority_name: labelOf("priority_level", item.priority_level),
+  expected_impact: item.expected_impact,
+  impact_name: labelOf("expected_impact", item.expected_impact),
+  score: item.score ?? "",
+  my_access: item.my_access,
+  access_name: accessLabels[item.my_access as "MANAGE" | "VIEW"]?.en ?? item.my_access,
+  // Row action gating: only MANAGE holders get edit/delete (backend enforces too).
+  can_manage: item.my_access === "MANAGE",
+  // "yes"/"no" so the favorites toggle's equality check works.
+  favorite: item.is_favorite ? "yes" : "no",
+  // Current status + owner moves, handed to the edit dialog's status control.
+  allowed_statuses: (item.allowed_statuses ?? []).join(","),
+  updated_at: item.updated_at ?? item.created_at,
+  created_at: item.created_at,
+}));
+
+// Cell relabel maps for the client step: English label → {en, es}, per column.
+const cellLabels: Record<string, Record<string, Record<string, string>>> = {
+  status_name: {}, type_name: {}, priority_name: {}, impact_name: {}, access_name: {},
+};
+const colField = {
+  status_name: "status", type_name: "type",
+  priority_name: "priority_level", impact_name: "expected_impact",
+} as const;
+for (const [col, field] of Object.entries(colField)) {
+  for (const byLang of Object.values(labels[field])) {
+    if (byLang.en) cellLabels[col][byLang.en] = byLang;
+  }
+}
+for (const byLang of Object.values(accessLabels)) cellLabels.access_name[byLang.en] = byLang;
+
+// Filter-option relabel maps: select id suffix → value → {en, es}.
+const optionLabels = {
+  "filter": labels.status,
+  "filter2": labels.type,
+  "filter5": labels.priority_level,
+  "filter6": labels.expected_impact,
+};
+
+const deleteFields = [
+  { key: "name", label: "initiative_modal.name", pk: true, disabled: true },
+];
+const fieldKeys = deleteFields.map((f) => f.key);
+
+// Options the detail modal's selects need (all languages; it filters itself).
+const modalLists = {
+  status: Object.entries(labels.status).map(([value, byLang]) => ({ value, byLang })),
+  type: Object.entries(labels.type).map(([value, byLang]) => ({ value, byLang })),
+  priority_level: Object.entries(labels.priority_level).map(([value, byLang]) => ({ value, byLang })),
+  expected_impact: Object.entries(labels.expected_impact).map(([value, byLang]) => ({ value, byLang })),
+};
+---
+
+<BaseLayout>
+  {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
+
+  <div class="mx-auto w-full max-w-full md:p-0">
+    <Breadcrumb
+      moduleName="Initiatives"
+      pageName="Initiative Management"
+      pageTitle="Initiative Management"
+      homeLink="/"
+      moduleNameKey="modules.INITS"
+      pageNameKey="menu_options.initiatives"
+      pageTitleKey="menu_options.initiatives"
+    />
+
+    <InitiativeDetailModal modalId="initiative-detail-modal" lists={modalLists} />
+
+    <CrudModal
+      mode="delete"
+      modalId="initiative-delete-modal"
+      entityName="Initiative"
+      fields={deleteFields}
+      showTrigger={false}
+    />
+
+    <div
+      id="initiatives-data"
+      data-rows={encodeURIComponent(JSON.stringify(data))}
+      data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
+      data-cell-labels={encodeURIComponent(JSON.stringify(cellLabels))}
+      data-option-labels={encodeURIComponent(JSON.stringify(optionLabels))}
+      class="hidden"
+      aria-hidden="true"
+    >
+    </div>
+
+    <script>
+      import { initCrudPage } from "@/lib/crudClient";
+      import { deleteInitiative } from "@/lib/initiatives";
+      import { showToast, flashToast } from "@/lib/toast";
+      import { translate } from "@/utils/i18nClient";
+
+      initCrudPage({
+        dataId: "initiatives-data",
+        editModalId: "initiative-edit-modal", // shim — DataTable still emits this id
+        deleteModalId: "initiative-delete-modal",
+      });
+
+      // ── Relabel list-backed cells and filter options to the viewer's
+      // language (the SSR pass is English-only; see getLocale).
+      const carrier = document.getElementById("initiatives-data");
+      const rows: { id: number; allowed_statuses: string }[] = JSON.parse(
+        decodeURIComponent(carrier?.dataset.rows || "%5B%5D"),
+      );
+      const cellLabels = JSON.parse(decodeURIComponent(carrier?.dataset.cellLabels || "%7B%7D"));
+      const optionLabels = JSON.parse(decodeURIComponent(carrier?.dataset.optionLabels || "%7B%7D"));
+      const lang = () => (localStorage.getItem("lang") === "es" ? "es" : "en");
+
+      const relabel = () => {
+        const l = lang();
+        const table = document.getElementById("initiatives");
+        if (table) {
+          const heads = Array.from(table.querySelectorAll("thead th"));
+          for (const [col, map] of Object.entries<Record<string, Record<string, string>>>(cellLabels)) {
+            const idx = heads.findIndex((th) => th.getAttribute("data-column-key") === col);
+            if (idx < 0) continue;
+            table.querySelectorAll("tbody tr").forEach((tr) => {
+              const td = tr.children[idx] as HTMLElement | undefined;
+              if (!td) return;
+              const target = (td.querySelector("span") as HTMLElement | null) ?? td;
+              const en = (target.dataset.enLabel ??= (target.textContent || "").trim());
+              const next = map[en]?.[l] ?? map[en]?.en;
+              if (next) target.textContent = next;
+            });
+          }
+        }
+        for (const [suffix, byValue] of Object.entries<Record<string, Record<string, string>>>(optionLabels)) {
+          const sel = document.getElementById(`initiatives-${suffix}`) as HTMLSelectElement | null;
+          sel?.querySelectorAll("option").forEach((opt) => {
+            const hit = byValue[opt.value];
+            if (hit) opt.textContent = hit[l] ?? hit.en ?? opt.textContent;
+          });
+        }
+      };
+      relabel();
+      document.addEventListener("synapxia:locale-changed", relabel);
+
+      // ── Bridge: the row pencil (DataTable emits `initiative-edit-modal`) →
+      // InitiativeDetailModal. Capture phase so we run before crudClient.
+      document.addEventListener(
+        "click",
+        (e) => {
+          const edit = (e.target as HTMLElement).closest?.('[data-modal-open="initiative-edit-modal"]');
+          if (!edit) return;
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          const id = edit.getAttribute("data-id");
+          if (!id) return;
+          const synthetic = document.createElement("button");
+          synthetic.style.display = "none";
+          synthetic.setAttribute("data-modal-open", "initiative-detail-modal");
+          synthetic.setAttribute("data-init-id", id);
+          const row = rows.find((r) => String(r.id) === id);
+          if (row) synthetic.setAttribute("data-allowed-statuses", row.allowed_statuses);
+          document.body.appendChild(synthetic);
+          synthetic.click();
+          synthetic.remove();
+        },
+        true,
+      );
+
+      document.addEventListener("crud-submit", async (e: Event) => {
+        const { mode, data } = (e as CustomEvent).detail;
+        if (mode !== "delete") return;
+        try {
+          await deleteInitiative(Number(data.id));
+          flashToast(translate("initiative_table.deleted"));
+          window.location.reload();
+        } catch (error) {
+          showToast(error instanceof Error ? error.message : "An error occurred", "error");
+        }
+      });
+    </script>
+
+    <div class="space-y-5 sm:space-y-6">
+      <div class="border-0 p-0">
+        <DataTable
+          columns={columns}
+          data={data}
+          tableId="initiatives"
+          i18Item="initiative"
+          showAddButton={false}
+          columnFilter="status"
+          filterOptions={optionsEn.status}
+          filterHeaderColumn="status_name"
+          columnFilter2="type"
+          filterOptions2={optionsEn.type}
+          filter2HeaderColumn="type_name"
+          columnFilter3="favorite"
+          filter3AsToggle={true}
+          filterOptions3={[
+            { value: "yes", label: "My favorites", i18n: "initiative_table.fav_filter_mine" },
+          ]}
+          columnFilter4="my_access"
+          filter4AllLabel="initiative_table.access_filter_all"
+          filterOptions4={[
+            { value: "MANAGE", label: "Can manage", i18n: "initiative_table.access_manage" },
+            { value: "VIEW", label: "View only", i18n: "initiative_table.access_view" },
+          ]}
+          extraFilters={[
+            { key: "priority_level", options: optionsEn.priority_level, headerColumn: "priority_name" },
+            { key: "expected_impact", options: optionsEn.expected_impact, headerColumn: "impact_name" },
+          ]}
+          manageKey="can_manage"
+        />
+      </div>
+    </div>
+  </div>
+</BaseLayout>

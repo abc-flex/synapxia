@@ -36,6 +36,19 @@ interface HistoryConfig {
   /** The detail dialog id, e.g. "mcp-view-modal". The shell lives at
    * `#${modalId}-history` (rendered by HistoryTimeline.astro). */
   modalId: string;
+  /** Data source; defaults to the asset timeline. Initiative Management
+   *  passes the collaborations timeline instead. */
+  fetcher?: (id: number) => Promise<HistoryEntry[]>;
+  /** `dataset` key on the opener that carries the id (default `assetId`,
+   *  i.e. `data-asset-id`). */
+  idAttr?: string;
+  /** i18n namespace for per-type labels (default `history.action`). */
+  labelNamespace?: string;
+}
+
+export interface HistoryController {
+  /** (Re)load the timeline for an id — e.g. after a save added an entry. */
+  load: (id: number) => Promise<void>;
 }
 
 const tr = (key: string, fallback: string): string => {
@@ -58,11 +71,21 @@ const DOT_COLORS: Record<string, string> = {
   QUESTION: "bg-amber-400",
   ANSWER: "bg-sky-400",
   CREATED: "bg-gray-400",
+  ACCEPTANCE: "bg-emerald-400",
+  KICKOFF: "bg-sky-400",
+  DELIVERY: "bg-emerald-500",
+  ARCHIVING: "bg-gray-500",
+  REJECTION: "bg-red-400",
 };
 
-export function mountHistory(cfg: HistoryConfig): void {
+export function mountHistory(cfg: HistoryConfig): HistoryController | undefined {
   if (typeof window === "undefined") return;
-  const { modalId } = cfg;
+  const {
+    modalId,
+    fetcher = (id: number) => getAssetHistory(id),
+    idAttr = "assetId",
+    labelNamespace = "history.action",
+  } = cfg;
 
   const root = document.getElementById(`${modalId}-history`);
   if (!root) return;
@@ -81,11 +104,11 @@ export function mountHistory(cfg: HistoryConfig): void {
   // server-derived summary.
   const actionLabel = (e: HistoryEntry): string => {
     if (e.workflow_status) {
-      const k = `history.action.${e.type}_${e.workflow_status}`;
+      const k = `${labelNamespace}.${e.type}_${e.workflow_status}`;
       const v = translate(k);
       if (v && v !== k) return v;
     }
-    return tr(`history.action.${e.type}`, e.summary || e.type.toLowerCase());
+    return tr(`${labelNamespace}.${e.type}`, e.summary || e.type.toLowerCase());
   };
 
   // ── Renderer (actor + content via textContent — XSS-safe) ──────────────────
@@ -134,7 +157,7 @@ export function mountHistory(cfg: HistoryConfig): void {
     listEl.innerHTML = "";
     setStatus(tr("history.loading", "Loading activity…"));
     try {
-      const items = await getAssetHistory(id);
+      const items = await fetcher(id);
       setStatus("");
       if (!items.length) {
         setStatus(tr("history.empty", "No activity yet."));
@@ -150,7 +173,9 @@ export function mountHistory(cfg: HistoryConfig): void {
   document.addEventListener("click", (e) => {
     const opener = (e.target as HTMLElement).closest?.(`[data-modal-open="${modalId}"]`);
     if (!opener) return;
-    const id = (opener as HTMLElement).dataset.assetId;
+    const id = (opener as HTMLElement).dataset[idAttr];
     if (id) load(Number(id));
   });
+
+  return { load };
 }

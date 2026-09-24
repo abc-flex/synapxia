@@ -1,13 +1,14 @@
 /**
  * Asset relations API service.
  *
- * Composite-PK `(source, target)` rows — both are asset ids. `type` comes
+ * Composite-PK `(source, target, type)` rows — both ends are asset ids; the
+ * same pair may be related once per relation type. `type` comes
  * from the RELATION_TYPE list; `rationale` is an optional free-text note.
  *
- * Re-add semantics: the API's create pre-check does NOT filter is_active,
- * so POSTing a pair that was logically deleted returns 409. Callers should
- * fall back to `updateAssetRelation(source, target, { ..., is_active: true })`
- * on 409 to reactivate the row.
+ * Re-add semantics: POSTing an identical (source, target, type) link that was
+ * logically deleted reactivates it (201); an active identical link → 409.
+ * Address a single link with the `…Typed` functions at the bottom — the
+ * pair-addressed ones only work while the pair has one link.
  */
 
 import { apiGet, apiPost, apiPut, apiDelete, buildQueryString } from "./api";
@@ -91,4 +92,31 @@ export async function deleteAssetRelation(
   return apiDelete<AssetRelation>(
     `/api/asset_relations/${encodeURIComponent(String(sourceId))}/${encodeURIComponent(String(targetId))}`,
   );
+}
+
+// ── One link by (source, target, type) ──────────────────────────────────────
+// The same pair may be related once per relation type (PK source, target,
+// type). These address a single link exactly; the pair-addressed functions
+// above only work while the pair has one link (the API answers 409 otherwise).
+
+const relPath = (sourceId: number, targetId: number, type: string) =>
+  `/api/asset_relations/${encodeURIComponent(String(sourceId))}/${encodeURIComponent(String(targetId))}/${encodeURIComponent(type)}`;
+
+/** Update one link's rationale / active flag (its type is part of the key). */
+export async function updateAssetRelationTyped(
+  sourceId: number,
+  targetId: number,
+  type: string,
+  data: Omit<AssetRelationUpdate, "type">,
+): Promise<AssetRelation> {
+  return apiPut<AssetRelation, Omit<AssetRelationUpdate, "type">>(relPath(sourceId, targetId, type), data);
+}
+
+/** Logically delete one link (that relation type only). */
+export async function deleteAssetRelationTyped(
+  sourceId: number,
+  targetId: number,
+  type: string,
+): Promise<AssetRelation> {
+  return apiDelete<AssetRelation>(relPath(sourceId, targetId, type));
 }

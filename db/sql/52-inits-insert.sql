@@ -14,11 +14,11 @@ INSERT INTO criterias (code, name, description, list) VALUES
 -- ******* Table initiatives ********
 -- **********************************
 
-INSERT INTO initiatives (id, name, description, expected_impact, priority_level, reference, status, tags, detail, score) VALUES
+INSERT INTO initiatives (id, name, description, expected_impact, priority_level, reference, status, type, tags, detail, score) VALUES
     (1, 'Organizational Knowledge Management Platform',
      'Develop a centralized platform to capture, organize, share and reuse the organization''s knowledge, reducing information silos and accelerating decision-making.',
      'DECISION_SUPPORT', 'HIGH', 'https://wiki.synapxia.local/initiatives/knowledge-management',
-     '3-ENGAGING', '["knowledge-management", "platform", "collaboration", "genai"]',
+     'IN_PROGRESS', 'IMPLEMENTATION', '["knowledge-management", "platform", "collaboration", "genai"]',
      $$# Organizational Knowledge Management Platform
 
 ## Problem
@@ -44,25 +44,25 @@ $$, 16),
     (2, 'Centralized Knowledge Base',
      'Single repository to document, categorize and version the organization''s explicit knowledge, replacing scattered drives and wikis.',
      'QUALITY_IMPROVEMENT', 'HIGH', NULL,
-     '4-DELIVERED', '["knowledge-base", "documentation", "taxonomy"]',
+     'DELIVERED', 'IMPLEMENTATION', '["knowledge-base", "documentation", "taxonomy"]',
      'Foundational repository that feeds the rest of the platform. Articles are classified using the existing asset taxonomy and reuse the lists/list_items catalog for status and visibility.',
      14),
     (3, 'Knowledge Assistant (RAG)',
      'GenAI assistant that answers employee questions in natural language, retrieving and citing content from the centralized knowledge base.',
      'TIME_REDUCTION', 'HIGH', NULL,
-     '3-ENGAGING', '["genai", "rag", "assistant", "search"]',
+     'ACCEPTED', 'PROTOTYPING', '["genai", "rag", "assistant", "search"]',
      'Retrieval-augmented assistant on top of the knowledge base. Requires the knowledge base (initiative 2) to be populated before it can deliver value.',
      15),
     (4, 'Onboarding Knowledge Hub',
      'Curated onboarding paths that guide new hires through the knowledge they need in their first 30/60/90 days.',
      'IMPROVED_UX', 'MEDIUM', NULL,
-     '2-ASSESSMENT', '["onboarding", "enablement", "knowledge-management"]',
+     'ACTIVATED', 'EXPLORATION', '["onboarding", "enablement", "knowledge-management"]',
      'Consumes content from the centralized knowledge base and tailors learning paths per role and team.',
      NULL),
     (5, 'Community of Practice & Expert Directory',
      'Directory of internal experts and spaces for communities of practice to capture tacit knowledge through Q&A and discussions.',
      'INNOVATION', 'LOW', NULL,
-     '1-ACTIVATED', '["community", "experts", "tacit-knowledge"]',
+     'ACTIVATED', 'EXPLORATION', '["community", "experts", "tacit-knowledge"]',
      'Turns tacit, person-bound knowledge into reusable assets by connecting questions to the right people and curating the best answers back into the knowledge base.',
      NULL);
 
@@ -119,7 +119,7 @@ INSERT INTO collaborations (id, init, user_id, type, workflow_status, content, p
     (8, 1, 1,  'DELIVERY',   'PENDING', NULL, NULL),
     (10, 1, 1, 'DELIVERY',   'HANDLED', NULL, NULL),
     (11, 1, 7,  'QUESTION',  NULL, 'Will the assistant cite the original source for every answer?', NULL),
-    (12, 1, 1,  'ANSWER',    NULL, 'Yes; every answer must ground its response and link back to the source asset.', 5),
+    (12, 1, 1,  'ANSWER',    NULL, 'Yes; every answer must ground its response and link back to the source asset.', 11),
     (13, 1, 10, 'COMMENT',   NULL, 'Capturing tacit knowledge from senior staff should be part of the rollout plan.', NULL);
 
 SELECT setval(pg_get_serial_sequence('collaborations', 'id'), (SELECT MAX(id) FROM collaborations));

@@ -55,11 +55,15 @@ scored criteria** instead of a review. Accepted initiatives feed the library thr
 > delivery** when the work is done and **archive** it when it is no longer relevant, **so
 > that** the portfolio reflects reality.
 - **Behavior:** each tab saves its own slice — core fields, related assets, permissions;
-  diagnosis questions and history are read-only here. Moving the initiative to *Delivered*
-  records a `DELIVERY` collaboration; archiving sets `status = ARCHIVED` and records an
-  `ARCHIVING` collaboration. Both are terminal records (`workflow_status = HANDLED`), not
-  assignments.
-- **Data:** `initiatives`, `collaborations` (`DELIVERY` / `ARCHIVING`)
+  diagnosis questions, discussion and history are read-only here. There is no "New
+  Initiative": initiatives are only proposed. The owner's only status moves are
+  *Accepted* → *In Progress* / *Delivered* / *Archived*, *In Progress* → *Delivered* /
+  *Archived*, and *Delivered* → *Archived*; each records a `KICKOFF` / `DELIVERY` /
+  `ARCHIVING` collaboration by the acting user. All are terminal records
+  (`workflow_status = HANDLED`), not assignments — no one is notified. Every other status
+  change is refused.
+- **Data:** `initiatives`, `collaborations` (`KICKOFF` / `DELIVERY` / `ARCHIVING`)
+- **Spec:** [`specs/004-initiative-management`](../../specs/004-initiative-management/spec.md)
 - Detail of **HU-IN02**.
 
 ---

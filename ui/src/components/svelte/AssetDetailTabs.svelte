@@ -31,14 +31,14 @@
   import {
     getAssetRelationsBySource,
     createAssetRelation,
-    updateAssetRelation,
-    deleteAssetRelation,
+    updateAssetRelationTyped,
+    deleteAssetRelationTyped,
   } from "@/lib/asset_relations";
   import {
     getAssetInitsByAsset,
     createAssetInit,
-    updateAssetInit,
-    deleteAssetInit,
+    updateAssetInitTyped,
+    deleteAssetInitTyped,
   } from "@/lib/asset_inits";
   import { getInitiativesSelect } from "@/lib/initiatives";
   import {
@@ -173,7 +173,10 @@
 
   // Relations
   let stagedRelations = $state<StagedRelation[]>([]);
-  let initialRelByTarget = $state(new Map<number, any>());
+  // Links are keyed by (target, relation type): the same pair may be related
+  // once per type (PK source, target, type / asset, init, type).
+  const linkKey = (target: number, type: string): string => `${target}:${type}`;
+  let initialRelByKey = $state(new Map<string, any>());
   let assetOptions = $state<SelectOption[]>([]);
   let relTypeOptions = $state<SelectOption[]>([]);
   let relTarget = $state("");
@@ -185,7 +188,7 @@
   // (asset_inits table) instead of another asset. Reuses relTypeOptions (both
   // tables share the RELATION_TYPE list).
   let stagedInits = $state<StagedInit[]>([]);
-  let initialInitByInit = $state(new Map<number, any>());
+  let initialInitByKey = $state(new Map<string, any>());
   let initOptions = $state<SelectOption[]>([]);
   let initTarget = $state("");
   let initType = $state("");
@@ -267,19 +270,21 @@
     }
     return set;
   });
-  const pendingRelationTargets = $derived.by(() => {
-    const set = new Set<number>();
+  const pendingRelationKeys = $derived.by(() => {
+    const set = new Set<string>();
     for (const rel of stagedRelations) {
-      const initial = initialRelByTarget.get(rel.target);
-      if (!initial || initial.type !== rel.type || (initial.rationale ?? "") !== rel.rationale) set.add(rel.target);
+      const key = linkKey(rel.target, rel.type);
+      const initial = initialRelByKey.get(key);
+      if (!initial || (initial.rationale ?? "") !== rel.rationale) set.add(key);
     }
     return set;
   });
-  const pendingInitIds = $derived.by(() => {
-    const set = new Set<number>();
+  const pendingInitKeys = $derived.by(() => {
+    const set = new Set<string>();
     for (const rel of stagedInits) {
-      const initial = initialInitByInit.get(rel.init);
-      if (!initial || initial.type !== rel.type || (initial.rationale ?? "") !== rel.rationale) set.add(rel.init);
+      const key = linkKey(rel.init, rel.type);
+      const initial = initialInitByKey.get(key);
+      if (!initial || (initial.rationale ?? "") !== rel.rationale) set.add(key);
     }
     return set;
   });
@@ -432,8 +437,8 @@
       relError = t("asset_detail_modal.related_missing_fields", "Pick a target asset and a relation type.");
       return;
     }
-    if (stagedRelations.some((r) => r.target === target)) {
-      relError = t("asset_detail_modal.related_duplicate", "This asset is already related.");
+    if (stagedRelations.some((r) => r.target === target && r.type === type)) {
+      relError = t("asset_detail_modal.related_duplicate", "This asset is already related with that relation type.");
       return;
     }
     stagedRelations = [
@@ -481,8 +486,8 @@
       initError = t("asset_detail_modal.related_inits_missing_fields", "Pick a target initiative and a relation type.");
       return;
     }
-    if (stagedInits.some((r) => r.init === init)) {
-      initError = t("asset_detail_modal.related_inits_duplicate", "This initiative is already related.");
+    if (stagedInits.some((r) => r.init === init && r.type === type)) {
+      initError = t("asset_detail_modal.related_inits_duplicate", "This initiative is already related with that relation type.");
       return;
     }
     stagedInits = [
@@ -660,7 +665,7 @@
     }
 
     // Relations
-    initialRelByTarget = new Map(relations.map((r: any) => [r.target, r]));
+    initialRelByKey = new Map(relations.map((r: any) => [linkKey(r.target, r.type), r]));
     stagedRelations = relations.map((r: any) => ({
       target: r.target,
       targetLabel: assetOptions.find((a) => Number(a.value) === r.target)?.label || String(r.target),
@@ -670,7 +675,7 @@
     }));
 
     // Related Inits
-    initialInitByInit = new Map(inits.map((r: any) => [r.init, r]));
+    initialInitByKey = new Map(inits.map((r: any) => [linkKey(r.init, r.type), r]));
     stagedInits = inits.map((r: any) => ({
       init: r.init,
       initLabel: initOptions.find((o) => Number(o.value) === r.init)?.label || String(r.init),
@@ -788,28 +793,28 @@
   /** Whether the staged relations differ from the last hydrated/flushed
    * baseline — same diff `flush()` would act on, without performing it. */
   export function relationsDirty(): boolean {
-    const stagedTargets = new Set(stagedRelations.map((r) => r.target));
-    for (const [target] of initialRelByTarget) {
-      if (!stagedTargets.has(target)) return true; // a pending delete
+    const stagedKeys = new Set(stagedRelations.map((r) => linkKey(r.target, r.type)));
+    for (const [key] of initialRelByKey) {
+      if (!stagedKeys.has(key)) return true; // a pending delete
     }
     for (const rel of stagedRelations) {
-      const initial = initialRelByTarget.get(rel.target);
+      const initial = initialRelByKey.get(linkKey(rel.target, rel.type));
       if (!initial) return true; // a pending create
-      if (initial.type !== rel.type || (initial.rationale ?? "") !== rel.rationale) return true; // a pending update
+      if ((initial.rationale ?? "") !== rel.rationale) return true; // a pending update
     }
     return false;
   }
 
   /** Same as `relationsDirty()`, for the Related Inits tab. */
   export function initsDirty(): boolean {
-    const stagedInitIds = new Set(stagedInits.map((r) => r.init));
-    for (const [initId] of initialInitByInit) {
-      if (!stagedInitIds.has(initId)) return true;
+    const stagedKeys = new Set(stagedInits.map((r) => linkKey(r.init, r.type)));
+    for (const [key] of initialInitByKey) {
+      if (!stagedKeys.has(key)) return true;
     }
     for (const rel of stagedInits) {
-      const initial = initialInitByInit.get(rel.init);
+      const initial = initialInitByKey.get(linkKey(rel.init, rel.type));
       if (!initial) return true;
-      if (initial.type !== rel.type || (initial.rationale ?? "") !== rel.rationale) return true;
+      if ((initial.rationale ?? "") !== rel.rationale) return true;
     }
     return false;
   }
@@ -868,56 +873,58 @@
       }
     }
 
-    // 2. Relations (deletes first → re-add hits 409 → reactivate)
+    // 2. Relations, keyed by (target, type) — the same pair may be related once
+    //    per type. Deletes first; a create of a previously removed identical link
+    //    is reactivated by the API (the 409 fallback covers an already-active one).
     if (!opts?.skipRelations) {
-      const stagedTargets = new Set(stagedRelations.map((r) => r.target));
-      for (const [target] of initialRelByTarget) {
-        if (!stagedTargets.has(target)) {
+      const stagedKeys = new Set(stagedRelations.map((r) => linkKey(r.target, r.type)));
+      for (const [key, initial] of initialRelByKey) {
+        if (!stagedKeys.has(key)) {
           try {
-            await deleteAssetRelation(id, target);
+            await deleteAssetRelationTyped(id, initial.target, initial.type);
           } catch {
             /* already gone */
           }
         }
       }
       for (const rel of stagedRelations) {
-        const initial = initialRelByTarget.get(rel.target);
+        const initial = initialRelByKey.get(linkKey(rel.target, rel.type));
         if (!initial) {
           try {
             await createAssetRelation({ source: id, target: rel.target, type: rel.type, rationale: rel.rationale || undefined });
           } catch (err) {
-            if (!isConflict(err)) throw err; // 409 = a logically-deleted row for this pair — reactivate it
-            await updateAssetRelation(id, rel.target, { type: rel.type, rationale: rel.rationale || null, is_active: true });
+            if (!isConflict(err)) throw err;
+            await updateAssetRelationTyped(id, rel.target, rel.type, { rationale: rel.rationale || null, is_active: true });
           }
-        } else if (initial.type !== rel.type || (initial.rationale ?? "") !== rel.rationale) {
-          await updateAssetRelation(id, rel.target, { type: rel.type, rationale: rel.rationale || null });
+        } else if ((initial.rationale ?? "") !== rel.rationale) {
+          await updateAssetRelationTyped(id, rel.target, rel.type, { rationale: rel.rationale || null });
         }
       }
     }
 
-    // 3. Related Inits (same deletes-first → re-add-reactivates pattern)
+    // 3. Related Inits (same (init, type)-keyed pattern)
     if (!opts?.skipInits) {
-      const stagedInitIds = new Set(stagedInits.map((r) => r.init));
-      for (const [initId] of initialInitByInit) {
-        if (!stagedInitIds.has(initId)) {
+      const stagedKeys = new Set(stagedInits.map((r) => linkKey(r.init, r.type)));
+      for (const [key, initial] of initialInitByKey) {
+        if (!stagedKeys.has(key)) {
           try {
-            await deleteAssetInit(id, initId);
+            await deleteAssetInitTyped(id, initial.init, initial.type);
           } catch {
             /* already gone */
           }
         }
       }
       for (const rel of stagedInits) {
-        const initial = initialInitByInit.get(rel.init);
+        const initial = initialInitByKey.get(linkKey(rel.init, rel.type));
         if (!initial) {
           try {
             await createAssetInit({ asset: id, init: rel.init, type: rel.type, rationale: rel.rationale || undefined });
           } catch (err) {
-            if (!isConflict(err)) throw err; // 409 = a logically-deleted row for this pair — reactivate it
-            await updateAssetInit(id, rel.init, { type: rel.type, rationale: rel.rationale || null, is_active: true });
+            if (!isConflict(err)) throw err;
+            await updateAssetInitTyped(id, rel.init, rel.type, { rationale: rel.rationale || null, is_active: true });
           }
-        } else if (initial.type !== rel.type || (initial.rationale ?? "") !== rel.rationale) {
-          await updateAssetInit(id, rel.init, { type: rel.type, rationale: rel.rationale || null });
+        } else if ((initial.rationale ?? "") !== rel.rationale) {
+          await updateAssetInitTyped(id, rel.init, rel.type, { rationale: rel.rationale || null });
         }
       }
     }
@@ -968,13 +975,13 @@
       initialCharByFeature = new Map(charSeed);
     }
     if (!opts?.skipRelations) {
-      initialRelByTarget = new Map(
-        stagedRelations.map((r) => [r.target, { target: r.target, type: r.type, rationale: r.rationale }]),
+      initialRelByKey = new Map(
+        stagedRelations.map((r) => [linkKey(r.target, r.type), { target: r.target, type: r.type, rationale: r.rationale }]),
       );
     }
     if (!opts?.skipInits) {
-      initialInitByInit = new Map(
-        stagedInits.map((r) => [r.init, { init: r.init, type: r.type, rationale: r.rationale }]),
+      initialInitByKey = new Map(
+        stagedInits.map((r) => [linkKey(r.init, r.type), { init: r.init, type: r.type, rationale: r.rationale }]),
       );
     }
     if (!opts?.skipPermissions) {
@@ -996,13 +1003,13 @@
     charsLoading = false;
     initialCharByFeature = new Map();
     stagedRelations = [];
-    initialRelByTarget = new Map();
+    initialRelByKey = new Map();
     relTarget = "";
     relType = "";
     relRationale = "";
     relError = "";
     stagedInits = [];
-    initialInitByInit = new Map();
+    initialInitByKey = new Map();
     initTarget = "";
     initType = "";
     initRationale = "";
@@ -1351,10 +1358,10 @@
         <div class={emptyClass}>{t("asset_detail_modal.related_empty", "No related assets yet.")}</div>
       {:else}
         <ul class="space-y-2">
-          {#each stagedRelations as rel, idx (rel.target)}
+          {#each stagedRelations as rel, idx (linkKey(rel.target, rel.type))}
             <li
-              class={pendingRelationTargets.has(rel.target) ? `${rowClass} ring-2 ring-amber-400` : rowClass}
-              data-pending={pendingRelationTargets.has(rel.target) ? "1" : undefined}
+              class={pendingRelationKeys.has(linkKey(rel.target, rel.type)) ? `${rowClass} ring-2 ring-amber-400` : rowClass}
+              data-pending={pendingRelationKeys.has(linkKey(rel.target, rel.type)) ? "1" : undefined}
             >
               <span class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-800 dark:text-gray-200" title={rel.targetLabel}>{rel.targetLabel}</span>
               <span class="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">{rel.typeLabel || rel.type}</span>
@@ -1410,10 +1417,10 @@
         <div class={emptyClass}>{t("asset_detail_modal.related_inits_empty", "No related initiatives yet.")}</div>
       {:else}
         <ul class="space-y-2">
-          {#each stagedInits as rel, idx (rel.init)}
+          {#each stagedInits as rel, idx (linkKey(rel.init, rel.type))}
             <li
-              class={pendingInitIds.has(rel.init) ? `${rowClass} ring-2 ring-amber-400` : rowClass}
-              data-pending={pendingInitIds.has(rel.init) ? "1" : undefined}
+              class={pendingInitKeys.has(linkKey(rel.init, rel.type)) ? `${rowClass} ring-2 ring-amber-400` : rowClass}
+              data-pending={pendingInitKeys.has(linkKey(rel.init, rel.type)) ? "1" : undefined}
             >
               <span class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-800 dark:text-gray-200" title={rel.initLabel}>{rel.initLabel}</span>
               <span class="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">{rel.typeLabel || rel.type}</span>

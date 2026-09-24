@@ -79,28 +79,107 @@ def get_by_asset(
     return relations
 
 
+# ── Addressing ────────────────────────────────────────────────────────────
+# A link is identified by (asset, init, type) — the DDL primary key: the same
+# pair may be linked once per relation type. The typed routes address one link
+# exactly; the older pair routes act on the pair's SINGLE link and answer 409
+# when it holds several (mirrors asset_relations).
+
+
+def _pair_single(session: Session, asset_id: int, init_id: int) -> AssetInit:
+    rows = session.exec(
+        select(AssetInit).where(AssetInit.asset == asset_id, AssetInit.init == init_id)
+    ).all()
+    if not rows:
+        raise HTTPException(status_code=404, detail="Asset-initiative relation not found")
+    active = [r for r in rows if r.is_active]
+    candidates = active or rows
+    if len(candidates) > 1:
+        raise HTTPException(
+            status_code=409,
+            detail=(f"Asset '{asset_id}' and initiative '{init_id}' are related by several "
+                    f"types; use /api/asset_inits/{asset_id}/{init_id}/{{type}}"))
+    return candidates[0]
+
+
+def _typed(session: Session, asset_id: int, init_id: int, type_: str) -> AssetInit:
+    relation = session.get(AssetInit, (asset_id, init_id, type_))
+    if not relation:
+        raise HTTPException(status_code=404, detail="Asset-initiative relation not found")
+    return relation
+
+
+def _ensure_active(relation: AssetInit) -> AssetInit:
+    if not relation.is_active:
+        raise HTTPException(
+            status_code=400,
+            detail=(f"Asset-initiative relation {relation.asset} -> {relation.init} "
+                    f"({relation.type}) is inactive"))
+    return relation
+
+
+def _apply_update(session: Session, relation: AssetInit, update: AssetInitUpdate,
+                  allow_type_change: bool) -> AssetInit:
+    data = update.model_dump(exclude_unset=True)
+    new_type = data.pop("type", None)
+    if new_type is not None and new_type != relation.type:
+        if not allow_type_change:
+            raise HTTPException(
+                status_code=400,
+                detail="The relation type is part of the key; remove this relation and add a new one")
+        if session.get(AssetInit, (relation.asset, relation.init, new_type)):
+            raise HTTPException(
+                status_code=409,
+                detail=f"This asset and initiative are already related as '{new_type}'")
+        relation.type = new_type
+    for key, value in data.items():
+        setattr(relation, key, value)
+    relation.updated_at = datetime.utcnow()
+    session.add(relation)
+    session.commit()
+    session.refresh(relation)
+    return relation
+
+
+def _deactivate(session: Session, relation: AssetInit) -> AssetInit:
+    if not relation.is_active:
+        raise HTTPException(
+            status_code=400,
+            detail=(f"Asset-initiative relation {relation.asset} -> {relation.init} "
+                    f"({relation.type}) is already inactive"))
+    relation.is_active = False
+    relation.updated_at = datetime.utcnow()
+    session.add(relation)
+    session.commit()
+    session.refresh(relation)
+    logger.info("Asset-initiative relation deactivated: %s -> %s (%s)",
+                relation.asset, relation.init, relation.type)
+    return relation
+
+
+@router.get("/{asset_id}/{init_id}/{relation_type}", response_model=AssetInit)
+def get_typed(
+    asset_id: int, init_id: int, relation_type: str,
+    session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False)),
+) -> AssetInit:
+    """Get one asset-initiative relation by asset, initiative and type."""
+    return _ensure_active(_typed(session, asset_id, init_id, relation_type))
+
+
 @router.get("/{asset_id}/{init_id}", response_model=AssetInit)
 def get(
     asset_id: int, init_id: int, session: Session = Depends(get_db_session),
     _: User = Depends(require_privilege("LIB", "ASSETS", can_edit=False))
 ) -> AssetInit:
     """
-    Get an asset-initiative relation by asset and initiative id.
+    Get the pair's single asset-initiative relation (409 when several types
+    exist — use the typed route).
 
     - **asset_id**: Asset id
     - **init_id**: Initiative id
     """
-    relation = session.exec(
-        select(AssetInit).where(
-            AssetInit.asset == asset_id,
-            AssetInit.init == init_id
-        )
-    ).first()
-    if not relation:
-        raise HTTPException(status_code=404, detail="Asset-initiative relation not found")
-    elif not relation.is_active:
-        raise HTTPException(status_code=400, detail=f"Asset-initiative relation with asset '{asset_id}' and init '{init_id}' is inactive")
-    return relation
+    return _ensure_active(_pair_single(session, asset_id, init_id))
 
 
 @router.post("/", response_model=AssetInit, status_code=201)
@@ -116,6 +195,10 @@ def create(
     - **type**: Relation type (required)
     - **rationale**: Optional note on why the asset and initiative are related
     - **is_active**: Active/inactive status (default: True)
+
+    The same pair may be linked once per type: an active identical
+    (asset, init, type) link → 409; an inactive one is reactivated with the
+    given rationale.
 
     Write access: `LIB/ASSETS` OR a write privilege on the asset's own category
     (mirrors `get_by_asset`'s read rule) — lets a proposer flush the Propose
@@ -144,17 +227,23 @@ def create(
     )
     _ensure_manage(session, current, relation.asset)
 
-    existing = session.exec(
-        select(AssetInit).where(
-            AssetInit.asset == relation.asset,
-            AssetInit.init == relation.init
-        )
-    ).first()
-    if existing:
+    existing = session.get(AssetInit, (relation.asset, relation.init, relation.type))
+    if existing and existing.is_active:
         raise HTTPException(
             status_code=409,
-            detail=f"Asset-initiative relation with asset '{relation.asset}' and init '{relation.init}' already exists"
+            detail=(f"Asset '{relation.asset}' and initiative '{relation.init}' are already "
+                    f"related as '{relation.type}'")
         )
+    if existing:
+        existing.is_active = True
+        existing.rationale = relation.rationale
+        existing.updated_at = datetime.utcnow()
+        session.add(existing)
+        session.commit()
+        session.refresh(existing)
+        logger.info("Asset-initiative relation reactivated: %s -> %s (%s)",
+                    relation.asset, relation.init, relation.type)
+        return existing
 
     try:
         db = AssetInit.model_validate(relation)
@@ -162,7 +251,7 @@ def create(
         session.commit()
         session.refresh(db)
         logger.info(
-            f"Asset-initiative relation created: {relation.asset} -> {relation.init}")
+            f"Asset-initiative relation created: {relation.asset} -> {relation.init} ({relation.type})")
         return db
     except IntegrityError as e:
         session.rollback()
@@ -170,8 +259,23 @@ def create(
             f"Integrity error creating asset-initiative relation {relation.asset}/{relation.init}: {e}")
         raise HTTPException(
             status_code=409,
-            detail=f"Asset-initiative relation with asset '{relation.asset}' and init '{relation.init}' already exists"
+            detail=(f"Asset '{relation.asset}' and initiative '{relation.init}' are already "
+                    f"related as '{relation.type}'")
         )
+
+
+@router.put("/{asset_id}/{init_id}/{relation_type}", response_model=AssetInit)
+def update_typed(
+    asset_id: int, init_id: int, relation_type: str,
+    update: AssetInitUpdate,
+    session: Session = Depends(get_db_session),
+    current: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True)),
+) -> AssetInit:
+    """Update one link's rationale / active flag. The type is part of the key
+    and cannot change here (400). Requires MANAGE on the asset."""
+    relation = _typed(session, asset_id, init_id, relation_type)
+    _ensure_manage(session, current, asset_id)
+    return _apply_update(session, relation, update, allow_type_change=False)
 
 
 @router.put("/{asset_id}/{init_id}", response_model=AssetInit)
@@ -183,33 +287,28 @@ def update(
     current: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True)),
 ) -> AssetInit:
     """
-    Update an existing asset-initiative relation. Requires MANAGE on the asset.
+    Update the pair's single asset-initiative relation (409 when several types
+    exist — use the typed route). Requires MANAGE on the asset.
 
     - **asset_id**: Asset id
     - **init_id**: Initiative id
     - Only provided fields are updated
     """
-    relation = session.exec(
-        select(AssetInit).where(
-            AssetInit.asset == asset_id,
-            AssetInit.init == init_id
-        )
-    ).first()
-    if not relation:
-        raise HTTPException(status_code=404, detail="Asset-initiative relation not found")
+    relation = _pair_single(session, asset_id, init_id)
     _ensure_manage(session, current, asset_id)
+    return _apply_update(session, relation, update, allow_type_change=True)
 
-    update_data = update.model_dump(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(relation, key, value)
 
-    relation.updated_at = datetime.utcnow()
-
-    session.add(relation)
-    session.commit()
-    session.refresh(relation)
-    logger.info(f"Asset-initiative relation updated: {asset_id} -> {init_id}")
-    return relation
+@router.delete("/{asset_id}/{init_id}/{relation_type}", response_model=AssetInit, status_code=200)
+def delete_typed(
+    asset_id: int, init_id: int, relation_type: str,
+    session: Session = Depends(get_db_session),
+    current: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True)),
+) -> AssetInit:
+    """Logically delete one link (that type only). Requires MANAGE on the asset."""
+    relation = _typed(session, asset_id, init_id, relation_type)
+    _ensure_manage(session, current, asset_id)
+    return _deactivate(session, relation)
 
 
 @router.delete("/{asset_id}/{init_id}", response_model=AssetInit, status_code=200)
@@ -218,35 +317,12 @@ def delete(
     current: User = Depends(require_privilege("LIB", "ASSETS", can_edit=True))
 ) -> AssetInit:
     """
-    Delete an asset-initiative relation (logical delete). Requires MANAGE on the asset.
-
-    Performs a logical delete by setting is_active=False instead of removing the record.
+    Logically delete the pair's single asset-initiative relation (409 when
+    several types exist — use the typed route). Requires MANAGE on the asset.
 
     - **asset_id**: Asset id
     - **init_id**: Initiative id
     """
-    relation = session.exec(
-        select(AssetInit).where(
-            AssetInit.asset == asset_id,
-            AssetInit.init == init_id
-        )
-    ).first()
-    if not relation:
-        raise HTTPException(status_code=404, detail="Asset-initiative relation not found")
+    relation = _pair_single(session, asset_id, init_id)
     _ensure_manage(session, current, asset_id)
-
-    if not relation.is_active:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Asset-initiative relation with asset '{asset_id}' and init '{init_id}' is already inactive"
-        )
-
-    relation.is_active = False
-    relation.updated_at = datetime.utcnow()
-
-    session.add(relation)
-    session.commit()
-    session.refresh(relation)
-    logger.info(
-        f"Asset-initiative relation deactivated (logical delete): {asset_id} -> {init_id}")
-    return relation
+    return _deactivate(session, relation)

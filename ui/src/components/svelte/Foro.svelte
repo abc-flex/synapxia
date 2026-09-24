@@ -34,7 +34,21 @@
   // `readonly` renders the thread without any write affordance (no composer,
   // no Answer link, no Delete) — used by the Asset Management edit modal's
   // Discussion tab, which is view-only. The gallery leaves it false.
-  let { modalId, readonly = false }: { modalId: string; readonly?: boolean } = $props();
+  // `fetchDiscussion` / `idAttr` let another entity reuse the same thread view:
+  // Initiative Management passes the collaborations reader and `initId`
+  // (`data-init-id`). Writes still go through the asset services, so a
+  // non-asset caller must also pass `readonly`. Defaults = today's asset behaviour.
+  let {
+    modalId,
+    readonly = false,
+    fetchDiscussion = getDiscussion,
+    idAttr = "assetId",
+  }: {
+    modalId: string;
+    readonly?: boolean;
+    fetchDiscussion?: (id: number) => Promise<DiscussionItem[]>;
+    idAttr?: string;
+  } = $props();
 
   let items = $state<DiscussionItem[]>([]);
   let statusText = $state("");
@@ -121,7 +135,7 @@
     answerDraft = {};
     statusText = t("foro.loading", "Loading discussion…");
     try {
-      const data = await getDiscussion(id);
+      const data = await fetchDiscussion(id);
       if (seq !== loadSeq) return; // superseded by a newer open()
       items = data;
       statusText = "";
@@ -208,7 +222,7 @@
     const onDocClick = (e: MouseEvent) => {
       const opener = (e.target as HTMLElement).closest?.(`[data-modal-open="${modalId}"]`);
       if (!opener) return;
-      const id = (opener as HTMLElement).dataset.assetId;
+      const id = (opener as HTMLElement).dataset[idAttr];
       if (id) void load(Number(id));
       if ((opener as HTMLElement).dataset.foroFocus) {
         setTimeout(() => {

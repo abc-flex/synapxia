@@ -11,6 +11,7 @@ import DataTableBody from "./partials/DataTableBody.astro";
 import DataTablePagination from "./partials/DataTablePagination.astro";
 import DataTableEmpty from "./partials/DataTableEmpty.astro";
 import type { ColumnConfig, FilterOption } from "@/types/datatable";
+import type { FilterSlotInput } from "@/lib/datatable";
 import { buildFilterConfigs } from "@/lib/datatable";
 
 const locale = getLocale(Astro);
@@ -67,6 +68,10 @@ const {
   // Per-row action gating (HU-LI08): name of a boolean row field; rows where
   // it isn't true hide edit/delete/detail-expand. null = unconditional (default).
   manageKey = null,
+  // Optional filter slots 5+ (exact match, AND-combined) — same shape as the
+  // numbered slots (`key`, `options`, `headerColumn`, `asToggle`, …). Empty by
+  // default, so existing tables are unaffected.
+  extraFilters = [],
 } = Astro.props as {
   columns?: ColumnConfig[];
   data?: Record<string, any>[];
@@ -102,6 +107,7 @@ const {
   favoriteKey?: string;
   detailExpand?: boolean;
   manageKey?: string | null;
+  extraFilters?: FilterSlotInput[];
 };
 
 // Filtrar columnas visibles (ocultar si visible: false)
@@ -116,6 +122,7 @@ const filterConfigs = buildFilterConfigs(tableId, [
   { key: columnFilter2, options: filterOptions2, defaultValue: filterDefaultValue2, headerColumn: filter2HeaderColumn, asToggle: filter2AsToggle },
   { key: columnFilter3, options: filterOptions3, defaultValue: filterDefaultValue3, allLabel: filter3AllLabel, headerColumn: filter3HeaderColumn, asToggle: filter3AsToggle },
   { key: columnFilter4, options: filterOptions4, defaultValue: filterDefaultValue4, allLabel: filter4AllLabel, headerColumn: filter4HeaderColumn, asToggle: filter4AsToggle },
+  ...extraFilters,
 ]);
 ---
 
@@ -202,6 +209,7 @@ const filterConfigs = buildFilterConfigs(tableId, [
     filterDefaultValue3,
     columnFilter4,
     filterDefaultValue4,
+    extraFilters: extraFilters.map((f) => ({ param: f.key ?? null, defaultValue: f.defaultValue ?? "" })),
   }).replace(/</g, "\\u003c")}
 />
 
@@ -227,6 +235,7 @@ const filterConfigs = buildFilterConfigs(tableId, [
         c.filterDefaultValue3,
         c.columnFilter4,
         c.filterDefaultValue4,
+        c.extraFilters ?? [],
       );
     });
 </script>

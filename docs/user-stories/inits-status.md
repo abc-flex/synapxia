@@ -42,4 +42,7 @@ When saving, request a reviewer (user with ADMINISTRATIVE role) and insert the f
 - Upon entering, record NOTHING — reading is not acknowledging. The notice becomes 'HANDLED' only when the user explicitly acknowledges it
 
 ## HU-Edit Initiative (Include Delivery / Archiving)
-- When saving and including status = 'DELIVERED', insert a new collaboration for the creator user with type 'DELIVERY' and status 'PENDING'
+> Implemented by `specs/004-initiative-management`.
+- The status can only change ACCEPTED → IN_PROGRESS / DELIVERED / ARCHIVED, IN_PROGRESS → DELIVERED / ARCHIVED, and DELIVERED → ARCHIVED; every other change is refused (the propose / diagnose / modify workflow owns the rest)
+- When saving with a new status, insert ONE collaboration for the current user in the same transaction: type 'KICKOFF' (→ IN_PROGRESS), 'DELIVERY' (→ DELIVERED) or 'ARCHIVING' (→ ARCHIVED), with status 'HANDLED'
+- No pending notice is raised for the creator or anyone else — the change is visible in the initiative's History only (same as deprecation on the asset side)

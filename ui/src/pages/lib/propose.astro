@@ -843,8 +843,8 @@ try {
         showRelError(tr("asset_detail_modal.related_missing_fields", "Pick a target asset and a relation type."));
         return;
       }
-      if (stagedRelations.some((r) => r.target === target)) {
-        showRelError(tr("asset_detail_modal.related_duplicate", "This asset is already related."));
+      if (stagedRelations.some((r) => r.target === target && r.type === type)) {
+        showRelError(tr("asset_detail_modal.related_duplicate", "This asset is already related with that relation type."));
         return;
       }
       stagedRelations = [
@@ -876,8 +876,8 @@ try {
         showInitError(tr("asset_detail_modal.related_inits_missing_fields", "Pick a target initiative and a relation type."));
         return;
       }
-      if (stagedInits.some((r) => r.init === initId)) {
-        showInitError(tr("asset_detail_modal.related_inits_duplicate", "This initiative is already related."));
+      if (stagedInits.some((r) => r.init === initId && r.type === type)) {
+        showInitError(tr("asset_detail_modal.related_inits_duplicate", "This initiative is already related with that relation type."));
         return;
       }
       stagedInits = [

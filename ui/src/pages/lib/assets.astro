@@ -223,6 +223,15 @@ const fieldKeys = deleteFields.map((f) => f.key);
         true /* capture so we beat advancedTable's bubble delegation */,
       );
 
+      // The edit modal's own star saves immediately and reports on close; sync
+      // the row star (and, through paintStar, an active "My favorites" filter).
+      document.addEventListener("favorite:changed", (e) => {
+        const { tableId, id, on } = (e as CustomEvent).detail || {};
+        if (tableId !== "assets") return;
+        const btn = document.querySelector(`#assets [data-action="favorite"][data-id="${id}"]`);
+        if (btn) paintStar(btn, on);
+      });
+
       // ── Bridge: DataTable's "asset-create-modal" / "asset-edit-modal"
       // buttons ("+ New asset" / the row's pencil, now the single "Edit
       // Asset" entry point) → AssetDetailModal. We intercept the DataTable's

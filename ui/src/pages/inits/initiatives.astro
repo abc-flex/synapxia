@@ -253,6 +253,15 @@ const modalLists = {
         true,
       );
 
+      // The edit dialog's own star saves immediately and reports on close; sync
+      // the row star (and, through paintStar, an active "My favorites" filter).
+      document.addEventListener("favorite:changed", (e: Event) => {
+        const { tableId, id, on } = (e as CustomEvent).detail || {};
+        if (tableId !== "initiatives") return;
+        const btn = document.querySelector(`#initiatives [data-action="favorite"][data-id="${id}"]`) as HTMLElement | null;
+        if (btn) paintStar(btn, on);
+      });
+
       // ── Bridge: the row pencil (DataTable emits `initiative-edit-modal`) →
       // InitiativeDetailModal. Capture phase so we run before crudClient.
       document.addEventListener(
@@ -270,6 +279,9 @@ const modalLists = {
           synthetic.setAttribute("data-init-id", id);
           const row = rows.find((r) => String(r.id) === id);
           if (row) synthetic.setAttribute("data-allowed-statuses", row.allowed_statuses);
+          // The row star is the live favorite state (the row JSON can be stale).
+          const star = document.querySelector(`#initiatives [data-action="favorite"][data-id="${id}"]`);
+          synthetic.setAttribute("data-favorite", star?.getAttribute("data-fav") === "1" ? "1" : "0");
           document.body.appendChild(synthetic);
           synthetic.click();
           synthetic.remove();

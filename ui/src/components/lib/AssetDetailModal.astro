@@ -458,6 +458,9 @@ const {
     // Favorite state. Edit mode toggles immediately (a per-user preference
     // orthogonal to the draft); create mode stages the bit until the id exists.
     let favoriteOn = false;
+    // The favorite state as loaded when an existing asset was opened — compared
+    // on close to tell the list whether its star must change (null = unknown).
+    let favoriteAtOpen: boolean | null = null;
 
     // ── Version preview ("v1.2.0 → v1.3.0", bumping digit highlighted) ─────
     const versionPreview = document.getElementById(`${modalId}-version-preview`) as HTMLElement;
@@ -792,6 +795,7 @@ const {
       if (user?.id || user?.id === 0) {
         isFavorite(Number(user.id), editingAssetId).then((on) => {
           favoriteOn = on;
+          favoriteAtOpen = on;
           paintFavorite();
         });
       }
@@ -835,6 +839,15 @@ const {
     }
 
     function closeModal() {
+      // The star saves immediately, but the list behind the modal is only told
+      // on exit: its row star + an active "My favorites" filter then catch up
+      // (the page listens for `favorite:changed`).
+      if (editingAssetId != null && favoriteAtOpen !== null && favoriteOn !== favoriteAtOpen) {
+        document.dispatchEvent(new CustomEvent("favorite:changed", {
+          detail: { tableId: "assets", id: editingAssetId, on: favoriteOn },
+        }));
+      }
+      favoriteAtOpen = null;
       dialog.close();
       resetForm();
     }

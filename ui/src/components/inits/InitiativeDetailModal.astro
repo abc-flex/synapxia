@@ -42,17 +42,33 @@ const label = (o: ListOption) => o.byLang.en ?? o.byLang.es ?? o.value;
       <h3 class="text-lg font-bold text-gray-900 dark:text-white">
         <span data-i18n="initiative_detail_modal.title_edit">Edit Initiative</span><span id={`${modalId}-title-name`}></span>
       </h3>
-      <button
-        type="button"
-        data-modal-close={modalId}
-        class="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
-        aria-label="Close"
-        data-i18n-aria-label="common.close"
-      >
-        <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-        </svg>
-      </button>
+      <div class="flex items-center gap-1">
+        {/* Favorite star — same look and behaviour as Edit Asset's: saves at once,
+            the list behind is told on close. */}
+        <button
+          type="button"
+          id={`${modalId}-fav`}
+          aria-pressed="false"
+          title="Add to favorites"
+          data-i18n-title="initiative_detail_modal.favorite_add"
+          class="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        >
+          <svg class="w-5 h-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.3 4.02a1 1 0 00.95.69h4.22c.97 0 1.37 1.24.59 1.81l-3.42 2.48a1 1 0 00-.36 1.12l1.3 4.02c.3.92-.75 1.69-1.54 1.12l-3.41-2.48a1 1 0 00-1.18 0l-3.41 2.48c-.78.57-1.84-.2-1.54-1.12l1.3-4.02a1 1 0 00-.36-1.12L2 9.45c-.78-.57-.38-1.81.6-1.81h4.21a1 1 0 00.95-.69l1.3-4.02z" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          data-modal-close={modalId}
+          class="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+          aria-label="Close"
+          data-i18n-aria-label="common.close"
+        >
+          <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+          </svg>
+        </button>
+      </div>
     </div>
 
     <div id={`${modalId}-status`} class="hidden mx-6 mt-4 rounded-lg p-3 text-sm" role="status" aria-live="polite"></div>
@@ -148,7 +164,7 @@ const label = (o: ListOption) => o.byLang.en ?? o.byLang.es ?? o.value;
 <script>
   import { mount, tick } from "svelte";
   import InitiativeDetailTabs from "@/components/svelte/InitiativeDetailTabs.svelte";
-  import { getInitiative, updateInitiative } from "@/lib/initiatives";
+  import { getInitiative, setInitiativeFavorite, updateInitiative } from "@/lib/initiatives";
   import { getInitiativeHistory } from "@/lib/collaborations";
   import { mountHistory } from "@/lib/history";
   import { createStatusBanner } from "@/lib/statusBanner";
@@ -319,6 +335,34 @@ const label = (o: ListOption) => o.byLang.en ?? o.byLang.es ?? o.value;
       statusHint.textContent = tr(key, fallback);
     }
 
+
+    // ── Favorite star: saves at once; the list is told on close ───────────
+    const favBtn = $<HTMLButtonElement>("-fav");
+    let favoriteOn = false;
+    let favoriteAtOpen: boolean | null = null;
+    function paintFavorite() {
+      favBtn.setAttribute("aria-pressed", String(favoriteOn));
+      favBtn.querySelector("svg")?.setAttribute("fill", favoriteOn ? "currentColor" : "none");
+      favBtn.classList.toggle("text-yellow-400", favoriteOn);
+      favBtn.classList.toggle("text-gray-400", !favoriteOn);
+      const key = favoriteOn ? "initiative_detail_modal.favorite_remove" : "initiative_detail_modal.favorite_add";
+      favBtn.setAttribute("data-i18n-title", key);
+      favBtn.title = tr(key, favoriteOn ? "Remove from favorites" : "Add to favorites");
+    }
+    favBtn.addEventListener("click", async () => {
+      if (editingId == null) return;
+      const id = editingId;
+      const next = !favoriteOn;
+      favoriteOn = next;
+      paintFavorite();
+      try {
+        await setInitiativeFavorite(id, next);
+      } catch {
+        favoriteOn = !next;
+        paintFavorite();
+        status.show(tr("initiative_detail_modal.error_favorite", "Could not update favorite."), "error");
+      }
+    });
     // ── Open / reset / close ──────────────────────────────────────────────
     function resetForm() {
       form.reset();
@@ -333,9 +377,12 @@ const label = (o: ListOption) => o.byLang.en ?? o.byLang.es ?? o.value;
       updateCoreHighlight();
     }
 
-    async function openEdit(id: number, allowedHint: string[]) {
+    async function openEdit(id: number, allowedHint: string[], favoriteHint = false) {
       resetForm();
       editingId = id;
+      favoriteOn = favoriteHint;
+      favoriteAtOpen = favoriteHint;
+      paintFavorite();
       dialog.showModal();
       try {
         const it = await getInitiative(id);
@@ -359,6 +406,14 @@ const label = (o: ListOption) => o.byLang.en ?? o.byLang.es ?? o.value;
     }
 
     function closeModal() {
+      // Tell the list behind on exit, so its row star and an active
+      // "My favorites" filter catch up (the page listens for `favorite:changed`).
+      if (editingId != null && favoriteAtOpen !== null && favoriteOn !== favoriteAtOpen) {
+        document.dispatchEvent(new CustomEvent("favorite:changed", {
+          detail: { tableId: "initiatives", id: editingId, on: favoriteOn },
+        }));
+      }
+      favoriteAtOpen = null;
       dialog.close();
       resetForm();
     }
@@ -396,7 +451,11 @@ const label = (o: ListOption) => o.byLang.en ?? o.byLang.es ?? o.value;
         e.preventDefault();
         const id = Number(target.dataset.initId);
         // No id → nothing to open: initiatives are never created here.
-        if (id) openEdit(id, (target.dataset.allowedStatuses || "").split(",").filter(Boolean));
+        if (id) openEdit(
+          id,
+          (target.dataset.allowedStatuses || "").split(",").filter(Boolean),
+          target.dataset.favorite === "1",
+        );
       }
       const closer = (e.target as HTMLElement).closest?.(`[data-modal-close="${modalId}"]`);
       if (closer) {

@@ -224,3 +224,19 @@ def test_favorite_requires_view(client, session):
     override(user(1))
     assert client.put(f"/api/initiatives/{i.id}/favorite").status_code == 403
     assert client.put("/api/initiatives/999/favorite").status_code == 404
+
+
+# --- Review 2: privileges filter data --------------------------------------
+
+def test_permission_scopes_list_how_grants_reach_the_caller(client, session):
+    seed_privileges(session, can_edit=False)
+    a = mk_init(session, name="A")
+    b = mk_init(session, name="B")
+    mk_perm(session, a.id, "USER", "1", access_level="VIEW")
+    mk_perm(session, a.id, "UNIT", "ENG", access_level="VIEW")
+    mk_perm(session, a.id, "PUBLIC", "ALL", access_level="VIEW")
+    mk_perm(session, b.id, "USER", "1", access_level="MANAGE")
+    mk_perm(session, b.id, "UNIT", "OTHER", access_level="MANAGE")  # not the caller's unit
+    override(user(1, unit="ENG"))
+    rows = {r["name"]: r["permission_scopes"] for r in data(client.get(URL))}
+    assert rows == {"A": ["PUBLIC", "UNIT", "USER"], "B": ["USER"]}

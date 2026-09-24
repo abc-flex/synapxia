@@ -100,6 +100,9 @@ class InitiativeWithAccess(InitiativeBase):
     my_access: str
     is_favorite: bool = False
     allowed_statuses: List[str] = Field(default_factory=list)
+    # Scope types (USER/ROLE/TEAM/UNIT/PROJECT/PUBLIC) through which a live
+    # grant reaches the caller — drives the list's privileges filter.
+    permission_scopes: List[str] = Field(default_factory=list)
 
 
 # Collaborations — the initiatives' activity substrate (the `inits` twin of

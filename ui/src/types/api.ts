@@ -1082,6 +1082,8 @@ export interface InitiativeWithAccess extends Initiative {
   is_favorite: boolean;
   /** Current status plus the owner moves available from it. */
   allowed_statuses: string[];
+  /** Scope types through which a live grant reaches the user (privileges filter). */
+  permission_scopes: string[];
 }
 
 export interface InitiativeUpdate {

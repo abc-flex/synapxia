@@ -54,13 +54,14 @@ def _ensure_view(session: Session, user: User, init_id: int) -> None:
 
 
 def _with_access(
-    initiative: Initiative, access: str, favorite: bool,
+    initiative: Initiative, access: str, favorite: bool, scopes: List[str] | None = None,
 ) -> InitiativeWithAccess:
     return InitiativeWithAccess(
         **initiative.model_dump(),
         my_access=access,
         is_favorite=favorite,
         allowed_statuses=status_service.allowed_statuses_for(initiative.status),
+        permission_scopes=scopes or [],
     )
 
 
@@ -127,12 +128,15 @@ def get_all_with_access(
     rows = session.exec(
         query.order_by(Initiative.name).offset(skip).limit(limit)
     ).all()
-    favorites = _favorite_ids(session, current, [r.id for r in rows])
+    ids = [r.id for r in rows]
+    favorites = _favorite_ids(session, current, ids)
+    scopes = permissions_service.inits_user_scopes(session, current, ids)
     return [
         _with_access(
             r,
             permissions_service.ACCESS_MANAGE if current.is_superuser else access_map[r.id],
             r.id in favorites,
+            scopes.get(r.id, []),
         )
         for r in rows
     ]
@@ -306,7 +310,8 @@ def update(
 
     access = permissions_service.user_init_access(session, current, init_id)
     favorite = init_id in _favorite_ids(session, current, [init_id])
-    return _with_access(initiative, access or permissions_service.ACCESS_MANAGE, favorite)
+    scopes = permissions_service.inits_user_scopes(session, current, [init_id]).get(init_id, [])
+    return _with_access(initiative, access or permissions_service.ACCESS_MANAGE, favorite, scopes)
 
 
 @router.delete("/{init_id}", response_model=Initiative)

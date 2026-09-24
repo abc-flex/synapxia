@@ -305,3 +305,7 @@ mapped before deciding:
   author-or-superuser only.
 - **Alternatives considered**: reusing `/api/actions/*` for initiative posts — impossible
   (`actions.asset` NOT NULL); keeping a single `score` — rejected, the user wants one per party.
+- **Review 2 (2026-09-23)**: the access-level and expected-impact filters are replaced by a
+  privileges filter identical to Asset Management's. `/with-access` rows gain
+  `permission_scopes` from the shared engine's `user_scopes_for` (bound to `init_permissions`
+  via `inits_user_scopes`), matched by the DataTable's existing slot-4 membership filter.

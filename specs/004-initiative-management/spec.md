@@ -33,7 +33,7 @@ As an initiative owner, I want a list of the initiatives I have access to — fi
 **Acceptance Scenarios**:
 
 1. **Given** a user holds manage or view access to some initiatives and none to others, **When** they open Initiative Management, **Then** only the initiatives they can access are listed, with the columns name, type, priority, status, tags and actions (in that order); the actions include a favorite star.
-2. **Given** the list is open, **When** the user filters by one or more of status, type, priority, expected impact, access level or "my favorites", **Then** only initiatives matching every selected filter remain, and the visible count reflects the filtered set.
+2. **Given** the list is open, **When** the user filters by one or more of status, type, priority, privileges (how the initiative is shared with them) or "my favorites", **Then** only initiatives matching every selected filter remain, and the visible count reflects the filtered set.
 3. **Given** the list is open, **When** the user types part of an initiative's name in search, **Then** matching initiatives remain and the rest are hidden.
 4. **Given** any user opens Initiative Management, **When** they look for a way to add an initiative, **Then** none is offered — no "New" button, no empty-state call to create one.
 5. **Given** a user has view-only access to an initiative, **When** it appears in the list, **Then** its row offers no edit or remove affordance.
@@ -112,8 +112,8 @@ As an initiative owner, I want to mark an accepted initiative In Progress when w
 
 - **FR-001**: The system MUST provide an Initiative Management screen, reachable from the existing "Initiative Management" navigation option, listing the active initiatives the current user can access.
 - **FR-002**: A user MUST only see initiatives on which they hold a currently valid view or manage grant — directly, or through their role, project, team, unit, or a public grant; superusers MUST see all active initiatives.
-- **FR-003**: The list MUST show, per initiative, the columns name, type, priority, status, tags and actions, in that order; expected impact, score and the user's access level are NOT shown as columns (they stay available as filters).
-- **FR-004**: The list MUST support filtering by status, type, priority, expected impact, access level and favorites, and searching by name; filters combine.
+- **FR-003**: The list MUST show, per initiative, the columns name, type, priority, status, tags and actions, in that order; expected impact, score and the user's access level are NOT shown.
+- **FR-004**: The list MUST support filtering by status, type, priority, privileges and favorites, and searching by name; filters combine. The privileges filter works exactly like Asset Management's: options All privileges, Shared with me (a grant to the user), My role, My team, My unit, My projects and Public, each matching initiatives where a live grant of that scope reaches the user.
 - **FR-004a**: The actions column MUST include a favorite star on every listed initiative (manage or view access); toggling it saves the current user's favorite immediately and is reflected by the favorites filter.
 - **FR-005**: The screen MUST NOT offer any way to create an initiative.
 - **FR-006**: Edit and remove affordances MUST only be offered on initiatives the user can manage; view-only initiatives MUST open read-only.
@@ -210,3 +210,4 @@ As an initiative owner, I want to mark an accepted initiative In Progress when w
 - Q: How is the move to In Progress recorded? → A: With a new collaboration type, recorded as completed (Option A); name chosen by the user: `KICKOFF` ("Kickoff" / "Arranque").
 - Q (2026-09-23, after implementation): May an initiative and an asset (and two assets) be linked more than once? → A: Yes — one link per relation type, in both Edit Initiative and Edit Asset. That is why the primary keys of `asset_inits` and `related_assets` include `type`. Supersedes the plan's earlier "one link per pair" reading.
 - Q (2026-09-23, review of the first implementation): list columns, favorites, diagnosis layout and discussion → A: columns name, type, priority, status, tags, actions (no expected impact, score or access); a favorite star in actions; Diagnosis Questions as a table distinguishing proposer vs reviewer answers, rationale behind a Show/Hide switch, an overall score for each party; Discussion interactive like Edit Asset.
+- Q (2026-09-23, review): which list filters? → A: drop the access-level and expected-impact filters; add a privileges filter identical in behaviour to Asset Management's (All privileges, Shared with me, My role, My team, My unit, My projects, Public).

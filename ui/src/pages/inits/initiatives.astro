@@ -59,8 +59,8 @@ const labelOf = (field: keyof typeof LISTS, raw: unknown): string => {
 };
 
 // Visible order: name, type, priority, status, tags (+ the actions column the
-// DataTable appends). Expected impact and access level are filter-only (hidden
-// raw columns), so the filters can still match them.
+// DataTable appends). `permissions` is a hidden, filter-only column (the comma-
+// joined scope types through which the initiative is shared with the user).
 const columns = [
   { key: "name", label: "initiative_modal.name", as: "title", subtitleKey: "updated_at", subtitleFormat: "relative" },
   { key: "type", label: "initiative_modal.type", visible: false },
@@ -70,8 +70,7 @@ const columns = [
   { key: "status", label: "initiative_modal.status", visible: false },
   { key: "status_name", label: "initiative_modal.status", as: "status" },
   { key: "tags_display", label: "initiative_modal.tags", as: "tags" },
-  { key: "expected_impact", label: "initiative_modal.expected_impact", visible: false },
-  { key: "my_access", label: "initiative_modal.access", visible: false },
+  { key: "permissions", label: "initiative_table.perm_filter_all", visible: false },
 ];
 
 const data = initiatives.map((item) => ({
@@ -84,8 +83,9 @@ const data = initiatives.map((item) => ({
   type_name: labelOf("type", item.type),
   priority_level: item.priority_level,
   priority_name: labelOf("priority_level", item.priority_level),
-  expected_impact: item.expected_impact,
-  my_access: item.my_access,
+  // Scope types by which a grant reaches the user (USER/ROLE/TEAM/UNIT/PROJECT/PUBLIC),
+  // comma-joined for the privileges filter's membership match.
+  permissions: (item.permission_scopes ?? []).join(","),
   tags_display: Array.isArray(item.tags) ? item.tags.join(", ") : item.tags || "",
   // Row action gating: only MANAGE holders get edit/delete (backend enforces too).
   can_manage: item.my_access === "MANAGE",
@@ -116,7 +116,6 @@ const optionLabels = {
   "filter": labels.status,
   "filter2": labels.type,
   "filter5": labels.priority_level,
-  "filter6": labels.expected_impact,
 };
 
 const deleteFields = [
@@ -321,15 +320,20 @@ const modalLists = {
           filterOptions3={[
             { value: "yes", label: "My favorites", i18n: "initiative_table.fav_filter_mine" },
           ]}
-          columnFilter4="my_access"
-          filter4AllLabel="initiative_table.access_filter_all"
+          {/* Privileges → toolbar dropdown over how the initiative is shared with
+              the user (membership match, same as Asset Management). */}
+          columnFilter4="permissions"
+          filter4AllLabel="initiative_table.perm_filter_all"
           filterOptions4={[
-            { value: "MANAGE", label: "Can manage", i18n: "initiative_table.access_manage" },
-            { value: "VIEW", label: "View only", i18n: "initiative_table.access_view" },
+            { value: "USER", label: "Shared with me", i18n: "initiative_table.perm_filter_user" },
+            { value: "ROLE", label: "My role", i18n: "initiative_table.perm_filter_role" },
+            { value: "TEAM", label: "My team", i18n: "initiative_table.perm_filter_team" },
+            { value: "UNIT", label: "My unit", i18n: "initiative_table.perm_filter_unit" },
+            { value: "PROJECT", label: "My projects", i18n: "initiative_table.perm_filter_project" },
+            { value: "PUBLIC", label: "Public", i18n: "initiative_table.perm_filter_public" },
           ]}
           extraFilters={[
             { key: "priority_level", options: optionsEn.priority_level, headerColumn: "priority_name" },
-            { key: "expected_impact", options: optionsEn.expected_impact, allLabel: "initiative_table.all_impacts" },
           ]}
           favoriteAction={true}
           favoriteKey="favorite"

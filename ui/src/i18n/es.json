@@ -491,11 +491,14 @@
   },
   "initiative_table": {
     "fav_filter_mine": "Mis favoritas",
-    "access_filter_all": "Todos los accesos",
-    "access_manage": "Puede gestionar",
-    "access_view": "Solo lectura",
+    "perm_filter_all": "Todos los permisos",
+    "perm_filter_user": "Compartidas conmigo",
+    "perm_filter_role": "Mi rol",
+    "perm_filter_team": "Mi equipo",
+    "perm_filter_unit": "Mi unidad",
+    "perm_filter_project": "Mis proyectos",
+    "perm_filter_public": "Públicas",
     "all_types": "Todos los tipos",
-    "all_impacts": "Todos los impactos",
     "deleted": "Iniciativa eliminada."
   },
   "initiative_detail_modal": {

@@ -241,3 +241,10 @@ Additive routes (existing pair routes unchanged for single-link pairs; see resea
 - **Diagnostics** gains `creator_total`, `creator_answered`, `reviewer_total`,
   `reviewer_answered` (sums and counts over the listed criteria; `reviewer_total` is `null`
   when the reviewer has answered none). `score` is unchanged.
+
+## Amendment (2026-09-23, review 2) — privileges filter
+
+`GET /api/initiatives/with-access` rows gain **`permission_scopes: string[]`** (additive) — the
+scope types (subset of `USER`, `ROLE`, `TEAM`, `UNIT`, `PROJECT`, `PUBLIC`) through which a
+live grant reaches the caller, computed with the shared engine exactly like
+`/api/assets/with-access`. It drives the list's privileges filter (membership match).

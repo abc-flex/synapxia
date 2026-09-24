@@ -44,6 +44,15 @@ def inits_user_access(
         rp.matching_grants(session, user, InitPermission, _FK, init_ids), _FK)
 
 
+def inits_user_scopes(
+    session: Session, user: User, init_ids: List[int]
+) -> Dict[int, List[str]]:
+    """Per initiative, the sorted scope types by which a live grant reaches
+    ``user`` (same rule as the asset list's privileges filter). One batched
+    query over the given ids."""
+    return rp.user_scopes_for(session, user, InitPermission, _FK, init_ids)
+
+
 def accessible_inits(session: Session, user: User) -> Dict[int, str]:
     """Every initiative id the user can access → effective level (superuser
     bypass is the caller's responsibility)."""

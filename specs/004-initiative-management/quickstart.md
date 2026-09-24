@@ -71,12 +71,15 @@ Obtain a token for API calls from `/docs` (Authorize) or reuse the browser cooki
 2. `GET /api/initiatives/with-access` as that user → same set; each row has `my_access`,
    `is_favorite`, `allowed_statuses`.
 3. As `admin` → all 5 initiatives.
-4. Filter by status, type, priority, impact, access level, favorites; search by name.
+4. Filter by status, type, priority, privileges (All privileges / Shared with me / My role / My
+   team / My unit / My projects / Public — as felipe, initiative 1 matches "Public" and "Shared
+   with me", 2 and 3 only "Shared with me") and favorites; search by name.
    ✅ Filters combine; the count updates.
 5. Columns read name, type, priority, status, tags, actions (no impact, score or access). A
    VIEW-only row shows no edit/delete buttons but does show the favorite star; toggling it
    persists (reload → still starred) and the "My favorites" toggle filters by it.
-6. Switch language to Español. ✅ Status, type, priority and impact labels are in Spanish.
+6. Switch language to Español. ✅ Status, type and priority labels and the privileges options are
+   in Spanish.
 
 ### S2 — Tabs save only their slice (US2)
 

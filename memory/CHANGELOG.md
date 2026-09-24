@@ -20,6 +20,11 @@ Entries before the 2026-06-10 switchover (Keep-a-Changelog–style, auto-generat
 
 ---
 
+## 2026-09-23 22:53 — docs(memory): mark the stale DB/PgAdmin host-port decisions as superseded
+
+- `memory/MEMORY.md` still stated the old host defaults, DB `5442` (2026-07-01) and PgAdmin `8090` (2026-07-02), although PR #76 (`fe9aaab`, 2026-07-06) had moved them to `5433` / `8081` (`docker-compose.yml`, `.env.template`). The two decision rows are kept as history, each prefixed with a "superseded by PR #76" note that gives the current value. This was found when tooling built from the note connected to the wrong port.
+- Files affected: `memory/MEMORY.md`, `memory/CHANGELOG.md`
+
 ## 2026-09-23 11:29 — feat(inits): Initiative Management (HU-IN02/HU-IN03, SpecKit 004)
 
 - **`/inits/initiatives` exists now** (it 404'd before). It lists the initiatives the caller holds a live `init_permissions` grant on (superusers: all), filtered BEFORE `skip`/`limit`. Filters: status / type / priority / impact as column-header funnels, a favorites toggle, and an access-level filter. There is **no "New"**, since initiatives are only proposed. A six-tab edit dialog follows the Asset Management conventions: Core Fields, Diagnosis Questions, Related Assets, Permissions, Discussion, History. Each editable tab saves only its own slice (stricter than assets, where Related/Inits/Permissions flush together). Diagnosis, Discussion and History are read-only. Spec, plan, contracts and quickstart are in `specs/004-initiative-management/`.

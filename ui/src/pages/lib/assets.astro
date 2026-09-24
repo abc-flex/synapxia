@@ -182,7 +182,11 @@ const fieldKeys = deleteFields.map((f) => f.key);
           .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 
       // ── Per-row favorite star toggle ──────────────────────────────────────
+      // Also patches the row data so an active "My favorites" filter updates at once.
       const paintStar = (btn, on) => {
+        document.dispatchEvent(new CustomEvent("datatable:row-update", {
+          detail: { tableId: "assets", id: btn.getAttribute("data-id"), changes: { favorite: on ? "yes" : "no" } },
+        }));
         btn.setAttribute("data-fav", on ? "1" : "0");
         btn.setAttribute("aria-pressed", on ? "true" : "false");
         const span = btn.querySelector("span");
@@ -218,6 +222,15 @@ const fieldKeys = deleteFields.map((f) => f.key);
         },
         true /* capture so we beat advancedTable's bubble delegation */,
       );
+
+      // The edit modal's own star saves immediately and reports on close; sync
+      // the row star (and, through paintStar, an active "My favorites" filter).
+      document.addEventListener("favorite:changed", (e) => {
+        const { tableId, id, on } = (e as CustomEvent).detail || {};
+        if (tableId !== "assets") return;
+        const btn = document.querySelector(`#assets [data-action="favorite"][data-id="${id}"]`);
+        if (btn) paintStar(btn, on);
+      });
 
       // ── Bridge: DataTable's "asset-create-modal" / "asset-edit-modal"
       // buttons ("+ New asset" / the row's pencil, now the single "Edit

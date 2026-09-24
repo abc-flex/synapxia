@@ -360,7 +360,9 @@ class AssetRelationBase(SQLModel):
         'source', BigInteger, ForeignKey('assets.id'), primary_key=True))
     target: int = Field(sa_column=Column(
         'target', BigInteger, ForeignKey('assets.id'), primary_key=True))
-    type: str = Field(max_length=100)
+    # Part of the key (DDL: pk_related_assets (source, target, type)): the same
+    # pair may be related once per relation type.
+    type: str = Field(sa_column=Column('type', String(100), primary_key=True))
     rationale: Optional[str] = Field(default=None)
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -419,7 +421,9 @@ class AssetInitBase(SQLModel):
         'asset', BigInteger, ForeignKey('assets.id'), primary_key=True))
     init: int = Field(sa_column=Column(
         'init', BigInteger, ForeignKey('initiatives.id'), primary_key=True))
-    type: str = Field(max_length=100)
+    # Part of the key (DDL: pk_asset_inits (asset, init, type)): the same pair
+    # may be linked once per relation type.
+    type: str = Field(sa_column=Column('type', String(100), primary_key=True))
     rationale: Optional[str] = Field(default=None)
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)

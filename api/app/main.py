@@ -54,6 +54,9 @@ from .collab.routes import roles as roles_router
 
 from .inits.routes import criterias as criterias_router
 from .inits.routes import initiatives as initiatives_router
+from .inits.routes import initiative_assets as initiative_assets_router
+from .inits.routes import init_permissions as init_permissions_router
+from .inits.routes import collaborations as collaborations_router
 
 from .support.routes import bug_reports as bug_reports_router
 
@@ -361,6 +364,9 @@ app.include_router(metrics_router.router)
 # GenAI Initiatives module
 app.include_router(criterias_router.router)
 app.include_router(initiatives_router.router)
+app.include_router(initiative_assets_router.router)
+app.include_router(init_permissions_router.router)
+app.include_router(collaborations_router.router)
 
 # Support module
 app.include_router(bug_reports_router.router)
@@ -411,6 +417,10 @@ TAG_TO_MODULE: dict[str, str] = {
     "dimensions": "collab",
     "metrics": "collab",
     "criterias": "inits",
+    "initiatives": "inits",
+    "initiative-assets": "inits",
+    "init_permissions": "inits",
+    "collaborations": "inits",
 }
 
 

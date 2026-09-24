@@ -134,6 +134,7 @@ FROM user_data;
 SELECT setval(pg_get_serial_sequence('users', 'id'), (SELECT MAX(id) FROM users));
 
 UPDATE users SET profile = 'REVIEWER' WHERE username = 'santiago.marin';
+UPDATE users SET profile = 'ADMINISTRATIVE' WHERE username = 'felipe.cardenas';
 
 -- **********************************
 -- ******* Table Assignments ********

@@ -22,12 +22,12 @@ notification type, so a PENDING row here would raise a request the actor would
 then have to acknowledge to themselves.
 """
 import logging
-import re
 from typing import Optional
 
 from sqlmodel import Session
 
 from .models import Action
+from ...internal.status import normalize  # noqa: F401  (re-exported: status_service.normalize)
 
 logger = logging.getLogger(__name__)
 
@@ -51,17 +51,6 @@ CREATE_ACTION = TYPE_PUBLICATION
 ALLOWED_TRANSITIONS = {
     (STATUS_PUBLISHED, STATUS_DEPRECATED): TYPE_DEPRECATION,
 }
-
-# Legacy/seeded rows may carry the `list_items` sort prefix (e.g. `3-PUBLISHED`)
-# instead of the bare code. Compare on the bare code so such a row is still
-# recognised as published — the UI already tolerates both spellings.
-_SORT_PREFIX = re.compile(r"^\d+-")
-
-
-def normalize(status: Optional[str]) -> str:
-    """The bare status code: trimmed, upper-cased, sort-prefix stripped."""
-    return _SORT_PREFIX.sub("", (status or "").strip().upper())
-
 
 def validate_create_status(status: Optional[str]) -> str:
     """Return the action type to log for a direct create, or raise.

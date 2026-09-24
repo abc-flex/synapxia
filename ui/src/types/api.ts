@@ -1075,6 +1075,105 @@ export interface Initiative {
   updated_at?: string;
 }
 
+// Initiative Management (specs/004). There is deliberately no
+// InitiativeCreate — initiatives are only ever proposed, never created by hand.
+export interface InitiativeWithAccess extends Initiative {
+  my_access: "MANAGE" | "VIEW";
+  is_favorite: boolean;
+  /** Current status plus the owner moves available from it. */
+  allowed_statuses: string[];
+  /** Scope types through which a live grant reaches the user (privileges filter). */
+  permission_scopes: string[];
+}
+
+export interface InitiativeUpdate {
+  name?: string;
+  description?: string | null;
+  type?: string | null;
+  expected_impact?: string;
+  priority_level?: string;
+  reference?: string | null;
+  tags?: string[] | null;
+  detail?: string | null;
+  status?: string;
+}
+
+export interface DiagnosticRow {
+  criteria: string;
+  name: string;
+  description?: string | null;
+  list?: string | null;
+  is_active_criteria: boolean;
+  creator_score?: number | null;
+  creator_label?: string | null;
+  reviewer_score?: number | null;
+  reviewer_label?: string | null;
+  rationale?: string | null;
+}
+
+export interface DiagnosticsResponse {
+  init: number;
+  score?: number | null;
+  /** Overall score per party: sum of that party's answers + how many it answered. */
+  creator_total?: number | null;
+  creator_answered: number;
+  reviewer_total?: number | null;
+  reviewer_answered: number;
+  items: DiagnosticRow[];
+}
+
+export interface InitiativeAsset {
+  asset: number;
+  asset_name?: string | null;
+  category?: string | null;
+  asset_status?: string | null;
+  type: string;
+  rationale?: string | null;
+  created_at: string;
+}
+
+export interface InitiativeAssetCreate {
+  asset: number;
+  type: string;
+  rationale?: string | null;
+}
+
+export interface InitPermission {
+  id: number;
+  init: number;
+  target_type: string;
+  target_code: string;
+  access_level: string;
+  valid_from?: string;
+  valid_to?: string | null;
+}
+
+export interface InitPermissionCreate {
+  init: number;
+  target_type: string;
+  target_code: string;
+  access_level: string;
+  valid_from?: string | null;
+  valid_to?: string | null;
+}
+
+export interface InitPermissionUpdate {
+  access_level?: string;
+  valid_from?: string | null;
+  valid_to?: string | null;
+}
+
+export interface InitDiscussionItem {
+  id: number;
+  init: number;
+  user_id: number;
+  author?: string | null;
+  type: "COMMENT" | "QUESTION" | "ANSWER";
+  content?: string | null;
+  parent?: number | null;
+  created_at: string;
+}
+
 // Criteria types
 export interface Criteria {
   code: string;

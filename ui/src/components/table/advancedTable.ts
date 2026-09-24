@@ -12,7 +12,11 @@ export function initAdvancedTable(
     columnFilter3: string | null = null,
     filterDefaultValue3: string = "",
     columnFilter4: string | null = null,
-    filterDefaultValue4: string = ""
+    filterDefaultValue4: string = "",
+    // Optional slots 5+ (exact-match, AND-combined), for tables that need more
+    // than four filters (e.g. Initiative Management). Element ids continue the
+    // `${tableId}-filterN` sequence. Empty by default → no behaviour change.
+    extraFilters: { param: string | null; defaultValue?: string }[] = []
 ) {
     // Normalize a value for filter comparison: strip a leading `N-` ordinal
     // prefix so a bare seeded code (e.g. `IN_USE`) matches the prefixed
@@ -89,6 +93,13 @@ export function initAdvancedTable(
     let filterKey3: string | null = null;
     let filterKey4: string | null = null;
 
+    const extraSlots = extraFilters.map((f, i) => ({
+        el: document.getElementById(`${tableId}-filter${i + 5}`) as FilterEl,
+        param: f.param,
+        defaultValue: f.defaultValue ?? "",
+        key: null as string | null,
+    }));
+
     const isCheckbox = (el: FilterEl): el is HTMLInputElement =>
         el instanceof HTMLInputElement && el.type === "checkbox";
     // An aria-pressed <button> toggle (the shared FavoritesPill).
@@ -132,7 +143,8 @@ export function initAdvancedTable(
             slotValue(filterSelect) ||
             slotValue(filterSelect2) ||
             slotValue(filterSelect3) ||
-            slotValue(filterSelect4)
+            slotValue(filterSelect4) ||
+            extraSlots.some((s) => slotValue(s.el))
         );
 
     const updateResetVisibility = () => {
@@ -163,6 +175,10 @@ export function initAdvancedTable(
             syncFilterParam(columnFilter2, "");
             syncFilterParam(columnFilter3, "");
             syncFilterParam(columnFilter4, "");
+            extraSlots.forEach((s) => {
+                setSlotValue(s.el, "");
+                syncFilterParam(s.param, "");
+            });
             applyFilters();
         });
     }
@@ -250,6 +266,16 @@ export function initAdvancedTable(
         }
     }
 
+    extraSlots.forEach((s) => {
+        if (!s.el) return;
+        s.key = s.el.dataset.columnKey ?? null;
+        const urlParams = new URLSearchParams(window.location.search);
+        const initial = (s.param ? urlParams.get(s.param) : null) ?? s.defaultValue;
+        setSlotValue(s.el, initial);
+        bindFilterControl(s.el, s.param);
+        if (initial) applyFilters();
+    });
+
     // Reflect initial state (e.g. a filterDefaultValue applied above, or none).
     updateResetVisibility();
 
@@ -295,7 +321,7 @@ export function initAdvancedTable(
     /* ======================
        FILTRO COMBINADO
     ====================== */
-    function applyFilters() {
+    function applyFilters(opts: { keepPage?: boolean } = {}) {
         // Collapse any open detail-expansion rows first so the index/data
         // alignment below stays 1:1 with `data`.
         purgeDetailRows();
@@ -311,6 +337,8 @@ export function initAdvancedTable(
         markHeaderFilterActive(filterSelect2, !!filterValue2);
         markHeaderFilterActive(filterSelect3, !!filterValue3);
         markHeaderFilterActive(filterSelect4, !!filterValue4);
+        const extraValues = extraSlots.map((s) => slotValue(s.el));
+        extraSlots.forEach((s, i) => markHeaderFilterActive(s.el, !!extraValues[i]));
 
         const rows = Array.from(tbody.querySelectorAll("tr")) as HTMLTableRowElement[];
 
@@ -354,9 +382,17 @@ export function initAdvancedTable(
                 visible = visible && tokens.includes(normFilter(filterValue4));
             }
 
+            // 🏷️ Slots 5+ (AND, exact match)
+            extraSlots.forEach((s, i) => {
+                const v = extraValues[i];
+                if (v && s.key && rowData) {
+                    visible = visible && normFilter(String(rowData[s.key] ?? "")) === normFilter(v);
+                }
+            });
+
             row.classList.toggle("hidden-by-filter", !visible);
         });
-        currentPage = 1;
+        if (!opts.keepPage) currentPage = 1;
         renderPagination();
         updateResetVisibility();
     }
@@ -610,6 +646,20 @@ export function initAdvancedTable(
                 })
             );
         }
+    });
+
+    // 🔹 Row updates from the page (e.g. a favorite star toggled in place):
+    // patch the row's data and re-run the filters so an active filter — "My
+    // favorites" — reflects the change at once, staying on the current page.
+    //   document.dispatchEvent(new CustomEvent("datatable:row-update",
+    //     { detail: { tableId, id, changes: { favorite: "yes" } } }));
+    document.addEventListener("datatable:row-update", (e) => {
+        const detail = (e as CustomEvent).detail || {};
+        if (detail.tableId !== tableId) return;
+        const row = data.find((r) => String(r.id) === String(detail.id));
+        if (!row) return;
+        Object.assign(row, detail.changes || {});
+        applyFilters({ keepPage: true });
     });
 
     // 🔹 Aplicar filtros iniciales después de renderizar

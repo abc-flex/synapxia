@@ -1,0 +1,523 @@
+---
+/**
+ * InitiativeDetailModal — Initiative Management's tabbed edit dialog
+ * (specs/004-initiative-management). Derived from AssetDetailModal.astro.
+ *
+ * Edit only — initiatives are never created by hand, so an opener without an
+ * id does nothing. Each editable tab (Core Fields, Related Assets, Permissions)
+ * saves ONLY its own slice; Diagnosis Questions and History are read-only;
+ * Discussion is interactive and saves each post itself. The status control offers exactly the statuses the API reports as
+ * reachable (`allowed_statuses`): the current one plus the owner moves.
+ *
+ * USAGE (from a page):
+ *   <InitiativeDetailModal modalId="initiative-detail-modal" lists={...} />
+ *   <button data-modal-open="initiative-detail-modal"
+ *           data-init-id="3" data-allowed-statuses="ACCEPTED,IN_PROGRESS">Edit</button>
+ */
+type ListOption = { value: string; byLang: Record<string, string> };
+interface Props {
+  modalId?: string;
+  lists: {
+    status: ListOption[];
+    type: ListOption[];
+    priority_level: ListOption[];
+    expected_impact: ListOption[];
+  };
+}
+const { modalId = "initiative-detail-modal", lists } = Astro.props as Props;
+
+const inputClass =
+  "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white";
+const labelClass = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1";
+const label = (o: ListOption) => o.byLang.en ?? o.byLang.es ?? o.value;
+---
+
+<dialog
+  id={modalId}
+  data-initiative-detail
+  class="rounded-2xl p-0 w-[min(1040px,95vw)] max-w-none bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 backdrop:bg-black/60 backdrop:backdrop-blur-sm"
+>
+  <form id={`${modalId}-form`} class="flex flex-col h-[min(760px,90vh)]">
+    <div class="flex items-start justify-between gap-4 px-6 py-4 border-b border-gray-200 dark:border-gray-800">
+      <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+        <span data-i18n="initiative_detail_modal.title_edit">Edit Initiative</span><span id={`${modalId}-title-name`}></span>
+      </h3>
+      <div class="flex items-center gap-1">
+        {/* Favorite star — same look and behaviour as Edit Asset's: saves at once,
+            the list behind is told on close. */}
+        <button
+          type="button"
+          id={`${modalId}-fav`}
+          aria-pressed="false"
+          title="Add to favorites"
+          data-i18n-title="initiative_detail_modal.favorite_add"
+          class="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        >
+          <svg class="w-5 h-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.3 4.02a1 1 0 00.95.69h4.22c.97 0 1.37 1.24.59 1.81l-3.42 2.48a1 1 0 00-.36 1.12l1.3 4.02c.3.92-.75 1.69-1.54 1.12l-3.41-2.48a1 1 0 00-1.18 0l-3.41 2.48c-.78.57-1.84-.2-1.54-1.12l1.3-4.02a1 1 0 00-.36-1.12L2 9.45c-.78-.57-.38-1.81.6-1.81h4.21a1 1 0 00.95-.69l1.3-4.02z" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          data-modal-close={modalId}
+          class="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+          aria-label="Close"
+          data-i18n-aria-label="common.close"
+        >
+          <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div id={`${modalId}-status`} class="hidden mx-6 mt-4 rounded-lg p-3 text-sm" role="status" aria-live="polite"></div>
+
+    <div class="flex-1 overflow-y-auto px-6 pb-5 space-y-6">
+      {/* Core fields — re-parented into the island's "core" tab after mount. */}
+      <section id={`${modalId}-core-section`}>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div class="md:col-span-2">
+            <label for={`${modalId}-name`} class={labelClass}><span data-i18n="initiative_modal.name">Name</span><span class="ml-0.5 text-red-500" aria-hidden="true">*</span></label>
+            <input id={`${modalId}-name`} name="name" type="text" maxlength="100" required class={inputClass} />
+          </div>
+
+          <div>
+            <label for={`${modalId}-type`} class={labelClass} data-i18n="initiative_modal.type">Type</label>
+            <select id={`${modalId}-type`} name="type" class={inputClass}>
+              <option value="" data-i18n="initiative_detail_modal.choose">— choose —</option>
+              {lists.type.map((o) => <option value={o.value} data-labels={JSON.stringify(o.byLang)}>{label(o)}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label for={`${modalId}-status-select`} class={labelClass} data-i18n="initiative_modal.status">Status</label>
+            <select id={`${modalId}-status-select`} name="status" class={inputClass}>
+              {lists.status.map((o) => <option value={o.value} data-labels={JSON.stringify(o.byLang)}>{label(o)}</option>)}
+            </select>
+            <p id={`${modalId}-status-hint`} class="mt-1 text-xs text-gray-500 dark:text-gray-400"></p>
+          </div>
+
+          <div>
+            <label for={`${modalId}-priority`} class={labelClass}><span data-i18n="initiative_modal.priority_level">Priority</span><span class="ml-0.5 text-red-500" aria-hidden="true">*</span></label>
+            <select id={`${modalId}-priority`} name="priority_level" required class={inputClass}>
+              <option value="" data-i18n="initiative_detail_modal.choose">— choose —</option>
+              {lists.priority_level.map((o) => <option value={o.value} data-labels={JSON.stringify(o.byLang)}>{label(o)}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label for={`${modalId}-impact`} class={labelClass}><span data-i18n="initiative_modal.expected_impact">Expected impact</span><span class="ml-0.5 text-red-500" aria-hidden="true">*</span></label>
+            <select id={`${modalId}-impact`} name="expected_impact" required class={inputClass}>
+              <option value="" data-i18n="initiative_detail_modal.choose">— choose —</option>
+              {lists.expected_impact.map((o) => <option value={o.value} data-labels={JSON.stringify(o.byLang)}>{label(o)}</option>)}
+            </select>
+          </div>
+
+          <div class="md:col-span-2">
+            <label for={`${modalId}-description`} class={labelClass} data-i18n="initiative_modal.description">Description</label>
+            <textarea id={`${modalId}-description`} name="description" rows={2} maxlength="500" class={inputClass}></textarea>
+          </div>
+
+          <div>
+            <label for={`${modalId}-reference`} class={labelClass} data-i18n="initiative_modal.reference">Reference</label>
+            <input id={`${modalId}-reference`} name="reference" type="text" class={inputClass} />
+          </div>
+
+          <div>
+            <label for={`${modalId}-tags`} class={labelClass} data-i18n="initiative_modal.tags">Tags</label>
+            <input id={`${modalId}-tags`} name="tags" type="text" placeholder="tag1, tag2, tag3" data-i18n-placeholder="initiative_detail_modal.tags_placeholder" class={inputClass} />
+          </div>
+
+          <div class="md:col-span-2">
+            <label for={`${modalId}-detail`} class={labelClass} data-i18n="initiative_modal.detail">Detail</label>
+            <textarea id={`${modalId}-detail`} name="detail" rows={4} placeholder="Additional detail (optional)" data-i18n-placeholder="initiative_detail_modal.detail_placeholder" class={inputClass}></textarea>
+          </div>
+        </div>
+      </section>
+
+      {/* pt-6 = the gap Edit Asset gets from `space-y-6` (its hidden id input stays a
+          sibling there; here the core section is re-parented away, leaving the tabs
+          as the only child). */}
+      <div id={`${modalId}-detail-tabs`} class="pt-6"></div>
+    </div>
+
+    <div class="flex flex-wrap items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-800">
+      <button type="button" data-modal-close={modalId} class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800" data-i18n="common.cancel">Cancel</button>
+      <button id={`${modalId}-submit`} type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50" data-i18n="initiative_detail_modal.save_core">Save core fields</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog
+  id={`${modalId}-discard-confirm`}
+  class="rounded-2xl p-6 w-[420px] max-w-full bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 backdrop:bg-black/60 backdrop:backdrop-blur-sm"
+>
+  <h3 class="text-base font-bold text-gray-900 dark:text-white" data-i18n="initiative_detail_modal.discard_title">Discard changes?</h3>
+  <p class="mt-2 text-sm text-gray-600 dark:text-gray-400" data-i18n="initiative_detail_modal.discard_message">You have unsaved changes. If you leave now, they will be lost.</p>
+  <div class="mt-5 flex justify-end gap-3">
+    <button type="button" id={`${modalId}-discard-keep`} class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800" data-i18n="initiative_detail_modal.discard_keep_editing">Keep editing</button>
+    <button type="button" id={`${modalId}-discard-confirm-btn`} class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700" data-i18n="initiative_detail_modal.discard_confirm">Discard changes</button>
+  </div>
+</dialog>
+
+<script>
+  import { mount, tick } from "svelte";
+  import InitiativeDetailTabs from "@/components/svelte/InitiativeDetailTabs.svelte";
+  import { getInitiative, setInitiativeFavorite, updateInitiative } from "@/lib/initiatives";
+  import { getInitiativeHistory } from "@/lib/collaborations";
+  import { mountHistory } from "@/lib/history";
+  import { createStatusBanner } from "@/lib/statusBanner";
+  import { translate } from "@/utils/i18nClient";
+  import type { InitiativeUpdate } from "@/types/api";
+
+  type DetailTab = "core" | "diagnosis" | "related" | "permissions" | "discussion" | "history";
+  const READONLY_TABS: DetailTab[] = ["diagnosis", "discussion", "history"];
+  const SAVE_LABELS: Record<string, [string, string]> = {
+    core: ["initiative_detail_modal.save_core", "Save core fields"],
+    related: ["initiative_detail_modal.save_related", "Save related assets"],
+    permissions: ["initiative_detail_modal.save_permissions", "Save permissions"],
+  };
+  const LOCKED_CLASSES = ["!bg-gray-100", "dark:!bg-gray-800", "cursor-not-allowed"];
+
+  const tr = (key: string, fallback: string): string => {
+    try {
+      const v = translate(key);
+      if (v && v !== key) return v;
+    } catch { /* non-fatal */ }
+    return fallback;
+  };
+  const lang = () => (localStorage.getItem("lang") === "es" ? "es" : "en");
+  const bare = (raw: unknown) => String(raw ?? "").replace(/^\d+-/, "").trim().toUpperCase();
+
+  function init(dialog: HTMLDialogElement) {
+    const modalId = dialog.id;
+    const $ = <T extends HTMLElement>(suffix: string) => document.getElementById(`${modalId}${suffix}`) as T;
+    const form = $<HTMLFormElement>("-form");
+    const nameField = $<HTMLInputElement>("-name");
+    const typeSel = $<HTMLSelectElement>("-type");
+    const statusSel = $<HTMLSelectElement>("-status-select");
+    const statusHint = $<HTMLElement>("-status-hint");
+    const prioritySel = $<HTMLSelectElement>("-priority");
+    const impactSel = $<HTMLSelectElement>("-impact");
+    const descField = $<HTMLTextAreaElement>("-description");
+    const refField = $<HTMLInputElement>("-reference");
+    const tagsField = $<HTMLInputElement>("-tags");
+    const detailField = $<HTMLTextAreaElement>("-detail");
+    const titleNameEl = $<HTMLElement>("-title-name");
+    const submitBtn = $<HTMLButtonElement>("-submit");
+    const discardDialog = document.getElementById(`${modalId}-discard-confirm`) as HTMLDialogElement;
+    const status = createStatusBanner($<HTMLElement>("-status"), "mx-6 mt-4 rounded-lg p-3 text-sm");
+
+    let editingId: number | null = null;
+    let activeTab: DetailTab = "core";
+    let originalCoreSnapshot = "";
+    let allowedStatuses: string[] = [];
+    // The list page is not reloaded after a save, so its row data can go stale:
+    // remember the reachable statuses the API returned for each saved initiative.
+    const allowedCache = new Map<number, string[]>();
+
+    // ── Localize list-backed options (labels carried per option) ──────────
+    const relabelOptions = () => {
+      const l = lang();
+      for (const sel of [typeSel, statusSel, prioritySel, impactSel]) {
+        sel.querySelectorAll<HTMLOptionElement>("option[data-labels]").forEach((opt) => {
+          try {
+            const byLang = JSON.parse(opt.dataset.labels || "{}");
+            opt.textContent = byLang[l] ?? byLang.en ?? opt.value;
+          } catch { /* keep SSR label */ }
+        });
+      }
+    };
+    relabelOptions();
+    document.addEventListener("synapxia:locale-changed", relabelOptions);
+
+    // ── Core payload + dirty tracking ─────────────────────────────────────
+    function buildCorePayload(): InitiativeUpdate {
+      const tags = tagsField.value.split(",").map((t) => t.trim()).filter(Boolean);
+      return {
+        name: nameField.value.trim(),
+        type: typeSel.value || null,
+        status: statusSel.value,
+        priority_level: prioritySel.value,
+        expected_impact: impactSel.value,
+        description: descField.value.trim() || null,
+        reference: refField.value.trim() || null,
+        tags: tags.length ? tags : null,
+        detail: detailField.value.trim() || null,
+      };
+    }
+    const CORE_FIELDS: [HTMLElement, keyof InitiativeUpdate][] = [
+      [nameField, "name"], [typeSel, "type"], [statusSel, "status"],
+      [prioritySel, "priority_level"], [impactSel, "expected_impact"],
+      [descField, "description"], [refField, "reference"], [tagsField, "tags"],
+      [detailField, "detail"],
+    ];
+    const requiredInputs = [nameField, prioritySel, impactSel];
+
+    function coreChangedFields(): HTMLElement[] {
+      const baseline = originalCoreSnapshot ? JSON.parse(originalCoreSnapshot) : {};
+      const current = buildCorePayload() as Record<string, unknown>;
+      return CORE_FIELDS
+        .filter(([, key]) => JSON.stringify(current[key]) !== JSON.stringify(baseline[key]))
+        .map(([el]) => el);
+    }
+
+    // ── Tabs island ───────────────────────────────────────────────────────
+    const tabs = mount(InitiativeDetailTabs, {
+      target: $<HTMLElement>("-detail-tabs"),
+      props: {
+        idPrefix: modalId,
+        onError: (m: string) => status.show(m, "error"),
+        onTabChange: (name: DetailTab) => {
+          activeTab = name;
+          for (const f of requiredInputs) f.required = name === "core";
+          paintFooterForTab(name);
+        },
+      },
+    });
+    const coreSection = $<HTMLElement>("-core-section");
+    document.getElementById(`${modalId}-core`)?.appendChild(coreSection);
+
+    function updateCoreHighlight() {
+      const changed = new Set(coreChangedFields());
+      for (const [el] of CORE_FIELDS) {
+        el.classList.toggle("ring-2", changed.has(el));
+        el.classList.toggle("ring-amber-400", changed.has(el));
+      }
+      tabs.setCoreDirty(changed.size > 0);
+    }
+    for (const [el] of CORE_FIELDS) {
+      el.addEventListener("input", updateCoreHighlight);
+      el.addEventListener("change", updateCoreHighlight);
+    }
+
+    const history = mountHistory({
+      modalId,
+      fetcher: (id) => getInitiativeHistory(id),
+      idAttr: "initId",
+      labelNamespace: "initiative_history.action",
+    });
+
+    function paintFooterForTab(tab: DetailTab) {
+      if (READONLY_TABS.includes(tab)) {
+        submitBtn.classList.add("hidden");
+        return;
+      }
+      submitBtn.classList.remove("hidden");
+      const [key, fallback] = SAVE_LABELS[tab];
+      submitBtn.setAttribute("data-i18n", key);
+      submitBtn.textContent = tr(key, fallback);
+    }
+
+    // ── Status policy: offer only what the API says is reachable ──────────
+    function applyStatusPolicy(currentStatus: string, allowed: string[]) {
+      const current = bare(currentStatus);
+      allowedStatuses = allowed.length ? allowed.map(bare) : [current];
+      let selectable = 0;
+      for (const opt of [...statusSel.options]) {
+        const keep = allowedStatuses.includes(bare(opt.value));
+        opt.hidden = !keep;
+        opt.disabled = !keep;
+        if (keep) selectable += 1;
+      }
+      const match = [...statusSel.options].find((o) => bare(o.value) === current);
+      statusSel.value = match?.value ?? "";
+      const locked = selectable < 2;
+      statusSel.disabled = locked;
+      for (const c of LOCKED_CLASSES) statusSel.classList.toggle(c, locked);
+      const [key, fallback] = !locked
+        ? ["initiative_detail_modal.status_hint_moves", "From here an initiative can only move forward to the statuses offered."]
+        : current === "ARCHIVED"
+          ? ["initiative_detail_modal.status_hint_closed", "This initiative is archived; its status can no longer change."]
+          : ["initiative_detail_modal.status_hint_workflow", "This status is set by the propose and diagnose workflow and cannot be changed here."];
+      statusHint.setAttribute("data-i18n", key);
+      statusHint.textContent = tr(key, fallback);
+    }
+
+
+    // ── Favorite star: saves at once; the list is told on close ───────────
+    const favBtn = $<HTMLButtonElement>("-fav");
+    let favoriteOn = false;
+    let favoriteAtOpen: boolean | null = null;
+    function paintFavorite() {
+      favBtn.setAttribute("aria-pressed", String(favoriteOn));
+      favBtn.querySelector("svg")?.setAttribute("fill", favoriteOn ? "currentColor" : "none");
+      favBtn.classList.toggle("text-yellow-400", favoriteOn);
+      favBtn.classList.toggle("text-gray-400", !favoriteOn);
+      const key = favoriteOn ? "initiative_detail_modal.favorite_remove" : "initiative_detail_modal.favorite_add";
+      favBtn.setAttribute("data-i18n-title", key);
+      favBtn.title = tr(key, favoriteOn ? "Remove from favorites" : "Add to favorites");
+    }
+    favBtn.addEventListener("click", async () => {
+      if (editingId == null) return;
+      const id = editingId;
+      const next = !favoriteOn;
+      favoriteOn = next;
+      paintFavorite();
+      try {
+        await setInitiativeFavorite(id, next);
+      } catch {
+        favoriteOn = !next;
+        paintFavorite();
+        status.show(tr("initiative_detail_modal.error_favorite", "Could not update favorite."), "error");
+      }
+    });
+    // ── Open / reset / close ──────────────────────────────────────────────
+    function resetForm() {
+      form.reset();
+      editingId = null;
+      titleNameEl.textContent = "";
+      tabs.reset();
+      activeTab = "core";
+      for (const f of requiredInputs) f.required = true;
+      paintFooterForTab("core");
+      status.clear();
+      originalCoreSnapshot = JSON.stringify(buildCorePayload());
+      updateCoreHighlight();
+    }
+
+    async function openEdit(id: number, allowedHint: string[], favoriteHint = false) {
+      resetForm();
+      editingId = id;
+      favoriteOn = favoriteHint;
+      favoriteAtOpen = favoriteHint;
+      paintFavorite();
+      dialog.showModal();
+      try {
+        const it = await getInitiative(id);
+        if (editingId !== id) return;
+        nameField.value = it.name ?? "";
+        titleNameEl.textContent = it.name ? `: ${it.name}` : "";
+        typeSel.value = it.type ?? "";
+        prioritySel.value = it.priority_level ?? "";
+        impactSel.value = it.expected_impact ?? "";
+        descField.value = it.description ?? "";
+        refField.value = it.reference ?? "";
+        tagsField.value = Array.isArray(it.tags) ? (it.tags as string[]).join(", ") : String(it.tags ?? "");
+        detailField.value = it.detail ?? "";
+        applyStatusPolicy(it.status, allowedCache.get(id) ?? allowedHint);
+        originalCoreSnapshot = JSON.stringify(buildCorePayload());
+        updateCoreHighlight();
+        await tabs.hydrate(id);
+      } catch (e) {
+        status.show(e instanceof Error ? e.message : tr("initiative_detail_modal.error_load", "Could not load the initiative."), "error");
+      }
+    }
+
+    function closeModal() {
+      // Tell the list behind on exit, so its row star and an active
+      // "My favorites" filter catch up (the page listens for `favorite:changed`).
+      if (editingId != null && favoriteAtOpen !== null && favoriteOn !== favoriteAtOpen) {
+        document.dispatchEvent(new CustomEvent("favorite:changed", {
+          detail: { tableId: "initiatives", id: editingId, on: favoriteOn },
+        }));
+      }
+      favoriteAtOpen = null;
+      dialog.close();
+      resetForm();
+    }
+
+    function pendingTabs(): DetailTab[] {
+      const pending: DetailTab[] = [];
+      if (JSON.stringify(buildCorePayload()) !== originalCoreSnapshot) pending.push("core");
+      if (tabs.relationsDirty()) pending.push("related");
+      if (tabs.permissionsDirty()) pending.push("permissions");
+      return pending;
+    }
+
+    function requestClose() {
+      if (pendingTabs().length) discardDialog.showModal();
+      else closeModal();
+    }
+
+    document.getElementById(`${modalId}-discard-keep`)?.addEventListener("click", async () => {
+      discardDialog.close();
+      const [first] = pendingTabs();
+      if (!first) return;
+      tabs.activateTab(first);
+      await tick();
+      if (first === "core") coreChangedFields()[0]?.focus();
+      else tabs.focusFirstPending();
+    });
+    document.getElementById(`${modalId}-discard-confirm-btn`)?.addEventListener("click", () => {
+      discardDialog.close();
+      closeModal();
+    });
+
+    document.addEventListener("click", (e) => {
+      const target = (e.target as HTMLElement).closest?.(`[data-modal-open="${modalId}"]`) as HTMLElement | null;
+      if (target) {
+        e.preventDefault();
+        const id = Number(target.dataset.initId);
+        // No id → nothing to open: initiatives are never created here.
+        if (id) openEdit(
+          id,
+          (target.dataset.allowedStatuses || "").split(",").filter(Boolean),
+          target.dataset.favorite === "1",
+        );
+      }
+      const closer = (e.target as HTMLElement).closest?.(`[data-modal-close="${modalId}"]`);
+      if (closer) {
+        e.preventDefault();
+        requestClose();
+      }
+    });
+    dialog.addEventListener("cancel", (e) => {
+      e.preventDefault();
+      requestClose();
+    });
+
+    // ── Submit: only the active tab's slice ───────────────────────────────
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (editingId == null) return;
+      const id = editingId;
+      submitBtn.disabled = true;
+      status.clear();
+      try {
+        let msg = "";
+        if (activeTab === "core") {
+          const payload = buildCorePayload();
+          if (JSON.stringify(payload) === originalCoreSnapshot) {
+            msg = "";
+          } else {
+            if (!payload.name || !payload.priority_level || !payload.expected_impact) {
+              status.show(tr("initiative_detail_modal.required", "Please fill the required fields."), "error");
+              return;
+            }
+            const baseline = JSON.parse(originalCoreSnapshot || "{}");
+            const statusChanged = bare(payload.status) !== bare(baseline.status);
+            const saved = await updateInitiative(id, payload);
+            titleNameEl.textContent = saved.name ? `: ${saved.name}` : "";
+            allowedCache.set(id, saved.allowed_statuses ?? []);
+            applyStatusPolicy(saved.status, saved.allowed_statuses ?? []);
+            originalCoreSnapshot = JSON.stringify(buildCorePayload());
+            updateCoreHighlight();
+            // A status move writes a history entry — refresh the timeline.
+            if (statusChanged) void history?.load(id);
+            msg = tr("initiative_detail_modal.core_saved", "Core fields saved.");
+          }
+        } else if (activeTab === "related") {
+          if (tabs.relationsDirty()) {
+            await tabs.flush(id, { skipPermissions: true });
+            msg = tr("initiative_detail_modal.related_saved", "Related assets saved.");
+          }
+        } else if (activeTab === "permissions") {
+          if (tabs.permissionsDirty()) {
+            await tabs.flush(id, { skipRelations: true });
+            msg = tr("initiative_detail_modal.permissions_saved", "Permissions saved.");
+          }
+        }
+        if (msg) status.show(msg, "ok");
+        else status.show(tr("initiative_detail_modal.no_changes", "No changes to save."), "info");
+      } catch (err) {
+        status.show(err instanceof Error ? err.message : tr("initiative_detail_modal.error_save", "Could not save the initiative."), "error");
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  }
+
+  document.querySelectorAll<HTMLDialogElement>("dialog[data-initiative-detail]").forEach(init);
+</script>

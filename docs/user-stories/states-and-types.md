@@ -115,12 +115,15 @@ The initiative workflow mirrors the asset one over `collaborations`, with `type`
 | `MODIFICATION` | Diagnosis of the Initiative | Modify Initiative | Proposer |
 | `ACCEPTANCE` | Diagnosis of the Initiative | User Acknowledgment of Initiative Notification | Proposer |
 | `REJECTION` | Diagnosis of the Initiative | User Acknowledgment of Initiative Notification | Proposer |
-| `DELIVERY` | — | Edit Initiative | Proposer |
+| `KICKOFF` | — | Edit Initiative | User |
+| `DELIVERY` | — | Edit Initiative | User |
 | `ARCHIVING` | — | Edit Initiative | User |
 
 `inits` shares the `WORKFLOW_STATUS` list with `lib`, so the two-state model applies here too.
-The domain is still a stub — these rows exist as seed data only, with no application code
-reading them yet.
+`KICKOFF` / `DELIVERY` / `ARCHIVING` are written by Initiative Management
+(`specs/004-initiative-management`) as completed log rows (`HANDLED`, attributed to whoever
+made the change) — they raise **no** pending notice, same as `DEPRECATION` on the asset side.
+The propose / diagnose / modify rows are still seed data only (those stories are not built yet).
 
 ### Community layer
 
@@ -150,9 +153,13 @@ reading them yet.
 | `ACTIVATED` | Diagnosis → reject | `REJECTED` |
 | `ACTIVATED` | Diagnosis → request changes | `FEEDBACK` |
 | `FEEDBACK` | Modify → resubmit | `ACTIVATED` |
-| `ACCEPTED` | work starts | `IN_PROGRESS` |
-| `IN_PROGRESS` | Edit Initiative → deliver | `DELIVERED` |
-| any | Edit Initiative → archive | `ARCHIVED` |
+| `ACCEPTED` | Edit Initiative → kick off (`KICKOFF`) | `IN_PROGRESS` |
+| `ACCEPTED` / `IN_PROGRESS` | Edit Initiative → deliver (`DELIVERY`) | `DELIVERED` |
+| `ACCEPTED` / `IN_PROGRESS` / `DELIVERED` | Edit Initiative → archive (`ARCHIVING`) | `ARCHIVED` |
+
+Only these six owner moves are possible from Initiative Management; the server refuses every
+other status change there (400). `ACTIVATED`, `FEEDBACK` and `REJECTED` initiatives cannot be
+archived from Edit Initiative.
 
 ---
 
@@ -166,7 +173,7 @@ reading them yet.
 | Diagnosis Questions | Read-only | Request diagnosis | Read-only |
 | Related Assets | Save related assets | Not applicable | Read-only |
 | Permissions | Save permissions | Not applicable | Not applicable |
-| Discussion | Multiple options | Not applicable | Multiple options |
+| Discussion | Read-only | Not applicable | Multiple options |
 | History | Read-only | Not applicable | Read-only |
 
 ---
@@ -192,7 +199,7 @@ English labels are the seeded values; lists marked *(en/es)* are bilingual.
 | `ACCESS_LEVEL` | LIST_OF_VALUES | permissions (all modules) | View, Manage |
 | `INITIATIVE_STATUS` | LIST_OF_VALUES | INITS | Activated, Feedback Provided, Accepted, Rejected, In Progress, Delivered, Archived |
 | `INITIATIVE_TYPE` | LIST_OF_VALUES | INITS | Exploration, Prototyping, Implementation |
-| `COLLAB_TYPE` | LIST_OF_VALUES | INITS collaborations | Activation, Diagnosis, Modification, Acceptance, Rejection, Delivery, Archiving, Vote, Comment, Question, Answer |
+| `COLLAB_TYPE` | LIST_OF_VALUES | INITS collaborations | Activation, Diagnosis, Modification, Acceptance, Rejection, Kickoff, Delivery, Archiving, Vote, Comment, Question, Answer |
 | `EXPECTED_IMPACT` | LIST_OF_VALUES | INITS | Time Reduction, Quality Improvement, Error Reduction, Decision Support, Improved User Experience, Cost Savings, Revenue Increase, Compliance Enhancement, Risk Reduction, Scalability Improvement, Innovation, Other |
 | `PRIORITY_LEVEL` | LIST_OF_VALUES | INITS | High, Medium, Low |
 | `CLARITY_MATURITY`, `SUPPORT_OBJECTIVE`, `COMPLEXITY`, `DATA_INTEGRATIONS`, `RISK_IMPACT`, `SUSTAINABILITY` | CRITERIA | INITS diagnostics *(en/es)* | 1–3 scale per criterion |

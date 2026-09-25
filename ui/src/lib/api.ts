@@ -293,3 +293,14 @@ export function buildQueryString(params: Record<string, any>): string {
 export function getApiUrl(): string {
   return API_BASE_URL;
 }
+
+/**
+ * The server's own message from an error thrown by apiGet/apiPost/…, without
+ * the `METHOD url failed (status):` prefix — suitable for showing to a user.
+ * Falls back to `fallback` for non-API errors (network, etc.).
+ */
+export function apiErrorDetail(error: unknown, fallback: string): string {
+  const msg = error instanceof Error ? error.message : "";
+  const match = /failed \(\d+\): ([\s\S]+)$/.exec(msg);
+  return (match ? match[1] : "").trim() || fallback;
+}

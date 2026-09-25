@@ -1,0 +1,39 @@
+---
+/**
+ * Initiative outcome (HU-IN17, specs/005-explore-initiatives US8) — `/inits/show-collab?collab={id}`.
+ * Page shell for the `InitiativeOutcome` island (mounted manually with `mount()`, same
+ * pattern as the asset review / modify / show-action pages).
+ */
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import Toast from "../../components/Toast.astro";
+---
+
+<BaseLayout>
+  <div class="mx-auto w-full max-w-4xl">
+    <Breadcrumb
+      moduleName="Initiatives"
+      pageName="My Initiative Requests"
+      pageTitle="Initiative outcome"
+      homeLink="/"
+      moduleNameKey="modules.INITS"
+      pageNameKey="my_initiative_requests.title"
+      pageTitleKey="inits_show_collab.title"
+    />
+    <div id="inits-action-root"></div>
+  </div>
+
+  <Toast message="" variant="info" open={false} />
+
+  <script>
+    import { mount } from "svelte";
+    import InitiativeOutcome from "@/components/svelte/InitiativeOutcome.svelte";
+    import { loadClientTranslations } from "@/utils/i18nClient";
+    import { installGlobalToast } from "@/lib/toast";
+
+    loadClientTranslations();
+    installGlobalToast();
+    const target = document.getElementById("inits-action-root");
+    if (target) mount(InitiativeOutcome, { target });
+  </script>
+</BaseLayout>

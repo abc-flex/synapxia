@@ -1,6 +1,6 @@
 /**
  * notificationsStore — one client-side source of truth for the caller's asset
- * requests, shared by the header bell and the "My Asset Requests" page so the
+ * and initiative requests, shared by the header bell and the "My Asset Requests" page so the
  * two can never disagree.
  *
  * WHY THIS EXISTS. Before it, both surfaces loaded once and never again, which
@@ -25,7 +25,10 @@
  * in `onMount` and assign into their own local `$state`.
  */
 import { getAssetRequests, getNotifications } from "./notifications";
-import type { AssetRequest, NotificationFeed } from "@/types/api";
+import { getInitiativeNotifications, getInitiativeRequests } from "./collaborations";
+import type {
+  AssetRequest, InitiativeRequest, InitNotificationFeed, NotificationFeed,
+} from "@/types/api";
 
 /** How often to re-check while the tab is visible. Comfortably inside the 90 s
  *  the spec allows for converging on somebody else's change, without making a
@@ -44,6 +47,12 @@ export interface NotificationsState {
   /** False until the first successful load, so callers can tell "nothing yet"
    *  from a genuinely empty list. */
   loaded: boolean;
+  // Initiatives (specs/005-explore-initiatives): the same three lists over the
+  // `collaborations` substrate, loaded alongside the asset ones.
+  initFeed: InitNotificationFeed;
+  initPending: InitiativeRequest[];
+  initHandled: InitiativeRequest[];
+  initLoaded: boolean;
 }
 
 type Listener = (state: NotificationsState) => void;
@@ -53,6 +62,10 @@ let state: NotificationsState = {
   pending: [],
   handled: [],
   loaded: false,
+  initFeed: { items: [], total: 0 },
+  initPending: [],
+  initHandled: [],
+  initLoaded: false,
 };
 
 const listeners = new Set<Listener>();
@@ -90,13 +103,25 @@ export function refresh(): Promise<void> {
 
   inFlight = (async () => {
     try {
-      const [feed, pending, handled] = await Promise.all([
-        getNotifications(),
-        getAssetRequests("PENDING"),
-        getAssetRequests("HANDLED"),
+      // Each domain settles on its own: a failure on one keeps ITS last known
+      // state and never blanks the other.
+      const [assets, inits] = await Promise.allSettled([
+        Promise.all([getNotifications(), getAssetRequests("PENDING"), getAssetRequests("HANDLED")]),
+        Promise.all([getInitiativeNotifications(), getInitiativeRequests("PENDING"), getInitiativeRequests("HANDLED")]),
       ]);
-      state = { feed, pending, handled, loaded: true };
-      emit();
+      let next = state;
+      if (assets.status === "fulfilled") {
+        const [feed, pending, handled] = assets.value;
+        next = { ...next, feed, pending, handled, loaded: true };
+      }
+      if (inits.status === "fulfilled") {
+        const [initFeed, initPending, initHandled] = inits.value;
+        next = { ...next, initFeed, initPending, initHandled, initLoaded: true };
+      }
+      if (next !== state) {
+        state = next;
+        emit();
+      }
     } catch {
       /* keep the last known good state — see the note above */
     } finally {

@@ -7,12 +7,19 @@
  */
 import { apiDelete, apiGet, apiPost, apiPut, buildQueryString } from "./api";
 import type {
+  DiagnosisForm,
   DiagnosticsResponse,
   Initiative,
   InitiativeAsset,
   InitiativeAssetCreate,
+  InitiativeDiagnoseRequest,
+  InitiativeExploreItem,
+  InitiativeProposeRequest,
+  InitiativeResubmitRequest,
   InitiativeUpdate,
   InitiativeWithAccess,
+  LinkableAsset,
+  ReviewerOption,
 } from "@/types/api";
 
 export interface InitiativeSelectOption {
@@ -75,4 +82,42 @@ export async function addInitiativeAsset(id: number, data: InitiativeAssetCreate
 /** Remove one link — the same asset may be linked once per relation type. */
 export async function removeInitiativeAsset(id: number, assetId: number, type: string): Promise<void> {
   await apiDelete(`/api/initiatives/${enc(id)}/assets/${enc(assetId)}/${enc(type)}`);
+}
+
+// ── Contribution workflow (specs/005-explore-initiatives) ────────────────────
+
+/** Explore Initiatives gallery: accessible Accepted / In Progress / Delivered
+ *  initiatives with the card counters. */
+export async function getInitiativesExplore(skip = 0, limit = 500): Promise<InitiativeExploreItem[]> {
+  return apiGet<InitiativeExploreItem[]>(
+    `/api/initiatives/explore${buildQueryString({ skip, limit })}`,
+  );
+}
+
+/** Eligible reviewers — the caller is left out unless they are an admin. */
+export async function getInitiativeReviewers(): Promise<ReviewerOption[]> {
+  return apiGet<ReviewerOption[]>("/api/initiatives/reviewers");
+}
+
+/** Assets the caller can see, for the Propose wizard's Related Assets step. */
+export async function getLinkableAssets(): Promise<LinkableAsset[]> {
+  return apiGet<LinkableAsset[]>("/api/initiatives/linkable-assets");
+}
+
+export async function proposeInitiative(data: InitiativeProposeRequest): Promise<Initiative> {
+  return apiPost<Initiative, InitiativeProposeRequest>("/api/initiatives/propose", data);
+}
+
+export async function diagnoseInitiative(id: number, data: InitiativeDiagnoseRequest): Promise<Initiative> {
+  return apiPost<Initiative, InitiativeDiagnoseRequest>(`/api/initiatives/${enc(id)}/diagnose`, data);
+}
+
+export async function resubmitInitiative(id: number, data: InitiativeResubmitRequest): Promise<Initiative> {
+  return apiPost<Initiative, InitiativeResubmitRequest>(`/api/initiatives/${enc(id)}/resubmit`, data);
+}
+
+/** The diagnosis questionnaire: active criteria (unanswered) + each scale's
+ *  options in `lang`. Readable with INITS/EXPLORE alone. */
+export async function getDiagnosisForm(lang = "en"): Promise<DiagnosisForm> {
+  return apiGet<DiagnosisForm>(`/api/initiatives/diagnosis-form${buildQueryString({ lang })}`);
 }

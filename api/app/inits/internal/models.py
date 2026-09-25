@@ -1,7 +1,7 @@
 """Models for Initiatives module"""
 from sqlmodel import Field, SQLModel, Column, String, ForeignKey
 from sqlalchemy import JSON, BigInteger
-from typing import Optional, Any, List
+from typing import Optional, Any, Dict, List
 from datetime import datetime
 
 # Initiative Models
@@ -278,3 +278,152 @@ class InitiativeAssetCreate(SQLModel):
     type: str = Field(max_length=100, description="RELATION_TYPE list value")
     rationale: Optional[str] = Field(
         default=None, description="Why the initiative and asset are related")
+
+
+# ── Contribution workflow (specs/005-explore-initiatives) ────────────────────
+# Propose → Diagnose → Modify → Acknowledge on the `collaborations` substrate,
+# plus the Explore listing. Actors always come from the session: none of these
+# bodies carries a user id.
+
+
+class DiagnosisAnswer(SQLModel):
+    """The proposer's answer to one criterion: a value of the criterion's own
+    scale plus an optional rationale."""
+    score: int = Field(description="Value of the criterion's scale (criterias.list)")
+    rationale: Optional[str] = Field(default=None, max_length=2000)
+
+
+class ProposeAssetLink(SQLModel):
+    asset: int = Field(description="Asset id (FK to assets.id)")
+    type: str = Field(max_length=100, description="RELATION_TYPE list value")
+    rationale: Optional[str] = Field(default=None, max_length=2000)
+
+
+class InitiativeProposeRequest(SQLModel):
+    """Body of POST /api/initiatives/propose. No `status` (always ACTIVATED) and
+    no `score` (set by the diagnosis)."""
+    name: str = Field(max_length=100)
+    description: Optional[str] = Field(default=None, max_length=500)
+    type: Optional[str] = Field(default=None, max_length=100)
+    expected_impact: str = Field(max_length=100)
+    priority_level: str = Field(max_length=100)
+    reference: Optional[str] = Field(default=None)
+    tags: Optional[List[str]] = Field(default=None)
+    detail: Optional[str] = Field(default=None)
+    reviewer_id: Optional[int] = Field(
+        default=None, description="Eligible reviewer; omitted → auto-assigned")
+    answers: Dict[str, DiagnosisAnswer] = Field(
+        default_factory=dict, description="criteria code → proposer answer")
+    assets: List[ProposeAssetLink] = Field(default_factory=list)
+
+
+class InitiativeDiagnoseRequest(SQLModel):
+    """Body of POST /api/initiatives/{id}/diagnose."""
+    decision: str = Field(description="accept | reject | changes")
+    feedback: Optional[str] = Field(default=None, max_length=2000)
+    answers: Dict[str, int] = Field(
+        default_factory=dict, description="criteria code → reviewer score")
+
+
+class InitiativeResubmitRequest(SQLModel):
+    """Body of POST /api/initiatives/{id}/resubmit — only sent keys apply."""
+    name: Optional[str] = Field(default=None, max_length=100)
+    description: Optional[str] = Field(default=None, max_length=500)
+    type: Optional[str] = Field(default=None, max_length=100)
+    expected_impact: Optional[str] = Field(default=None, max_length=100)
+    priority_level: Optional[str] = Field(default=None, max_length=100)
+    reference: Optional[str] = Field(default=None)
+    tags: Optional[List[str]] = Field(default=None)
+    detail: Optional[str] = Field(default=None)
+    answers: Optional[Dict[str, DiagnosisAnswer]] = Field(default=None)
+
+
+class LinkableAsset(SQLModel):
+    value: int
+    label: str
+    category: Optional[str] = None
+
+
+class InitVoteTally(SQLModel):
+    init: int
+    positive: int = 0
+    negative: int = 0
+    score: int = 0
+    my_vote: Optional[str] = None
+
+
+class InitVoteRequest(SQLModel):
+    content: str = Field(description="POSITIVE | NEGATIVE")
+
+
+class InitiativeExploreItem(InitiativeBase):
+    """An Explore Initiatives gallery row: the initiative plus the caller's
+    access, favorite flag, grant scopes and the card's counters."""
+    id: int
+    my_access: str
+    is_favorite: bool = False
+    permission_scopes: List[str] = Field(default_factory=list)
+    votes: InitVoteTally
+    discussion_count: int = 0
+    related_assets_count: int = 0
+
+
+class InitiativeRequest(SQLModel):
+    """One row of My Initiative Requests — one per initiative (lib's AssetRequest twin)."""
+    init: int
+    init_name: Optional[str] = None
+    init_status: Optional[str] = None
+    roles: List[str] = Field(default_factory=list)
+    state: str
+    awaited_party: Optional[str] = None
+    pending_collab_id: Optional[int] = None
+    pending_collab_type: Optional[str] = None
+    last_change_at: datetime
+
+
+class InitNotificationItem(SQLModel):
+    id: int
+    init: int
+    init_name: Optional[str] = None
+    type: str
+    created_at: datetime
+
+
+class InitNotificationFeed(SQLModel):
+    items: List[InitNotificationItem] = Field(default_factory=list)
+    total: int = 0
+
+
+class CollaborationDetail(SQLModel):
+    """A single collaboration row for its owner, with the initiative embedded so
+    the action pages never need the INITIATIVES-only GET /api/initiatives/{id}."""
+    id: int
+    init: int
+    user_id: int
+    type: str
+    workflow_status: Optional[str] = None
+    content: Optional[str] = None
+    reference: Optional[str] = None
+    parent: Optional[int] = None
+    detail: Optional[str] = None
+    is_active: bool = True
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    actor_name: Optional[str] = None
+    initiative: Optional[Initiative] = None
+    # The thread's CURRENT state (its newest row). The row itself never changes
+    # status — resolving inserts a new row — so pages check this, not
+    # `workflow_status`, to know whether the request is still pending.
+    current_status: Optional[str] = None
+
+
+class ScaleOption(SQLModel):
+    value: int
+    label: str
+
+
+class DiagnosisForm(SQLModel):
+    """Active criteria (unanswered) plus each scale's options — the questionnaire
+    the Propose / Diagnose / Modify pages render."""
+    items: List[DiagnosticRow] = Field(default_factory=list)
+    scales: Dict[str, List[ScaleOption]] = Field(default_factory=dict)

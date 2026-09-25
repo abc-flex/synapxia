@@ -1,0 +1,49 @@
+---
+/**
+ * My Initiative Requests (HU-IN14, specs/005-explore-initiatives US5) — the
+ * durable record of every initiative the caller has taken part in. The table
+ * is the `MyInitiativeRequests.svelte` island (manual `mount()`), fed by the
+ * shared notifications store so it always agrees with the header bell.
+ */
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Breadcrumb from "@/components/core/Breadcrumb.astro";
+import Toast from "@/components/Toast.astro";
+import { getLocale } from "@/utils/getLocale";
+import { t } from "@/i18n";
+
+const locale = getLocale(Astro);
+---
+
+<BaseLayout title="My Initiative Requests">
+  <div class="mx-auto w-full max-w-full md:p-0">
+    <Breadcrumb
+      moduleName="Initiatives"
+      pageName="My Initiative Requests"
+      pageTitle="My Initiative Requests"
+      homeLink="/"
+      moduleNameKey="modules.INITS"
+      pageNameKey="my_initiative_requests.title"
+      pageTitleKey="my_initiative_requests.title"
+    />
+
+    <p class="mb-4 text-sm text-gray-500 dark:text-gray-400" data-i18n="my_initiative_requests.subtitle">
+      {t(locale, "my_initiative_requests.subtitle")}
+    </p>
+
+    <div id="my-initiative-requests-root"></div>
+  </div>
+
+  <Toast message="" variant="info" open={false} />
+
+  <script>
+    import { mount } from "svelte";
+    import MyInitiativeRequests from "@/components/svelte/MyInitiativeRequests.svelte";
+    import { loadClientTranslations } from "@/utils/i18nClient";
+    import { installGlobalToast } from "@/lib/toast";
+
+    loadClientTranslations();
+    installGlobalToast();
+    const target = document.getElementById("my-initiative-requests-root");
+    if (target) mount(MyInitiativeRequests, { target });
+  </script>
+</BaseLayout>

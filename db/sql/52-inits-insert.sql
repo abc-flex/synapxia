@@ -116,7 +116,6 @@ INSERT INTO collaborations (id, init, user_id, type, workflow_status, content, p
     (4, 1, 0,  'DIAGNOSIS',  'HANDLED', 'Assessed scope, criteria and expected impact with stakeholders; prioritized as HIGH.', NULL),
     (5, 1, 1,  'ACCEPTANCE', 'PENDING', NULL, NULL),
     (7, 1, 1,  'ACCEPTANCE', 'HANDLED', 'Built a proof of concept for the RAG assistant over a sample of documented assets.', NULL),
-    (8, 1, 1,  'DELIVERY',   'PENDING', NULL, NULL),
     (10, 1, 1, 'DELIVERY',   'HANDLED', NULL, NULL),
     (11, 1, 7,  'QUESTION',  NULL, 'Will the assistant cite the original source for every answer?', NULL),
     (12, 1, 1,  'ANSWER',    NULL, 'Yes; every answer must ground its response and link back to the source asset.', 11),

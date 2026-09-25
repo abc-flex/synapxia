@@ -12,7 +12,10 @@ from typing import Dict, Optional, Tuple
 from sqlalchemy import or_
 from sqlmodel import Session, select
 
-from .models import Criteria, Diagnostic, DiagnosticRow, DiagnosticsResponse, Initiative
+from .models import (
+    Criteria, Diagnostic, DiagnosisForm, DiagnosticRow, DiagnosticsResponse, Initiative,
+    ScaleOption,
+)
 from ...admin.internal.models import ListItem
 
 DEFAULT_LANG = "en"
@@ -86,3 +89,44 @@ def get_diagnostics(session: Session, initiative: Initiative, lang: str) -> Diag
         reviewer_answered=len(reviewer),
         items=items,
     )
+
+
+def diagnosis_form(session: Session, lang: str) -> DiagnosisForm:
+    """The empty questionnaire for the Propose / Diagnose / Modify pages: every
+    active criterion (no answers) plus each criterion scale's options as
+    {value, label} in `lang` (fallback `en`). Two queries. Backs users who hold
+    INITS/EXPLORE but not INITS/CRITERIAS (specs/005-explore-initiatives)."""
+    criteria_rows = session.exec(
+        select(Criteria).where(Criteria.is_active == True)  # noqa: E712
+        .order_by(Criteria.created_at, Criteria.code)
+    ).all()
+    lists = {c.list or c.code for c in criteria_rows}
+    by_list: Dict[str, Dict[str, Tuple[int, str, int]]] = {}
+    if lists:
+        for item in session.exec(
+            select(ListItem).where(
+                ListItem.list.in_(list(lists)),
+                ListItem.lang.in_(list({lang, DEFAULT_LANG})),
+            )
+        ).all():
+            try:
+                value = int(item.value)
+            except (TypeError, ValueError):
+                continue
+            slot = by_list.setdefault(item.list, {})
+            # The requested language wins over the English fallback.
+            if item.value not in slot or item.lang == lang:
+                slot[item.value] = (value, item.label or item.value, item.sort_order or 0)
+    scales = {
+        code: [ScaleOption(value=v, label=lbl)
+               for v, lbl, _ in sorted(opts.values(), key=lambda o: (o[2], o[0]))]
+        for code, opts in by_list.items()
+    }
+    items = [
+        DiagnosticRow(
+            criteria=c.code, name=c.name, description=c.description,
+            list=c.list or c.code, is_active_criteria=True,
+        )
+        for c in criteria_rows
+    ]
+    return DiagnosisForm(items=items, scales=scales)

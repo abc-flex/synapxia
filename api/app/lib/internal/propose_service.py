@@ -22,18 +22,16 @@ from sqlmodel import Session, select
 from .models import Asset, Characterization, Action, AssetPermission, ProposeRequest
 from ...taxo.internal.models import Specification, Category
 from ...admin.internal.models import User
+# Reviewer eligibility is shared with the initiatives' diagnosis workflow, so it
+# lives in app/internal/reviewers.py (specs/005-explore-initiatives R2). The names
+# are re-exported here so existing imports keep working unchanged.
+from ...internal.reviewers import (  # noqa: F401
+    ADMIN_PROFILES, REVIEWER_PROFILES, is_admin, is_eligible, list_reviewers,
+    resolve_reviewer,
+)
+_is_eligible = is_eligible  # historical private name, still imported by review_service
 
 logger = logging.getLogger(__name__)
-
-# Profiles eligible to review a proposal (db/sql/12-admin-insert.sql). Superusers
-# are always eligible too (see list_reviewers / resolve_reviewer). REVIEWER is the
-# dedicated reviewer profile; ADMINISTRATOR/ADMINISTRATIVE are the admin profiles.
-REVIEWER_PROFILES = ("ADMINISTRATOR", "ADMINISTRATIVE", "REVIEWER")
-
-# The truly "administrative" profiles — exempt from the self-review exclusion
-# below (an admin proposing on the org's behalf may still self-assign; a
-# REVIEWER or COLLABORATOR proposing their own work may not review it).
-ADMIN_PROFILES = ("ADMINISTRATOR", "ADMINISTRATIVE")
 
 STATUS_PROPOSED = "PROPOSED"
 TYPE_PROPOSAL = "PROPOSAL"
@@ -42,65 +40,6 @@ WF_HANDLED = "HANDLED"
 WF_PENDING = "PENDING"
 TARGET_USER = "USER"
 ACCESS_MANAGE = "MANAGE"
-
-
-def _is_eligible(user: User) -> bool:
-    """A user can review if active and either an admin/REVIEWER profile or superuser."""
-    return bool(user.is_active) and (
-        user.profile in REVIEWER_PROFILES or bool(user.is_superuser)
-    )
-
-
-def is_admin(user: User) -> bool:
-    """Truly administrative (exempt from the self-review exclusion)."""
-    return bool(user.is_superuser) or user.profile in ADMIN_PROFILES
-
-
-def list_reviewers(session: Session, exclude_user_id: Optional[int] = None) -> List[User]:
-    """Active users eligible to review (admin/REVIEWER profile or superuser), id
-    order. `exclude_user_id` (the proposer, when they're not themselves an admin/
-    superuser — see resolve_reviewer) drops that user from the results so a
-    REVIEWER/COLLABORATOR can't be offered themselves as their own reviewer."""
-    statement = select(User).where(
-        User.is_active == True,  # noqa: E712
-        (User.profile.in_(REVIEWER_PROFILES)) | (User.is_superuser == True),  # noqa: E712
-    )
-    if exclude_user_id is not None:
-        statement = statement.where(User.id != exclude_user_id)
-    return session.exec(statement.order_by(User.id)).all()
-
-
-def resolve_reviewer(
-    session: Session, reviewer_id: Optional[int], proposer: Optional[User] = None
-) -> User:
-    """Resolve the reviewer for a proposal: the requested user (which must be an
-    active admin/REVIEWER or superuser) or, when none is requested, the first
-    eligible one. Raises ValueError if the requested reviewer is invalid or none
-    exist.
-
-    A non-admin `proposer` (COLLABORATOR/REVIEWER — see is_admin) may not
-    resolve to themselves: an admin proposing on the org's behalf may still
-    self-assign, but a REVIEWER/COLLABORATOR reviewing their own proposal
-    would defeat the point of the review step.
-    """
-    exclude_id = proposer.id if proposer and not is_admin(proposer) else None
-    if reviewer_id is not None:
-        user = session.get(User, reviewer_id)
-        if not user or not user.is_active:
-            raise ValueError(f"Reviewer '{reviewer_id}' not found or inactive.")
-        if not _is_eligible(user):
-            raise ValueError(
-                "Reviewer must be an administrator, a REVIEWER, or a superuser."
-            )
-        if exclude_id is not None and user.id == exclude_id:
-            raise ValueError("You cannot select yourself as the reviewer.")
-        return user
-    eligible = list_reviewers(session, exclude_user_id=exclude_id)
-    if not eligible:
-        raise ValueError(
-            "No eligible reviewer (administrator, REVIEWER, or superuser) is available."
-        )
-    return eligible[0]
 
 
 def propose_asset(session: Session, proposer_id: int, data: ProposeRequest) -> Asset:

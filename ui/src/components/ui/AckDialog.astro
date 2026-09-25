@@ -1,0 +1,53 @@
+---
+/**
+ * AckDialog — a blocking acknowledgment `<dialog>` for outcomes the user must
+ * read before the page moves on (e.g. "your proposal was sent — follow it in
+ * My … Requests"). Deliberately not a toast: it cannot time out, and Esc is
+ * blocked, so the only way out is the button. Driven by `showAckDialog()` in
+ * `lib/ackDialog.ts`.
+ *
+ * Extracted from pages/lib/propose.astro (specs/005-explore-initiatives R15)
+ * so the asset and initiative proposal pages share one implementation.
+ */
+interface Props {
+  id: string;
+  titleKey?: string;
+  titleFallback?: string;
+  okKey?: string;
+  okFallback?: string;
+}
+
+const {
+  id,
+  titleKey = "propose.dialog_title",
+  titleFallback = "Proposal submitted",
+  okKey = "propose.dialog_ok",
+  okFallback = "Got it",
+} = Astro.props;
+---
+
+<dialog
+  id={id}
+  data-ack-dialog
+  class="rounded-2xl p-6 w-[420px] max-w-full bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 backdrop:bg-black/60 backdrop:backdrop-blur-sm"
+>
+  <div class="flex items-start gap-3">
+    <span id={`${id}-icon`} class="mt-0.5 shrink-0"></span>
+    <div>
+      <h3 id={`${id}-title`} class="text-base font-bold text-gray-900 dark:text-white" data-i18n={titleKey}>
+        {titleFallback}
+      </h3>
+      <p id={`${id}-message`} class="mt-2 text-sm text-gray-600 dark:text-gray-400"></p>
+    </div>
+  </div>
+  <div class="mt-5 flex justify-end">
+    <button
+      type="button"
+      id={`${id}-ok`}
+      class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+      data-i18n={okKey}
+    >
+      {okFallback}
+    </button>
+  </div>
+</dialog>

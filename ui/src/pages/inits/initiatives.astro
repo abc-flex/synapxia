@@ -315,6 +315,7 @@ const modalLists = {
           columnFilter2="type"
           filterOptions2={optionsEn.type}
           filter2HeaderColumn="type_name"
+          filter2AllLabel="initiative_table.all_types"
           columnFilter3="favorite"
           filter3AsToggle={true}
           filterOptions3={[
@@ -333,7 +334,7 @@ const modalLists = {
             { value: "PUBLIC", label: "Public", i18n: "initiative_table.perm_filter_public" },
           ]}
           extraFilters={[
-            { key: "priority_level", options: optionsEn.priority_level, headerColumn: "priority_name" },
+            { key: "priority_level", options: optionsEn.priority_level, headerColumn: "priority_name", allLabel: "initiative_table.all_priorities" },
           ]}
           favoriteAction={true}
           favoriteKey="favorite"

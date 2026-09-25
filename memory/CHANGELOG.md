@@ -20,6 +20,35 @@ Entries before the 2026-06-10 switchover (Keep-a-Changelog–style, auto-generat
 
 ---
 
+## 2026-09-24 21:28 — feat(inits): Explore Initiatives, Propose, Diagnosis/Modify/Acknowledge and initiative notifications (SpecKit 005)
+
+- **The initiative contribution workflow now exists end to end**, on `collaborations`, mirroring the asset workflow type-for-type:
+  - **`/inits/explore`:** a grant-scoped gallery of Accepted / In Progress / Delivered initiatives, shown as full-width rows. It has *My favorites*, the six-option privileges filter, votes, a discussion count, *+ Propose*, and a read-only Initiative Detail.
+  - **`/inits/propose`:** a Core Fields → Diagnosis Questions → Related Assets wizard, with the asset reviewer rule. *Request diagnosis* writes everything in one transaction, links and answers included.
+  - **`/inits/diagnose`, `/inits/modify`, `/inits/show-collab`:** the reviewer's accept / reject / request-changes decision, the proposer's resubmit, and the outcome acknowledgment.
+  - **Notifications:** the header bell is split into Assets / Initiatives tabs, and *My Initiative Requests* sits under *My Asset Requests* in the account menu.
+  - Spec, plan, contracts and quickstart are in `specs/005-explore-initiatives/`.
+- **API.** 14 additive endpoints, with `lib` routes untouched.
+  - Reviewer eligibility moved to the shared `api/app/internal/reviewers.py`; `lib` re-exports it.
+  - New inits services: propose, diagnosis (score = Σ reviewer scores), modify, requests (a port of the asset participations derivation), votes (session-attributed) and explore (grouped counts, filtered before pagination).
+  - `GET /api/initiatives/diagnosis-form` lets EXPLORE-only users load the criteria.
+  - `GET /api/collaborations/{id}` serves workflow rows only, with `current_status`.
+- **Seeds, edited in place.** COLLABORATOR and REVIEWER get `INITS/EXPLORE` with `can_edit = TRUE`, so they can propose, vote and post. The obsolete `DELIVERY/PENDING` collaboration (row 8) is deleted. Provisioned DBs need the two one-off statements in the quickstart.
+- **UI reuse.** `CardGallery` gained `layout="list"`. `initCardGallery` gained pluggable `services` / `idAttr` plus a `gallery:card-update` sync event. `DiagnosisTable.svelte` was extracted from the 004 dialog, and `AckDialog.astro` + `lib/ackDialog.ts` from the asset propose page. `apiErrorDetail()` was added. The notifications store loads both domains with `Promise.allSettled`.
+- **Verification.** 84 new backend tests; the suite has 537 passed and the 8 pre-existing failures. The full loop was run live as `adriana.velez` / `santiago.marin`, and the test initiative was logically deleted afterwards. `bun run build` is clean. Not click-tested in a browser.
+- **Fixes, Explore Initiatives (after user review).**
+  - **Clicking a card now opens the detail.** The whole-card click in `initCardGallery` still hard-coded `data-asset-id`, so the modal never found the initiative. Asset galleries keep that default. Verified in headless Chrome, and so is Explore Category.
+  - **Compact card.** The title sits on top, with status · priority · type · date beneath it. Score and expected impact are removed from the card. Tags sit alone under the description as blue chips, like Explore Category. The footer has symmetric padding, and the card is ~185 px tall instead of ~245.
+  - **Second review round.**
+    - The card's description, tags and footer now align with the initiative icon instead of indenting under the title.
+    - The detail window has a fixed height (`min(85vh, 760px)`), so switching tabs no longer resizes it; it measured 203–719 px before and 679 px on every tab now.
+    - Each Core Fields value sits in its own bordered box.
+    - Related Assets is a two-column card grid, like Explore Category's Related tab: name, a translated relation chip (`related.type.*`), the category's option name, and the rationale. Before, it was a single cramped row showing raw codes.
+  - **Status, priority and type labels follow the viewer's language** (cards and detail). The server-rendered pass is English-only, so they are relabelled client-side, the same approach Initiative Management uses.
+- **Fix, Initiative Management (`/inits/initiatives`).** The *Type* and *Priority* column filters showed their "all" option untranslated. They fell back to `type_modal.filter_title` / `priority_level_modal.filter_title`, which exist in neither language. They now use `initiative_table.all_types` / the new `initiative_table.all_priorities` ("Todos los tipos" / "Todas las prioridades"). `DataTable` gained an optional `filter2AllLabel` prop (default null, so other pages are unchanged).
+- Docs: `docs/user-stories/{05-inits,inits-status,states-and-types}.md`, `memory/MEMORY.md`, and `CLAUDE.md` (plan pointer).
+- Files affected: `db/sql/12-admin-insert.sql`, `db/sql/52-inits-insert.sql`, `api/app/internal/reviewers.py`, `api/app/lib/internal/propose_service.py`, `api/app/inits/internal/{models,criteria_validation,list_validation,propose_service,diagnosis_service,modify_service,requests_service,votes_service,explore_service,diagnostics_service}.py`, `api/app/inits/routes/{initiatives,collaborations}.py`, `api/tests/{inits_helpers,test_internal_reviewers,test_inits_criteria_validation,test_inits_propose,test_inits_votes,test_inits_explore,test_inits_requests,test_inits_diagnosis,test_inits_modify}.py`, `ui/src/pages/inits/{explore,propose,diagnose,modify,show-collab,my_initiative_requests}.astro`, `ui/src/pages/lib/propose.astro`, `ui/src/components/inits/{InitiativeCard,InitiativeExploreModal}.astro`, `ui/src/components/ui/AckDialog.astro`, `ui/src/components/lib/gallery/CardGallery.astro`, `ui/src/components/table/DataTable.astro`, `ui/src/pages/inits/initiatives.astro`, `ui/src/components/svelte/{DiagnosisTable,InitiativeDetailView,InitiativeDiagnose,InitiativeModify,InitiativeOutcome,MyInitiativeRequests,NotificationBell,InitiativeDetailTabs}.svelte`, `ui/src/components/core/header/{Header,AccountMenu}.astro`, `ui/src/lib/{api,ackDialog,catalogGallery,collaborations,initiatives,initiativeLists,notificationsStore}.ts`, `ui/src/types/api.ts`, `ui/src/i18n/{en,es}.json`
+
 ## 2026-09-23 22:53 — docs(memory): mark the stale DB/PgAdmin host-port decisions as superseded
 
 - `memory/MEMORY.md` still stated the old host defaults, DB `5442` (2026-07-01) and PgAdmin `8090` (2026-07-02), although PR #76 (`fe9aaab`, 2026-07-06) had moved them to `5433` / `8081` (`docker-compose.yml`, `.env.template`). The two decision rows are kept as history, each prefixed with a "superseded by PR #76" note that gives the current value. This was found when tooling built from the note connected to the wrong port.

@@ -1,0 +1,103 @@
+---
+/**
+ * InitiativeExploreModal — the dialog shell for the read-mostly Initiative
+ * Detail opened from an Explore Initiatives card (specs/005-explore-initiatives).
+ *
+ * Mounts `InitiativeDetailView` (Svelte, manual `mount()`) and hydrates its
+ * History tab with the shared `mountHistory` controller. Opens on the same
+ * `[data-modal-open=modalId]` trigger the gallery fires (carrying
+ * `data-init-id`; `data-foro-focus` jumps to the Discussion tab). The row
+ * data comes from the page's embedded JSON (`#${modalId}-data`), so opening
+ * needs no extra request for the core fields.
+ */
+interface Props {
+  modalId: string;
+  /** JSON-serialisable { items: InitiativeExploreItem[], labels } for the view. */
+  payload: unknown;
+}
+const { modalId, payload } = Astro.props;
+// Escape "<" so user-entered text (e.g. a name containing "</script>") can
+// never close the JSON <script> tag early.
+const json = JSON.stringify(payload ?? {}).replace(/</g, "\\u003c");
+---
+
+<dialog
+  id={modalId}
+  data-inits-explore-modal
+  class="w-[min(960px,calc(100vw-2rem))] max-w-full overflow-hidden rounded-2xl bg-white p-0 text-gray-900 shadow-xl dark:bg-gray-900 dark:text-gray-100 backdrop:bg-black/60 backdrop:backdrop-blur-sm"
+>
+  <div data-view-root></div>
+</dialog>
+<script type="application/json" id={`${modalId}-data`} set:html={json} />
+
+<script>
+  import { mount } from "svelte";
+  import InitiativeDetailView from "@/components/svelte/InitiativeDetailView.svelte";
+  import { mountHistory } from "@/lib/history";
+  import { getInitiativeHistory } from "@/lib/collaborations";
+  import type { InitiativeExploreItem, InitVoteTally } from "@/types/api";
+
+  type ViewApi = { open(item: InitiativeExploreItem, opts?: { tab?: "core" | "discussion" }): void };
+
+  for (const dialog of document.querySelectorAll<HTMLDialogElement>("dialog[data-inits-explore-modal]")) {
+    const modalId = dialog.id;
+    const target = dialog.querySelector<HTMLElement>("[data-view-root]");
+    const raw = document.getElementById(`${modalId}-data`)?.textContent || "{}";
+    let data: { items?: InitiativeExploreItem[]; labels?: any } = {};
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      data = {};
+    }
+    const byId = new Map((data.items ?? []).map((i) => [String(i.id), i]));
+    if (!target) continue;
+
+    const view = mount(InitiativeDetailView, {
+      target,
+      props: {
+        modalId,
+        labels: data.labels,
+        onClose: () => dialog.close(),
+        onChange: (change: { id: number; favorite?: boolean; tally?: InitVoteTally }) => {
+          // Keep the embedded row current so reopening shows the latest state.
+          const row = byId.get(String(change.id));
+          if (row) {
+            if (change.favorite !== undefined) row.is_favorite = change.favorite;
+            if (change.tally) row.votes = change.tally;
+          }
+          document.dispatchEvent(new CustomEvent("gallery:card-update", { detail: change }));
+        },
+      },
+    }) as unknown as ViewApi;
+
+    mountHistory({
+      modalId,
+      fetcher: getInitiativeHistory,
+      idAttr: "initId",
+      labelNamespace: "initiative_history.action",
+    });
+
+    // Card favorite / vote changes made on the gallery flow back into the rows.
+    document.addEventListener("gallery:card-update", (e) => {
+      const d = (e as CustomEvent).detail as { id: number; favorite?: boolean; tally?: InitVoteTally };
+      const row = d && byId.get(String(d.id));
+      if (!row) return;
+      if (d.favorite !== undefined) row.is_favorite = d.favorite;
+      if (d.tally) row.votes = { ...row.votes, ...d.tally };
+    });
+
+    document.addEventListener("click", (e) => {
+      const opener = (e.target as HTMLElement).closest?.(`[data-modal-open="${modalId}"]`) as HTMLElement | null;
+      if (!opener) return;
+      const row = byId.get(opener.dataset.initId || "");
+      if (!row) return;
+      view.open(row, { tab: opener.dataset.foroFocus ? "discussion" : "core" });
+      if (!dialog.open) dialog.showModal();
+    });
+
+    // Backdrop click closes (the header has an explicit close button too).
+    dialog.addEventListener("click", (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+  }
+</script>

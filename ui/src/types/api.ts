@@ -1174,6 +1174,139 @@ export interface InitDiscussionItem {
   created_at: string;
 }
 
+// ── Initiative contribution workflow (specs/005-explore-initiatives) ─────────
+// Propose → Diagnose → Modify → Acknowledge over `collaborations`, plus the
+// Explore gallery. No body carries a user id: the API takes it from the session.
+
+export interface DiagnosisAnswer {
+  score: number;
+  rationale?: string | null;
+}
+
+export interface ProposeAssetLink {
+  asset: number;
+  type: string;
+  rationale?: string | null;
+}
+
+export interface InitiativeProposeRequest {
+  name: string;
+  description?: string | null;
+  type?: string | null;
+  expected_impact: string;
+  priority_level: string;
+  reference?: string | null;
+  tags?: string[] | null;
+  detail?: string | null;
+  /** Omitted → auto-assigned by the server. */
+  reviewer_id?: number;
+  answers: Record<string, DiagnosisAnswer>;
+  assets: ProposeAssetLink[];
+}
+
+export type DiagnosisDecision = "accept" | "reject" | "changes";
+
+export interface InitiativeDiagnoseRequest {
+  decision: DiagnosisDecision;
+  feedback?: string | null;
+  answers: Record<string, number>;
+}
+
+export interface InitiativeResubmitRequest {
+  name?: string;
+  description?: string | null;
+  type?: string | null;
+  expected_impact?: string;
+  priority_level?: string;
+  reference?: string | null;
+  tags?: string[] | null;
+  detail?: string | null;
+  answers?: Record<string, DiagnosisAnswer>;
+}
+
+export interface ScaleOption {
+  value: number;
+  label: string;
+}
+
+/** Active criteria (unanswered) + each scale's options, keyed by list code. */
+export interface DiagnosisForm {
+  items: DiagnosticRow[];
+  scales: Record<string, ScaleOption[]>;
+}
+
+export interface LinkableAsset {
+  value: number;
+  label: string;
+  category?: string | null;
+}
+
+export interface InitVoteTally {
+  init: number;
+  positive: number;
+  negative: number;
+  score: number;
+  my_vote: "POSITIVE" | "NEGATIVE" | null;
+}
+
+export interface InitiativeExploreItem extends Initiative {
+  my_access: "MANAGE" | "VIEW";
+  is_favorite: boolean;
+  permission_scopes: string[];
+  votes: InitVoteTally;
+  discussion_count: number;
+  related_assets_count: number;
+}
+
+/** One row of My Initiative Requests — one per initiative. */
+export interface InitiativeRequest {
+  init: number;
+  init_name?: string | null;
+  init_status?: string | null;
+  roles: ("PROPOSER" | "REVIEWER")[];
+  state: "PENDING" | "HANDLED";
+  awaited_party?: "SELF" | "OTHER" | null;
+  pending_collab_id?: number | null;
+  pending_collab_type?: string | null;
+  last_change_at: string;
+}
+
+export interface InitNotificationItem {
+  id: number;
+  init: number;
+  init_name?: string | null;
+  type: string;
+  created_at: string;
+}
+
+export interface InitNotificationFeed {
+  items: InitNotificationItem[];
+  total: number;
+}
+
+export interface Collaboration {
+  id: number;
+  init: number;
+  user_id: number;
+  type: string;
+  workflow_status?: string | null;
+  content?: string | null;
+  reference?: string | null;
+  parent?: number | null;
+  detail?: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+export interface CollaborationDetail extends Collaboration {
+  actor_name?: string | null;
+  initiative?: Initiative | null;
+  /** The thread's CURRENT status (its newest row) — the row itself never
+   *  changes, so pages check this to know whether the request is still open. */
+  current_status?: string | null;
+}
+
 // Criteria types
 export interface Criteria {
   code: string;

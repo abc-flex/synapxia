@@ -10,8 +10,9 @@ from types import SimpleNamespace
 from app.admin.internal.models import ListItem, Privilege, User
 from app.auth.routes import current_active_user
 from app.inits.internal.models import (
-    Criteria, Diagnostic, FavoriteInit, InitPermission, Initiative,
+    Collaboration, Criteria, Diagnostic, FavoriteInit, InitPermission, Initiative,
 )
+from app.lib.internal.models import Asset, AssetPermission
 from app.main import app
 
 NOW = datetime.utcnow()
@@ -37,13 +38,15 @@ def override(u):
     app.dependency_overrides[current_active_user] = lambda: u
 
 
-def mk_user_row(session, id, username=None, profile=OWNER):
+def mk_user_row(session, id, username=None, profile=OWNER, *, is_active=True,
+                is_superuser=False):
     """A real users row — needed where a service resolves actor usernames."""
     username = username or f"u{id}"
     row = User(
         id=id, username=username, email=f"{username}@x.co",
         password_hash="x", first_name="F", last_name="L",
-        profile=profile, unit="ENG",
+        profile=profile, unit="ENG", is_active=is_active,
+        is_superuser=is_superuser,
     )
     session.add(row)
     session.commit()
@@ -123,3 +126,47 @@ def mk_diag(session, init, criteria, creator, reviewer=None, rationale=None):
 def data(resp):
     """Unwrap the global `{data, error, meta}` envelope."""
     return resp.json()["data"]
+
+
+# ── Workflow helpers (specs/005-explore-initiatives) ─────────────────────────
+
+def mk_collab(session, init, user_id, type, workflow_status=None, content=None,
+              parent=None, created_at=None, active=True):
+    row = Collaboration(
+        init=init, user_id=user_id, type=type, workflow_status=workflow_status,
+        content=content, parent=parent, is_active=active,
+        created_at=created_at or datetime.utcnow(),
+    )
+    session.add(row)
+    session.commit()
+    session.refresh(row)
+    return row
+
+
+def seed_criteria_with_scale(session, codes=("C1", "C2"), values=(1, 2, 3)):
+    """One CRITERIA-scale list per code (en + es labels) plus an active criterion."""
+    for code in codes:
+        for lang in ("en", "es"):
+            mk_list(session, code,
+                    [(str(v), f"{code}-{lang}-{v}") for v in values], lang=lang)
+        mk_criteria(session, code)
+
+
+def mk_asset(session, id, name="Asset", category="PROMPTS", status="PUBLISHED",
+             active=True):
+    row = Asset(id=id, name=name, category=category, status=status,
+                is_active=active)
+    session.add(row)
+    session.commit()
+    session.refresh(row)
+    return row
+
+
+def mk_asset_perm(session, asset, target_type="USER", target_code="1",
+                  access_level="VIEW"):
+    row = AssetPermission(asset=asset, target_type=target_type,
+                          target_code=target_code, access_level=access_level,
+                          valid_from=PAST)
+    session.add(row)
+    session.commit()
+    return row

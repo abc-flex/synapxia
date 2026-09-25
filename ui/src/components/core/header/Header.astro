@@ -101,6 +101,13 @@ import SearchBar from "./SearchBar.astro";
             label: "account_menu.my_asset_requests",
             href: "/lib/my_asset_requests",
           },
+          {
+            /* Same reasoning, initiatives side (specs/005-explore-initiatives):
+               a COLLABORATOR who proposed an initiative follows it here.
+               `GET /api/collaborations/requests` is self-scoped. */
+            label: "account_menu.my_initiative_requests",
+            href: "/inits/my_initiative_requests",
+          },
         ]}
         menuItems={[
           { label: "account_menu.edit_account", href: "/profile" },

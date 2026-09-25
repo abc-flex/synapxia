@@ -77,18 +77,27 @@ scored criteria** instead of a review. Accepted initiatives feed the library thr
 - **Data:** `initiatives` + `favorite_inits` (PK `(user_id, init)`) + `collaborations` of
   `type = VOTE` (one active vote per user and initiative). Scoped by `init_permissions`.
 - **Option:** `INITS.EXPLORE` → `/inits/explore`
+- **Behavior:** shows only **Accepted / In Progress / Delivered** initiatives (the living
+  portfolio), as full-width rows. It has the same search, *My favorites* toggle and six-option
+  privileges filter (Public, Shared with me, My role, My team, My unit, My projects; default
+  Public) as Explore Category, and a *+ Propose* button.
+- **Spec:** [`specs/005-explore-initiatives`](../../specs/005-explore-initiatives/spec.md)
 
 ### HU-IN05 · – Propose Initiative
 > As a **collaborator**, I want to **propose (activate) an initiative and request a diagnosis**
 > **so that** it enters the evaluation workflow.
-- **Behavior:** a wizard over the initiative tabs — **Core Fields → Diagnosis Questions**, the
-  second step scoring every criterion and submitting the request.
+- **Behavior:** a three-step wizard — **Core Fields → Diagnosis Questions → Related Assets**.
+  - Core Fields has a reviewer field with the same rule as Propose an asset.
+  - Every active criterion must be answered.
+  - *Request diagnosis* is offered on steps 2 and 3.
+  - Nothing is saved before it; then everything is saved in one transaction, including the
+    staged `asset_inits` links.
 - **Data:** one transaction inserts — an `initiatives` row (`status = ACTIVATED`); one
   `diagnostics` row per criterion carrying the proposer's `creator_score`; a `collaborations`
   row for the proposer (`type = ACTIVATION`, `workflow_status = HANDLED`); a `collaborations`
   row for the chosen reviewer (`type = DIAGNOSIS`, `workflow_status = PENDING`); and
   `init_permissions` rows (`access_level = MANAGE`, open validity) for the proposer and the
-  reviewer.
+  reviewer; plus one `asset_inits` row per staged related asset.
 - Detail of **HU-IN04**.
 
 ### HU-IN06 · – Initiative Detail
@@ -132,8 +141,8 @@ story (Edit Initiative / Propose Initiative / Initiative Detail) — see the
 > produces** **so that** reuse between initiatives and assets is visible.
 - **Data:** `asset_inits` — PK `(asset, init, type)`, `type` (→ `RELATION_TYPE`), `rationale`.
   The same table backs [HU-LI09](04-lib.md#hu-li09--asset-tab-related-inits) from the asset side.
-- **Options:** Edit Initiative → *Save related assets* · Propose Initiative → not applicable ·
-  Initiative Detail → read-only
+- **Options:** Edit Initiative → *Save related assets* · Propose Initiative → *Add relation*
+  (staged, saved with the proposal) · Initiative Detail → read-only
 
 ### HU-IN10 · [Initiative Tab] Permissions
 > As an **initiative owner**, I want to **grant view or manage access to users, roles,
@@ -172,11 +181,11 @@ These stories implement the activation/diagnosis loop on `collaborations`. See t
 > As an **assignee** (reviewer or proposer), I want a **notification bell listing the
 > collaborations waiting on me** **so that** I know what needs my attention.
 - **Behavior:** lists the user's `collaborations` grouped by initiative whose **latest**
-  `workflow_status` is `PENDING` (bold) or `PENDING` (not bold), for `type` in `DIAGNOSIS` /
-  `MODIFICATION` / `ACCEPTANCE` / `REJECTION` / `DELIVERY`. Opening one routes to **HU-IN15
-  Diagnosis of the Initiative** (`DIAGNOSIS`), **HU-IN16 Modify Initiative** (`MODIFICATION`)
-  or **HU-IN17 User Acknowledgment of Initiative Notification** (`ACCEPTANCE` / `REJECTION` /
-  `DELIVERY`). There is no dismiss: an entry leaves the list by being resolved. For the
+  `workflow_status` is `PENDING`, for `type` in `DIAGNOSIS` / `MODIFICATION` / `ACCEPTANCE` /
+  `REJECTION`. Delivery raises no notice (spec 004). The bell's panel is split into an *Assets*
+  tab and an *Initiatives* tab. Opening one routes to **HU-IN15 Diagnosis of the Initiative**
+  (`DIAGNOSIS`), **HU-IN16 Modify Initiative** (`MODIFICATION`) or **HU-IN17 User
+  Acknowledgment of Initiative Notification** (`ACCEPTANCE` / `REJECTION`). There is no dismiss: an entry leaves the list by being resolved. For the
   informational outcomes, resolving means the user explicitly acknowledging them, which inserts
   that collaboration with `workflow_status = HANDLED`.
 - **Data:** `collaborations` (`type`, `workflow_status`, `content`)
@@ -185,20 +194,22 @@ These stories implement the activation/diagnosis loop on `collaborations`. See t
 > As a **reviewer or proposer**, I want a **durable list of my initiative requests** — open and
 > already resolved — **so that** I can find my pending work without depending on a transient
 > notification.
-- **Behavior:** lists the user's `collaborations` grouped by initiative with status `PENDING`
-  (bold), `PENDING` (plain) or `HANDLED` (muted), for `type` in `DIAGNOSIS` / `MODIFICATION`
-  / `ACCEPTANCE` / `REJECTION` / `DELIVERY`. Every `HANDLED` collaboration — and every
-  `ACCEPTANCE` / `REJECTION` / `DELIVERY` — opens **HU-IN17**; the rest open **HU-IN15**
-  (`DIAGNOSIS`) or **HU-IN16** (`MODIFICATION`). Reached from the account menu's *My Workspace*
-  section.
+- **Behavior:** one row per initiative the user took part in: initiatives they proposed
+  (`ACTIVATION`) and `DIAGNOSIS` / `MODIFICATION` / `ACCEPTANCE` / `REJECTION` collaborations
+  directed at them.
+  - The rows are split into *Pending* and *Handled* views, and each pending row states whose
+    turn it is.
+  - The actions are the bell's routing, plus *Got it* for an acceptance or rejection.
+  - It is reached from the account menu's *My Workspace* section, right below *My Asset
+    Requests*, and shown to every user.
 - **Data:** `collaborations` (`type`, `workflow_status`)
 
 ### HU-IN15 · – Diagnosis of the Initiative
 > As a **reviewer**, I want to **score an activated initiative against the criteria and accept
 > it, reject it or request changes** **so that** only viable initiatives proceed.
 - **Behavior:** opening the page records nothing — viewing is not deciding, so the collaboration
-  stays `PENDING`. On decision, one transaction writes the `reviewer_score` and
-  rationale per criterion, inserts the `DIAGNOSIS` collaboration as `HANDLED`, sets the
+  stays `PENDING`. On decision, one transaction writes the `reviewer_score` per criterion
+  (the proposer's `rationale` is kept) and `initiatives.score` = Σ reviewer scores, inserts the `DIAGNOSIS` collaboration as `HANDLED`, sets the
   initiative `status` to `ACCEPTED` / `REJECTED` / `FEEDBACK`, and inserts a collaboration for
   the **proposer** of `type` `ACCEPTANCE` / `REJECTION` / `MODIFICATION` with
   `workflow_status = PENDING` and the feedback in `content`.

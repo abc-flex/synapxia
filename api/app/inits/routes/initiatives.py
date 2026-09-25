@@ -6,16 +6,26 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlmodel import Session, select, SQLModel
 from sqlalchemy import cast, String
 
-from ..internal import permissions_service, status_service
-from ..internal.diagnostics_service import get_diagnostics
-from ..internal.models import (
-    DiagnosticsResponse, FavoriteInit, FavoriteState, Initiative, InitiativeUpdate,
-    InitiativeWithAccess,
+from sqlalchemy.exc import IntegrityError
+
+from ..internal import (
+    diagnosis_service, explore_service, modify_service, permissions_service,
+    propose_service, status_service,
 )
+from ..internal.list_validation import REQUIRED_FIELDS, validate_core_fields
+from ..internal.diagnostics_service import diagnosis_form, get_diagnostics
+from ..internal.models import (
+    DiagnosisForm, DiagnosticsResponse, FavoriteInit, FavoriteState, Initiative,
+    InitiativeDiagnoseRequest, InitiativeExploreItem, InitiativeProposeRequest,
+    InitiativeResubmitRequest, InitiativeUpdate, InitiativeWithAccess, LinkableAsset,
+)
+from ...internal import reviewers
+from ...lib.internal import permissions_service as asset_permissions
+from ...lib.internal.models import Asset, ReviewerOption
 from ..internal.dependencies import get_db_session
 from ...internal.permissions import require_privilege, check_any_privilege
 from ...auth.routes import current_active_user
-from ...admin.internal.models import ListItem, User
+from ...admin.internal.models import User
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/initiatives", tags=["initiatives"])
@@ -24,15 +34,6 @@ router = APIRouter(prefix="/api/initiatives", tags=["initiatives"])
 # flow). Initiative Management (specs/004-initiative-management) lists the
 # initiatives the caller can access and edits them tab by tab; status changes
 # are limited to the owner moves in inits/internal/status_service.py.
-
-# List-backed core fields and the list each value must come from.
-_LIST_FIELDS = {
-    "type": "INITIATIVE_TYPE",
-    "expected_impact": "EXPECTED_IMPACT",
-    "priority_level": "PRIORITY_LEVEL",
-}
-_REQUIRED_FIELDS = ("name", "expected_impact", "priority_level")
-
 
 class InitiativeBasic(SQLModel):
     value: str
@@ -161,6 +162,110 @@ def get_all(
     return initiatives
 
 
+# ── Explore / Propose (specs/005-explore-initiatives) ────────────────────────
+# Declared before every `/{init_id}` route so the static paths win.
+
+
+def _gate_explore(session: Session, user: User, can_edit: bool = False) -> None:
+    """Module RBAC for the Explore surface: INITS/EXPLORE or INITS/INITIATIVES."""
+    check_any_privilege(session, user, "INITS", ["EXPLORE", "INITIATIVES"], can_edit=can_edit)
+
+
+@router.get("/explore", response_model=List[InitiativeExploreItem])
+def get_explore(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
+    session: Session = Depends(get_db_session),
+    current: User = Depends(current_active_user),
+) -> List[InitiativeExploreItem]:
+    """
+    Explore Initiatives gallery: active ACCEPTED / IN_PROGRESS / DELIVERED
+    initiatives a live grant reaches the caller through (superusers: all),
+    filtered BEFORE `skip`/`limit`, newest first. Each row carries the caller's
+    access, favorite flag, grant scopes, vote tally, discussion count and
+    related-assets count.
+    """
+    _gate_explore(session, current)
+    return explore_service.list_explore(session, current, skip, limit)
+
+
+@router.get("/reviewers", response_model=List[ReviewerOption])
+def get_reviewers(
+    session: Session = Depends(get_db_session),
+    current: User = Depends(current_active_user),
+) -> List[ReviewerOption]:
+    """Eligible reviewers for a proposal — the same rule as Propose an asset.
+    A non-admin caller is left out of their own list."""
+    _gate_explore(session, current)
+    exclude_id = None if reviewers.is_admin(current) else current.id
+    return [
+        ReviewerOption(
+            value=u.id,
+            label=f"{u.first_name or ''} {u.last_name or ''}".strip() or u.username,
+            profile=u.profile or "",
+            is_superuser=bool(u.is_superuser),
+        )
+        for u in reviewers.list_reviewers(session, exclude_user_id=exclude_id)
+    ]
+
+
+@router.get("/linkable-assets", response_model=List[LinkableAsset])
+def get_linkable_assets(
+    session: Session = Depends(get_db_session),
+    current: User = Depends(current_active_user),
+) -> List[LinkableAsset]:
+    """Active assets the caller can see (superusers: all), for the Propose
+    wizard's Related Assets step. The proposal re-checks visibility."""
+    _gate_explore(session, current)
+    query = select(Asset).where(Asset.is_active == True)  # noqa: E712
+    if not current.is_superuser:
+        visible = asset_permissions.accessible_assets(session, current)
+        if not visible:
+            return []
+        query = query.where(Asset.id.in_(list(visible)))
+    return [
+        LinkableAsset(value=a.id, label=a.name, category=a.category)
+        for a in session.exec(query.order_by(Asset.name)).all()
+    ]
+
+
+@router.get("/diagnosis-form", response_model=DiagnosisForm)
+def get_diagnosis_form(
+    lang: str = Query("en", pattern="^(en|es)$"),
+    session: Session = Depends(get_db_session),
+    current: User = Depends(current_active_user),
+) -> DiagnosisForm:
+    """The diagnosis questionnaire — active criteria plus each scale's options
+    in `lang` — for proposers and reviewers who hold INITS/EXPLORE but not the
+    INITS/CRITERIAS admin privilege."""
+    _gate_explore(session, current)
+    return diagnosis_form(session, lang)
+
+
+@router.post("/propose", response_model=Initiative, status_code=201)
+def propose(
+    payload: InitiativeProposeRequest,
+    session: Session = Depends(get_db_session),
+    current: User = Depends(current_active_user),
+) -> Initiative:
+    """
+    Propose an initiative and request its diagnosis — one transaction writes
+    the initiative (ACTIVATED), the proposer's diagnosis answers, the related
+    asset links, ACTIVATION/HANDLED + DIAGNOSIS/PENDING collaborations and
+    MANAGE grants for the proposer and the reviewer. 400 on any validation
+    problem (nothing is written).
+    """
+    _gate_explore(session, current, can_edit=True)
+    try:
+        return propose_service.propose_initiative(session, current, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(
+            status_code=409, detail="Could not propose the initiative due to a data conflict")
+
+
 @router.get("/{init_id}/diagnostics", response_model=DiagnosticsResponse)
 def get_initiative_diagnostics(
     init_id: int,
@@ -239,23 +344,6 @@ def get(
     return initiative
 
 
-def _validate_list_values(session: Session, updates: dict) -> None:
-    """400 when a list-backed field carries a value its list does not define
-    (any language row counts — values are language-independent)."""
-    for field, list_code in _LIST_FIELDS.items():
-        value = updates.get(field)
-        if value is None:
-            continue
-        known = session.exec(
-            select(ListItem.value).where(
-                ListItem.list == list_code, ListItem.value == value)
-        ).first()
-        if known is None:
-            raise HTTPException(
-                status_code=400,
-                detail=f"'{value}' is not a valid {list_code} value")
-
-
 @router.put("/{init_id}", response_model=InitiativeWithAccess)
 def update(
     init_id: int,
@@ -282,10 +370,10 @@ def update(
         raise HTTPException(status_code=400, detail=f"Initiative with id '{init_id}' is inactive")
 
     updates = payload.model_dump(exclude_unset=True)
-    for field in _REQUIRED_FIELDS:
-        if field in updates and not (updates[field] or "").strip():
-            raise HTTPException(status_code=400, detail=f"'{field}' cannot be blank")
-    _validate_list_values(session, updates)
+    try:
+        validate_core_fields(session, updates, required=REQUIRED_FIELDS)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
     collab_type = None
     if "status" in updates:
@@ -312,6 +400,57 @@ def update(
     favorite = init_id in _favorite_ids(session, current, [init_id])
     scopes = permissions_service.inits_user_scopes(session, current, [init_id]).get(init_id, [])
     return _with_access(initiative, access or permissions_service.ACCESS_MANAGE, favorite, scopes)
+
+
+@router.post("/{init_id}/diagnose", response_model=Initiative)
+def diagnose(
+    init_id: int,
+    payload: InitiativeDiagnoseRequest,
+    session: Session = Depends(get_db_session),
+    current: User = Depends(current_active_user),
+) -> Initiative:
+    """
+    The assigned reviewer's decision (accept / reject / changes). The service
+    enforces the rest: eligible reviewer holding the PENDING DIAGNOSIS (403),
+    initiative ACTIVATED (409), complete in-scale answers and feedback for
+    reject / changes (400).
+    """
+    try:
+        return diagnosis_service.diagnose_initiative(session, current, init_id, payload)
+    except diagnosis_service.DiagnosisForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
+    except diagnosis_service.DiagnosisConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(status_code=409, detail="Could not save the diagnosis due to a data conflict")
+
+
+@router.post("/{init_id}/resubmit", response_model=Initiative)
+def resubmit(
+    init_id: int,
+    payload: InitiativeResubmitRequest,
+    session: Session = Depends(get_db_session),
+    current: User = Depends(current_active_user),
+) -> Initiative:
+    """
+    The proposer's resubmission after a change request. The service enforces
+    the rest: proposer holding the PENDING MODIFICATION (403), initiative in
+    FEEDBACK (409), valid fields and complete answers when sent (400).
+    """
+    try:
+        return modify_service.resubmit_initiative(session, current, init_id, payload)
+    except modify_service.ModifyForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
+    except modify_service.ModifyConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(status_code=409, detail="Could not resubmit the initiative due to a data conflict")
 
 
 @router.delete("/{init_id}", response_model=Initiative)

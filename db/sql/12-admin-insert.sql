@@ -246,7 +246,7 @@ VALUES
 
     -- Independent options (read-only)
     ('COLLABORATOR','TAXO', 'TAXONOMY',   FALSE),
-    ('COLLABORATOR','INITS','EXPLORE',    FALSE),
+    ('COLLABORATOR','INITS','EXPLORE',    TRUE),  -- edit: Explore is where initiatives are proposed, voted and discussed
     ('COLLABORATOR','ANA',  'CATALOG',    FALSE),
     ('COLLABORATOR','PROC', 'VALUE_CHAIN',FALSE),
     ('COLLABORATOR','PROC', 'MAP',        FALSE);
@@ -266,7 +266,7 @@ VALUES
 
     -- Independent options (read-only)
     ('REVIEWER','TAXO', 'TAXONOMY',   FALSE),
-    ('REVIEWER','INITS','EXPLORE',    FALSE),
+    ('REVIEWER','INITS','EXPLORE',    TRUE),  -- edit: Explore is where initiatives are proposed, voted and discussed
     ('REVIEWER','ANA',  'CATALOG',    FALSE),
     ('REVIEWER','PROC', 'VALUE_CHAIN',FALSE),
     ('REVIEWER','PROC', 'MAP',        FALSE);

@@ -1,0 +1,193 @@
+---
+/**
+ * InitiativeCard — one Explore Initiatives row (specs/005-explore-initiatives).
+ *
+ * A person sees far fewer initiatives than assets in a category, so each one
+ * gets a full-width row instead of a grid tile. Compact layout:
+ *
+ *   ▌ [icon]  Title                                             ☆
+ *   ▌         Status · Priority · Type · 3 d ago
+ *   ▌ Two-line description, aligned with the icon…
+ *   ▌ #tag #tag
+ *   ▌ ───────────────────────────────────────────────────────────
+ *   ▌ 👍 2  👎 0  💬 3                               🔗 1 related asset
+ *
+ * The left accent bar is coloured by status. No version pill (initiatives are
+ * not versioned), no score and no expected impact (they live in the detail).
+ *
+ * Emits the same hooks as GalleryCard (`data-card`, `data-search`,
+ * `data-favorite`, `data-permissions`, `data-action=*`, `[data-vote-bar]`), so
+ * `initCardGallery` filters and wires it unchanged.
+ */
+import { formatRelative } from "@/lib/datatable";
+
+export interface Props {
+  id: number;
+  name: string;
+  description?: string | null;
+  statusValue: string;
+  statusLabel: string;
+  typeValue?: string | null;
+  typeLabel?: string | null;
+  priorityValue?: string | null;
+  priorityLabel?: string | null;
+  tags?: string[];
+  createdAt: string;
+  locale?: string;
+  favorite: boolean;
+  permissions: string;
+  votePositive: number;
+  voteNegative: number;
+  myVote?: string | null;
+  discussCount: number;
+  relatedCount: number;
+  detailModalId?: string;
+}
+
+const {
+  id, name, description, statusValue, statusLabel, typeValue, typeLabel, priorityValue, priorityLabel,
+  tags = [], createdAt, locale = "en", favorite, permissions, votePositive, voteNegative,
+  myVote, discussCount, relatedCount, detailModalId = "inits-view-modal",
+} = Astro.props as Props;
+
+const ACCENT: Record<string, { bar: string; pill: string; icon: string }> = {
+  ACCEPTED: {
+    bar: "bg-indigo-500",
+    pill: "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300",
+    icon: "bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300",
+  },
+  IN_PROGRESS: {
+    bar: "bg-amber-500",
+    pill: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+    icon: "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300",
+  },
+  DELIVERED: {
+    bar: "bg-emerald-500",
+    pill: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+    icon: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300",
+  },
+};
+const accent = ACCENT[statusValue] ?? ACCENT.ACCEPTED;
+const PRIORITY_DOT: Record<string, string> = {
+  HIGH: "bg-rose-500",
+  MEDIUM: "bg-amber-500",
+  LOW: "bg-gray-400",
+};
+const chip = "inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300";
+const upOn = myVote === "POSITIVE";
+const downOn = myVote === "NEGATIVE";
+const voteBtn = "rounded-md p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ";
+const searchText = [name, description, typeLabel, tags.join(" ")].filter(Boolean).join(" ");
+const thumb =
+  "M7.493 18.5c-.425 0-.82-.236-.974-.632A7.48 7.48 0 016 15.125c0-1.75.599-3.358 1.602-4.634.151-.192.373-.309.6-.397.473-.183.89-.514 1.212-.924a9.042 9.042 0 012.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 00.322-1.672V2.75a.75.75 0 01.75-.75 2.25 2.25 0 012.25 2.25c0 1.152-.26 2.243-.722 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 01-2.649 7.521c-.388.482-.987.729-1.605.729H14.23c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 00-1.423-.23h-.777ZM2.331 10.727a11.969 11.969 0 00-.831 4.398 12 12 0 00.52 3.507c.26.85 1.084 1.368 1.973 1.368H4.9c.445 0 .72-.498.523-.898a8.963 8.963 0 01-.924-3.977c0-1.708.476-3.305 1.302-4.666.245-.403-.028-.959-.5-.959H4.25c-.832 0-1.612.453-1.918 1.227Z";
+---
+
+<article
+  data-card
+  data-id={String(id)}
+  data-search={searchText}
+  data-status={statusValue}
+  data-favorite={favorite ? "yes" : "no"}
+  data-permissions={permissions}
+  data-detail-modal={detailModalId}
+  class="group relative flex cursor-pointer overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-gray-800 dark:bg-gray-900"
+>
+  <div class={`w-1.5 shrink-0 ${accent.bar}`} aria-hidden="true"></div>
+
+  <div class="flex min-w-0 flex-1 flex-col">
+    <div class="flex items-start gap-3 px-4 pt-3 sm:px-5">
+      <span class={`mt-0.5 hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl sm:flex ${accent.icon}`} aria-hidden="true">
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1.1 2V16h5v-.2c.1-.8.5-1.5 1.1-2A6 6 0 0 0 12 3Z" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </span>
+
+      <div class="min-w-0 flex-1">
+        <h3 class="truncate text-base font-semibold text-gray-900 dark:text-white" title={name}>{name}</h3>
+
+        <div class="mt-1 flex flex-wrap items-center gap-1.5">
+          <span class={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${accent.pill}`} data-label-list="status" data-label-value={statusValue}>{statusLabel}</span>
+          {priorityLabel && (
+            <span class={chip}>
+              <span class={`h-1.5 w-1.5 rounded-full ${PRIORITY_DOT[priorityValue ?? ""] ?? "bg-gray-400"}`} aria-hidden="true"></span>
+              <span class="text-gray-500 dark:text-gray-400" data-i18n="inits_explore.field_priority">Priority</span>
+              <span class="font-semibold" data-label-list="priority" data-label-value={priorityValue ?? ""}>{priorityLabel}</span>
+            </span>
+          )}
+          {typeLabel && <span class={chip} data-label-list="type" data-label-value={typeValue ?? ""}>{typeLabel}</span>}
+          <span class="text-xs text-gray-400" data-relative-ts={createdAt}>{formatRelative(createdAt, locale)}</span>
+        </div>
+
+      </div>
+
+      <button
+        type="button"
+        data-action="favorite"
+        data-id={String(id)}
+        aria-pressed={favorite ? "true" : "false"}
+        title="Add to favorites"
+        data-i18n-title="gallery.favorite_add"
+        class={`-mr-1 shrink-0 rounded-md p-1.5 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ${favorite ? "text-yellow-400" : "text-gray-400"}`}
+      >
+        <svg class="h-5 w-5" viewBox="0 0 20 20" fill={favorite ? "currentColor" : "none"} stroke="currentColor" stroke-width="1.5">
+          <path d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.3 4.02a1 1 0 00.95.69h4.22c.97 0 1.37 1.24.59 1.81l-3.42 2.48a1 1 0 00-.36 1.12l1.3 4.02c.3.92-.75 1.69-1.54 1.12l-3.41-2.48a1 1 0 00-1.18 0l-3.41 2.48c-.78.57-1.84-.2-1.54-1.12l1.3-4.02a1 1 0 00-.36-1.12L2 9.45c-.78-.57-.38-1.81.6-1.81h4.21a1 1 0 00.95-.69l1.3-4.02z" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Description and tags span the full width, aligned with the icon's left
+         edge (not indented under the title). -->
+    <div class="px-4 sm:px-5">
+      {description && (
+        <p class="mt-2 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">{description}</p>
+      )}
+
+      {tags.length > 0 && (
+        <div class="mt-2 flex flex-wrap gap-1.5">
+          {tags.map((t) => (
+            <span class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">#{t}</span>
+          ))}
+        </div>
+      )}
+    </div>
+
+    <!-- Footer: equal padding above and below, so the icons sit centred between
+         the divider and the card's bottom edge. -->
+    <div class="mt-2.5 flex flex-wrap items-center gap-1 border-t border-gray-100 px-4 py-1.5 sm:px-5 dark:border-gray-800" data-vote-bar>
+      <button type="button" data-action="vote-up" data-id={String(id)} aria-pressed={upOn ? "true" : "false"}
+        title="Helpful" aria-label="Helpful" data-i18n-title={upOn ? "gallery.vote_remove" : "gallery.vote_up"}
+        data-i18n-aria-label={upOn ? "gallery.vote_remove" : "gallery.vote_up"}
+        class={"-ml-1 " + voteBtn + (upOn ? "text-emerald-500" : "text-gray-400")}>
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d={thumb} /></svg>
+      </button>
+      <span data-vote-up-count class="min-w-[1rem] text-center text-sm font-semibold text-gray-700 dark:text-gray-200">{votePositive}</span>
+      <button type="button" data-action="vote-down" data-id={String(id)} aria-pressed={downOn ? "true" : "false"}
+        title="Not helpful" aria-label="Not helpful" data-i18n-title={downOn ? "gallery.vote_remove" : "gallery.vote_down"}
+        data-i18n-aria-label={downOn ? "gallery.vote_remove" : "gallery.vote_down"}
+        class={voteBtn + (downOn ? "text-rose-500" : "text-gray-400")}>
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><g transform="rotate(180 12 12)"><path d={thumb} /></g></svg>
+      </button>
+      <span data-vote-down-count class="min-w-[1rem] text-center text-sm font-semibold text-gray-700 dark:text-gray-200">{voteNegative}</span>
+
+      <button type="button" data-action="discuss" data-id={String(id)}
+        title="Comment or ask a question" aria-label="Comment or ask a question"
+        data-i18n-title="gallery.discuss" data-i18n-aria-label="gallery.discuss"
+        class="ml-2 flex items-center gap-1 rounded-md p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-indigo-500 dark:hover:bg-gray-800">
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3.75h6m-9.75 5.25 3.6-2.7a1.5 1.5 0 0 1 .9-.3H18a2.25 2.25 0 0 0 2.25-2.25v-6A2.25 2.25 0 0 0 18 3.75H6A2.25 2.25 0 0 0 3.75 6v11.25Z" />
+        </svg>
+        <span data-discuss-count class={`text-sm font-semibold ${discussCount > 0 ? "" : "hidden"}`}>{discussCount > 0 ? discussCount : ""}</span>
+      </button>
+
+      <span class="ml-auto inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.244 7.242" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span
+          data-i18n-count={relatedCount === 1 ? "inits_explore.related_one" : "inits_explore.related_count"}
+          data-count={String(relatedCount)}
+        >{relatedCount === 1 ? "1 related asset" : `${relatedCount} related assets`}</span>
+      </span>
+    </div>
+  </div>
+</article>

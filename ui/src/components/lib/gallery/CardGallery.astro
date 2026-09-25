@@ -44,6 +44,11 @@ export interface Props {
    * default look of existing galleries (Prompts/MCPs/Agents) is unaffected.
    */
   growSearch?: boolean;
+  /**
+   * `grid` (default): the auto-fill card grid. `list`: one full-width card per
+   * row, for catalogs with fewer, richer items (Explore Initiatives).
+   */
+  layout?: "grid" | "list";
 }
 
 const {
@@ -60,7 +65,12 @@ const {
   proposeLabelKey = "menu_options.propose",
   privileges = [],
   growSearch = true,
+  layout = "grid",
 } = Astro.props as Props;
+
+const itemsClass = layout === "list"
+  ? "flex flex-col gap-3"
+  : "grid grid-cols-1 gap-5 sm:grid-cols-[repeat(auto-fill,minmax(360px,1fr))]";
 
 const searchWrapClass = growSearch
   ? "relative min-w-[200px] flex-1"
@@ -139,7 +149,7 @@ const searchWrapClass = growSearch
 
   {/* Card grid — auto-fill keeps a comfortable min card width and grows to
       fill the row, so cards are wider than the old fixed 4-column grid. */}
-  <div class="grid grid-cols-1 gap-5 sm:grid-cols-[repeat(auto-fill,minmax(360px,1fr))]">
+  <div class={itemsClass}>
     <slot />
   </div>
 

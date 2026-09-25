@@ -123,7 +123,8 @@ The initiative workflow mirrors the asset one over `collaborations`, with `type`
 `KICKOFF` / `DELIVERY` / `ARCHIVING` are written by Initiative Management
 (`specs/004-initiative-management`) as completed log rows (`HANDLED`, attributed to whoever
 made the change) — they raise **no** pending notice, same as `DEPRECATION` on the asset side.
-The propose / diagnose / modify rows are still seed data only (those stories are not built yet).
+The propose / diagnose / modify / acknowledge rows are written by `specs/005-explore-initiatives`.
+`DELIVERY` raises no pending notice; it is a log row only.
 
 ### Community layer
 
@@ -171,7 +172,7 @@ archived from Edit Initiative.
 |----------------|------------------------------------------|--------------------------------------------|-------------------------------------------|
 | Core Fields | Save core fields | Go to diagnosis questions | Read-only |
 | Diagnosis Questions | Read-only | Request diagnosis | Read-only |
-| Related Assets | Save related assets | Not applicable | Read-only |
+| Related Assets | Save related assets | Add relation (staged, saved with the proposal) | Read-only |
 | Permissions | Save permissions | Not applicable | Not applicable |
 | Discussion | Read-only | Not applicable | Multiple options |
 | History | Read-only | Not applicable | Read-only |

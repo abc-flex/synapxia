@@ -1,0 +1,183 @@
+---
+/**
+ * Explore Initiatives (HU-IN04, specs/005-explore-initiatives US3).
+ *
+ * The living portfolio — Accepted / In Progress / Delivered initiatives the
+ * caller can access — in the shared CardGallery with the same search,
+ * "my favorites" toggle and six-option privileges filter as Explore Category,
+ * but as full-width rows (`layout="list"`): people see far fewer initiatives
+ * than assets. "+ Propose" opens the Propose Initiative wizard; a card opens
+ * the read-mostly Initiative Detail.
+ */
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import Toast from "../../components/Toast.astro";
+import CardGallery from "../../components/lib/gallery/CardGallery.astro";
+import InitiativeCard from "../../components/inits/InitiativeCard.astro";
+import InitiativeExploreModal from "../../components/inits/InitiativeExploreModal.astro";
+import { getInitiativesExplore } from "@/lib/initiatives";
+import { getListItemsbyList } from "@/lib/list_items";
+import { getLocale } from "@/utils/getLocale";
+import type { InitiativeExploreItem } from "@/types/api";
+
+const locale = getLocale(Astro);
+const lang = String(locale).toLowerCase().startsWith("es") ? "es" : "en";
+
+// Same six options, order and default (PUBLIC, no "all") as Explore Category.
+const PRIVILEGE_OPTIONS = [
+  { value: "PUBLIC", label: "Public", i18n: "asset_table.perm_filter_public" },
+  { value: "USER", label: "Shared with me", i18n: "asset_table.perm_filter_user" },
+  { value: "ROLE", label: "My role", i18n: "asset_table.perm_filter_role" },
+  { value: "TEAM", label: "My team", i18n: "asset_table.perm_filter_team" },
+  { value: "UNIT", label: "My unit", i18n: "asset_table.perm_filter_unit" },
+  { value: "PROJECT", label: "My projects", i18n: "asset_table.perm_filter_project" },
+];
+
+let items: InitiativeExploreItem[] = [];
+let errorMessage: string | null = null;
+try {
+  items = await getInitiativesExplore(0, 500);
+} catch (error) {
+  console.error("Failed to fetch initiatives for Explore:", error);
+  errorMessage = error instanceof Error ? error.message : "Failed to fetch initiatives";
+}
+
+// value → { en, es } per list. The SSR pass picks `lang` (getLocale), and the
+// client relabels to the viewer's chosen language (same approach as
+// Initiative Management — the server cannot see localStorage).
+type ByLang = Record<string, Record<string, string>>;
+async function labelsFor(code: string): Promise<ByLang> {
+  try {
+    const rows = await getListItemsbyList(code, 0, 200);
+    const out: ByLang = {};
+    for (const r of rows) (out[r.value] ??= {})[r.lang] = r.label || r.value;
+    return out;
+  } catch {
+    return {};
+  }
+}
+const [status, type, impact, priority] = await Promise.all([
+  labelsFor("INITIATIVE_STATUS"), labelsFor("INITIATIVE_TYPE"),
+  labelsFor("EXPECTED_IMPACT"), labelsFor("PRIORITY_LEVEL"),
+]);
+const labels = { status, type, impact, priority };
+const pick = (map: ByLang, value?: string | null): string =>
+  value ? map[value]?.[lang] ?? map[value]?.en ?? value : "";
+const tagsOf = (i: InitiativeExploreItem): string[] => (Array.isArray(i.tags) ? (i.tags as string[]) : []);
+---
+
+<BaseLayout>
+  <div class="mx-auto w-full max-w-6xl">
+    <Breadcrumb
+      moduleName="Initiatives"
+      pageName="Explore Initiatives"
+      pageTitle="Explore Initiatives"
+      homeLink="/"
+      moduleNameKey="modules.INITS"
+      pageNameKey="menu_options.explore"
+      pageTitleKey="inits_explore.title"
+    />
+    <p class="-mt-2 mb-6 text-sm text-gray-500 dark:text-gray-400" data-i18n="inits_explore.subtitle">
+      Browse the initiative portfolio you have access to, follow the ones you care about and signal what matters.
+    </p>
+
+    {errorMessage && (
+      <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+        {errorMessage}
+      </div>
+    )}
+
+    <InitiativeExploreModal modalId="inits-view-modal" payload={{ items, labels }} />
+    <script type="application/json" id="inits-list-labels" set:html={JSON.stringify(labels).replace(/</g, "\\u003c")} />
+
+    <CardGallery
+      galleryId="inits-gallery"
+      layout="list"
+      emptyKey="inits_explore.empty"
+      statuses={[]}
+      privileges={PRIVILEGE_OPTIONS}
+      growSearch={false}
+      proposeHref="/inits/propose"
+    >
+      {items.map((i) => (
+        <InitiativeCard
+          id={i.id}
+          name={i.name}
+          description={i.description}
+          statusValue={i.status}
+          statusLabel={pick(status, i.status)}
+          typeValue={i.type}
+          typeLabel={i.type ? pick(type, i.type) : null}
+          priorityValue={i.priority_level}
+          priorityLabel={pick(priority, i.priority_level)}
+          tags={tagsOf(i)}
+          createdAt={i.created_at}
+          locale={locale}
+          favorite={i.is_favorite}
+          permissions={(i.permission_scopes ?? []).join(",")}
+          votePositive={i.votes.positive}
+          voteNegative={i.votes.negative}
+          myVote={i.votes.my_vote}
+          discussCount={i.discussion_count}
+          relatedCount={i.related_assets_count}
+        />
+      ))}
+    </CardGallery>
+  </div>
+
+  <Toast message="" variant="info" open={false} />
+
+  <script>
+    import { initCardGallery } from "@/lib/catalogGallery";
+    import { setInitiativeFavorite } from "@/lib/initiatives";
+    import { getInitiativeVoteTally, setInitiativeVote } from "@/lib/collaborations";
+    import { loadClientTranslations, translate } from "@/utils/i18nClient";
+    import { installGlobalToast } from "@/lib/toast";
+
+    initCardGallery({
+      galleryId: "inits-gallery",
+      pageSize: 20,
+      idAttr: "initId",
+      services: {
+        toggleFavorite: (id, on) => setInitiativeFavorite(id, on),
+        vote: (id, value) => setInitiativeVote(id, value),
+        tally: (id) => getInitiativeVoteTally(id),
+      },
+    });
+    loadClientTranslations();
+    installGlobalToast();
+
+    // List-backed chips (status / priority / type) in the viewer's language.
+    const LIST_LABELS: Record<string, Record<string, Record<string, string>>> = (() => {
+      try {
+        return JSON.parse(document.getElementById("inits-list-labels")?.textContent || "{}");
+      } catch {
+        return {};
+      }
+    })();
+    function relabelChips(): void {
+      const lang = localStorage.getItem("lang") === "es" ? "es" : "en";
+      document.querySelectorAll<HTMLElement>("[data-label-list]").forEach((el) => {
+        const hit = LIST_LABELS[el.dataset.labelList || ""]?.[el.dataset.labelValue || ""];
+        if (hit) el.textContent = hit[lang] ?? hit.en ?? el.textContent;
+      });
+    }
+    relabelChips();
+    window.addEventListener("languageChanged", relabelChips);
+    document.addEventListener("synapxia:locale-changed", relabelChips);
+
+    // Pluralised "N related assets" — the generic i18n runtime only swaps
+    // static strings, so the count is filled in here (and on language switch).
+    function paintCounts(): void {
+      document.querySelectorAll<HTMLElement>("[data-i18n-count]").forEach((el) => {
+        const key = el.dataset.i18nCount || "";
+        const n = el.dataset.count || "0";
+        const text = translate(key);
+        if (text && text !== key) el.textContent = text.replace("{n}", n);
+      });
+    }
+    paintCounts();
+    window.addEventListener("languageChanged", paintCounts);
+    document.addEventListener("synapxia:locale-changed", paintCounts);
+  </script>
+</BaseLayout>

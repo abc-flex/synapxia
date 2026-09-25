@@ -4,8 +4,17 @@
  * asset readers, so the shared `mountHistory` controller and the `Foro` island
  * render them unchanged (`initiativeForoApi` is Foro's `api` prop).
  */
-import { apiDelete, apiGet, apiPost, buildQueryString } from "./api";
-import type { DiscussionItem, HistoryEntry, InitDiscussionItem } from "@/types/api";
+import { apiDelete, apiGet, apiPost, apiPut, buildQueryString } from "./api";
+import type {
+  Collaboration,
+  CollaborationDetail,
+  DiscussionItem,
+  HistoryEntry,
+  InitDiscussionItem,
+  InitiativeRequest,
+  InitNotificationFeed,
+  InitVoteTally,
+} from "@/types/api";
 
 const enc = (v: number) => encodeURIComponent(String(v));
 
@@ -57,3 +66,40 @@ export const initiativeForoApi = {
   addAnswer: addInitiativeAnswer,
   deleteParticipation: deleteInitiativeParticipation,
 };
+
+// ── Contribution workflow (specs/005-explore-initiatives) ────────────────────
+
+/** One of the caller's own collaborations, with the initiative embedded. */
+export async function getCollaboration(id: number): Promise<CollaborationDetail> {
+  return apiGet<CollaborationDetail>(`/api/collaborations/${enc(id)}`);
+}
+
+// Votes — one active vote per user and initiative; the voter is the session user.
+
+export async function getInitiativeVoteTally(initId: number): Promise<InitVoteTally> {
+  return apiGet<InitVoteTally>(`/api/collaborations/votes/init/${enc(initId)}`);
+}
+
+/** Set the vote. Sending the vote already held withdraws it (toggle). */
+export async function setInitiativeVote(initId: number, content: "POSITIVE" | "NEGATIVE"): Promise<InitVoteTally> {
+  return apiPut<InitVoteTally, { content: string }>(`/api/collaborations/votes/init/${enc(initId)}`, { content });
+}
+
+export async function clearInitiativeVote(initId: number): Promise<InitVoteTally> {
+  return apiDelete<InitVoteTally>(`/api/collaborations/votes/init/${enc(initId)}`);
+}
+
+// Requests / notifications — scoped to the caller by the API.
+
+export async function getInitiativeRequests(state: "PENDING" | "HANDLED" = "PENDING"): Promise<InitiativeRequest[]> {
+  return apiGet<InitiativeRequest[]>(`/api/collaborations/requests${buildQueryString({ state, limit: 200 })}`);
+}
+
+export async function getInitiativeNotifications(limit = 5): Promise<InitNotificationFeed> {
+  return apiGet<InitNotificationFeed>(`/api/collaborations/notifications${buildQueryString({ limit })}`);
+}
+
+/** Acknowledge an ACCEPTANCE / REJECTION notice (records it as HANDLED). */
+export async function acknowledgeCollaboration(id: number): Promise<Collaboration> {
+  return apiPost<Collaboration, Record<string, never>>(`/api/collaborations/notifications/${enc(id)}/acknowledge`, {});
+}

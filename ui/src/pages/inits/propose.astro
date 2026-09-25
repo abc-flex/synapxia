@@ -1,0 +1,507 @@
+---
+/**
+ * Propose Initiative (HU-IN05, specs/005-explore-initiatives US1/US2).
+ *
+ * A three-step wizard — Core Fields → Diagnosis Questions → Related Assets —
+ * reached from Explore Initiatives' "+ Propose". Nothing is saved until
+ * "Request diagnosis": one POST to `/api/initiatives/propose` writes the
+ * initiative (ACTIVATED), the proposer's answers, the related-asset links, the
+ * ACTIVATION / DIAGNOSIS collaborations and the MANAGE grants together.
+ *
+ * Footer per step (FR-013 / FR-015 / FR-017):
+ *   core       Back to initiatives · Diagnosis questions >
+ *   diagnosis  Back to initiatives · Request diagnosis · Related Assets >
+ *   related    Back to initiatives · Request diagnosis
+ *
+ * Built on the shared primitives (`components/ui/*`, `lib/tabs`,
+ * `lib/formClasses`, `AckDialog`) and the shared `DiagnosisTable` island.
+ */
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import Toast from "../../components/Toast.astro";
+import Tabs from "../../components/ui/Tabs.astro";
+import FormField from "../../components/ui/FormField.astro";
+import Button from "../../components/ui/Button.astro";
+import AckDialog from "../../components/ui/AckDialog.astro";
+import { inputClass, labelClass, addBtnClass, emptyClass } from "@/lib/formClasses";
+
+const PROPOSE_TABS = [
+  { key: "core", labelKey: "inits_propose.tab_core", label: "Core Fields" },
+  { key: "diagnosis", labelKey: "inits_propose.tab_diagnosis", label: "Diagnosis Questions" },
+  { key: "related", labelKey: "inits_propose.tab_related", label: "Related Assets" },
+];
+---
+
+<BaseLayout>
+  <div class="mx-auto w-full max-w-4xl">
+    <Breadcrumb
+      moduleName="Initiatives"
+      pageName="Explore Initiatives"
+      pageTitle="Propose Initiative"
+      homeLink="/"
+      moduleNameKey="modules.INITS"
+      pageNameKey="menu_options.explore"
+      pageTitleKey="inits_propose.title"
+    />
+
+    <form
+      id="inits-propose-form"
+      novalidate
+      class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
+    >
+      <div class="flex items-start gap-4 bg-gradient-to-br from-amber-500 to-orange-500 px-6 py-5 text-white">
+        <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/20 text-white">
+          <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1.1 2V16h5v-.2c.1-.8.5-1.5 1.1-2A6 6 0 0 0 12 3Z" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </span>
+        <div class="min-w-0">
+          <h1 class="text-lg font-semibold" data-i18n="inits_propose.title">Propose Initiative</h1>
+          <p class="mt-0.5 text-sm text-white/85" data-i18n="inits_propose.subtitle">
+            Describe the opportunity, answer the diagnosis questions and optionally link the assets it relates to.
+          </p>
+        </div>
+      </div>
+
+      <Tabs tabs={PROPOSE_TABS} ariaLabel="Propose initiative sections" />
+
+      <div class="px-6 py-5">
+        <!-- 1 · Core Fields -->
+        <div data-tab-panel="core" class="space-y-5">
+          <FormField controlId="ip-name" labelKey="inits_propose.name" label="Name" required
+            errorId="ip-name-error" errorKey="inits_propose.required">
+            <input id="ip-name" type="text" maxlength="100" class={inputClass} />
+          </FormField>
+
+          <FormField controlId="ip-description" labelKey="inits_propose.description" label="Description">
+            <textarea id="ip-description" rows="2" maxlength="500" class={inputClass}></textarea>
+          </FormField>
+
+          <div class="grid gap-5 sm:grid-cols-3">
+            <FormField controlId="ip-type" labelKey="inits_propose.type" label="Type">
+              <select id="ip-type" class={inputClass}>
+                <option value="" data-i18n="inits_propose.choose">— choose —</option>
+              </select>
+            </FormField>
+            <FormField controlId="ip-impact" labelKey="inits_propose.expected_impact" label="Expected impact" required
+              errorId="ip-impact-error" errorKey="inits_propose.required">
+              <select id="ip-impact" class={inputClass}>
+                <option value="" data-i18n="inits_propose.choose">— choose —</option>
+              </select>
+            </FormField>
+            <FormField controlId="ip-priority" labelKey="inits_propose.priority_level" label="Priority" required
+              errorId="ip-priority-error" errorKey="inits_propose.required">
+              <select id="ip-priority" class={inputClass}>
+                <option value="" data-i18n="inits_propose.choose">— choose —</option>
+              </select>
+            </FormField>
+          </div>
+
+          <FormField controlId="ip-reviewer" labelKey="inits_propose.reviewer" label="Reviewer"
+            errorId="ip-reviewer-error">
+            <select id="ip-reviewer" class={inputClass}>
+              <option value="" data-i18n="inits_propose.reviewer_auto">Auto-assign a reviewer</option>
+            </select>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400" data-i18n="inits_propose.reviewer_hint">
+              The reviewer diagnoses your initiative and decides whether it is accepted.
+            </p>
+          </FormField>
+
+          <FormField controlId="ip-reference" labelKey="inits_propose.reference" label="Reference">
+            <input id="ip-reference" type="text" class={inputClass} />
+          </FormField>
+
+          <FormField controlId="ip-tags" labelKey="inits_propose.tags" label="Tags">
+            <input id="ip-tags" type="text" class={inputClass}
+              data-i18n-placeholder="inits_propose.tags_placeholder" placeholder="Comma-separated, e.g. legal, contracts" />
+          </FormField>
+
+          <FormField controlId="ip-detail" labelKey="inits_propose.detail" label="Detail">
+            <textarea id="ip-detail" rows="4" class={inputClass}></textarea>
+          </FormField>
+        </div>
+
+        <!-- 2 · Diagnosis Questions -->
+        <div data-tab-panel="diagnosis" class="hidden space-y-4">
+          <p class="text-xs text-gray-500 dark:text-gray-400" data-i18n="inits_propose.diagnosis_hint">
+            Answer every question on its own scale. Rationales are optional but help the reviewer.
+          </p>
+          <p id="ip-no-criteria" class={`hidden ${emptyClass}`} data-i18n="inits_propose.no_criteria">
+            No diagnosis criteria are configured — you can request the diagnosis directly.
+          </p>
+          <div id="ip-diagnosis"></div>
+        </div>
+
+        <!-- 3 · Related Assets -->
+        <div data-tab-panel="related" class="hidden space-y-4">
+          <p class="text-xs text-gray-500 dark:text-gray-400" data-i18n="inits_propose.related_hint">
+            Optionally link library assets this initiative uses or produces.
+          </p>
+          <div class="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label for="ip-rel-target" class={labelClass} data-i18n="inits_propose.related_target">Target asset</label>
+              <select id="ip-rel-target" class={inputClass}>
+                <option value="" data-i18n="inits_propose.related_choose_asset">— choose asset —</option>
+              </select>
+            </div>
+            <div>
+              <label for="ip-rel-type" class={labelClass} data-i18n="inits_propose.related_type">Relation type</label>
+              <select id="ip-rel-type" class={inputClass}>
+                <option value="" data-i18n="inits_propose.related_choose_type">— choose type —</option>
+              </select>
+            </div>
+            <div class="sm:col-span-2">
+              <label for="ip-rel-rationale" class={labelClass} data-i18n="inits_propose.related_rationale">Rationale</label>
+              <div class="flex flex-col gap-2 sm:flex-row">
+                <input id="ip-rel-rationale" type="text" class={`flex-1 ${inputClass}`}
+                  data-i18n-placeholder="inits_propose.related_rationale_placeholder" placeholder="Why are they related? (optional)" />
+                <button type="button" id="ip-rel-add" class={addBtnClass} data-i18n="inits_propose.related_add">Add relation</button>
+              </div>
+            </div>
+          </div>
+          <p id="ip-rel-error" class="hidden text-xs text-red-600 dark:text-red-400"></p>
+          <div id="ip-rel-list" class="space-y-2">
+            <div class={emptyClass} data-i18n="inits_propose.related_empty">No related assets yet.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-800">
+        <Button id="ip-back" type="button" variant="ghost" labelKey="inits_propose.back" />
+        <div class="flex flex-wrap gap-3">
+          <Button id="ip-submit-secondary" type="button" variant="secondary" labelKey="inits_propose.submit" class="hidden" />
+          <Button id="ip-submit" type="submit" variant="primary" labelKey="inits_propose.next_diagnosis" />
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <Toast message="" variant="info" open={false} />
+  <AckDialog id="ip-ack-dialog" titleKey="inits_propose.ack_title_success" titleFallback="Initiative proposed"
+    okKey="inits_propose.ack_ok" />
+
+  <script>
+    import { mount } from "svelte";
+    import DiagnosisTable from "@/components/svelte/DiagnosisTable.svelte";
+    import {
+      getDiagnosisForm, getInitiativeReviewers, getLinkableAssets, proposeInitiative,
+    } from "@/lib/initiatives";
+    import { getListItemsbyList } from "@/lib/list_items";
+    import { apiErrorDetail } from "@/lib/api";
+    import { loadClientTranslations, translate } from "@/utils/i18nClient";
+    import { installGlobalToast, showToast } from "@/lib/toast";
+    import { initTabs } from "@/lib/tabs";
+    import { showAckDialog } from "@/lib/ackDialog";
+    import { notifyChanged } from "@/lib/notificationsStore";
+    import { emptyClass, rowClass, setFieldInvalid } from "@/lib/formClasses";
+    import type { DiagnosisAnswer, InitiativeProposeRequest, ProposeAssetLink } from "@/types/api";
+
+    type Option = { value: string; label: string };
+    type Staged = ProposeAssetLink & { assetLabel: string; typeLabel: string };
+    type TableApi = { validate(): string[]; getCreatorAnswers(): Record<string, DiagnosisAnswer> };
+
+    loadClientTranslations();
+    installGlobalToast();
+
+    const tr = (key: string, fallback: string): string => {
+      try {
+        const v = translate(key);
+        if (v && v !== key) return v;
+      } catch {
+        /* non-fatal */
+      }
+      return fallback;
+    };
+    const lang = (): string =>
+      (typeof localStorage !== "undefined" && localStorage.getItem("lang")) === "es" ? "es" : "en";
+    const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T | null;
+
+    const form = $<HTMLFormElement>("inits-propose-form");
+    const nameIn = $<HTMLInputElement>("ip-name");
+    const typeSel = $<HTMLSelectElement>("ip-type");
+    const impactSel = $<HTMLSelectElement>("ip-impact");
+    const prioritySel = $<HTMLSelectElement>("ip-priority");
+    const reviewerSel = $<HTMLSelectElement>("ip-reviewer");
+    const submitBtn = $<HTMLButtonElement>("ip-submit");
+    const secondaryBtn = $<HTMLButtonElement>("ip-submit-secondary");
+    const backBtn = $<HTMLButtonElement>("ip-back");
+    const relTarget = $<HTMLSelectElement>("ip-rel-target");
+    const relType = $<HTMLSelectElement>("ip-rel-type");
+    const relRationale = $<HTMLInputElement>("ip-rel-rationale");
+    const relError = $<HTMLElement>("ip-rel-error");
+    const relList = $<HTMLElement>("ip-rel-list");
+
+    const STEPS = ["core", "diagnosis", "related"];
+    const NEXT_LABEL: Record<string, [string, string]> = {
+      diagnosis: ["inits_propose.next_diagnosis", "Diagnosis questions >"],
+      related: ["inits_propose.next_related", "Related Assets >"],
+    };
+    const DIRECT_SUBMIT_TABS = ["diagnosis"];
+
+    let table: TableApi | null = null;
+    let assetOptions: Option[] = [];
+    let relTypeOptions: Option[] = [];
+    let staged: Staged[] = [];
+    let submitting = false;
+
+    const tabs = initTabs(document, { onActivate: () => updateFooter() });
+
+    function updateFooter(): void {
+      const current = tabs.current() || "core";
+      const next = STEPS[STEPS.indexOf(current) + 1];
+      const [key, fallback] = next ? NEXT_LABEL[next] : ["inits_propose.submit", "Request diagnosis"];
+      if (submitBtn) {
+        submitBtn.setAttribute("data-i18n", key);
+        submitBtn.textContent = tr(key, fallback);
+      }
+      secondaryBtn?.classList.toggle("hidden", !DIRECT_SUBMIT_TABS.includes(current));
+    }
+
+    // ── option lists ────────────────────────────────────────────────────
+    function byLang<T extends { lang?: string; sort_order?: number }>(items: T[]): T[] {
+      const scoped = items.filter((i) => i.lang === lang());
+      return (scoped.length ? scoped : items.filter((i) => i.lang === "en"))
+        .slice().sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    }
+    function fill(sel: HTMLSelectElement | null, options: Option[]): void {
+      if (!sel) return;
+      while (sel.options.length > 1) sel.remove(1);
+      for (const o of options) {
+        const opt = document.createElement("option");
+        opt.value = o.value;
+        opt.textContent = o.label;
+        sel.appendChild(opt);
+      }
+    }
+    async function listOptions(code: string): Promise<Option[]> {
+      try {
+        return byLang(await getListItemsbyList(code, 0, 200)).map((li) => ({ value: li.value, label: li.label || li.value }));
+      } catch {
+        return [];
+      }
+    }
+    async function loadLists(): Promise<void> {
+      const [types, impacts, priorities, relTypes] = await Promise.all([
+        listOptions("INITIATIVE_TYPE"), listOptions("EXPECTED_IMPACT"),
+        listOptions("PRIORITY_LEVEL"), listOptions("RELATION_TYPE"),
+      ]);
+      fill(typeSel, types);
+      fill(impactSel, impacts);
+      fill(prioritySel, priorities);
+      relTypeOptions = relTypes;
+      fill(relType, relTypes);
+    }
+    async function loadReviewers(): Promise<void> {
+      try {
+        const revs = await getInitiativeReviewers();
+        fill(reviewerSel, revs.map((r) => ({
+          value: String(r.value),
+          label: `${r.label} — ${r.is_superuser ? tr("reviewer_role.SUPERUSER", "Superuser") : tr(`reviewer_role.${r.profile}`, r.profile)}`,
+        })));
+      } catch {
+        /* auto-assign stays available */
+      }
+    }
+    async function loadAssets(): Promise<void> {
+      try {
+        assetOptions = (await getLinkableAssets()).map((a) => ({ value: String(a.value), label: a.label }));
+      } catch {
+        assetOptions = [];
+      }
+      fill(relTarget, assetOptions);
+    }
+    async function loadDiagnosis(): Promise<void> {
+      const target = $<HTMLElement>("ip-diagnosis");
+      if (!target) return;
+      try {
+        const formData = await getDiagnosisForm(lang());
+        $<HTMLElement>("ip-no-criteria")?.classList.toggle("hidden", formData.items.length > 0);
+        if (formData.items.length) {
+          table = mount(DiagnosisTable, {
+            target,
+            props: { items: formData.items, mode: "propose", scales: formData.scales },
+          }) as unknown as TableApi;
+        }
+      } catch {
+        showToast(tr("inits_propose.failure", "The initiative could not be proposed."), "error");
+      }
+    }
+
+    // ── related assets (staged until submit) ───────────────────────────
+    const label = (options: Option[], value: string) => options.find((o) => o.value === value)?.label || value;
+
+    function renderStaged(): void {
+      if (!relList) return;
+      relList.innerHTML = "";
+      if (!staged.length) {
+        const empty = document.createElement("div");
+        empty.className = emptyClass;
+        empty.textContent = tr("inits_propose.related_empty", "No related assets yet.");
+        relList.appendChild(empty);
+        return;
+      }
+      staged.forEach((link, idx) => {
+        const row = document.createElement("div");
+        row.className = rowClass;
+        const name = document.createElement("span");
+        name.className = "min-w-0 flex-1 truncate text-sm font-semibold text-gray-800 dark:text-gray-200";
+        name.textContent = link.assetLabel;
+        name.title = link.assetLabel;
+        const type = document.createElement("span");
+        type.className = "shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300";
+        type.textContent = link.typeLabel;
+        row.append(name, type);
+        if (link.rationale) {
+          const why = document.createElement("span");
+          why.className = "hidden md:block max-w-[220px] truncate text-xs text-gray-500 dark:text-gray-400";
+          why.textContent = link.rationale;
+          why.title = link.rationale;
+          row.appendChild(why);
+        }
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "shrink-0 rounded-md p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30";
+        const removeLabel = tr("inits_propose.related_remove", "Remove");
+        remove.title = removeLabel;
+        remove.setAttribute("aria-label", removeLabel);
+        remove.innerHTML = '<svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>';
+        remove.addEventListener("click", () => {
+          staged = staged.filter((_, i) => i !== idx);
+          renderStaged();
+        });
+        row.appendChild(remove);
+        relList.appendChild(row);
+      });
+    }
+
+    function relErr(msg: string | null): void {
+      if (!relError) return;
+      relError.textContent = msg || "";
+      relError.classList.toggle("hidden", !msg);
+    }
+
+    $<HTMLButtonElement>("ip-rel-add")?.addEventListener("click", () => {
+      relErr(null);
+      const asset = Number(relTarget?.value || "");
+      const type = relType?.value || "";
+      if (!asset || !type) {
+        relErr(tr("inits_propose.related_missing", "Choose an asset and a relation type."));
+        return;
+      }
+      if (staged.some((l) => l.asset === asset && l.type === type)) {
+        relErr(tr("inits_propose.related_duplicate", "That asset is already linked with this relation type."));
+        return;
+      }
+      staged = [...staged, {
+        asset, type,
+        rationale: (relRationale?.value || "").trim() || null,
+        assetLabel: label(assetOptions, String(asset)),
+        typeLabel: label(relTypeOptions, type),
+      }];
+      if (relTarget) relTarget.value = "";
+      if (relType) relType.value = "";
+      if (relRationale) relRationale.value = "";
+      renderStaged();
+    });
+
+    // ── validation + submission ────────────────────────────────────────
+    function validateCore(): boolean {
+      const required: [HTMLInputElement | HTMLSelectElement | null, string][] = [
+        [nameIn, "ip-name-error"], [impactSel, "ip-impact-error"], [prioritySel, "ip-priority-error"],
+      ];
+      let ok = true;
+      for (const [el, errId] of required) {
+        const bad = !(el?.value || "").trim();
+        if (el) setFieldInvalid(el, $<HTMLElement>(errId), bad);
+        if (bad) ok = false;
+      }
+      if (!ok) {
+        tabs.activate("core");
+        showToast(tr("inits_propose.required", "Please complete the required fields."), "error");
+      }
+      return ok;
+    }
+    function validateAnswers(): boolean {
+      if (!table) return true;
+      if (table.validate().length) {
+        tabs.activate("diagnosis");
+        showToast(tr("inits_propose.answers_required", "Please answer every diagnosis question."), "error");
+        return false;
+      }
+      return true;
+    }
+
+    function setBusy(busy: boolean): void {
+      submitting = busy;
+      for (const b of [submitBtn, secondaryBtn]) if (b) b.disabled = busy;
+    }
+
+    async function submit(): Promise<void> {
+      if (submitting) return;
+      if (!validateCore() || !validateAnswers()) return;
+      const tags = ($<HTMLInputElement>("ip-tags")?.value || "")
+        .split(",").map((t) => t.trim()).filter(Boolean);
+      const text = (id: string) => ($<HTMLInputElement>(id)?.value || "").trim() || null;
+      const payload: InitiativeProposeRequest = {
+        name: (nameIn?.value || "").trim(),
+        description: text("ip-description"),
+        type: typeSel?.value || null,
+        expected_impact: impactSel?.value || "",
+        priority_level: prioritySel?.value || "",
+        reference: text("ip-reference"),
+        detail: text("ip-detail"),
+        tags: tags.length ? tags : null,
+        answers: table ? table.getCreatorAnswers() : {},
+        assets: staged.map(({ asset, type, rationale }) => ({ asset, type, rationale })),
+      };
+      if (reviewerSel?.value) payload.reviewer_id = Number(reviewerSel.value);
+
+      setBusy(true);
+      try {
+        await proposeInitiative(payload);
+        notifyChanged();
+        await showAckDialog("ip-ack-dialog",
+          tr("inits_propose.success", "Your initiative was sent for diagnosis. You can follow it in My Initiative Requests."),
+          "success", tr("inits_propose.ack_title_success", "Initiative proposed"));
+        window.location.href = "/inits/explore";
+      } catch (err) {
+        const detail = apiErrorDetail(err, tr("inits_propose.failure", "The initiative could not be proposed."));
+        if (/reviewer/i.test(detail) && reviewerSel) {
+          const revErr = $<HTMLElement>("ip-reviewer-error");
+          if (revErr) revErr.textContent = detail;
+          setFieldInvalid(reviewerSel, revErr, true);
+          tabs.activate("core");
+        }
+        await showAckDialog("ip-ack-dialog", detail, "error",
+          tr("inits_propose.ack_title_error", "Proposal not sent"));
+        setBusy(false);
+      }
+    }
+
+    form?.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const current = tabs.current() || "core";
+      const next = STEPS[STEPS.indexOf(current) + 1];
+      if (current === "core" && !validateCore()) return;
+      if (next) {
+        tabs.activate(next);
+        return;
+      }
+      void submit();
+    });
+    secondaryBtn?.addEventListener("click", () => void submit());
+    backBtn?.addEventListener("click", () => { window.location.href = "/inits/explore"; });
+    reviewerSel?.addEventListener("change", () => setFieldInvalid(reviewerSel, $<HTMLElement>("ip-reviewer-error"), false));
+    for (const el of [nameIn, impactSel, prioritySel]) {
+      el?.addEventListener("input", () => setFieldInvalid(el, null, false));
+      el?.addEventListener("change", () => setFieldInvalid(el, null, false));
+    }
+
+    tabs.activate("core");
+    renderStaged();
+    void loadLists();
+    void loadReviewers();
+    void loadAssets();
+    void loadDiagnosis();
+  </script>
+</BaseLayout>

@@ -17,7 +17,6 @@ import { setVote, getVoteTally, type VoteValue } from "@/lib/actions";
 import { getUser } from "@/lib/auth";
 import { translate } from "@/utils/i18nClient";
 import { showToast } from "@/lib/toast";
-import type { VoteTally } from "@/types/api";
 
 /**
  * Reflect a vote button's state: filled icon when active (outline when not),
@@ -46,17 +45,55 @@ export function styleVoteButton(
   btn.setAttribute("aria-label", label);
 }
 
+/** A vote tally as the vote bar needs it (asset and initiative tallies both fit). */
+export interface GalleryTally {
+  positive: number;
+  negative: number;
+  my_vote?: string | null;
+}
+
+/**
+ * The per-card writes a gallery performs. Defaults to the asset services;
+ * another catalog (Explore Initiatives) passes its own. The acting user always
+ * comes from the session, so no user id is threaded through.
+ */
+export interface GalleryServices {
+  toggleFavorite(id: number, on: boolean): Promise<unknown>;
+  vote(id: number, value: VoteValue): Promise<GalleryTally>;
+  tally(id: number): Promise<GalleryTally>;
+}
+
+const sessionUserId = (): number => {
+  const user = getUser() as any;
+  if (!user || user.id === undefined || user.id === null) throw new Error("Sign in first");
+  return Number(user.id);
+};
+
+const ASSET_SERVICES: GalleryServices = {
+  toggleFavorite: (id, on) => setFavorite(sessionUserId(), id, on),
+  vote: (id, value) => setVote(sessionUserId(), id, value),
+  tally: (id) => getVoteTally(id),
+};
+
 export interface CardGalleryConfig {
   /** Root element id wrapping the toolbar + grid, e.g. "prompts-gallery". */
   galleryId: string;
   /** How many cards to reveal per page (default 12). */
   pageSize?: number;
+  /** Dataset key the synthetic modal openers carry the card id in (default "assetId" → data-asset-id). */
+  idAttr?: string;
+  /** Per-card writes (default: the asset favorite / vote services). */
+  services?: GalleryServices;
 }
+
+const toKebab = (key: string): string => key.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase());
 
 export function initCardGallery(cfg: CardGalleryConfig): void {
   if (typeof window === "undefined") return;
   const { galleryId } = cfg;
   const pageSize = cfg.pageSize ?? 12;
+  const services = cfg.services ?? ASSET_SERVICES;
+  const idDataAttr = `data-${toKebab(cfg.idAttr ?? "assetId")}`;
 
   const root = document.getElementById(galleryId);
   if (!root) return;
@@ -134,8 +171,12 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
     if (card) card.dataset.favorite = on ? "yes" : "no";
   };
 
+  // Tell other views of the same item (e.g. its detail modal) what changed.
+  const announce = (change: { id: number; favorite?: boolean; tally?: GalleryTally }) =>
+    document.dispatchEvent(new CustomEvent("gallery:card-update", { detail: { galleryId, ...change } }));
+
   // ── Vote bar (up/down) ──────────────────────────────────────────────────────
-  const paintVote = (scope: HTMLElement | null, tally: VoteTally) => {
+  const paintVote = (scope: HTMLElement | null, tally: GalleryTally) => {
     if (!scope) return;
     const up = scope.querySelector<HTMLElement>('[data-action="vote-up"]');
     const down = scope.querySelector<HTMLElement>('[data-action="vote-down"]');
@@ -153,17 +194,13 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
   const voteTimers = new WeakMap<HTMLElement, ReturnType<typeof setTimeout>>();
   const VOTE_DEBOUNCE_MS = 300;
 
-  async function sendVote(
-    scope: HTMLElement,
-    userId: number,
-    id: number,
-    value: VoteValue,
-  ) {
+  async function sendVote(scope: HTMLElement, id: number, value: VoteValue) {
     if (scope.dataset.voting === "1") return; // a request is already in flight
     scope.dataset.voting = "1";
     try {
-      const tally = await setVote(userId, id, value);
+      const tally = await services.vote(id, value);
       paintVote(scope, tally);
+      announce({ id, tally });
     } catch (err) {
       showToast(
         err instanceof Error ? err.message : "Could not register your vote",
@@ -171,7 +208,7 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
       );
       // Re-sync from the authoritative tally so a failed vote never leaves the
       // bar in a stale state.
-      getVoteTally(id)
+      services.tally(id)
         .then((tally) => paintVote(scope, tally))
         .catch(() => {});
     } finally {
@@ -179,14 +216,14 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
     }
   }
 
-  function queueVote(scope: HTMLElement, userId: number, id: number, value: VoteValue) {
+  function queueVote(scope: HTMLElement, id: number, value: VoteValue) {
     const pending = voteTimers.get(scope);
     if (pending) clearTimeout(pending);
     voteTimers.set(
       scope,
       setTimeout(() => {
         voteTimers.delete(scope);
-        void sendVote(scope, userId, id, value);
+        void sendVote(scope, id, value);
       }, VOTE_DEBOUNCE_MS),
     );
   }
@@ -208,7 +245,8 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
       const wasOn = favBtn.getAttribute("aria-pressed") === "true";
       paintStar(favBtn, !wasOn); // optimistic
       try {
-        await setFavorite(Number(user.id), id, !wasOn);
+        await services.toggleFavorite(id, !wasOn);
+        announce({ id, favorite: !wasOn });
         if (favToggle?.getAttribute("aria-pressed") === "true") applyFilters();
       } catch (err) {
         paintStar(favBtn, wasOn); // revert
@@ -238,7 +276,7 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
         voteBtn.dataset.action === "vote-up" ? "POSITIVE" : "NEGATIVE";
       const scope = voteBtn.closest<HTMLElement>("[data-vote-bar]");
       // Debounce: coalesce a burst of rapid clicks into one request.
-      if (scope) queueVote(scope, Number(user.id), id, value);
+      if (scope) queueVote(scope, id, value);
       return;
     }
 
@@ -255,7 +293,7 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
         const synthetic = document.createElement("button");
         synthetic.style.display = "none";
         synthetic.setAttribute("data-modal-open", openModal);
-        synthetic.setAttribute("data-asset-id", card.dataset.id);
+        synthetic.setAttribute(idDataAttr, card.dataset.id);
         synthetic.setAttribute("data-foro-focus", "1");
         document.body.appendChild(synthetic);
         synthetic.click();
@@ -307,11 +345,29 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
       synthetic.style.display = "none";
       synthetic.setAttribute("data-modal-open", openModal);
       synthetic.setAttribute("data-asset-mode", "edit");
-      synthetic.setAttribute("data-asset-id", card.dataset.id);
+      synthetic.setAttribute(idDataAttr, card.dataset.id);
       document.body.appendChild(synthetic);
       synthetic.click();
       synthetic.remove();
     }
+  });
+
+  // A detail view (modal) that changes a card's favorite or vote tells the
+  // gallery so the card and the active filters stay in sync without a reload.
+  document.addEventListener("gallery:card-update", (e) => {
+    const detail = (e as CustomEvent).detail as
+      | { galleryId?: string; id: number; favorite?: boolean; tally?: GalleryTally }
+      | undefined;
+    if (!detail || (detail.galleryId && detail.galleryId !== galleryId)) return;
+    const card = root.querySelector<HTMLElement>(`[data-card][data-id="${detail.id}"]`);
+    if (!card) return;
+    if (detail.favorite !== undefined) {
+      const star = card.querySelector<HTMLElement>('[data-action="favorite"]');
+      if (star) paintStar(star, detail.favorite);
+      else card.dataset.favorite = detail.favorite ? "yes" : "no";
+      if (favToggle?.getAttribute("aria-pressed") === "true") applyFilters();
+    }
+    if (detail.tally) paintVote(card.querySelector<HTMLElement>("[data-vote-bar]"), detail.tally);
   });
 
   applyFilters();

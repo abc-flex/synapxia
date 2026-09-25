@@ -37,6 +37,7 @@ const {
   filterOptions3 = [],
   filterDefaultValue3 = "",
   // i18n key for the third filter's "all" (empty) option.
+  filter2AllLabel = null,
   filter3AllLabel = null,
   // Optional fourth filter. Matches by membership (the row value may be a
   // comma-separated multi-value field, e.g. asset access "VIEW,MANAGE,PUBLIC").
@@ -87,6 +88,8 @@ const {
   columnFilter3?: string | null;
   filterOptions3?: FilterOption[];
   filterDefaultValue3?: string;
+  /** i18n key for slot 2's "all" option (default: `${columnFilter2}_modal.filter_title`). */
+  filter2AllLabel?: string | null;
   filter3AllLabel?: string | null;
   columnFilter4?: string | null;
   filterOptions4?: FilterOption[];
@@ -119,7 +122,7 @@ const hasData = data.length > 0;
 // `headerColumn` render as a funnel in that column's <th>; others in the toolbar.
 const filterConfigs = buildFilterConfigs(tableId, [
   { key: columnFilter, options: filterOptions, defaultValue: filterDefaultValue, headerColumn: filterHeaderColumn, asToggle: filterAsToggle },
-  { key: columnFilter2, options: filterOptions2, defaultValue: filterDefaultValue2, headerColumn: filter2HeaderColumn, asToggle: filter2AsToggle },
+  { key: columnFilter2, options: filterOptions2, defaultValue: filterDefaultValue2, allLabel: filter2AllLabel, headerColumn: filter2HeaderColumn, asToggle: filter2AsToggle },
   { key: columnFilter3, options: filterOptions3, defaultValue: filterDefaultValue3, allLabel: filter3AllLabel, headerColumn: filter3HeaderColumn, asToggle: filter3AsToggle },
   { key: columnFilter4, options: filterOptions4, defaultValue: filterDefaultValue4, allLabel: filter4AllLabel, headerColumn: filter4HeaderColumn, asToggle: filter4AsToggle },
   ...extraFilters,

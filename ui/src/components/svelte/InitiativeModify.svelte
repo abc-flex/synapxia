@@ -10,7 +10,9 @@
   import DiagnosisTable from "@/components/svelte/DiagnosisTable.svelte";
   import { getCollaboration } from "@/lib/collaborations";
   import { getDiagnosisForm, getInitiativeDiagnostics, resubmitInitiative } from "@/lib/initiatives";
-  import { loadInitiativeLists, labelOf, currentLang, type InitiativeLists } from "@/lib/initiativeLists";
+  import {
+    loadInitiativeLists, labelOf, optionLabel, currentLang, type InitiativeLists, type Option,
+  } from "@/lib/initiativeLists";
   import { notifyChanged } from "@/lib/notificationsStore";
   import { apiErrorDetail } from "@/lib/api";
   import { translate } from "@/utils/i18nClient";
@@ -20,6 +22,15 @@
   } from "@/types/api";
 
   let langTick = $state(0);
+  // List labels in the current language; re-run on langTick (language switch).
+  const lbl = (opts: Option[], value?: string | null): string => {
+    void langTick;
+    return labelOf(opts, value);
+  };
+  const optText = (o: Option): string => {
+    void langTick;
+    return optionLabel(o);
+  };
   const t = (key: string, fallback: string): string => {
     void langTick;
     try {
@@ -151,7 +162,7 @@
       <p class="mt-0.5 text-sm text-white/85">{t("inits_modify.subtitle", "Apply the reviewer's feedback and resubmit the initiative for diagnosis.")}</p>
     </div>
     {#if initiative}
-      <span class="ml-auto shrink-0 rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-medium">{labelOf(lists.status, initiative.status)}</span>
+      <span class="ml-auto shrink-0 rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-medium">{lbl(lists.status, initiative.status)}</span>
     {/if}
   </div>
 
@@ -187,21 +198,21 @@
               <label for="im-type" class={label}>{t("inits_propose.type", "Type")}</label>
               <select id="im-type" class={input("type")} bind:value={form.type}>
                 <option value="">{t("inits_propose.choose", "— choose —")}</option>
-                {#each lists.type as o (o.value)}<option value={o.value}>{o.label}</option>{/each}
+                {#each lists.type as o (o.value)}<option value={o.value}>{optText(o)}</option>{/each}
               </select>
             </div>
             <div>
               <label for="im-impact" class={label}>{t("inits_propose.expected_impact", "Expected impact")} <span class="text-red-500">*</span></label>
               <select id="im-impact" class={input("expected_impact")} bind:value={form.expected_impact} onchange={() => clear("expected_impact")}>
                 <option value="">{t("inits_propose.choose", "— choose —")}</option>
-                {#each lists.impact as o (o.value)}<option value={o.value}>{o.label}</option>{/each}
+                {#each lists.impact as o (o.value)}<option value={o.value}>{optText(o)}</option>{/each}
               </select>
             </div>
             <div>
               <label for="im-priority" class={label}>{t("inits_propose.priority_level", "Priority")} <span class="text-red-500">*</span></label>
               <select id="im-priority" class={input("priority_level")} bind:value={form.priority_level} onchange={() => clear("priority_level")}>
                 <option value="">{t("inits_propose.choose", "— choose —")}</option>
-                {#each lists.priority as o (o.value)}<option value={o.value}>{o.label}</option>{/each}
+                {#each lists.priority as o (o.value)}<option value={o.value}>{optText(o)}</option>{/each}
               </select>
             </div>
           </div>

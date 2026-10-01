@@ -312,7 +312,8 @@ import "../styles/globals.css";
             const msg = error.message.toLowerCase();
 
             // Specific error handling
-            if (msg.includes("incorrect username") || msg.includes("incorrect password") || msg.includes("unauthorized")) {
+            // The API answers a bad login with 400 {"detail": "LOGIN_BAD_CREDENTIALS"}.
+            if (msg.includes("login_bad_credentials") || msg.includes("incorrect username") || msg.includes("incorrect password") || msg.includes("unauthorized")) {
               errorMsg = tr("login_page.error_invalid_credentials", "Invalid username or password.");
               usernameInput.focus();
             } else if (msg.includes("user") && msg.includes("disabled")) {

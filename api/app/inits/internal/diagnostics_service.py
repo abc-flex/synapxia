@@ -40,27 +40,25 @@ def get_diagnostics(session: Session, initiative: Initiative, lang: str) -> Diag
     ).all()
 
     lists = {c.list for c in criteria_rows if c.list}
-    langs = {lang, DEFAULT_LANG}
-    labels: Dict[Tuple[str, str, str], str] = {}
+    # Every language, so each answer also carries all of its labels.
+    by_value: Dict[Tuple[str, str], Dict[str, str]] = {}
     if lists:
         for item in session.exec(
-            select(ListItem).where(
-                ListItem.list.in_(list(lists)),
-                ListItem.lang.in_(list(langs)),
-            )
+            select(ListItem).where(ListItem.list.in_(list(lists)))
         ).all():
-            labels[(item.list, item.lang, item.value)] = item.label
+            if item.label:
+                by_value.setdefault((item.list, item.value), {})[item.lang] = item.label
+
+    def labels_of(list_code: Optional[str], score: Optional[int]) -> Optional[Dict[str, str]]:
+        if score is None or not list_code:
+            return None
+        return by_value.get((list_code, str(score))) or None
 
     def label(list_code: Optional[str], score: Optional[int]) -> Optional[str]:
         if score is None:
             return None
-        value = str(score)
-        if list_code:
-            for code in (lang, DEFAULT_LANG):
-                hit = labels.get((list_code, code, value))
-                if hit:
-                    return hit
-        return value
+        found = labels_of(list_code, score) or {}
+        return found.get(lang) or found.get(DEFAULT_LANG) or str(score)
 
     items = []
     for c in criteria_rows:
@@ -73,8 +71,10 @@ def get_diagnostics(session: Session, initiative: Initiative, lang: str) -> Diag
             is_active_criteria=c.is_active,
             creator_score=d.creator_score if d else None,
             creator_label=label(c.list, d.creator_score) if d else None,
+            creator_labels=labels_of(c.list, d.creator_score) if d else None,
             reviewer_score=d.reviewer_score if d else None,
             reviewer_label=label(c.list, d.reviewer_score) if d else None,
+            reviewer_labels=labels_of(c.list, d.reviewer_score) if d else None,
             rationale=d.rationale if d else None,
         ))
 
@@ -102,23 +102,24 @@ def diagnosis_form(session: Session, lang: str) -> DiagnosisForm:
     ).all()
     lists = {c.list or c.code for c in criteria_rows}
     by_list: Dict[str, Dict[str, Tuple[int, str, int]]] = {}
+    all_labels: Dict[Tuple[str, str], Dict[str, str]] = {}
     if lists:
         for item in session.exec(
-            select(ListItem).where(
-                ListItem.list.in_(list(lists)),
-                ListItem.lang.in_(list({lang, DEFAULT_LANG})),
-            )
+            select(ListItem).where(ListItem.list.in_(list(lists)))
         ).all():
             try:
                 value = int(item.value)
             except (TypeError, ValueError):
+                continue
+            all_labels.setdefault((item.list, item.value), {})[item.lang] = item.label or item.value
+            if item.lang not in (lang, DEFAULT_LANG):
                 continue
             slot = by_list.setdefault(item.list, {})
             # The requested language wins over the English fallback.
             if item.value not in slot or item.lang == lang:
                 slot[item.value] = (value, item.label or item.value, item.sort_order or 0)
     scales = {
-        code: [ScaleOption(value=v, label=lbl)
+        code: [ScaleOption(value=v, label=lbl, labels=all_labels.get((code, str(v)), {}))
                for v, lbl, _ in sorted(opts.values(), key=lambda o: (o[2], o[0]))]
         for code, opts in by_list.items()
     }

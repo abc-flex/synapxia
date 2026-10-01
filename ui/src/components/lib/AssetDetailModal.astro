@@ -18,10 +18,13 @@
  *   The page should listen for the `asset-detail-saved` window event
  *   (or just reload). The modal does its own toasting + reload.
  */
+import { listLabelsAttr } from "@/lib/listLang";
+
 interface Props {
   modalId?: string;
   categories?: { value: string; label: string }[];
-  statuses?: { value: string; label: string }[];
+  /** `labels` (every language) lets the options follow the language switcher. */
+  statuses?: { value: string; label: string; labels?: Record<string, string> }[];
 }
 
 const {
@@ -172,7 +175,7 @@ const {
             >
               <option value="" data-i18n="asset_detail_modal.choose_status">— choose —</option>
               {statuses.map((s) => (
-                <option value={s.value}>{s.label}</option>
+                <option value={s.value} data-list-labels={listLabelsAttr(s.labels)}>{s.label}</option>
               ))}
             </select>
             {/* Why the field is locked / which options survived — set by

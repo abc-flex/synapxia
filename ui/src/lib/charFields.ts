@@ -13,6 +13,7 @@
 import { getSpecificationsbyCategory } from "./specifications";
 import { getFeature } from "./features";
 import { getListItemsbyList } from "./list_items";
+import { labelsByValue, labelsFor, toListOptions } from "./listLang";
 import type { Feature, ListItem } from "../types/api";
 
 /** Long-form features rendered as a textarea (single source of truth). */
@@ -26,6 +27,8 @@ export type CharControl = "select" | "textarea" | "input";
 export interface CharFieldOption {
   value: string;
   label: string;
+  /** Every language's label — lets the control follow the language switcher. */
+  labels: Record<string, string>;
 }
 
 export interface CharFieldDef {
@@ -35,6 +38,8 @@ export interface CharFieldDef {
   description?: string;
   /** FEAT_TYPE classification (GENERAL/TECHNICAL/…) — shown as a badge. */
   type?: string;
+  /** The FEAT_TYPE value's label in every language (badge text). */
+  typeLabels?: Record<string, string>;
   required: boolean;
   control: CharControl;
   /** Select options (empty unless control === "select"). */
@@ -45,15 +50,17 @@ export interface CharFieldDef {
 const featureCache = new Map<string, Feature>();
 const listItemsCache = new Map<string, ListItem[]>();
 
-const currentLang = (): string =>
-  (typeof localStorage !== "undefined" && localStorage.getItem("lang")) || "en";
-
-/** Keep the current language's items (fall back to English), in sort_order. */
-export function pickLangItems(items: ListItem[], lang = currentLang()): ListItem[] {
-  const byLang = items.filter((li) => li.lang === lang);
-  return (byLang.length ? byLang : items.filter((li) => li.lang === "en")).sort(
-    (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0),
-  );
+async function listItems(code: string): Promise<ListItem[]> {
+  let items = listItemsCache.get(code);
+  if (!items) {
+    try {
+      items = await getListItemsbyList(code, 0, 1000);
+      listItemsCache.set(code, items);
+    } catch {
+      items = [];
+    }
+  }
+  return items;
 }
 
 /**
@@ -62,7 +69,10 @@ export function pickLangItems(items: ListItem[], lang = currentLang()): ListItem
  * plain text control instead of dropping the field.
  */
 export async function buildCharFieldDefs(category: string): Promise<CharFieldDef[]> {
-  const specs = await getSpecificationsbyCategory(category, 0, 1000);
+  const [specs, featTypes] = await Promise.all([
+    getSpecificationsbyCategory(category, 0, 1000),
+    listItems("FEAT_TYPE").then(labelsByValue),
+  ]);
   return Promise.all(
     specs.map(async (spec) => {
       let feature = featureCache.get(spec.feature);
@@ -77,19 +87,7 @@ export async function buildCharFieldDefs(category: string): Promise<CharFieldDef
 
       let options: CharFieldOption[] = [];
       if (feature.list) {
-        let items = listItemsCache.get(feature.list);
-        if (!items) {
-          try {
-            items = await getListItemsbyList(feature.list, 0, 1000);
-            listItemsCache.set(feature.list, items);
-          } catch {
-            items = [];
-          }
-        }
-        options = pickLangItems(items).map((li) => ({
-          value: li.value,
-          label: li.label || li.value,
-        }));
+        options = toListOptions(await listItems(feature.list));
       }
 
       const control: CharControl = options.length
@@ -103,6 +101,7 @@ export async function buildCharFieldDefs(category: string): Promise<CharFieldDef
         name: feature.name || spec.feature,
         description: feature.description || undefined,
         type: feature.type || undefined,
+        typeLabels: feature.type ? labelsFor(featTypes, feature.type) : undefined,
         required: !!spec.required,
         control,
         options,

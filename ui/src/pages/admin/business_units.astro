@@ -8,6 +8,7 @@ import TreeChart from "../../components/treeview/TreeChart.astro";
 import shareSvg from "@/images/icons/share.svg?raw";
 import { getBusinessUnits } from "@/lib/business_units";
 import { getListItemsbyList } from "@/lib/list_items";
+import { labelsByValue, labelsFor, listLabel } from "@/lib/listLang";
 
 // Fetch business_units from API
 let business_units: any[] = [];
@@ -30,7 +31,7 @@ const columns = [
   { key: "code", label: "business_unit_modal.code", visible: false },
   { key: "name", label: "business_unit_modal.name", as: "title", subtitleKey: "code", subtitleFormat: "text" },
   { key: "type", label: "business_unit_modal.type", visible: false },
-  { key: "type_name", label: "business_unit_modal.type" },
+  { key: "type_name", label: "business_unit_modal.type", labelsKey: "type_labels" },
   { key: "parent", label: "business_unit_modal.parent", visible: false },
   { key: "parent_name", label: "business_unit_modal.parent" },
 ];
@@ -47,7 +48,8 @@ const data = business_units.map((item) => ({
   name: item.name,
   description: item.description,
   type: item.type,
-  type_name: types.find((s) => String(s.value) === String(item.type))?.label || item.type,
+  type_name: listLabel(labelsByValue(types), item.type, "en"),
+  type_labels: labelsFor(labelsByValue(types), item.type),
   parent: item.parent,
   parent_name: units.find((u) => u.value === item.parent)?.name || item.parent,
   is_active: item.is_active,

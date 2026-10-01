@@ -1,6 +1,7 @@
 ---
 import type { ColumnConfig, FilterConfig } from "@/types/datatable";
 import filterIcon from "@/images/icons/funnel.svg?raw";
+import { listLabelsAttr } from "@/lib/listLang";
 
 interface Props {
   visibleColumns: ColumnConfig[];
@@ -39,7 +40,9 @@ const headerFilterFor = (key: string): FilterConfig | undefined =>
                   >
                     <option value="" data-i18n={hf.allLabel || `${hf.key}_modal.filter_title`}></option>
                     {hf.options.map((opt) => (
-                      <option value={opt.value || opt.code} data-i18n={opt.i18n} selected={(opt.value || opt.code) === hf.defaultValue}>
+                      <option value={opt.value || opt.code} data-i18n={opt.i18n}
+                        data-list-labels={opt.i18n ? undefined : listLabelsAttr(opt.labels)}
+                        selected={(opt.value || opt.code) === hf.defaultValue}>
                         {opt.label || opt.name}
                       </option>
                     ))}

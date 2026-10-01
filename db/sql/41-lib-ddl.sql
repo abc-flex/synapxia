@@ -168,6 +168,12 @@ INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
     ('ASSET_STATUS', 'en', 'PUBLISHED', 'Published', 30),
     ('ASSET_STATUS', 'en', 'REJECTED', 'Rejected', 40),
     ('ASSET_STATUS', 'en', 'DEPRECATED', 'Deprecated', 50);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('ASSET_STATUS', 'es', 'PROPOSED', 'Propuesto', 10),
+    ('ASSET_STATUS', 'es', 'FEEDBACK', 'Retroalimentado', 20),
+    ('ASSET_STATUS', 'es', 'PUBLISHED', 'Publicado', 30),
+    ('ASSET_STATUS', 'es', 'REJECTED', 'Rechazado', 40),
+    ('ASSET_STATUS', 'es', 'DEPRECATED', 'Obsoleto', 50);
 
 -- ===== List: Action Type =====
 INSERT INTO lists (code, name, description, type, module) VALUES (
@@ -215,6 +221,15 @@ INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
     ('RELATION_TYPE', 'en', 'EXTENDS', 'Extends', 60),
     ('RELATION_TYPE', 'en', 'CONTAINS', 'Contains', 70),
     ('RELATION_TYPE', 'en', 'INSPIRED_BY', 'Inspired By', 80);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('RELATION_TYPE', 'es', 'DEPENDS_ON', 'Depende de', 10),
+    ('RELATION_TYPE', 'es', 'RELATED_TO', 'Relacionado con', 20),
+    ('RELATION_TYPE', 'es', 'SIMILAR_TO', 'Similar a', 30),
+    ('RELATION_TYPE', 'es', 'PART_OF', 'Parte de', 40),
+    ('RELATION_TYPE', 'es', 'USED_BY', 'Usado por', 50),
+    ('RELATION_TYPE', 'es', 'EXTENDS', 'Extiende', 60),
+    ('RELATION_TYPE', 'es', 'CONTAINS', 'Contiene', 70),
+    ('RELATION_TYPE', 'es', 'INSPIRED_BY', 'Inspirado en', 80);
 
 -- ===== List: Target Type =====
 INSERT INTO lists (code, name, description, type, module) VALUES (
@@ -228,6 +243,13 @@ INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
     ('TARGET_TYPE', 'en', 'TEAM', 'Teams', 40),
     ('TARGET_TYPE', 'en', 'UNIT', 'Units', 50),
     ('TARGET_TYPE', 'en', 'PUBLIC', 'Public', 60);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('TARGET_TYPE', 'es', 'USER', 'Usuarios', 10),
+    ('TARGET_TYPE', 'es', 'ROLE', 'Roles', 20),
+    ('TARGET_TYPE', 'es', 'PROJECT', 'Proyectos', 30),
+    ('TARGET_TYPE', 'es', 'TEAM', 'Equipos', 40),
+    ('TARGET_TYPE', 'es', 'UNIT', 'Unidades', 50),
+    ('TARGET_TYPE', 'es', 'PUBLIC', 'Público', 60);
 
 -- ===== List: Access Level =====
 INSERT INTO lists (code, name, description, type, module) VALUES (
@@ -237,3 +259,6 @@ INSERT INTO lists (code, name, description, type, module) VALUES (
 INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
     ('ACCESS_LEVEL', 'en', 'VIEW', 'View', 10),
     ('ACCESS_LEVEL', 'en', 'MANAGE', 'Manage', 20);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('ACCESS_LEVEL', 'es', 'VIEW', 'Ver', 10),
+    ('ACCESS_LEVEL', 'es', 'MANAGE', 'Gestionar', 20);

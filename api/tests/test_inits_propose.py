@@ -77,12 +77,19 @@ def test_propose_writes_the_whole_workflow(session, client):
     assert (link.asset, link.type, link.rationale) == (5, "USED_BY", "reuse")
 
 
-def test_admin_self_review_yields_one_grant(session, client):
-    _world(session, proposer_profile="ADMINISTRATIVE")
-    override(user(PROPOSER, profile="ADMINISTRATIVE"))
-    resp = client.post("/api/initiatives/propose", json=_body(reviewer_id=PROPOSER))
+def test_response_names_the_assigned_reviewer(session, client):
+    override(_world(session))
+    resp = client.post("/api/initiatives/propose", json=_body(reviewer_id=None))
     assert resp.status_code == 201, resp.text
-    assert len(session.exec(select(InitPermission)).all()) == 1
+    init = data(resp)
+    assert init["reviewer_id"] == REVIEWER and init["reviewer_name"] == "F L"
+    assert init["name"] == "Clause Extractor"  # the initiative's own keys are kept
+
+
+def test_admin_self_review_refused(session, client):
+    _world(session, proposer_profile="ADMINISTRATIVE")
+    proposer = user(PROPOSER, profile="ADMINISTRATIVE")
+    _assert_refused(session, client, proposer, _body(reviewer_id=PROPOSER))
 
 
 def test_actor_comes_from_session_not_body(session, client):
@@ -204,11 +211,11 @@ def test_reviewers_exclude_non_admin_caller(session, client):
     assert PROPOSER not in ids and REVIEWER in ids
 
 
-def test_reviewers_include_admin_caller(session, client):
+def test_reviewers_exclude_admin_caller_too(session, client):
     _world(session, proposer_profile="ADMINISTRATIVE")
     override(user(PROPOSER, profile="ADMINISTRATIVE"))
     ids = [r["value"] for r in data(client.get("/api/initiatives/reviewers"))]
-    assert PROPOSER in ids
+    assert PROPOSER not in ids and REVIEWER in ids
 
 
 def test_reviewers_need_an_inits_privilege(session, client):

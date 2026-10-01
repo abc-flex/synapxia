@@ -20,6 +20,7 @@
  * `initCardGallery` filters and wires it unchanged.
  */
 import { formatRelative } from "@/lib/datatable";
+import { listLabelsAttr } from "@/lib/listLang";
 
 export interface Props {
   id: number;
@@ -31,6 +32,10 @@ export interface Props {
   typeLabel?: string | null;
   priorityValue?: string | null;
   priorityLabel?: string | null;
+  /** Every language's label (lang → label) — the chips follow the language switcher. */
+  statusLabels?: Record<string, string>;
+  typeLabels?: Record<string, string>;
+  priorityLabels?: Record<string, string>;
   tags?: string[];
   createdAt: string;
   locale?: string;
@@ -46,7 +51,7 @@ export interface Props {
 
 const {
   id, name, description, statusValue, statusLabel, typeValue, typeLabel, priorityValue, priorityLabel,
-  tags = [], createdAt, locale = "en", favorite, permissions, votePositive, voteNegative,
+  statusLabels, typeLabels, priorityLabels, tags = [], createdAt, locale = "en", favorite, permissions, votePositive, voteNegative,
   myVote, discussCount, relatedCount, detailModalId = "inits-view-modal",
 } = Astro.props as Props;
 
@@ -106,15 +111,15 @@ const thumb =
         <h3 class="truncate text-base font-semibold text-gray-900 dark:text-white" title={name}>{name}</h3>
 
         <div class="mt-1 flex flex-wrap items-center gap-1.5">
-          <span class={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${accent.pill}`} data-label-list="status" data-label-value={statusValue}>{statusLabel}</span>
+          <span class={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${accent.pill}`} data-list-labels={listLabelsAttr(statusLabels)}>{statusLabel}</span>
           {priorityLabel && (
             <span class={chip}>
               <span class={`h-1.5 w-1.5 rounded-full ${PRIORITY_DOT[priorityValue ?? ""] ?? "bg-gray-400"}`} aria-hidden="true"></span>
               <span class="text-gray-500 dark:text-gray-400" data-i18n="inits_explore.field_priority">Priority</span>
-              <span class="font-semibold" data-label-list="priority" data-label-value={priorityValue ?? ""}>{priorityLabel}</span>
+              <span class="font-semibold" data-list-labels={listLabelsAttr(priorityLabels)}>{priorityLabel}</span>
             </span>
           )}
-          {typeLabel && <span class={chip} data-label-list="type" data-label-value={typeValue ?? ""}>{typeLabel}</span>}
+          {typeLabel && <span class={chip} data-list-labels={listLabelsAttr(typeLabels)}>{typeLabel}</span>}
           <span class="text-xs text-gray-400" data-relative-ts={createdAt}>{formatRelative(createdAt, locale)}</span>
         </div>
 

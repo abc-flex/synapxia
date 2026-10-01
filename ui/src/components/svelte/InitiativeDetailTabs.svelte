@@ -18,6 +18,7 @@
   import { onMount } from "svelte";
   import { getAssetsSelect, getAssetsWithAccess } from "@/lib/assets";
   import { getListItemsbyList } from "@/lib/list_items";
+  import { labelsByValue, listLabel, toListOptions } from "@/lib/listLang";
   import {
     getInitiativeDiagnostics,
     getInitiativeAssets,
@@ -96,12 +97,17 @@
   };
   const currentLang = (): string =>
     (typeof localStorage !== "undefined" && localStorage.getItem("lang")) === "es" ? "es" : "en";
-  const langItems = (items: any[]): any[] => {
-    const lang = currentLang();
-    const byLang = items.filter((li) => li.lang === lang);
-    return (byLang.length ? byLang : items.filter((li) => li.lang === "en")).sort(
-      (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0),
-    );
+  // List values follow the header language switcher: every list is kept with
+  // all of its languages and read through langTick (lib/listLang.ts).
+  // list code → every language's items (RELATION_TYPE, TARGET_TYPE, ACCESS_LEVEL).
+  let listRaw = $state<Record<string, any[]>>({});
+  const listOpts = (code: string): SelectOption[] => {
+    void langTick;
+    return toListOptions(listRaw[code] ?? [], currentLang());
+  };
+  const listText = (code: string, value: string | null | undefined): string => {
+    void langTick;
+    return value ? listLabel(labelsByValue(listRaw[code] ?? []), value, currentLang()) : "";
   };
 
   // ── State ─────────────────────────────────────────────────────────────
@@ -121,7 +127,7 @@
   const linkKey = (asset: number, type: string): string => `${asset}:${type}`;
   let initialLinkByKey = $state(new Map<string, { asset: number; type: string; rationale: string }>());
   let assetOptions = $state<SelectOption[]>([]);
-  let relTypeOptions = $state<SelectOption[]>([]);
+  const relTypeOptions = $derived(listOpts("RELATION_TYPE"));
   let relTarget = $state("");
   let relType = $state("");
   let relRationale = $state("");
@@ -130,10 +136,8 @@
   // Permissions
   let stagedPermissions = $state<StagedPermission[]>([]);
   let initialPermById = $state(new Map<number, any>());
-  let targetTypeOptions = $state<SelectOption[]>([]);
-  let accessOptions = $state<SelectOption[]>([]);
-  let targetTypeLabels = new Map<string, string>();
-  let accessLabels = new Map<string, string>();
+  const targetTypeOptions = $derived(listOpts("TARGET_TYPE"));
+  const accessOptions = $derived(listOpts("ACCESS_LEVEL"));
   let permType = $state("");
   let permCode = $state("");
   let permAccess = $state("");
@@ -252,25 +256,17 @@
         assetOptions = [];
       }
     }
-    try {
-      relTypeOptions = langItems(await listItems("RELATION_TYPE")).map((li) => ({ value: li.value, label: li.label || li.value }));
-    } catch {
-      relTypeOptions = [];
-    }
-    try {
-      const li = langItems(await listItems("TARGET_TYPE"));
-      targetTypeOptions = li.map((x) => ({ value: x.value, label: x.label || x.value }));
-      targetTypeLabels = new Map(li.map((x) => [x.value, x.label || x.value]));
-    } catch {
-      targetTypeOptions = [];
-    }
-    try {
-      const li = langItems(await listItems("ACCESS_LEVEL"));
-      accessOptions = li.map((x) => ({ value: x.value, label: x.label || x.value }));
-      accessLabels = new Map(li.map((x) => [x.value, x.label || x.value]));
-    } catch {
-      accessOptions = [];
-    }
+    const loaded: Record<string, any[]> = {};
+    await Promise.all(
+      ["RELATION_TYPE", "TARGET_TYPE", "ACCESS_LEVEL"].map(async (code) => {
+        try {
+          loaded[code] = await listItems(code);
+        } catch {
+          loaded[code] = [];
+        }
+      }),
+    );
+    listRaw = { ...listRaw, ...loaded };
   }
 
   async function targetOptions(targetType: string): Promise<SelectOption[]> {
@@ -375,11 +371,11 @@
       ...stagedPermissions,
       {
         targetType: permType,
-        targetTypeLabel: targetTypeLabels.get(permType) || permType,
+        targetTypeLabel: listText("TARGET_TYPE", permType) || permType,
         targetCode,
         targetCodeLabel,
         access: permAccess,
-        accessLabel: accessLabels.get(permAccess) || permAccess,
+        accessLabel: listText("ACCESS_LEVEL", permAccess) || permAccess,
       },
     ];
     permType = "";
@@ -436,11 +432,11 @@
       permissions.map(async (p: any) => ({
         id: p.id,
         targetType: p.target_type,
-        targetTypeLabel: targetTypeLabels.get(p.target_type) || p.target_type,
+        targetTypeLabel: listText("TARGET_TYPE", p.target_type) || p.target_type,
         targetCode: p.target_code,
         targetCodeLabel: await resolveTargetLabel(p.target_type, p.target_code),
         access: p.access_level,
-        accessLabel: accessLabels.get(p.access_level) || p.access_level,
+        accessLabel: listText("ACCESS_LEVEL", p.access_level) || p.access_level,
       })),
     );
   }
@@ -518,9 +514,10 @@
   }
 
   onMount(() => {
+    // The diagnosis rows carry every language's answer labels, so a language
+    // switch only repaints (DiagnosisTable has its own langTick) — no refetch.
     const onLang = () => {
       langTick += 1;
-      if (initId != null) void loadDiagnosis(initId);
     };
     window.addEventListener("languageChanged", onLang);
     document.addEventListener("synapxia:locale-changed", onLang);
@@ -639,7 +636,7 @@
               data-pending={pendingLinkKeys.has(linkKey(link.asset, link.type)) ? "1" : undefined}
             >
               <span class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-800 dark:text-gray-200" title={link.assetLabel}>{link.assetLabel}</span>
-              <span class="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">{link.typeLabel || link.type}</span>
+              <span class="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">{listText("RELATION_TYPE", link.type) || link.type}</span>
               {#if link.rationale}
                 <span class="hidden md:block max-w-[220px] truncate text-xs text-gray-500 dark:text-gray-400" title={link.rationale}>{link.rationale}</span>
               {/if}
@@ -702,9 +699,9 @@
               class={p.id == null ? `${rowClass} ring-2 ring-amber-400` : rowClass}
               data-pending={p.id == null ? "1" : undefined}
             >
-              <span class="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-300">{p.targetTypeLabel || p.targetType}</span>
+              <span class="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-300">{listText("TARGET_TYPE", p.targetType) || p.targetType}</span>
               <span class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-800 dark:text-gray-200" title={p.targetCodeLabel}>{p.targetCodeLabel}</span>
-              <span class="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">{p.accessLabel || p.access}</span>
+              <span class="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">{listText("ACCESS_LEVEL", p.access) || p.access}</span>
               <button type="button" class="shrink-0 rounded-md p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30" title={t("initiative_detail_modal.perm_remove", "Revoke")} aria-label={t("initiative_detail_modal.perm_remove", "Revoke")} onclick={() => removePermission(idx)}>
                 {@render removeIcon()}
               </button>

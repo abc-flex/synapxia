@@ -37,10 +37,26 @@ def test_non_admin_proposer_cannot_self_select(session):
         reviewers.resolve_reviewer(session, 3, proposer=proposer)
 
 
-def test_admin_proposer_may_self_select(session):
+@pytest.mark.parametrize("uid", [1, 2, 5])  # ADMINISTRATOR, ADMINISTRATIVE, superuser
+def test_admin_proposer_cannot_self_select_either(session, uid):
     _seed(session)
-    proposer = session.get(reviewers.User, 2)  # ADMINISTRATIVE
-    assert reviewers.resolve_reviewer(session, 2, proposer=proposer).id == 2
+    proposer = session.get(reviewers.User, uid)
+    with pytest.raises(ValueError, match="yourself"):
+        reviewers.resolve_reviewer(session, uid, proposer=proposer)
+
+
+def test_auto_assign_skips_admin_proposer(session):
+    _seed(session)
+    proposer = session.get(reviewers.User, 1)  # ADMINISTRATOR, lowest eligible id
+    assert reviewers.resolve_reviewer(session, None, proposer=proposer).id == 2
+
+
+def test_display_name_falls_back_to_username(session):
+    _seed(session)
+    assert reviewers.display_name(session.get(reviewers.User, 1)) == "F L"
+    u = session.get(reviewers.User, 1)
+    u.first_name, u.last_name = None, None
+    assert reviewers.display_name(u) == "admin_like"
 
 
 def test_ineligible_or_inactive_reviewer_refused(session):

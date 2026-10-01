@@ -7,6 +7,7 @@ import Toast from "../../components/Toast.astro";
 import { getLists } from "@/lib/lists";
 import { getModulesSelect } from "@/lib/modules";
 import { getListItemsbyList } from "@/lib/list_items";
+import { labelsByValue, labelsFor, listLabel } from "@/lib/listLang";
 
 // Fetch lists from API
 let lists: any[] = [];
@@ -42,7 +43,7 @@ const columns = [
   { key: "code", label: "list_modal.code", visible: false },
   { key: "name", label: "list_modal.name", as: "title", subtitleKey: "code", subtitleFormat: "text" },
   { key: "type", label: "list_modal.type", visible: false },
-  { key: "type_label", label: "list_modal.type", visible: true },
+  { key: "type_label", label: "list_modal.type", visible: true, labelsKey: "type_labels" },
   { key: "module", label: "list_modal.module", visible: false },
   { key: "module_name", label: "list_modal.module" },
 ];
@@ -53,7 +54,8 @@ const data = lists.map((item) => ({
   code: item.code,
   name: item.name,
   type: item.type,  //references List_items where list='LIST_TYPE'
-  type_label: types.find((t) => String(t.value) === String(item.type))?.label || item.type,
+  type_label: listLabel(labelsByValue(types), item.type, "en"),
+  type_labels: labelsFor(labelsByValue(types), item.type),
   description: item.description,
   is_active: item.is_active,
   created_at: item.created_at,

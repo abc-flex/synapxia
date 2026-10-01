@@ -311,7 +311,7 @@ def test_list_versions_service(session):
     reviewer = _mk_user(session, 7, "rev")
     # The versioner must be a real User row so the actor lookup resolves it.
     versioner = _mk_user(session, 1, "root", is_superuser=True)
-    asset = _propose(session, reviewer, proposer_id=reviewer.id)
+    asset = _propose(session, reviewer, proposer_id=versioner.id)
 
     svc.create_version(session, versioner, asset.id, VersionRequest(change_type="minor"))
     svc.create_version(session, versioner, asset.id, VersionRequest(change_type="major"))

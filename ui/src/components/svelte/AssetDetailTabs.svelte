@@ -22,6 +22,7 @@
   import { getSpecificationsbyCategory } from "@/lib/specifications";
   import { getFeature } from "@/lib/features";
   import { getListItemsbyList } from "@/lib/list_items";
+  import { labelsByValue, listLabel, toListOptions } from "@/lib/listLang";
   import {
     getCharacterizationsByAsset,
     createCharacterization,
@@ -138,13 +139,30 @@
   };
   const currentLang = (): string =>
     (typeof localStorage !== "undefined" && localStorage.getItem("lang")) || "en";
-  const langItems = (items: any[]): any[] => {
-    const lang = currentLang();
-    const byLang = items.filter((li) => li.lang === lang);
-    return (byLang.length ? byLang : items.filter((li) => li.lang === "en")).sort(
-      (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0),
-    );
+  // List values follow the header language switcher: every list is kept with
+  // all of its languages and read through langTick (lib/listLang.ts).
+  const langItems = (items: any[]): SelectOption[] => {
+    void langTick;
+    return toListOptions(items ?? [], currentLang());
   };
+  // list code → every language's items (RELATION_TYPE, TARGET_TYPE, ACCESS_LEVEL, FEAT_TYPE).
+  let listRaw = $state<Record<string, any[]>>({});
+  const listOpts = (code: string): SelectOption[] => {
+    void langTick;
+    return toListOptions(listRaw[code] ?? [], currentLang());
+  };
+  const listText = (code: string, value: string | null | undefined): string => {
+    void langTick;
+    return value ? listLabel(labelsByValue(listRaw[code] ?? []), value, currentLang()) : "";
+  };
+  async function loadList(code: string): Promise<void> {
+    let items = listItemsCache.get(code);
+    if (!items) {
+      items = await getListItemsbyList(code);
+      listItemsCache.set(code, items);
+    }
+    listRaw = { ...listRaw, [code]: items };
+  }
   const isConflict = (err: unknown): boolean =>
     err instanceof Error && /\(409\)/.test(err.message);
 
@@ -178,7 +196,7 @@
   const linkKey = (target: number, type: string): string => `${target}:${type}`;
   let initialRelByKey = $state(new Map<string, any>());
   let assetOptions = $state<SelectOption[]>([]);
-  let relTypeOptions = $state<SelectOption[]>([]);
+  const relTypeOptions = $derived(listOpts("RELATION_TYPE"));
   let relTarget = $state("");
   let relType = $state("");
   let relRationale = $state("");
@@ -198,10 +216,8 @@
   // Permissions
   let stagedPermissions = $state<StagedPermission[]>([]);
   let initialPermById = $state(new Map<number, any>());
-  let targetTypeOptions = $state<SelectOption[]>([]);
-  let accessOptions = $state<SelectOption[]>([]);
-  let targetTypeLabels = new Map<string, string>();
-  let accessLabels = new Map<string, string>();
+  const targetTypeOptions = $derived(listOpts("TARGET_TYPE"));
+  const accessOptions = $derived(listOpts("ACCESS_LEVEL"));
   let permType = $state("");
   let permCode = $state("");
   let permAccess = $state("");
@@ -384,6 +400,8 @@
       return;
     }
 
+    // FEAT_TYPE labels for the per-feature "Type:" badge (non-fatal).
+    void loadList("FEAT_TYPE").catch(() => undefined);
     const enriched: EnrichedSpec[] = await Promise.all(
       specs.map(async (s) => {
         let featureObj = featureCache.get(s.feature);
@@ -466,14 +484,9 @@
       assetOptions = [];
     }
     try {
-      let items = listItemsCache.get("RELATION_TYPE");
-      if (!items) {
-        items = await getListItemsbyList("RELATION_TYPE");
-        listItemsCache.set("RELATION_TYPE", items);
-      }
-      relTypeOptions = langItems(items).map((li) => ({ value: li.value, label: li.label || li.value }));
+      await loadList("RELATION_TYPE");
     } catch {
-      relTypeOptions = [];
+      /* the type select stays empty */
     }
   }
 
@@ -587,30 +600,9 @@
   }
 
   async function loadPermissionOptions(): Promise<void> {
-    try {
-      let items = listItemsCache.get("TARGET_TYPE");
-      if (!items) {
-        items = await getListItemsbyList("TARGET_TYPE");
-        listItemsCache.set("TARGET_TYPE", items);
-      }
-      const li = langItems(items);
-      targetTypeOptions = li.map((x) => ({ value: x.value, label: x.label || x.value }));
-      targetTypeLabels = new Map(li.map((x) => [x.value, x.label || x.value]));
-    } catch {
-      targetTypeOptions = [];
-    }
-    try {
-      let items = listItemsCache.get("ACCESS_LEVEL");
-      if (!items) {
-        items = await getListItemsbyList("ACCESS_LEVEL");
-        listItemsCache.set("ACCESS_LEVEL", items);
-      }
-      const li = langItems(items);
-      accessOptions = li.map((x) => ({ value: x.value, label: x.label || x.value }));
-      accessLabels = new Map(li.map((x) => [x.value, x.label || x.value]));
-    } catch {
-      accessOptions = [];
-    }
+    await Promise.all(
+      ["TARGET_TYPE", "ACCESS_LEVEL"].map((code) => loadList(code).catch(() => undefined)),
+    );
   }
 
   // Resolve a hydrated permission's target_code → friendly label (cached).
@@ -690,11 +682,11 @@
       permissions.map(async (p: any) => ({
         id: p.id,
         targetType: p.target_type,
-        targetTypeLabel: targetTypeLabels.get(p.target_type) || p.target_type,
+        targetTypeLabel: listText("TARGET_TYPE", p.target_type) || p.target_type,
         targetCode: p.target_code,
         targetCodeLabel: await resolveTargetLabel(p.target_type, p.target_code),
         access: p.access_level,
-        accessLabel: accessLabels.get(p.access_level) || p.access_level,
+        accessLabel: listText("ACCESS_LEVEL", p.access_level) || p.access_level,
       })),
     );
 
@@ -1248,7 +1240,7 @@
               <label class="block min-w-0 break-words text-sm font-semibold text-gray-800 dark:text-gray-200" for={`${idPrefix}-char-${spec.feature}`}>
                 {t(`features.${spec.feature}`, spec.featureObj.name || spec.feature)}{#if spec.required}<span class="ml-0.5 text-red-500" aria-hidden="true">*</span>{/if}
               </label>
-              <span class="shrink-0 text-[10px] uppercase tracking-wide text-gray-400">{t("asset_detail_modal.characterization_type_label", "Type")}: {spec.featureObj.type || ""}</span>
+              <span class="shrink-0 text-[10px] uppercase tracking-wide text-gray-400">{t("asset_detail_modal.characterization_type_label", "Type")}: {listText("FEAT_TYPE", spec.featureObj.type) || spec.featureObj.type || ""}</span>
             </div>
             <div class="mb-2 flex items-start gap-2">
               {#if spec.featureObj.description}
@@ -1286,7 +1278,7 @@
               >
                 <option value="">—</option>
                 {#each langItems(spec.listItems) as li (li.value)}
-                  <option value={li.value}>{li.label || li.value}</option>
+                  <option value={li.value}>{li.label}</option>
                 {/each}
               </select>
             {:else}
@@ -1364,7 +1356,7 @@
               data-pending={pendingRelationKeys.has(linkKey(rel.target, rel.type)) ? "1" : undefined}
             >
               <span class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-800 dark:text-gray-200" title={rel.targetLabel}>{rel.targetLabel}</span>
-              <span class="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">{rel.typeLabel || rel.type}</span>
+              <span class="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">{listText("RELATION_TYPE", rel.type) || rel.type}</span>
               {#if rel.rationale}
                 <span class="hidden md:block max-w-[200px] truncate text-xs text-gray-500 dark:text-gray-400" title={rel.rationale}>{rel.rationale}</span>
               {/if}
@@ -1423,7 +1415,7 @@
               data-pending={pendingInitKeys.has(linkKey(rel.init, rel.type)) ? "1" : undefined}
             >
               <span class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-800 dark:text-gray-200" title={rel.initLabel}>{rel.initLabel}</span>
-              <span class="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">{rel.typeLabel || rel.type}</span>
+              <span class="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">{listText("RELATION_TYPE", rel.type) || rel.type}</span>
               {#if rel.rationale}
                 <span class="hidden md:block max-w-[200px] truncate text-xs text-gray-500 dark:text-gray-400" title={rel.rationale}>{rel.rationale}</span>
               {/if}
@@ -1488,9 +1480,9 @@
               class={pendingPermissionKeys.has(permPendingKey(p)) ? `${rowClass} ring-2 ring-amber-400` : rowClass}
               data-pending={pendingPermissionKeys.has(permPendingKey(p)) ? "1" : undefined}
             >
-              <span class="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-300">{p.targetTypeLabel || p.targetType}</span>
+              <span class="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-300">{listText("TARGET_TYPE", p.targetType) || p.targetType}</span>
               <span class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-800 dark:text-gray-200" title={p.targetCodeLabel}>{p.targetCodeLabel}</span>
-              <span class="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">{p.accessLabel || p.access}</span>
+              <span class="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">{listText("ACCESS_LEVEL", p.access) || p.access}</span>
               <button type="button" class="shrink-0 rounded-md p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30" title={t("asset_detail_modal.perm_remove", "Remove")} onclick={() => removePermission(idx)} aria-label={t("asset_detail_modal.perm_remove", "Remove")}>
                 <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
               </button>

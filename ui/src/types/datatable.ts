@@ -34,6 +34,12 @@ export interface ColumnConfig {
   titleSecondaryKey?: string;
   /** ONLY for as:"date" — defaults to "date". */
   dateFormat?: "date" | "relative";
+  /**
+   * List-backed column: row field holding the value's labels in every
+   * language (`{en, es}`, see lib/listLang.ts). The cell then follows the
+   * header language switcher. Works with the default text and `status`.
+   */
+  labelsKey?: string;
 }
 
 /** Option shape accepted by the toolbar filter <select>s. */
@@ -44,6 +50,8 @@ export interface FilterOption {
   name?: string;
   /** Runtime i18n key for the option label (used by the 3rd filter). */
   i18n?: string;
+  /** Every language's label (list-backed options) — relabeled on language switch. */
+  labels?: Record<string, string>;
 }
 
 /** A configured column filter (one <select> or toggle). */

@@ -618,6 +618,13 @@ export interface Asset {
   updated_at?: string;
 }
 
+// Response of POST /api/assets/propose: the created asset plus who it was sent
+// to for review (chosen or auto-assigned server-side).
+export interface ProposedAsset extends Asset {
+  reviewer_id?: number;
+  reviewer_name?: string;
+}
+
 // Propose (HU-Propose): request body for proposing an asset for review.
 // `reviewer_id` optional (auto-assigned when omitted); `values` optionally
 // overrides the category specs' default characterization values (feature→value).
@@ -1108,6 +1115,9 @@ export interface DiagnosticRow {
   creator_label?: string | null;
   reviewer_score?: number | null;
   reviewer_label?: string | null;
+  /** Every language's label of each answer (lang → label), for the language switcher. */
+  creator_labels?: Record<string, string> | null;
+  reviewer_labels?: Record<string, string> | null;
   rationale?: string | null;
 }
 
@@ -1189,6 +1199,12 @@ export interface ProposeAssetLink {
   rationale?: string | null;
 }
 
+// Response of POST /api/initiatives/propose: the initiative plus its reviewer.
+export interface ProposedInitiative extends Initiative {
+  reviewer_id?: number;
+  reviewer_name?: string;
+}
+
 export interface InitiativeProposeRequest {
   name: string;
   description?: string | null;
@@ -1227,6 +1243,8 @@ export interface InitiativeResubmitRequest {
 export interface ScaleOption {
   value: number;
   label: string;
+  /** Every language's label (lang → label). */
+  labels?: Record<string, string>;
 }
 
 /** Active criteria (unanswered) + each scale's options, keyed by list code. */

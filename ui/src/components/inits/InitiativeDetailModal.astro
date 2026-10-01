@@ -86,14 +86,14 @@ const label = (o: ListOption) => o.byLang.en ?? o.byLang.es ?? o.value;
             <label for={`${modalId}-type`} class={labelClass} data-i18n="initiative_modal.type">Type</label>
             <select id={`${modalId}-type`} name="type" class={inputClass}>
               <option value="" data-i18n="initiative_detail_modal.choose">— choose —</option>
-              {lists.type.map((o) => <option value={o.value} data-labels={JSON.stringify(o.byLang)}>{label(o)}</option>)}
+              {lists.type.map((o) => <option value={o.value} data-list-labels={JSON.stringify(o.byLang)}>{label(o)}</option>)}
             </select>
           </div>
 
           <div>
             <label for={`${modalId}-status-select`} class={labelClass} data-i18n="initiative_modal.status">Status</label>
             <select id={`${modalId}-status-select`} name="status" class={inputClass}>
-              {lists.status.map((o) => <option value={o.value} data-labels={JSON.stringify(o.byLang)}>{label(o)}</option>)}
+              {lists.status.map((o) => <option value={o.value} data-list-labels={JSON.stringify(o.byLang)}>{label(o)}</option>)}
             </select>
             <p id={`${modalId}-status-hint`} class="mt-1 text-xs text-gray-500 dark:text-gray-400"></p>
           </div>
@@ -102,7 +102,7 @@ const label = (o: ListOption) => o.byLang.en ?? o.byLang.es ?? o.value;
             <label for={`${modalId}-priority`} class={labelClass}><span data-i18n="initiative_modal.priority_level">Priority</span><span class="ml-0.5 text-red-500" aria-hidden="true">*</span></label>
             <select id={`${modalId}-priority`} name="priority_level" required class={inputClass}>
               <option value="" data-i18n="initiative_detail_modal.choose">— choose —</option>
-              {lists.priority_level.map((o) => <option value={o.value} data-labels={JSON.stringify(o.byLang)}>{label(o)}</option>)}
+              {lists.priority_level.map((o) => <option value={o.value} data-list-labels={JSON.stringify(o.byLang)}>{label(o)}</option>)}
             </select>
           </div>
 
@@ -110,7 +110,7 @@ const label = (o: ListOption) => o.byLang.en ?? o.byLang.es ?? o.value;
             <label for={`${modalId}-impact`} class={labelClass}><span data-i18n="initiative_modal.expected_impact">Expected impact</span><span class="ml-0.5 text-red-500" aria-hidden="true">*</span></label>
             <select id={`${modalId}-impact`} name="expected_impact" required class={inputClass}>
               <option value="" data-i18n="initiative_detail_modal.choose">— choose —</option>
-              {lists.expected_impact.map((o) => <option value={o.value} data-labels={JSON.stringify(o.byLang)}>{label(o)}</option>)}
+              {lists.expected_impact.map((o) => <option value={o.value} data-list-labels={JSON.stringify(o.byLang)}>{label(o)}</option>)}
             </select>
           </div>
 
@@ -187,7 +187,6 @@ const label = (o: ListOption) => o.byLang.en ?? o.byLang.es ?? o.value;
     } catch { /* non-fatal */ }
     return fallback;
   };
-  const lang = () => (localStorage.getItem("lang") === "es" ? "es" : "en");
   const bare = (raw: unknown) => String(raw ?? "").replace(/^\d+-/, "").trim().toUpperCase();
 
   function init(dialog: HTMLDialogElement) {
@@ -217,20 +216,8 @@ const label = (o: ListOption) => o.byLang.en ?? o.byLang.es ?? o.value;
     // remember the reachable statuses the API returned for each saved initiative.
     const allowedCache = new Map<number, string[]>();
 
-    // ── Localize list-backed options (labels carried per option) ──────────
-    const relabelOptions = () => {
-      const l = lang();
-      for (const sel of [typeSel, statusSel, prioritySel, impactSel]) {
-        sel.querySelectorAll<HTMLOptionElement>("option[data-labels]").forEach((opt) => {
-          try {
-            const byLang = JSON.parse(opt.dataset.labels || "{}");
-            opt.textContent = byLang[l] ?? byLang.en ?? opt.value;
-          } catch { /* keep SSR label */ }
-        });
-      }
-    };
-    relabelOptions();
-    document.addEventListener("synapxia:locale-changed", relabelOptions);
+    // List-backed options carry every language's label (data-list-labels) and
+    // follow the language switcher via loadClientTranslations (lib/listLang.ts).
 
     // ── Core payload + dirty tracking ─────────────────────────────────────
     function buildCorePayload(): InitiativeUpdate {

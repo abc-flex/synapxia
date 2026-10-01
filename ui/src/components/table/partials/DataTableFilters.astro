@@ -5,6 +5,7 @@
 // the rest render as <select>s. Both keep the canonical `id` + `data-column-key`
 // so advancedTable.ts binds them identically wherever they live.
 import type { FilterConfig } from "@/types/datatable";
+import { listLabelsAttr } from "@/lib/listLang";
 import FavoritesPill from "@/components/lib/FavoritesPill.astro";
 
 interface Props {
@@ -44,7 +45,9 @@ const toggleLabel = (f: FilterConfig): string =>
         >
           <option value="" data-i18n={f.allLabel || `${f.key}_modal.filter_title`}></option>
           {f.options.map((opt) => (
-            <option value={opt.value || opt.code} data-i18n={opt.i18n} selected={(opt.value || opt.code) === f.defaultValue}>
+            <option value={opt.value || opt.code} data-i18n={opt.i18n}
+              data-list-labels={opt.i18n ? undefined : listLabelsAttr(opt.labels)}
+              selected={(opt.value || opt.code) === f.defaultValue}>
               {opt.label || opt.name}
             </option>
           ))}

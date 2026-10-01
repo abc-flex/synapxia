@@ -61,7 +61,7 @@ make up        # start all containers (waits ~30s for DB init), then health chec
 make dev       # up + print URLs and login credentials
 make down      # stop containers
 make rebuild   # clean rebuild including volumes
-make test      # health checks: API /api/health, DB pg_isready, admin user
+make test      # health checks: API /health, DB pg_isready, admin user
 make logs      # all logs  (also logs-api / logs-db / logs-ui)
 make shell     # psql into the DB
 ```

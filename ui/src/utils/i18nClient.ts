@@ -2,6 +2,7 @@
 import en from '../i18n/en.json';
 import es from '../i18n/es.json';
 import { formatRelative } from '../lib/datatable';
+import { relabelLists } from '../lib/listLang';
 
 const translations = { en, es };
 
@@ -78,6 +79,10 @@ export const loadClientTranslations = () => {
     const ts = element.getAttribute('data-relative-ts');
     if (ts) element.textContent = formatRelative(ts, locale);
   });
+
+  // List values (list_items) carry every language's label in
+  // data-list-labels; repaint them in the new language (lib/listLang.ts).
+  relabelLists(document, locale);
 
   // Dispatch custom event for other components to react
   window.dispatchEvent(new CustomEvent('languageChanged', { detail: { locale } }));

@@ -231,6 +231,27 @@ def test_propose_route_creates_proposed_asset(session, client):
     assert r.status_code == 201
     body = r.json()["data"]
     assert body["status"] == "PROPOSED" and body["name"] == "My Prompt"
+    # The response names who the proposal was sent to (shown in the outcome dialog).
+    assert body["reviewer_id"] == 7 and body["reviewer_name"] == "Rev Iewer"
+
+
+def test_reviewers_route_excludes_the_caller_even_if_admin(session, client):
+    _mk_user(session, 1, "root", profile="ADMINISTRATOR", is_superuser=True)
+    _mk_user(session, 6, "carol", profile="REVIEWER")
+    app.dependency_overrides[current_active_user] = _superuser  # uid=1
+
+    ids = [o["value"] for o in client.get("/api/assets/reviewers").json()["data"]]
+    assert ids == [6]
+
+
+def test_admin_proposer_cannot_self_assign(session):
+    _mk_category(session)
+    _mk_user(session, 1, "root", profile="ADMINISTRATOR", is_superuser=True)
+    _mk_user(session, 7, "rev")
+    with pytest.raises(ValueError, match="yourself"):
+        svc.propose_asset(session, 1, _req(reviewer_id=1))
+    # Auto-assignment skips the proposer too.
+    assert svc.propose_asset_with_reviewer(session, 1, _req())[1].id == 7
 
 
 def test_propose_route_unknown_category_400(session, client):

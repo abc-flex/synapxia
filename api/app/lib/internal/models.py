@@ -559,6 +559,14 @@ class ProposeRequest(SQLModel):
         "additional to `values`; a feature with no entry gets no detail")
 
 
+class ProposedAsset(AssetBase):
+    """Response of POST /api/assets/propose: the created asset plus who it was
+    sent to for review (additive keys — the asset's own keys are unchanged)."""
+    id: Optional[int] = None
+    reviewer_id: Optional[int] = Field(default=None, description="Assigned reviewer user id")
+    reviewer_name: Optional[str] = Field(default=None, description="Assigned reviewer display name")
+
+
 class ReviewerOption(SQLModel):
     """A selectable reviewer for the propose form ({value, label, profile, is_superuser})."""
     value: int = Field(description="Reviewer user id")

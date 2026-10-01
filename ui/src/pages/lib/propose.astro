@@ -145,7 +145,9 @@ try {
             <FormField controlId="propose-reviewer" labelKey="propose.reviewer" required
               errorId="propose-reviewer-error" errorKey="propose.reviewer_required">
               <select id="propose-reviewer" name="reviewer_id" class={inputClass}>
-                <option value="" data-i18n="propose.reviewer_placeholder">Select a reviewer…</option>
+                <!-- No default: the user must pick a reviewer or the auto option. -->
+                <option value="" data-i18n="propose.reviewer_placeholder">— choose a reviewer —</option>
+                <option value="auto" data-i18n="propose.reviewer_auto">Assign a reviewer automatically</option>
               </select>
             </FormField>
           </div>
@@ -277,6 +279,7 @@ try {
     import { getInitiativesSelect } from "@/lib/initiatives";
     import { createAssetInit } from "@/lib/asset_inits";
     import { getListItemsbyList } from "@/lib/list_items";
+    import { fillListSelect, listOption, setListLabel, toListOptions, type ListOption } from "@/lib/listLang";
     import { loadClientTranslations, translate } from "@/utils/i18nClient";
     import { installGlobalToast, showToast } from "@/lib/toast";
     import { initTabs } from "@/lib/tabs";
@@ -284,8 +287,8 @@ try {
     import { inputClass, labelClass, rowClass, emptyClass, setFieldInvalid } from "@/lib/formClasses";
 
     type SelectOption = { value: string; label: string };
-    type StagedRelation = { target: number; targetLabel: string; type: string; typeLabel: string; rationale: string };
-    type StagedInit = { init: number; initLabel: string; type: string; typeLabel: string; rationale: string };
+    type StagedRelation = { target: number; targetLabel: string; type: string; typeLabels: Record<string, string>; rationale: string };
+    type StagedInit = { init: number; initLabel: string; type: string; typeLabels: Record<string, string>; rationale: string };
 
     loadClientTranslations();
     installGlobalToast();
@@ -384,7 +387,7 @@ try {
     let stagedInits: StagedInit[] = [];
     let assetOptions: SelectOption[] = [];
     let initOptions: SelectOption[] = [];
-    let relTypeOptions: SelectOption[] = [];
+    let relTypeOptions: ListOption[] = [];
 
     // Shared tab toggler; keep the stepped submit label in sync with the tab.
     const tabs = initTabs(document, {
@@ -562,9 +565,15 @@ try {
           }
           labelRow.appendChild(label);
           if (def.type) {
+            // "Type: <FEAT_TYPE label>" — both halves follow the language switcher.
             const badge = document.createElement("span");
             badge.className = "shrink-0 text-[10px] uppercase tracking-wide text-gray-400";
-            badge.textContent = `${tr("asset_detail_modal.characterization_type_label", "Type")}: ${def.type}`;
+            const prefix = document.createElement("span");
+            prefix.setAttribute("data-i18n", "asset_detail_modal.characterization_type_label");
+            prefix.textContent = tr("asset_detail_modal.characterization_type_label", "Type");
+            const typeName = document.createElement("span");
+            setListLabel(typeName, def.typeLabels, def.type);
+            badge.append(prefix, ": ", typeName);
             labelRow.appendChild(badge);
           }
           cell.appendChild(labelRow);
@@ -588,12 +597,7 @@ try {
             blank.value = "";
             blank.textContent = "—";
             select.appendChild(blank);
-            for (const opt of def.options) {
-              const option = document.createElement("option");
-              option.value = opt.value;
-              option.textContent = opt.label;
-              select.appendChild(option);
-            }
+            for (const opt of def.options) select.appendChild(listOption(opt.value, opt.labels));
             field = select;
           } else if (def.control === "textarea") {
             const ta = document.createElement("textarea");
@@ -700,7 +704,9 @@ try {
       }
     }
 
-    function buildStagedRow(label: string, typeLabel: string, rationale: string, onRemove: () => void): HTMLElement {
+    function buildStagedRow(
+      label: string, type: string, typeLabels: Record<string, string>, rationale: string, onRemove: () => void,
+    ): HTMLElement {
       const row = document.createElement("div");
       row.className = rowClass;
 
@@ -712,7 +718,7 @@ try {
 
       const typeSpan = document.createElement("span");
       typeSpan.className = "shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300";
-      typeSpan.textContent = typeLabel;
+      setListLabel(typeSpan, typeLabels, type);
       row.appendChild(typeSpan);
 
       if (rationale) {
@@ -743,12 +749,13 @@ try {
       if (!stagedRelations.length) {
         const empty = document.createElement("div");
         empty.className = emptyClass;
+        empty.setAttribute("data-i18n", "asset_detail_modal.related_empty");
         empty.textContent = tr("asset_detail_modal.related_empty", "No related assets yet.");
         relListEl.appendChild(empty);
         return;
       }
       stagedRelations.forEach((rel, idx) => {
-        relListEl.appendChild(buildStagedRow(rel.targetLabel, rel.typeLabel || rel.type, rel.rationale, () => removeRelation(idx)));
+        relListEl.appendChild(buildStagedRow(rel.targetLabel, rel.type, rel.typeLabels, rel.rationale, () => removeRelation(idx)));
       });
     }
 
@@ -758,12 +765,13 @@ try {
       if (!stagedInits.length) {
         const empty = document.createElement("div");
         empty.className = emptyClass;
+        empty.setAttribute("data-i18n", "asset_detail_modal.related_inits_empty");
         empty.textContent = tr("asset_detail_modal.related_inits_empty", "No related initiatives yet.");
         initListEl.appendChild(empty);
         return;
       }
       stagedInits.forEach((rel, idx) => {
-        initListEl.appendChild(buildStagedRow(rel.initLabel, rel.typeLabel || rel.type, rel.rationale, () => removeInit(idx)));
+        initListEl.appendChild(buildStagedRow(rel.initLabel, rel.type, rel.typeLabels, rel.rationale, () => removeInit(idx)));
       });
     }
 
@@ -797,7 +805,7 @@ try {
           target,
           targetLabel: findLabel(assetOptions, String(target)),
           type,
-          typeLabel: findLabel(relTypeOptions, type),
+          typeLabels: relTypeLabels(type),
           rationale: (relRationaleInput?.value || "").trim(),
         },
       ];
@@ -830,7 +838,7 @@ try {
           init: initId,
           initLabel: findLabel(initOptions, String(initId)),
           type,
-          typeLabel: findLabel(relTypeOptions, type),
+          typeLabels: relTypeLabels(type),
           rationale: (initRationaleInput?.value || "").trim(),
         },
       ];
@@ -848,23 +856,19 @@ try {
     relAddBtn?.addEventListener("click", addRelation);
     initAddBtn?.addEventListener("click", addInit);
 
-    function filterByLang<T extends { lang?: string; sort_order?: number }>(items: T[]): T[] {
-      const lang = (typeof localStorage !== "undefined" && localStorage.getItem("lang")) || "en";
-      const byLang = items.filter((i) => i.lang === lang);
-      const scoped = byLang.length ? byLang : items.filter((i) => i.lang === "en");
-      return scoped.slice().sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
-    }
-
+    // RELATION_TYPE options carry every language's label, so both selects and
+    // the staged rows follow the language switcher (lib/listLang.ts).
     async function loadRelationTypeOptions(): Promise<void> {
       try {
-        const items = await getListItemsbyList("RELATION_TYPE");
-        relTypeOptions = filterByLang(items).map((li) => ({ value: li.value, label: li.label || li.value }));
+        relTypeOptions = toListOptions(await getListItemsbyList("RELATION_TYPE"));
       } catch {
         relTypeOptions = [];
       }
-      populateSelectOptions(relTypeSel, relTypeOptions);
-      populateSelectOptions(initTypeSel, relTypeOptions);
+      fillListSelect(relTypeSel, relTypeOptions);
+      fillListSelect(initTypeSel, relTypeOptions);
     }
+    const relTypeLabels = (type: string): Record<string, string> =>
+      relTypeOptions.find((o) => o.value === type)?.labels ?? { en: type };
 
     async function loadAssetOptions(): Promise<void> {
       try {
@@ -1007,7 +1011,8 @@ try {
         reference: String(fd.get("reference") || "").trim() || undefined,
         detail: String(fd.get("detail") || "").trim() || undefined,
         tags: tagsRaw ? tagsRaw.split(",").map((t) => t.trim()).filter(Boolean) : undefined,
-        reviewer_id: reviewerRaw ? Number(reviewerRaw) : undefined,
+        // "auto" (or nothing) → the server assigns the first eligible reviewer.
+        reviewer_id: reviewerRaw && reviewerRaw !== "auto" ? Number(reviewerRaw) : undefined,
         values: Object.keys(values).length ? values : undefined,
         details: Object.keys(details).length ? details : undefined,
       };
@@ -1015,9 +1020,11 @@ try {
       if (submitBtn) submitBtn.disabled = true;
 
       let assetId: number | undefined;
+      let reviewerName = "";
       try {
         const asset = await proposeAsset(payload);
         assetId = asset.id;
+        reviewerName = asset.reviewer_name || "";
       } catch (err) {
         showToast(
           err instanceof Error ? err.message : tr("propose.error", "Could not propose the asset"),
@@ -1048,9 +1055,13 @@ try {
         }
       }
 
-      const resultMessage = relFailures > 0
+      // Name who the proposal went to (chosen or auto-assigned server-side).
+      const sentTo = reviewerName
+        ? " " + tr("propose.sent_to", "It was sent to {name} for review.").replace("{name}", reviewerName)
+        : "";
+      const resultMessage = (relFailures > 0
         ? tr("propose.related_save_partial", "Your asset was proposed for review, but some related items could not be saved. Check your Notifications or My Asset Requests to see the reviewer's decision.")
-        : tr("propose.success", "Your asset was proposed for review. Check your Notifications or My Asset Requests to see the reviewer's decision.");
+        : tr("propose.success", "Your asset was proposed for review. Check your Notifications or My Asset Requests to see the reviewer's decision.")) + sentTo;
       const resultVariant: "success" | "error" = relFailures > 0 ? "error" : "success";
 
       // Block on the acknowledgment dialog before doing anything else — the

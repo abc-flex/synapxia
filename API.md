@@ -18,7 +18,7 @@ make up      # or `make dev` to also print URLs + login credentials
 ```
 
 This builds and starts `db`, `api`, `ui`, and `pgadmin` together. The API is published at
-`http://localhost:8001` (Swagger at `/docs`, health at `/api/health`). See
+`http://localhost:8001` (Swagger at `/docs`, health at `/health`). See
 [`docs/GETTING_STARTED.md`](docs/GETTING_STARTED.md) for prerequisites, environment
 variables, and troubleshooting.
 
@@ -49,7 +49,7 @@ service at least once, or point `DATABASE_URL` at a DB where `db/sql/*.sql` has 
 ## Verifying it's running
 
 ```bash
-curl http://localhost:8001/api/health
+curl http://localhost:8001/health
 ```
 
 Open `http://localhost:8001/docs` (Swagger UI) or `/redoc` to explore the live API.

@@ -7,6 +7,7 @@ import Toast from "../../components/Toast.astro";
 import { getProjects } from "@/lib/projects";
 import { getTeamsSelect } from "@/lib/teams";
 import { getListItemsbyList } from "@/lib/list_items";
+import { labelsByValue, labelsFor, listLabel } from "@/lib/listLang";
 
 // Fetch projects from API
 let projects: any[] = [];
@@ -47,7 +48,7 @@ const columns = [
   { key: "name", label: "project_modal.name", as: "title", subtitleKey: "code", subtitleFormat: "text" },
   { key: "team", label: "project_modal.team", visible: false },
   { key: "team_name", label: "project_modal.team" },
-  { key: "status_label", label: "project_modal.status", as: "status" },
+  { key: "status_label", label: "project_modal.status", as: "status", labelsKey: "status_labels" },
   { key: "start_date", label: "project_modal.start_date", as: "date" },
   { key: "end_date", label: "project_modal.end_date", as: "date" },
 ];
@@ -59,7 +60,8 @@ const data = projects.map((item) => ({
   team: item.team,
   status: item.status,
   team_name: teams.find((t) => String(t.value) === String(item.team))?.label || item.team,
-  status_label: projectStatuses.find((s) => String(s.value) === String(item.status))?.label || item.status,
+  status_label: listLabel(labelsByValue(projectStatuses), item.status, "en"),
+  status_labels: labelsFor(labelsByValue(projectStatuses), item.status),
   start_date: item.start_date ? new Date(item.start_date).toISOString().split('T')[0] : null,
   end_date: item.end_date ? new Date(item.end_date).toISOString().split('T')[0] : null,
   description: item.description,

@@ -18,9 +18,9 @@ from ..admin.internal.models import User
 # dedicated reviewer profile; ADMINISTRATOR/ADMINISTRATIVE are the admin profiles.
 REVIEWER_PROFILES = ("ADMINISTRATOR", "ADMINISTRATIVE", "REVIEWER")
 
-# The truly "administrative" profiles — exempt from the self-review exclusion
-# below (an admin proposing on the org's behalf may still self-assign; a
-# REVIEWER or COLLABORATOR proposing their own work may not review it).
+# The truly "administrative" profiles. They used to be exempt from the
+# self-review exclusion; NOBODY may review their own proposal any more (see
+# resolve_reviewer), so this only backs is_admin() for other callers.
 ADMIN_PROFILES = ("ADMINISTRATOR", "ADMINISTRATIVE")
 
 
@@ -32,15 +32,14 @@ def is_eligible(user: User) -> bool:
 
 
 def is_admin(user: User) -> bool:
-    """Truly administrative (exempt from the self-review exclusion)."""
+    """Truly administrative (ADMINISTRATOR/ADMINISTRATIVE profile or superuser)."""
     return bool(user.is_superuser) or user.profile in ADMIN_PROFILES
 
 
 def list_reviewers(session: Session, exclude_user_id: Optional[int] = None) -> List[User]:
     """Active users eligible to review (admin/REVIEWER profile or superuser), id
-    order. `exclude_user_id` (the proposer, when they're not themselves an admin/
-    superuser — see resolve_reviewer) drops that user from the results so a
-    REVIEWER/COLLABORATOR can't be offered themselves as their own reviewer."""
+    order. `exclude_user_id` (the proposer — see resolve_reviewer) drops that
+    user from the results so nobody is offered themselves as their own reviewer."""
     statement = select(User).where(
         User.is_active == True,  # noqa: E712
         (User.profile.in_(REVIEWER_PROFILES)) | (User.is_superuser == True),  # noqa: E712
@@ -58,12 +57,11 @@ def resolve_reviewer(
     eligible one. Raises ValueError if the requested reviewer is invalid or none
     exist.
 
-    A non-admin `proposer` (COLLABORATOR/REVIEWER — see is_admin) may not
-    resolve to themselves: an admin proposing on the org's behalf may still
-    self-assign, but a REVIEWER/COLLABORATOR reviewing their own proposal
-    would defeat the point of the review step.
+    The `proposer` never resolves to themselves — not even an administrator
+    or superuser: reviewing your own proposal defeats the point of the review
+    step. Auto-assignment skips them too.
     """
-    exclude_id = proposer.id if proposer and not is_admin(proposer) else None
+    exclude_id = proposer.id if proposer else None
     if reviewer_id is not None:
         user = session.get(User, reviewer_id)
         if not user or not user.is_active:
@@ -81,3 +79,8 @@ def resolve_reviewer(
             "No eligible reviewer (administrator, REVIEWER, or superuser) is available."
         )
     return eligible[0]
+
+
+def display_name(user: User) -> str:
+    """The name shown for a reviewer (dropdown label, proposal confirmation)."""
+    return f"{user.first_name or ''} {user.last_name or ''}".strip() or user.username

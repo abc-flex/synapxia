@@ -10,6 +10,9 @@ import Toast from "../../components/Toast.astro";
 import InitiativeDetailModal from "../../components/inits/InitiativeDetailModal.astro";
 import { getInitiativesWithAccess } from "@/lib/initiatives";
 import { getListItemsbyList } from "@/lib/list_items";
+import {
+  labelsByValue, labelsFor, listLabel, toListOptions, type ListLabels, type ListOption,
+} from "@/lib/listLang";
 
 let initiatives: any[] = [];
 let errorMessage: string | null = null;
@@ -32,9 +35,8 @@ const LISTS = {
   expected_impact: "EXPECTED_IMPACT",
 } as const;
 
-type Labels = Record<string, Record<string, string>>; // value → lang → label
-const labels: Record<string, Labels> = {};
-const optionsEn: Record<string, { value: string; label: string }[]> = {};
+const labels: Record<string, ListLabels> = {};
+const optionsEn: Record<string, ListOption[]> = {};
 for (const [field, list] of Object.entries(LISTS)) {
   let items: any[] = [];
   try {
@@ -42,21 +44,14 @@ for (const [field, list] of Object.entries(LISTS)) {
   } catch {
     items = [];
   }
-  const map: Labels = {};
-  for (const it of items) (map[it.value] ??= {})[it.lang] = it.label;
-  labels[field] = map;
-  optionsEn[field] = items
-    .filter((it) => it.lang === "en")
-    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-    .map((it) => ({ value: it.value, label: it.label }));
+  labels[field] = labelsByValue(items);
+  optionsEn[field] = toListOptions(items, "en");
 }
 
 const bare = (v: unknown) => String(v ?? "").replace(/^\d+-/, "").toUpperCase();
-const labelOf = (field: keyof typeof LISTS, raw: unknown): string => {
-  if (!raw) return "";
-  const hit = labels[field][String(raw)] ?? labels[field][bare(raw)];
-  return hit?.en ?? hit?.es ?? String(raw);
-};
+const labelOf = (field: keyof typeof LISTS, raw: unknown): string =>
+  raw ? listLabel(labels[field], raw, "en") : "";
+const labelsOf = (field: keyof typeof LISTS, raw: unknown) => labelsFor(labels[field], raw);
 
 // Visible order: name, type, priority, status, tags (+ the actions column the
 // DataTable appends). `permissions` is a hidden, filter-only column (the comma-
@@ -64,11 +59,11 @@ const labelOf = (field: keyof typeof LISTS, raw: unknown): string => {
 const columns = [
   { key: "name", label: "initiative_modal.name", as: "title", subtitleKey: "updated_at", subtitleFormat: "relative" },
   { key: "type", label: "initiative_modal.type", visible: false },
-  { key: "type_name", label: "initiative_modal.type" },
+  { key: "type_name", label: "initiative_modal.type", labelsKey: "type_labels" },
   { key: "priority_level", label: "initiative_modal.priority_level", visible: false },
-  { key: "priority_name", label: "initiative_modal.priority_level" },
+  { key: "priority_name", label: "initiative_modal.priority_level", labelsKey: "priority_labels" },
   { key: "status", label: "initiative_modal.status", visible: false },
-  { key: "status_name", label: "initiative_modal.status", as: "status" },
+  { key: "status_name", label: "initiative_modal.status", as: "status", labelsKey: "status_labels" },
   { key: "tags_display", label: "initiative_modal.tags", as: "tags" },
   { key: "permissions", label: "initiative_table.perm_filter_all", visible: false },
 ];
@@ -79,10 +74,13 @@ const data = initiatives.map((item) => ({
   description: item.description,
   status: bare(item.status),
   status_name: labelOf("status", item.status),
+  status_labels: labelsOf("status", item.status),
   type: item.type ?? "",
   type_name: labelOf("type", item.type),
+  type_labels: labelsOf("type", item.type),
   priority_level: item.priority_level,
   priority_name: labelOf("priority_level", item.priority_level),
+  priority_labels: labelsOf("priority_level", item.priority_level),
   // Scope types by which a grant reaches the user (USER/ROLE/TEAM/UNIT/PROJECT/PUBLIC),
   // comma-joined for the privileges filter's membership match.
   permissions: (item.permission_scopes ?? []).join(","),
@@ -97,38 +95,17 @@ const data = initiatives.map((item) => ({
   created_at: item.created_at,
 }));
 
-// Cell relabel maps for the client step: English label → {en, es}, per column.
-const cellLabels: Record<string, Record<string, Record<string, string>>> = {
-  status_name: {}, type_name: {}, priority_name: {},
-};
-const colField = {
-  status_name: "status", type_name: "type",
-  priority_name: "priority_level",
-} as const;
-for (const [col, field] of Object.entries(colField)) {
-  for (const byLang of Object.values(labels[field])) {
-    if (byLang.en) cellLabels[col][byLang.en] = byLang;
-  }
-}
-
-// Filter-option relabel maps: select id suffix → value → {en, es}.
-const optionLabels = {
-  "filter": labels.status,
-  "filter2": labels.type,
-  "filter5": labels.priority_level,
-};
-
 const deleteFields = [
   { key: "name", label: "initiative_modal.name", pk: true, disabled: true },
 ];
 const fieldKeys = deleteFields.map((f) => f.key);
 
-// Options the detail modal's selects need (all languages; it filters itself).
+// Options the detail modal's selects need, in sort order, with every language.
 const modalLists = {
-  status: Object.entries(labels.status).map(([value, byLang]) => ({ value, byLang })),
-  type: Object.entries(labels.type).map(([value, byLang]) => ({ value, byLang })),
-  priority_level: Object.entries(labels.priority_level).map(([value, byLang]) => ({ value, byLang })),
-  expected_impact: Object.entries(labels.expected_impact).map(([value, byLang]) => ({ value, byLang })),
+  status: optionsEn.status.map((o) => ({ value: o.value, byLang: o.labels })),
+  type: optionsEn.type.map((o) => ({ value: o.value, byLang: o.labels })),
+  priority_level: optionsEn.priority_level.map((o) => ({ value: o.value, byLang: o.labels })),
+  expected_impact: optionsEn.expected_impact.map((o) => ({ value: o.value, byLang: o.labels })),
 };
 ---
 
@@ -160,8 +137,6 @@ const modalLists = {
       id="initiatives-data"
       data-rows={encodeURIComponent(JSON.stringify(data))}
       data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
-      data-cell-labels={encodeURIComponent(JSON.stringify(cellLabels))}
-      data-option-labels={encodeURIComponent(JSON.stringify(optionLabels))}
       class="hidden"
       aria-hidden="true"
     >
@@ -179,44 +154,12 @@ const modalLists = {
         deleteModalId: "initiative-delete-modal",
       });
 
-      // ── Relabel list-backed cells and filter options to the viewer's
-      // language (the SSR pass is English-only; see getLocale).
+      // List-backed cells and filter options carry every language's label
+      // (data-list-labels) and follow the language switcher on their own.
       const carrier = document.getElementById("initiatives-data");
       const rows: { id: number; allowed_statuses: string }[] = JSON.parse(
         decodeURIComponent(carrier?.dataset.rows || "%5B%5D"),
       );
-      const cellLabels = JSON.parse(decodeURIComponent(carrier?.dataset.cellLabels || "%7B%7D"));
-      const optionLabels = JSON.parse(decodeURIComponent(carrier?.dataset.optionLabels || "%7B%7D"));
-      const lang = () => (localStorage.getItem("lang") === "es" ? "es" : "en");
-
-      const relabel = () => {
-        const l = lang();
-        const table = document.getElementById("initiatives");
-        if (table) {
-          const heads = Array.from(table.querySelectorAll("thead th"));
-          for (const [col, map] of Object.entries<Record<string, Record<string, string>>>(cellLabels)) {
-            const idx = heads.findIndex((th) => th.getAttribute("data-column-key") === col);
-            if (idx < 0) continue;
-            table.querySelectorAll("tbody tr").forEach((tr) => {
-              const td = tr.children[idx] as HTMLElement | undefined;
-              if (!td) return;
-              const target = (td.querySelector("span") as HTMLElement | null) ?? td;
-              const en = (target.dataset.enLabel ??= (target.textContent || "").trim());
-              const next = map[en]?.[l] ?? map[en]?.en;
-              if (next) target.textContent = next;
-            });
-          }
-        }
-        for (const [suffix, byValue] of Object.entries<Record<string, Record<string, string>>>(optionLabels)) {
-          const sel = document.getElementById(`initiatives-${suffix}`) as HTMLSelectElement | null;
-          sel?.querySelectorAll("option").forEach((opt) => {
-            const hit = byValue[opt.value];
-            if (hit) opt.textContent = hit[l] ?? hit.en ?? opt.textContent;
-          });
-        }
-      };
-      relabel();
-      document.addEventListener("synapxia:locale-changed", relabel);
 
       // ── Per-row favorite star (same behaviour as Asset Management): optimistic
       // repaint, revert on failure. Capture phase so we beat advancedTable.

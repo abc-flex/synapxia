@@ -86,6 +86,12 @@ INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
     ('FEAT_TYPE', 'en', 'COMMERCIAL',    'Commercial',    30),
     ('FEAT_TYPE', 'en', 'USABILITY',     'Usability',     40),
     ('FEAT_TYPE', 'en', 'DOCUMENTATION', 'Documentation', 50);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('FEAT_TYPE', 'es', 'GENERAL',       'General',       10),
+    ('FEAT_TYPE', 'es', 'TECHNICAL',     'Técnica',       20),
+    ('FEAT_TYPE', 'es', 'COMMERCIAL',    'Comercial',     30),
+    ('FEAT_TYPE', 'es', 'USABILITY',     'Usabilidad',    40),
+    ('FEAT_TYPE', 'es', 'DOCUMENTATION', 'Documentación', 50);
 
 -- ===== List of features: Programming Languages =====
 INSERT INTO lists (code, name, description, type, module) VALUES (
@@ -98,6 +104,12 @@ INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
     ('LANGUAGE', 'en', 'JAVA',       'Java',       30),
     ('LANGUAGE', 'en', 'CPLUSPLUS',  'C++',        40),
     ('LANGUAGE', 'en', 'CSHARP',     'C#',         50);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('LANGUAGE', 'es', 'PYTHON',     'Python',     10),
+    ('LANGUAGE', 'es', 'JAVASCRIPT', 'JavaScript', 20),
+    ('LANGUAGE', 'es', 'JAVA',       'Java',       30),
+    ('LANGUAGE', 'es', 'CPLUSPLUS',  'C++',        40),
+    ('LANGUAGE', 'es', 'CSHARP',     'C#',         50);
 
 -- ===== List of features: Execution Modes =====
 INSERT INTO lists (code, name, description, type, module) VALUES (
@@ -107,3 +119,6 @@ INSERT INTO lists (code, name, description, type, module) VALUES (
 INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
     ('EXECUTION_MODE', 'en', 'LOCAL',    'Local',    10),
     ('EXECUTION_MODE', 'en', 'REMOTE',   'Remote',   20);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('EXECUTION_MODE', 'es', 'LOCAL',    'Local',    10),
+    ('EXECUTION_MODE', 'es', 'REMOTE',   'Remoto',   20);

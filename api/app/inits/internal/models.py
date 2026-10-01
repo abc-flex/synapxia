@@ -222,6 +222,10 @@ class DiagnosticRow(SQLModel):
     creator_label: Optional[str] = None
     reviewer_score: Optional[int] = None
     reviewer_label: Optional[str] = None
+    # Every language's label of each answer (lang → label), so the UI can
+    # follow the language switcher without another request.
+    creator_labels: Optional[Dict[str, str]] = None
+    reviewer_labels: Optional[Dict[str, str]] = None
     rationale: Optional[str] = None
 
 
@@ -291,6 +295,14 @@ class DiagnosisAnswer(SQLModel):
     scale plus an optional rationale."""
     score: int = Field(description="Value of the criterion's scale (criterias.list)")
     rationale: Optional[str] = Field(default=None, max_length=2000)
+
+
+class ProposedInitiative(InitiativeBase):
+    """Response of POST /api/initiatives/propose: the created initiative plus
+    who it was sent to for diagnosis (additive keys)."""
+    id: Optional[int] = None
+    reviewer_id: Optional[int] = Field(default=None, description="Assigned reviewer user id")
+    reviewer_name: Optional[str] = Field(default=None, description="Assigned reviewer display name")
 
 
 class ProposeAssetLink(SQLModel):
@@ -420,6 +432,8 @@ class CollaborationDetail(SQLModel):
 class ScaleOption(SQLModel):
     value: int
     label: str
+    # Every language's label (lang → label); `label` stays the requested one.
+    labels: Dict[str, str] = Field(default_factory=dict)
 
 
 class DiagnosisForm(SQLModel):

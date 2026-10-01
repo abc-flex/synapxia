@@ -88,7 +88,6 @@ const tagsOf = (i: InitiativeExploreItem): string[] => (Array.isArray(i.tags) ? 
     )}
 
     <InitiativeExploreModal modalId="inits-view-modal" payload={{ items, labels }} />
-    <script type="application/json" id="inits-list-labels" set:html={JSON.stringify(labels).replace(/</g, "\\u003c")} />
 
     <CardGallery
       galleryId="inits-gallery"
@@ -110,6 +109,9 @@ const tagsOf = (i: InitiativeExploreItem): string[] => (Array.isArray(i.tags) ? 
           typeLabel={i.type ? pick(type, i.type) : null}
           priorityValue={i.priority_level}
           priorityLabel={pick(priority, i.priority_level)}
+          statusLabels={i.status ? status[i.status] : undefined}
+          typeLabels={i.type ? type[i.type] : undefined}
+          priorityLabels={i.priority_level ? priority[i.priority_level] : undefined}
           tags={tagsOf(i)}
           createdAt={i.created_at}
           locale={locale}
@@ -147,24 +149,8 @@ const tagsOf = (i: InitiativeExploreItem): string[] => (Array.isArray(i.tags) ? 
     loadClientTranslations();
     installGlobalToast();
 
-    // List-backed chips (status / priority / type) in the viewer's language.
-    const LIST_LABELS: Record<string, Record<string, Record<string, string>>> = (() => {
-      try {
-        return JSON.parse(document.getElementById("inits-list-labels")?.textContent || "{}");
-      } catch {
-        return {};
-      }
-    })();
-    function relabelChips(): void {
-      const lang = localStorage.getItem("lang") === "es" ? "es" : "en";
-      document.querySelectorAll<HTMLElement>("[data-label-list]").forEach((el) => {
-        const hit = LIST_LABELS[el.dataset.labelList || ""]?.[el.dataset.labelValue || ""];
-        if (hit) el.textContent = hit[lang] ?? hit.en ?? el.textContent;
-      });
-    }
-    relabelChips();
-    window.addEventListener("languageChanged", relabelChips);
-    document.addEventListener("synapxia:locale-changed", relabelChips);
+    // List-backed chips (status / priority / type) carry every language's
+    // label (data-list-labels) and follow the language switcher on their own.
 
     // Pluralised "N related assets" — the generic i18n runtime only swaps
     // static strings, so the count is filled in here (and on language switch).

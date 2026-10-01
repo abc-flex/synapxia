@@ -19,9 +19,10 @@
   import { untrack } from "svelte";
   import { translate } from "@/utils/i18nClient";
   import type { DiagnosisAnswer, DiagnosticRow } from "@/types/api";
+  import { currentLang, labelIn } from "@/lib/listLang";
 
   type Mode = "view" | "propose" | "review" | "modify";
-  type ScaleOption = { value: number; label: string };
+  type ScaleOption = { value: number; label: string; labels?: Record<string, string> };
 
   let {
     items = [],
@@ -143,14 +144,27 @@
   const scaleFor = (row: DiagnosticRow): ScaleOption[] => scales[row.list || row.criteria] ?? [];
   const labelFor = (row: DiagnosticRow, score: number | null | undefined): string | null => {
     if (score == null) return null;
-    return scaleFor(row).find((o) => o.value === score)?.label ?? null;
+    const opt = scaleFor(row).find((o) => o.value === score);
+    return opt ? optLabel(opt) : null;
+  };
+  // Scale labels follow the language switcher (langTick re-runs these).
+  const optLabel = (opt: ScaleOption): string => {
+    void langTick;
+    return labelIn(opt.labels, currentLang(), opt.label);
+  };
+  const savedLabel = (
+    labels: Record<string, string> | null | undefined,
+    fallback: string | null | undefined,
+  ): string | null => {
+    void langTick;
+    return labels ? labelIn(labels, currentLang(), fallback ?? "") : fallback ?? null;
   };
   const creatorScore = (row: DiagnosticRow) => (editsCreator ? creator[row.criteria]?.score ?? null : row.creator_score ?? null);
   const creatorLabel = (row: DiagnosticRow) =>
-    editsCreator ? labelFor(row, creator[row.criteria]?.score) : row.creator_label ?? null;
+    editsCreator ? labelFor(row, creator[row.criteria]?.score) : savedLabel(row.creator_labels, row.creator_label);
   const reviewerScore = (row: DiagnosticRow) => (editsReviewer ? reviewer[row.criteria] ?? null : row.reviewer_score ?? null);
   const reviewerLabel = (row: DiagnosticRow) =>
-    editsReviewer ? labelFor(row, reviewer[row.criteria]) : row.reviewer_label ?? null;
+    editsReviewer ? labelFor(row, reviewer[row.criteria]) : savedLabel(row.reviewer_labels, row.reviewer_label);
   const rationaleOf = (row: DiagnosticRow) => (editsCreator ? creator[row.criteria]?.rationale ?? "" : row.rationale ?? "");
 
   const totals = $derived.by(() => {
@@ -229,7 +243,7 @@
   >
     <option value="">{t("inits_diagnosis.choose", "— choose an answer —")}</option>
     {#each scaleFor(row) as opt (opt.value)}
-      <option value={String(opt.value)}>{opt.value} · {opt.label}</option>
+      <option value={String(opt.value)}>{opt.value} · {optLabel(opt)}</option>
     {/each}
   </select>
   {#if invalid.has(row.criteria)}

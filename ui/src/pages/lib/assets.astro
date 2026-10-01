@@ -8,6 +8,7 @@ import AssetDetailModal from "../../components/lib/AssetDetailModal.astro";
 import { getAssetsWithAccess } from "@/lib/assets";
 import { getCategoriesSelect } from "@/lib/categories";
 import { getListItemsbyList } from "@/lib/list_items";
+import { labelsByValue, labelsFor, listLabel, toListOptions } from "@/lib/listLang";
 import { getCurrentUser } from "@/lib/auth";
 import { getFavoritesByUser } from "@/lib/favorites";
 
@@ -52,18 +53,13 @@ try {
   categories = [];
 }
 
-// Resolve a status code to its display label. Tolerates legacy/seeded rows
-// that stored the bare code (e.g. `IN_USE`) without the `N-` sort-prefix
-// that `list_items.value` carries (e.g. `6-IN_USE`). Canonical lookup runs
-// first; the prefix-stripped fallback is the safety net so the column
-// never shows the raw code when a label is available.
-const resolveStatusLabel = (raw: string): string => {
-  if (!raw) return "";
-  const direct = status.find((s) => s.value === raw);
-  if (direct) return direct.label;
-  const stripped = status.find((s) => s.value.replace(/^\d+-/, "") === raw);
-  return stripped?.label ?? raw;
-};
+// Status labels in every language. The server renders English; the client
+// repaints cells, filter options and the modal's select in the viewer's
+// language and on every language switch (lib/listLang.ts). Lookups tolerate
+// legacy rows that stored the bare code (`IN_USE`) without the `N-` prefix.
+const statusLabels = labelsByValue(status);
+const statusOptions = toListOptions(status, "en");
+const resolveStatusLabel = (raw: string): string => listLabel(statusLabels, raw, "en");
 
 // Columns shown in the table
 const columns = [
@@ -72,7 +68,7 @@ const columns = [
   { key: "category_name", label: "asset_modal.category" },
   { key: "current_version", label: "asset_modal.version" },
   { key: "status", label: "asset_modal.status", visible: false },
-  { key: "status_name", label: "asset_modal.status", as: "status" },
+  { key: "status_name", label: "asset_modal.status", as: "status", labelsKey: "status_labels" },
   { key: "tags_display", label: "asset_modal.tags", as: "tags" },
 ];
 
@@ -90,6 +86,7 @@ const data = assets.map((item) => ({
   reference: item.reference,
   status: item.status,
   status_name: resolveStatusLabel(item.status),
+  status_labels: labelsFor(statusLabels, item.status),
   current_version: item.current_version ?? "1.0.0",
   // Per-row action gating (HU-LI08): only MANAGE holders get edit/delete/
   // detail buttons (VIEW rows render read-only; backend enforces regardless).
@@ -137,7 +134,7 @@ const fieldKeys = deleteFields.map((f) => f.key);
     <AssetDetailModal
       modalId="asset-detail-modal"
       categories={categories}
-      statuses={status.map((s) => ({ value: s.value, label: s.label }))}
+      statuses={statusOptions}
     />
 
     {/* Slim delete confirmation (reuses existing CrudModal) */}
@@ -297,7 +294,7 @@ const fieldKeys = deleteFields.map((f) => f.key);
           filterOptions={categories}
           filterHeaderColumn="category_name"
           columnFilter2="status"
-          filterOptions2={status.map((s) => ({ value: s.value, label: s.label }))}
+          filterOptions2={statusOptions}
           filter2HeaderColumn="status_name"
           {/* Favorites → toolbar toggle */}
           columnFilter3="favorite"

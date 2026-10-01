@@ -50,6 +50,16 @@ def test_spanish_labels_with_english_fallback(client, session):
     assert rows["C"]["creator_label"] == "High"
 
 
+def test_answers_carry_every_language_label(client, session):
+    init = _setup(session)
+    mk_diag(session, init.id, "A", creator=1, reviewer=3)
+    override(user(1))
+    rows = {r["criteria"]: r for r in data(_get(client, init.id, lang="es"))["items"]}
+    assert rows["A"]["creator_labels"] == {"en": "Low", "es": "Baja"}
+    assert rows["A"]["reviewer_labels"] == {"en": "High", "es": "Alta"}
+    assert rows["B"]["creator_labels"] is None
+
+
 def test_raw_value_when_no_label_exists(client, session):
     init = _setup(session)
     mk_criteria(session, "NOLIST", list_code="MISSING")

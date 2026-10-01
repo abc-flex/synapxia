@@ -86,21 +86,23 @@ const PROPOSE_TABS = [
             <FormField controlId="ip-impact" labelKey="inits_propose.expected_impact" label="Expected impact" required
               errorId="ip-impact-error" errorKey="inits_propose.required">
               <select id="ip-impact" class={inputClass}>
-                <option value="" data-i18n="inits_propose.choose">— choose —</option>
+                <option value="" data-i18n="inits_propose.choose_impact">— choose an expected impact —</option>
               </select>
             </FormField>
             <FormField controlId="ip-priority" labelKey="inits_propose.priority_level" label="Priority" required
               errorId="ip-priority-error" errorKey="inits_propose.required">
               <select id="ip-priority" class={inputClass}>
-                <option value="" data-i18n="inits_propose.choose">— choose —</option>
+                <option value="" data-i18n="inits_propose.choose_priority">— choose a priority —</option>
               </select>
             </FormField>
           </div>
 
-          <FormField controlId="ip-reviewer" labelKey="inits_propose.reviewer" label="Reviewer"
-            errorId="ip-reviewer-error">
+          <FormField controlId="ip-reviewer" labelKey="inits_propose.reviewer" label="Reviewer" required
+            errorId="ip-reviewer-error" errorKey="inits_propose.reviewer_required">
             <select id="ip-reviewer" class={inputClass}>
-              <option value="" data-i18n="inits_propose.reviewer_auto">Auto-assign a reviewer</option>
+              <!-- No default: the user must pick a reviewer or the auto option. -->
+              <option value="" data-i18n="inits_propose.reviewer_placeholder">— choose a reviewer —</option>
+              <option value="auto" data-i18n="inits_propose.reviewer_auto">Assign a reviewer automatically</option>
             </select>
             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400" data-i18n="inits_propose.reviewer_hint">
               The reviewer diagnoses your initiative and decides whether it is accepted.
@@ -187,6 +189,7 @@ const PROPOSE_TABS = [
       getDiagnosisForm, getInitiativeReviewers, getLinkableAssets, proposeInitiative,
     } from "@/lib/initiatives";
     import { getListItemsbyList } from "@/lib/list_items";
+    import { fillListSelect, setListLabel, toListOptions, type ListOption } from "@/lib/listLang";
     import { apiErrorDetail } from "@/lib/api";
     import { loadClientTranslations, translate } from "@/utils/i18nClient";
     import { installGlobalToast, showToast } from "@/lib/toast";
@@ -197,7 +200,7 @@ const PROPOSE_TABS = [
     import type { DiagnosisAnswer, InitiativeProposeRequest, ProposeAssetLink } from "@/types/api";
 
     type Option = { value: string; label: string };
-    type Staged = ProposeAssetLink & { assetLabel: string; typeLabel: string };
+    type Staged = ProposeAssetLink & { assetLabel: string; typeLabels: Record<string, string> };
     type TableApi = { validate(): string[]; getCreatorAnswers(): Record<string, DiagnosisAnswer> };
 
     loadClientTranslations();
@@ -240,7 +243,7 @@ const PROPOSE_TABS = [
 
     let table: TableApi | null = null;
     let assetOptions: Option[] = [];
-    let relTypeOptions: Option[] = [];
+    let relTypeOptions: ListOption[] = [];
     let staged: Staged[] = [];
     let submitting = false;
 
@@ -258,11 +261,8 @@ const PROPOSE_TABS = [
     }
 
     // ── option lists ────────────────────────────────────────────────────
-    function byLang<T extends { lang?: string; sort_order?: number }>(items: T[]): T[] {
-      const scoped = items.filter((i) => i.lang === lang());
-      return (scoped.length ? scoped : items.filter((i) => i.lang === "en"))
-        .slice().sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
-    }
+    // List-backed selects carry every language's label, so they follow the
+    // header language switcher (lib/listLang.ts).
     function fill(sel: HTMLSelectElement | null, options: Option[]): void {
       if (!sel) return;
       while (sel.options.length > 1) sel.remove(1);
@@ -273,9 +273,9 @@ const PROPOSE_TABS = [
         sel.appendChild(opt);
       }
     }
-    async function listOptions(code: string): Promise<Option[]> {
+    async function listOptions(code: string): Promise<ListOption[]> {
       try {
-        return byLang(await getListItemsbyList(code, 0, 200)).map((li) => ({ value: li.value, label: li.label || li.value }));
+        return toListOptions(await getListItemsbyList(code, 0, 200));
       } catch {
         return [];
       }
@@ -285,19 +285,24 @@ const PROPOSE_TABS = [
         listOptions("INITIATIVE_TYPE"), listOptions("EXPECTED_IMPACT"),
         listOptions("PRIORITY_LEVEL"), listOptions("RELATION_TYPE"),
       ]);
-      fill(typeSel, types);
-      fill(impactSel, impacts);
-      fill(prioritySel, priorities);
+      fillListSelect(typeSel, types);
+      fillListSelect(impactSel, impacts);
+      fillListSelect(prioritySel, priorities);
       relTypeOptions = relTypes;
-      fill(relType, relTypes);
+      fillListSelect(relType, relTypes);
     }
     async function loadReviewers(): Promise<void> {
       try {
         const revs = await getInitiativeReviewers();
-        fill(reviewerSel, revs.map((r) => ({
-          value: String(r.value),
-          label: `${r.label} — ${r.is_superuser ? tr("reviewer_role.SUPERUSER", "Superuser") : tr(`reviewer_role.${r.profile}`, r.profile)}`,
-        })));
+        if (!reviewerSel) return;
+        // Keep the placeholder and the "auto" option (fill() keeps only one).
+        while (reviewerSel.options.length > 2) reviewerSel.remove(2);
+        for (const r of revs) {
+          const opt = document.createElement("option");
+          opt.value = String(r.value);
+          opt.textContent = `${r.label} — ${r.is_superuser ? tr("reviewer_role.SUPERUSER", "Superuser") : tr(`reviewer_role.${r.profile}`, r.profile)}`;
+          reviewerSel.appendChild(opt);
+        }
       } catch {
         /* auto-assign stays available */
       }
@@ -336,6 +341,7 @@ const PROPOSE_TABS = [
       if (!staged.length) {
         const empty = document.createElement("div");
         empty.className = emptyClass;
+        empty.setAttribute("data-i18n", "inits_propose.related_empty");
         empty.textContent = tr("inits_propose.related_empty", "No related assets yet.");
         relList.appendChild(empty);
         return;
@@ -349,7 +355,7 @@ const PROPOSE_TABS = [
         name.title = link.assetLabel;
         const type = document.createElement("span");
         type.className = "shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300";
-        type.textContent = link.typeLabel;
+        setListLabel(type, link.typeLabels, link.type);
         row.append(name, type);
         if (link.rationale) {
           const why = document.createElement("span");
@@ -396,7 +402,7 @@ const PROPOSE_TABS = [
         asset, type,
         rationale: (relRationale?.value || "").trim() || null,
         assetLabel: label(assetOptions, String(asset)),
-        typeLabel: label(relTypeOptions, type),
+        typeLabels: relTypeOptions.find((o) => o.value === type)?.labels ?? { en: type },
       }];
       if (relTarget) relTarget.value = "";
       if (relType) relType.value = "";
@@ -408,6 +414,7 @@ const PROPOSE_TABS = [
     function validateCore(): boolean {
       const required: [HTMLInputElement | HTMLSelectElement | null, string][] = [
         [nameIn, "ip-name-error"], [impactSel, "ip-impact-error"], [prioritySel, "ip-priority-error"],
+        [reviewerSel, "ip-reviewer-error"],
       ];
       let ok = true;
       for (const [el, errId] of required) {
@@ -454,14 +461,19 @@ const PROPOSE_TABS = [
         answers: table ? table.getCreatorAnswers() : {},
         assets: staged.map(({ asset, type, rationale }) => ({ asset, type, rationale })),
       };
-      if (reviewerSel?.value) payload.reviewer_id = Number(reviewerSel.value);
+      // "auto" → the server assigns the first eligible reviewer (never the caller).
+      if (reviewerSel?.value && reviewerSel.value !== "auto") payload.reviewer_id = Number(reviewerSel.value);
 
       setBusy(true);
       try {
-        await proposeInitiative(payload);
+        const created = await proposeInitiative(payload);
         notifyChanged();
+        // Name who the proposal went to (chosen or auto-assigned server-side).
+        const sentTo = created.reviewer_name
+          ? " " + tr("inits_propose.sent_to", "It was sent to {name} for diagnosis.").replace("{name}", created.reviewer_name)
+          : "";
         await showAckDialog("ip-ack-dialog",
-          tr("inits_propose.success", "Your initiative was sent for diagnosis. You can follow it in My Initiative Requests."),
+          tr("inits_propose.success", "Your initiative was sent for diagnosis. You can follow it in My Initiative Requests.") + sentTo,
           "success", tr("inits_propose.ack_title_success", "Initiative proposed"));
         window.location.href = "/inits/explore";
       } catch (err) {

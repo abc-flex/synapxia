@@ -239,6 +239,7 @@ const fieldKeys = ["id", ...tableFields.map((f) => f.key)];
 
     <script>
       import { initCrudPage } from "@/lib/crudClient";
+      import { listOption, toListOptions } from "@/lib/listLang";
       import {
         createMetric,
         updateMetric,
@@ -280,16 +281,12 @@ const fieldKeys = ["id", ...tableFields.map((f) => f.key)];
         console.error("Failed to decode scale maps", err);
       }
 
+      // One option per scale value, carrying every language's label so it
+      // follows the language switcher (lib/listLang.ts).
       function valueOptionsFor(dimensionCode) {
         const scaleCode = dimensionScale[dimensionCode];
         const items = (scaleCode && scalesByList[scaleCode]) || [];
-        if (items.length === 0) return [];
-        const lang = localStorage.getItem("lang") || "en";
-        const langs = new Set(items.map((i) => i.lang));
-        const target = langs.has(lang)
-          ? lang
-          : items.find((i) => i.lang)?.lang || lang;
-        return items.filter((i) => !i.lang || i.lang === target);
+        return items.length ? toListOptions(items) : [];
       }
 
       function refreshValueOptions(modal) {
@@ -306,9 +303,7 @@ const fieldKeys = ["id", ...tableFields.map((f) => f.key)];
         if (placeholder) valSelect.appendChild(placeholder);
 
         for (const item of valueOptionsFor(dimSelect.value)) {
-          const opt = document.createElement("option");
-          opt.value = item.value;
-          opt.textContent = item.label || item.value;
+          const opt = listOption(item.value, item.labels);
           if (item.value === previous) opt.selected = true;
           valSelect.appendChild(opt);
         }

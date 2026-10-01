@@ -12,7 +12,9 @@
   import {
     diagnoseInitiative, getDiagnosisForm, getInitiativeAssets, getInitiativeDiagnostics,
   } from "@/lib/initiatives";
-  import { loadInitiativeLists, labelOf, currentLang, type InitiativeLists } from "@/lib/initiativeLists";
+  import {
+    loadInitiativeLists, labelOf, optionLabel, currentLang, type InitiativeLists, type Option,
+  } from "@/lib/initiativeLists";
   import { notifyChanged } from "@/lib/notificationsStore";
   import { apiErrorDetail } from "@/lib/api";
   import { translate } from "@/utils/i18nClient";
@@ -22,6 +24,15 @@
   } from "@/types/api";
 
   let langTick = $state(0);
+  // List labels in the current language; re-run on langTick (language switch).
+  const lbl = (opts: Option[], value?: string | null): string => {
+    void langTick;
+    return labelOf(opts, value);
+  };
+  const optText = (o: Option): string => {
+    void langTick;
+    return optionLabel(o);
+  };
   const t = (key: string, fallback: string): string => {
     void langTick;
     try {
@@ -126,7 +137,7 @@
       <p class="mt-0.5 text-sm text-white/85">{t("inits_diagnose.subtitle", "Score the initiative on every criterion, then accept it, reject it or request changes.")}</p>
     </div>
     {#if initiative}
-      <span class="ml-auto shrink-0 rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-medium">{labelOf(lists.status, initiative.status)}</span>
+      <span class="ml-auto shrink-0 rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-medium">{lbl(lists.status, initiative.status)}</span>
     {/if}
   </div>
 
@@ -141,9 +152,9 @@
         {#if initiative.description}
           <div class="sm:col-span-3"><p class={field}>{t("inits_explore.field_description", "Description")}</p><p class={value}>{initiative.description}</p></div>
         {/if}
-        <div><p class={field}>{t("inits_explore.field_type", "Type")}</p><p class={value}>{labelOf(lists.type, initiative.type) || "—"}</p></div>
-        <div><p class={field}>{t("inits_explore.field_impact", "Expected impact")}</p><p class={value}>{labelOf(lists.impact, initiative.expected_impact)}</p></div>
-        <div><p class={field}>{t("inits_explore.field_priority", "Priority")}</p><p class={value}>{labelOf(lists.priority, initiative.priority_level)}</p></div>
+        <div><p class={field}>{t("inits_explore.field_type", "Type")}</p><p class={value}>{lbl(lists.type, initiative.type) || "—"}</p></div>
+        <div><p class={field}>{t("inits_explore.field_impact", "Expected impact")}</p><p class={value}>{lbl(lists.impact, initiative.expected_impact)}</p></div>
+        <div><p class={field}>{t("inits_explore.field_priority", "Priority")}</p><p class={value}>{lbl(lists.priority, initiative.priority_level)}</p></div>
         {#if initiative.reference}
           <div class="sm:col-span-3"><p class={field}>{t("inits_explore.field_reference", "Reference")}</p><p class={value}>{initiative.reference}</p></div>
         {/if}
@@ -155,7 +166,7 @@
             <p class={field}>{t("inits_diagnose.related_assets", "Related assets")}</p>
             <div class="mt-1 flex flex-wrap gap-2">
               {#each assets as a (`${a.asset}:${a.type}`)}
-                <span class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">{a.asset_name ?? `#${a.asset}`}<span class="font-semibold text-indigo-600 dark:text-indigo-400">{a.type}</span></span>
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">{a.asset_name ?? `#${a.asset}`}<span class="font-semibold text-indigo-600 dark:text-indigo-400">{t(`related.type.${a.type}`, a.type.replace(/_/g, " ").toLowerCase())}</span></span>
               {/each}
             </div>
           </div>

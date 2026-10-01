@@ -159,6 +159,11 @@ INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
     ('PROJECT_STATUS', 'en', 'IN_PROGRESS', 'In Progress', 20),
     ('PROJECT_STATUS', 'en', 'ON_HOLD', 'On Hold',  30),
     ('PROJECT_STATUS', 'en', 'COMPLETED','Completed', 40);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('PROJECT_STATUS', 'es', 'PLANNED', 'Planeado',   10),
+    ('PROJECT_STATUS', 'es', 'IN_PROGRESS', 'En progreso', 20),
+    ('PROJECT_STATUS', 'es', 'ON_HOLD', 'En pausa',  30),
+    ('PROJECT_STATUS', 'es', 'COMPLETED','Completado', 40);
 
 -- ===== List: Dimensions Unit =====
 INSERT INTO lists (code, name, description, type, module) VALUES (
@@ -171,6 +176,12 @@ INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
     ('DIMENSIONS_UNIT', 'en', 'COUNT', 'Count', 30),
     ('DIMENSIONS_UNIT', 'en', 'HOURS', 'Hours', 40),
     ('DIMENSIONS_UNIT', 'en', 'DAYS', 'Days', 50);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('DIMENSIONS_UNIT', 'es', 'PCT', 'Porcentaje', 10),
+    ('DIMENSIONS_UNIT', 'es', 'UNITS', 'Unidades', 20),
+    ('DIMENSIONS_UNIT', 'es', 'COUNT', 'Cantidad', 30),
+    ('DIMENSIONS_UNIT', 'es', 'HOURS', 'Horas', 40),
+    ('DIMENSIONS_UNIT', 'es', 'DAYS', 'Días', 50);
 
 -- ===== List: GenAI Adoption for Devs =====
 INSERT INTO lists (code, name, description, type, module) VALUES (

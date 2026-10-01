@@ -18,6 +18,7 @@ from ..internal.models import (
     DiagnosisForm, DiagnosticsResponse, FavoriteInit, FavoriteState, Initiative,
     InitiativeDiagnoseRequest, InitiativeExploreItem, InitiativeProposeRequest,
     InitiativeResubmitRequest, InitiativeUpdate, InitiativeWithAccess, LinkableAsset,
+    ProposedInitiative,
 )
 from ...internal import reviewers
 from ...lib.internal import permissions_service as asset_permissions
@@ -195,17 +196,17 @@ def get_reviewers(
     current: User = Depends(current_active_user),
 ) -> List[ReviewerOption]:
     """Eligible reviewers for a proposal — the same rule as Propose an asset.
-    A non-admin caller is left out of their own list."""
+    The caller is always left out of their own list (nobody reviews their own
+    proposal)."""
     _gate_explore(session, current)
-    exclude_id = None if reviewers.is_admin(current) else current.id
     return [
         ReviewerOption(
             value=u.id,
-            label=f"{u.first_name or ''} {u.last_name or ''}".strip() or u.username,
+            label=reviewers.display_name(u),
             profile=u.profile or "",
             is_superuser=bool(u.is_superuser),
         )
-        for u in reviewers.list_reviewers(session, exclude_user_id=exclude_id)
+        for u in reviewers.list_reviewers(session, exclude_user_id=current.id)
     ]
 
 
@@ -242,22 +243,23 @@ def get_diagnosis_form(
     return diagnosis_form(session, lang)
 
 
-@router.post("/propose", response_model=Initiative, status_code=201)
+@router.post("/propose", response_model=ProposedInitiative, status_code=201)
 def propose(
     payload: InitiativeProposeRequest,
     session: Session = Depends(get_db_session),
     current: User = Depends(current_active_user),
-) -> Initiative:
+) -> ProposedInitiative:
     """
     Propose an initiative and request its diagnosis — one transaction writes
     the initiative (ACTIVATED), the proposer's diagnosis answers, the related
     asset links, ACTIVATION/HANDLED + DIAGNOSIS/PENDING collaborations and
-    MANAGE grants for the proposer and the reviewer. 400 on any validation
+    MANAGE grants for the proposer and the reviewer. The response adds
+    `reviewer_id`/`reviewer_name` (who it was sent to). 400 on any validation
     problem (nothing is written).
     """
     _gate_explore(session, current, can_edit=True)
     try:
-        return propose_service.propose_initiative(session, current, payload)
+        return propose_service.propose_initiative_result(session, current, payload)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except IntegrityError:

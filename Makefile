@@ -148,7 +148,7 @@ health:
 	@echo "$(GREEN)Running health checks...$(NC)"
 	@echo ""
 	@echo "$(BLUE)API Health Check:$(NC)"
-	@curl -s http://localhost:8001/api/health || echo "$(RED)✗ API not responding$(NC)"
+	@curl -sf http://localhost:8001/health || echo "$(RED)✗ API not responding$(NC)"
 	@echo ""
 	@echo "$(BLUE)Database Connection:$(NC)"
 	@docker-compose -f $(COMPOSE_FILE) exec -T db pg_isready -U synapxia && echo "$(GREEN)✓ Database healthy$(NC)" || echo "$(RED)✗ Database unavailable$(NC)"

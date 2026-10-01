@@ -15,7 +15,7 @@ after the proposal — the links travel inside this transaction, so a failure ca
 never leave a proposal without them. Every check runs before the first write.
 """
 import logging
-from typing import List
+from typing import List, Tuple
 
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session
@@ -24,10 +24,10 @@ from .criteria_validation import validate_creator_answers
 from .list_validation import REQUIRED_FIELDS, validate_core_fields, validate_list_value
 from .models import (
     Collaboration, Diagnostic, InitPermission, Initiative, InitiativeProposeRequest,
-    ProposeAssetLink,
+    ProposeAssetLink, ProposedInitiative,
 )
 from ...admin.internal.models import User
-from ...internal.reviewers import resolve_reviewer
+from ...internal.reviewers import display_name, resolve_reviewer
 from ...lib.internal import permissions_service as asset_permissions
 from ...lib.internal.models import Asset, AssetInit
 
@@ -66,6 +66,22 @@ def _validate_assets(session: Session, user: User, links: List[ProposeAssetLink]
 def propose_initiative(
     session: Session, proposer: User, data: InitiativeProposeRequest,
 ) -> Initiative:
+    """Create an initiative proposal (see propose_initiative_with_reviewer)."""
+    return propose_initiative_with_reviewer(session, proposer, data)[0]
+
+
+def propose_initiative_result(
+    session: Session, proposer: User, data: InitiativeProposeRequest,
+) -> ProposedInitiative:
+    """The POST /api/initiatives/propose response: the initiative plus its reviewer."""
+    initiative, reviewer = propose_initiative_with_reviewer(session, proposer, data)
+    return ProposedInitiative(
+        **initiative.model_dump(), reviewer_id=reviewer.id, reviewer_name=display_name(reviewer))
+
+
+def propose_initiative_with_reviewer(
+    session: Session, proposer: User, data: InitiativeProposeRequest,
+) -> Tuple[Initiative, User]:
     """Create an initiative proposal and its diagnosis-workflow records atomically.
 
     Raises ValueError on any validation problem (→ 400, nothing written) and
@@ -104,7 +120,7 @@ def propose_initiative(
             init=initiative.id, user_id=reviewer.id,
             type=TYPE_DIAGNOSIS, workflow_status=WF_PENDING))
 
-        # MANAGE for proposer + reviewer (one row when an admin self-reviews).
+        # MANAGE for proposer + reviewer (never the same user — see resolve_reviewer).
         for target_id in {proposer.id, reviewer.id}:
             session.add(InitPermission(
                 init=initiative.id, target_type=TARGET_USER,
@@ -120,4 +136,4 @@ def propose_initiative(
     logger.info(
         "Initiative proposed: id=%s proposer=%s reviewer=%s answers=%d assets=%d",
         initiative.id, proposer.id, reviewer.id, len(answers), len(data.assets))
-    return initiative
+    return initiative, reviewer

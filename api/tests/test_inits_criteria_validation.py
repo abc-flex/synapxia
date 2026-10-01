@@ -68,7 +68,10 @@ def test_diagnosis_form_active_criteria_and_localized_scales(session, client):
     override(user(1, profile=COLLAB))
     body = data(client.get("/api/initiatives/diagnosis-form", params={"lang": "es"}))
     assert [i["criteria"] for i in body["items"]] == ["C1"]
-    assert body["scales"]["C1"] == [{"value": 1, "label": "C1-es-1"}, {"value": 2, "label": "C1-es-2"}]
+    assert [{k: o[k] for k in ("value", "label")} for o in body["scales"]["C1"]] == [
+        {"value": 1, "label": "C1-es-1"}, {"value": 2, "label": "C1-es-2"}]
+    # Every language rides along, so the UI can follow the language switcher.
+    assert body["scales"]["C1"][0]["labels"] == {"en": "C1-en-1", "es": "C1-es-1"}
 
 
 def test_diagnosis_form_needs_an_inits_privilege(session, client):

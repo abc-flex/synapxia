@@ -7,6 +7,7 @@ import Toast from "../../components/Toast.astro";
 import { getDimensions } from "@/lib/dimensions";
 import { getListsSelect } from "@/lib/lists";
 import { getListItemsbyList } from "@/lib/list_items";
+import { labelsByValue, labelsFor, listLabel } from "@/lib/listLang";
 
 // Fetch dimensions from API
 let dimensions: any[] = [];
@@ -45,7 +46,7 @@ const columns = [
   { key: "code", label: "dimension_modal.code", visible: false },
   { key: "name", label: "dimension_modal.name", as: "title", subtitleKey: "code", subtitleFormat: "text" },
   { key: "scale_label", label: "dimension_modal.scale" },
-  { key: "unit_label", label: "dimension_modal.unit" },
+  { key: "unit_label", label: "dimension_modal.unit", labelsKey: "unit_labels" },
 ];
 const data = dimensions.map((item) => ({
   id: item.code,
@@ -55,7 +56,8 @@ const data = dimensions.map((item) => ({
   scale: item.scale,
   scale_label: dimensionScales.find((s) => String(s.value) === String(item.scale))?.label || item.scale,
   unit: item.unit,
-  unit_label: dimensionUnits.find((u) => String(u.value) === String(item.unit))?.label || item.unit,
+  unit_label: listLabel(labelsByValue(dimensionUnits), item.unit, "en"),
+  unit_labels: labelsFor(labelsByValue(dimensionUnits), item.unit),
   is_active: item.is_active,
   created_at: item.created_at,
   updated_at: item.updated_at,

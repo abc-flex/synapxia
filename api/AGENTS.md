@@ -27,7 +27,7 @@ New features go inside their owning domain — never add cross-domain plumbing p
 ```bash
 make logs-api          # tail API logs
 make exec-api          # bash into the API container
-make test              # hits /api/health among other checks
+make test              # hits /health among other checks
 uv sync                # install/lock deps (inside api/)
 uv run fastapi dev     # run locally (as the container does)
 ```

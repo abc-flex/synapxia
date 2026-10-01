@@ -14,6 +14,7 @@
   import { getAsset } from "@/lib/assets";
   import { getCharacterizationsByAsset } from "@/lib/characterizations";
   import { buildCharFieldDefs, type CharFieldDef } from "@/lib/charFields";
+  import { currentLang, labelIn } from "@/lib/listLang";
   import { notifyChanged } from "@/lib/notificationsStore";
   import { resubmitAsset } from "@/lib/modify";
   import { translate } from "@/utils/i18nClient";
@@ -37,6 +38,11 @@
   };
   const locale = (): string =>
     (typeof localStorage !== "undefined" && localStorage.getItem("lang")) || "en";
+  // A list value's label in the current language (re-runs on langTick).
+  const listText = (labels: Record<string, string> | undefined, fallback = ""): string => {
+    void langTick;
+    return labelIn(labels, currentLang(), fallback);
+  };
 
   let loading = $state(true);
   let error = $state("");
@@ -289,7 +295,7 @@
                     <span>{t(`feature.${def.feature}`, def.name)}</span>{#if def.required}<span class="ml-0.5 text-red-500" aria-hidden="true">*</span>{/if}
                   </label>
                   {#if def.type}
-                    <span class="shrink-0 text-[10px] uppercase tracking-wide text-gray-400">{def.type}</span>
+                    <span class="shrink-0 text-[10px] uppercase tracking-wide text-gray-400">{listText(def.typeLabels, def.type)}</span>
                   {/if}
                 </div>
                 {#if def.description}
@@ -304,7 +310,7 @@
                   >
                     <option value="">—</option>
                     {#each def.options as opt (opt.value)}
-                      <option value={opt.value}>{opt.label}</option>
+                      <option value={opt.value}>{listText(opt.labels, opt.label)}</option>
                     {/each}
                   </select>
                 {:else if def.control === "textarea"}

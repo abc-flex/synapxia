@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 
 from ..internal.models import (
     Asset, AssetCreate, AssetUpdate, AssetPermission, AssetWithAccessLevels,
-    ProposeRequest, ReviewerOption, ReviewRequest, ModifyRequest, VersionRequest,
+    ProposeRequest, ProposedAsset, ReviewerOption, ReviewRequest, ModifyRequest, VersionRequest,
     AssetVersion, Characterization,
 )
 from ..internal import propose_service
@@ -301,37 +301,36 @@ def list_reviewers(
     can reach the Propose wizard (via `LIB/ASSETS` or a per-category LIB
     privilege) can see who the eligible reviewers are.
 
-    A non-admin caller (not ADMINISTRATOR/ADMINISTRATIVE/superuser — e.g. a
-    REVIEWER proposing their own asset) never sees themselves in the list: a
-    reviewer can't meaningfully review their own proposal.
+    The caller never sees themselves in the list — not even an administrator
+    or superuser: nobody can review their own proposal.
     """
     check_any_module_privilege(session, current_user, "LIB")
-    exclude_id = current_user.id if not propose_service.is_admin(current_user) else None
     return [
         ReviewerOption(
             value=u.id,
-            label=(f"{u.first_name} {u.last_name}".strip() or u.username),
+            label=propose_service.display_name(u),
             profile=u.profile,
             is_superuser=bool(u.is_superuser),
         )
-        for u in propose_service.list_reviewers(session, exclude_user_id=exclude_id)
+        for u in propose_service.list_reviewers(session, exclude_user_id=current_user.id)
     ]
 
 
-@router.post("/propose", response_model=Asset, status_code=201)
+@router.post("/propose", response_model=ProposedAsset, status_code=201)
 def propose(
     payload: ProposeRequest, session: Session = Depends(get_db_session),
     current: User = Depends(current_active_user),
-) -> Asset:
+) -> ProposedAsset:
     """
     Propose an asset for review (HU-Propose). Atomically creates the asset
     (PROPOSED), its characterizations (from the category's specs), a PROPOSAL
     action for the current user, a REVIEW assignment for the reviewer, and MANAGE
-    permissions for both — generating the reviewer's notification.
+    permissions for both — generating the reviewer's notification. The response
+    is the asset plus `reviewer_id`/`reviewer_name` (who it was sent to).
 
     - **name** / **category**: required
     - **reviewer_id**: optional (auto-assigned to the first eligible reviewer —
-      administrator, REVIEWER, or superuser)
+      administrator, REVIEWER, or superuser — other than the proposer)
     - **values**: optional per-feature characterization overrides
 
     Write access: `LIB/ASSETS` OR a write privilege on the target category
@@ -341,7 +340,7 @@ def propose(
     """
     check_any_privilege(session, current, "LIB", ["ASSETS", payload.category], can_edit=True)
     try:
-        return propose_service.propose_asset(session, current.id, payload)
+        return propose_service.propose_asset_result(session, current.id, payload)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except IntegrityError:

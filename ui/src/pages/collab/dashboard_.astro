@@ -116,6 +116,7 @@ const metricFields = [
     import { getDimensions } from "@/lib/dimensions";
     import { getMetricsByDimension, updateMetric } from "@/lib/metrics";
     import { getListsbyType } from "@/lib/lists";
+    import { fillListSelect, toListOptions, type ListOption } from "@/lib/listLang";
     import { getListItemsbyList } from "@/lib/list_items";
     import { getTeamsSelect } from "@/lib/teams";
     import { getRolesSelect } from "@/lib/roles";
@@ -279,18 +280,12 @@ const metricFields = [
       }
     }
 
-    // Value options for a dimension: its SCALE list's items, filtered to the
-    // user's language (falls back to another language if the current has none).
-    function valueOptionsFor(dimensionCode: string): any[] {
+    // Value options for a dimension: one per value of its SCALE list, carrying
+    // every language's label so they follow the language switcher.
+    function valueOptionsFor(dimensionCode: string): ListOption[] {
       const scaleCode = dimensionScale[dimensionCode];
       const items = (scaleCode && scalesByList[scaleCode]) || [];
-      if (items.length === 0) return [];
-      const lang = localStorage.getItem("lang") || "en";
-      const langs = new Set(items.map((i: any) => i.lang));
-      const target = langs.has(lang)
-        ? lang
-        : items.find((i: any) => i.lang)?.lang || lang;
-      return items.filter((i: any) => !i.lang || i.lang === target);
+      return items.length ? toListOptions(items) : [];
     }
 
     // Fetch the assignments grid for the selected dimension + as-of date.
@@ -487,13 +482,8 @@ const metricFields = [
       const valSelect = modal.querySelector('select[name="value"]') as HTMLSelectElement | null;
       if (valSelect) {
         const options = valueOptionsFor(dimensionCode);
-        const fallback = row.rawValue ? [{ value: row.rawValue, label: row.rawValue }] : [];
-        valSelect.innerHTML = (options.length ? options : fallback)
-          .map(
-            (i: any) =>
-              `<option value="${escapeHtml(i.value)}">${escapeHtml(i.label || i.value)}</option>`,
-          )
-          .join("");
+        const fallback = row.rawValue ? [{ value: row.rawValue, labels: { en: row.rawValue } }] : [];
+        fillListSelect(valSelect, options.length ? options : fallback, 0);
         valSelect.value = row.rawValue;
       }
 

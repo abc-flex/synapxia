@@ -16,6 +16,7 @@ import type {
   InitiativeExploreItem,
   InitiativeProposeRequest,
   InitiativeResubmitRequest,
+  ProposedInitiative,
   InitiativeUpdate,
   InitiativeWithAccess,
   LinkableAsset,
@@ -104,8 +105,9 @@ export async function getLinkableAssets(): Promise<LinkableAsset[]> {
   return apiGet<LinkableAsset[]>("/api/initiatives/linkable-assets");
 }
 
-export async function proposeInitiative(data: InitiativeProposeRequest): Promise<Initiative> {
-  return apiPost<Initiative, InitiativeProposeRequest>("/api/initiatives/propose", data);
+/** Propose an initiative; the response also names the assigned reviewer. */
+export async function proposeInitiative(data: InitiativeProposeRequest): Promise<ProposedInitiative> {
+  return apiPost<ProposedInitiative, InitiativeProposeRequest>("/api/initiatives/propose", data);
 }
 
 export async function diagnoseInitiative(id: number, data: InitiativeDiagnoseRequest): Promise<Initiative> {

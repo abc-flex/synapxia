@@ -6,14 +6,14 @@
  * notifications (HU-LI11). `getReviewers` backs the form's reviewer dropdown.
  */
 import { apiGet, apiPost } from "./api";
-import type { Asset, ProposeRequest, ReviewerOption } from "../types/api";
+import type { ProposeRequest, ProposedAsset, ReviewerOption } from "../types/api";
 
 /** Eligible reviewers (active administrators, REVIEWERs, or superusers) for the propose form. */
 export async function getReviewers(): Promise<ReviewerOption[]> {
   return apiGet<ReviewerOption[]>("/api/assets/reviewers");
 }
 
-/** Propose an asset for review. Returns the created (PROPOSED) asset. */
-export async function proposeAsset(data: ProposeRequest): Promise<Asset> {
-  return apiPost<Asset, ProposeRequest>("/api/assets/propose", data);
+/** Propose an asset for review. Returns the created (PROPOSED) asset plus its reviewer. */
+export async function proposeAsset(data: ProposeRequest): Promise<ProposedAsset> {
+  return apiPost<ProposedAsset, ProposeRequest>("/api/assets/propose", data);
 }

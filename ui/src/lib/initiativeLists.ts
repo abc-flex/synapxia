@@ -1,12 +1,15 @@
 /**
  * The list-backed initiative fields (type, expected impact, priority, status)
- * as `{value, label}` options in the current language, with an English
- * fallback — shared by the diagnose / modify / outcome pages
- * (specs/005-explore-initiatives). One request per list, in parallel.
+ * as `{value, label, labels}` options — `label` in the requested language
+ * (English fallback), `labels` in every language so a page can follow the
+ * header language switcher without refetching (lib/listLang.ts). Shared by
+ * the diagnose / modify / outcome pages (specs/005-explore-initiatives).
+ * One request per list, in parallel.
  */
 import { getListItemsbyList } from "./list_items";
+import { currentLang, labelIn, toListOptions, type ListOption } from "./listLang";
 
-export type Option = { value: string; label: string };
+export type Option = ListOption;
 export interface InitiativeLists {
   type: Option[];
   impact: Option[];
@@ -14,23 +17,17 @@ export interface InitiativeLists {
   status: Option[];
 }
 
-export const currentLang = (): "en" | "es" =>
-  (typeof localStorage !== "undefined" && localStorage.getItem("lang")) === "es" ? "es" : "en";
+export { currentLang };
 
 async function options(code: string, lang: string): Promise<Option[]> {
   try {
-    const items = await getListItemsbyList(code, 0, 200);
-    const scoped = items.filter((i) => i.lang === lang);
-    return (scoped.length ? scoped : items.filter((i) => i.lang === "en"))
-      .slice()
-      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-      .map((i) => ({ value: i.value, label: i.label || i.value }));
+    return toListOptions(await getListItemsbyList(code, 0, 200), lang);
   } catch {
     return [];
   }
 }
 
-export async function loadInitiativeLists(lang = currentLang()): Promise<InitiativeLists> {
+export async function loadInitiativeLists(lang: string = currentLang()): Promise<InitiativeLists> {
   const [type, impact, priority, status] = await Promise.all([
     options("INITIATIVE_TYPE", lang),
     options("EXPECTED_IMPACT", lang),
@@ -40,5 +37,13 @@ export async function loadInitiativeLists(lang = currentLang()): Promise<Initiat
   return { type, impact, priority, status };
 }
 
-export const labelOf = (opts: Option[], value?: string | null): string =>
-  value ? opts.find((o) => o.value === value)?.label ?? value : "";
+/** An option's label in `lang` (default: the current language). */
+export const optionLabel = (o: Option, lang: string = currentLang()): string =>
+  labelIn(o.labels, lang, o.label);
+
+/** A stored value's label in `lang` (default: the current language). */
+export const labelOf = (opts: Option[], value?: string | null, lang: string = currentLang()): string => {
+  if (!value) return "";
+  const hit = opts.find((o) => o.value === value);
+  return hit ? optionLabel(hit, lang) : value;
+};

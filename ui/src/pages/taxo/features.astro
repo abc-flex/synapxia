@@ -6,6 +6,7 @@ import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
 import { getFeatures } from "@/lib/features";
 import { getListItemsbyList } from "@/lib/list_items";
+import { labelsByValue, labelsFor, listLabel } from "@/lib/listLang";
 import { getListsbyType } from "@/lib/lists";
 
 // Fetch features from API
@@ -33,7 +34,7 @@ const columns = [
   { key: "code", label: "feature_modal.code", visible: false },
   { key: "name", label: "feature_modal.name", as: "title", subtitleKey: "code", subtitleFormat: "text" },
   { key: "type", label: "feature_modal.type", visible: false },
-  { key: "type_name", label: "feature_modal.type" },
+  { key: "type_name", label: "feature_modal.type", labelsKey: "type_labels" },
 ];
 
 const data = features.map((item) => ({
@@ -42,7 +43,8 @@ const data = features.map((item) => ({
   name: item.name,
   description: item.description,
   type: item.type,
-  type_name: types.find((t) => t.value === item.type)?.label || item.type,
+  type_name: listLabel(labelsByValue(types), item.type, "en"),
+  type_labels: labelsFor(labelsByValue(types), item.type),
   list: item.list,
   list_name: lists.find((l) => l.code === item.list)?.label || item.list,
   is_active: item.is_active,

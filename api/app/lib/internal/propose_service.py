@@ -14,12 +14,14 @@ every row goes into an existing table (assets / characterizations / actions /
 asset_permissions).
 """
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
-from .models import Asset, Characterization, Action, AssetPermission, ProposeRequest
+from .models import (
+    Asset, Characterization, Action, AssetPermission, ProposeRequest, ProposedAsset,
+)
 from ...taxo.internal.models import Specification, Category
 from ...admin.internal.models import User
 # Reviewer eligibility is shared with the initiatives' diagnosis workflow, so it
@@ -27,7 +29,7 @@ from ...admin.internal.models import User
 # are re-exported here so existing imports keep working unchanged.
 from ...internal.reviewers import (  # noqa: F401
     ADMIN_PROFILES, REVIEWER_PROFILES, is_admin, is_eligible, list_reviewers,
-    resolve_reviewer,
+    resolve_reviewer, display_name,
 )
 _is_eligible = is_eligible  # historical private name, still imported by review_service
 
@@ -43,9 +45,23 @@ ACCESS_MANAGE = "MANAGE"
 
 
 def propose_asset(session: Session, proposer_id: int, data: ProposeRequest) -> Asset:
+    """Create an asset proposal (see propose_asset_with_reviewer); returns the asset."""
+    return propose_asset_with_reviewer(session, proposer_id, data)[0]
+
+
+def propose_asset_result(session: Session, proposer_id: int, data: ProposeRequest) -> ProposedAsset:
+    """The POST /api/assets/propose response: the asset plus its assigned reviewer."""
+    asset, reviewer = propose_asset_with_reviewer(session, proposer_id, data)
+    return ProposedAsset(
+        **asset.model_dump(), reviewer_id=reviewer.id, reviewer_name=display_name(reviewer))
+
+
+def propose_asset_with_reviewer(
+    session: Session, proposer_id: int, data: ProposeRequest
+) -> Tuple[Asset, User]:
     """Create an asset proposal and its review-workflow records atomically.
 
-    Returns the created (PROPOSED) asset. Raises ValueError on validation
+    Returns the created (PROPOSED) asset and its reviewer. Raises ValueError on validation
     problems (→ 400) and re-raises IntegrityError after rollback (→ 409).
     """
     if not (data.name or "").strip():
@@ -95,7 +111,7 @@ def propose_asset(session: Session, proposer_id: int, data: ProposeRequest) -> A
             asset=asset.id, user_id=reviewer.id,
             type=TYPE_REVIEW, workflow_status=WF_PENDING))
 
-        # 5. MANAGE permission for proposer + reviewer (deduped if they coincide).
+        # 5. MANAGE permission for proposer + reviewer (never the same user).
         for target_id in {proposer_id, reviewer.id}:
             session.add(AssetPermission(
                 asset=asset.id, target_type=TARGET_USER,
@@ -111,4 +127,4 @@ def propose_asset(session: Session, proposer_id: int, data: ProposeRequest) -> A
     logger.info(
         "Asset proposed: id=%s proposer=%s reviewer=%s specs=%d",
         asset.id, proposer_id, reviewer.id, len(specs))
-    return asset
+    return asset, reviewer

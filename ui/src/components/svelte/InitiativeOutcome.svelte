@@ -2,13 +2,15 @@
   /**
    * InitiativeOutcome — User Acknowledgment of Initiative Notification
    * (HU-IN17, specs/005-explore-initiatives US8). The proposer reads whether
-   * their initiative was accepted or rejected, with the reviewer's message.
+   * their initiative was accepted or rejected, with the reviewer's message —
+   * and, on acceptance, the type the diagnosis derived and its score.
    * Opening records NOTHING — reading is not acknowledging; only the explicit
    * "Got it" marks the notice handled.
    */
   import { onMount } from "svelte";
   import { acknowledgeCollaboration, getCollaboration } from "@/lib/collaborations";
   import { notifyChanged } from "@/lib/notificationsStore";
+  import { labelOf, loadInitiativeLists, type Option } from "@/lib/initiativeLists";
   import { formatRelative } from "@/lib/datatable";
   import { apiErrorDetail } from "@/lib/api";
   import { translate } from "@/utils/i18nClient";
@@ -30,6 +32,12 @@
     (typeof localStorage !== "undefined" && localStorage.getItem("lang")) || "en";
 
   let collab = $state<CollaborationDetail | null>(null);
+  let types = $state<Option[]>([]);
+  // The type's label in the current language; re-run on langTick.
+  const lbl = (value: string): string => {
+    void langTick;
+    return labelOf(types, value);
+  };
   let loading = $state(true);
   let notFound = $state(false);
   let busy = $state(false);
@@ -51,6 +59,7 @@
       const c = await getCollaboration(id);
       if (c.type !== "ACCEPTANCE" && c.type !== "REJECTION") throw new Error("wrong type");
       collab = c;
+      if (c.type === "ACCEPTANCE") types = (await loadInitiativeLists()).type;
     } catch {
       notFound = true;
     } finally {
@@ -98,6 +107,21 @@
     </div>
 
     <div class="space-y-4 px-6 py-5">
+      {#if accepted && collab.initiative?.type}
+        <div class="flex items-center gap-3 rounded-xl border border-violet-200 bg-violet-50/60 p-4 dark:border-violet-500/30 dark:bg-violet-500/10">
+          <div class="min-w-0 flex-1">
+            <p class="text-xs font-semibold uppercase tracking-wide text-violet-600 dark:text-violet-300">{t("inits_show_collab.type_assigned", "Initiative type assigned")}</p>
+            <p class="mt-0.5 text-base font-semibold text-gray-900 dark:text-white">{lbl(collab.initiative.type)}</p>
+            <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{t(`inits_show_collab.type_${collab.initiative.type.toLowerCase()}`, "")}</p>
+          </div>
+          {#if collab.initiative.score != null}
+            <div class="shrink-0 text-right">
+              <p class="text-xs text-gray-500 dark:text-gray-400">{t("inits_show_collab.score", "Diagnosis score")}</p>
+              <p class="text-2xl font-bold text-violet-700 dark:text-violet-300">{collab.initiative.score}</p>
+            </div>
+          {/if}
+        </div>
+      {/if}
       <div>
         <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">{t("inits_show_collab.message", "Reviewer's message")}</p>
         <p class="mt-1 whitespace-pre-line text-sm text-gray-800 dark:text-gray-200">{collab.content || t("inits_show_collab.no_message", "The reviewer left no message.")}</p>

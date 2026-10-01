@@ -1368,6 +1368,10 @@
     "not_found": "No se encontró esta solicitud de diagnóstico.",
     "to_requests": "Ir a Mis Solicitudes de Iniciativas",
     "related_assets": "Activos relacionados",
+    "no_description": "No se dio una descripción.",
+    "proposed_by": "Propuesta por",
+    "tags": "Etiquetas",
+    "type_hint": "Al aceptar, se suman tus puntajes y se asigna el tipo de iniciativa: 6–9 Exploración · 10–14 Prototipado · 15–18 Implementación.",
     "error": "No se pudo guardar la decisión."
   },
   "inits_modify": {
@@ -1384,7 +1388,12 @@
   "inits_show_collab": {
     "title_accepted": "Tu iniciativa fue aceptada",
     "title_rejected": "Tu iniciativa fue rechazada",
-    "message": "Mensaje del revisor",
+    "message": "Retroalimentación del revisor",
+    "type_assigned": "Tipo de iniciativa asignado",
+    "score": "Puntaje del diagnóstico",
+    "type_exploration": "Puntaje 6–9: la necesidad aún se está entendiendo; primero hay que explorarla.",
+    "type_prototyping": "Puntaje 10–14: construir un prototipo para validar la solución.",
+    "type_implementation": "Puntaje 15–18: lista para implementarse.",
     "no_message": "El revisor no dejó mensaje.",
     "acknowledge": "Entendido",
     "handled": "Ya confirmaste este resultado.",

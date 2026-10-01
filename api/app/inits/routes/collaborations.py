@@ -14,7 +14,8 @@ from sqlmodel import Session
 from sqlalchemy.exc import IntegrityError
 
 from ..internal import (
-    collaborations_service, permissions_service, requests_service, votes_service,
+    collaborations_service, diagnosis_service, permissions_service, requests_service,
+    votes_service,
 )
 from ..internal.dependencies import get_db_session
 from ..internal.models import (
@@ -25,6 +26,7 @@ from ..internal.models import (
 from ...admin.internal.models import User
 from ...auth.routes import current_active_user
 from ...internal.permissions import check_any_privilege
+from ...internal.reviewers import display_name
 from ...lib.internal.models import HistoryEntry
 
 logger = logging.getLogger(__name__)
@@ -268,9 +270,12 @@ def get_collaboration(
             or (row.user_id != current.id and not current.is_superuser)):
         raise HTTPException(status_code=404, detail="Collaboration not found")
     actor = session.get(User, row.user_id)
+    proposer_uid = diagnosis_service.proposer_id(session, row.init)
+    proposer = session.get(User, proposer_uid) if proposer_uid else None
     return CollaborationDetail(
         **row.model_dump(),
         actor_name=actor.username if actor else None,
+        proposer_name=display_name(proposer) if proposer else None,
         initiative=session.get(Initiative, row.init),
         current_status=(
             requests_service.current_thread_row(session, row).workflow_status

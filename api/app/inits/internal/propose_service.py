@@ -87,8 +87,10 @@ def propose_initiative_with_reviewer(
     Raises ValueError on any validation problem (→ 400, nothing written) and
     re-raises IntegrityError after rollback (→ 409).
     """
+    # No `type`: the diagnosis derives it on acceptance. The request key is
+    # still accepted (and ignored) so older clients keep working.
     fields = data.model_dump(include={
-        "name", "description", "type", "expected_impact", "priority_level",
+        "name", "description", "expected_impact", "priority_level",
         "reference", "tags", "detail"})
     validate_core_fields(session, fields, required=REQUIRED_FIELDS)
     answers = validate_creator_answers(session, data.answers)

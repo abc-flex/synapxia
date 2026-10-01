@@ -81,6 +81,9 @@ scored criteria** instead of a review. Accepted initiatives feed the library thr
   portfolio), as full-width rows. It has the same search, *My favorites* toggle and six-option
   privileges filter (Public, Shared with me, My role, My team, My unit, My projects; default
   Public) as Explore Category, and a *+ Propose* button.
+  - Each row's **type** indicator (the diagnosis' verdict, see **HU-IN15**) is an outlined
+    chip with an icon per type (compass, flask, rocket), so it reads differently from the
+    filled status and priority chips without standing out.
 - **Spec:** [`specs/005-explore-initiatives`](../../specs/005-explore-initiatives/spec.md)
 
 ### HU-IN05 · – Propose Initiative
@@ -88,6 +91,8 @@ scored criteria** instead of a review. Accepted initiatives feed the library thr
 > **so that** it enters the evaluation workflow.
 - **Behavior:** a three-step wizard — **Core Fields → Diagnosis Questions → Related Assets**.
   - Core Fields has a reviewer field with the same rule as Propose an asset.
+  - Core Fields has **no Type field**: the type is derived by the diagnosis when the
+    initiative is accepted (**HU-IN15**). A `type` sent by an older client is ignored.
   - Every active criterion must be answered.
   - *Request diagnosis* is offered on steps 2 and 3.
   - Nothing is saved before it; then everything is saved in one transaction, including the
@@ -208,20 +213,41 @@ These stories implement the activation/diagnosis loop on `collaborations`. See t
 > As a **reviewer**, I want to **score an activated initiative against the criteria and accept
 > it, reject it or request changes** **so that** only viable initiatives proceed.
 - **Behavior:** opening the page records nothing — viewing is not deciding, so the collaboration
-  stays `PENDING`. On decision, one transaction writes the `reviewer_score` per criterion
-  (the proposer's `rationale` is kept) and `initiatives.score` = Σ reviewer scores, inserts the `DIAGNOSIS` collaboration as `HANDLED`, sets the
-  initiative `status` to `ACCEPTED` / `REJECTED` / `FEEDBACK`, and inserts a collaboration for
-  the **proposer** of `type` `ACCEPTANCE` / `REJECTION` / `MODIFICATION` with
-  `workflow_status = PENDING` and the feedback in `content`.
+  stays `PENDING`.
+  - The page header shows everything the proposer submitted, as the reviewer's elements of
+    judgement: proposer and date, description, expected impact, priority, tags, reference,
+    detail and the related assets with their rationale. It does **not** show a type — the
+    type is the outcome of this diagnosis.
+  - The proposer's answer to each question is only a reference; the reviewer gives their own
+    answer (1–3) to each of the six questions.
+  - On decision, one transaction writes the `reviewer_score` per criterion (the proposer's
+    `rationale` is kept), inserts the `DIAGNOSIS` collaboration as `HANDLED`, sets the
+    initiative `status` to `ACCEPTED` / `REJECTED` / `FEEDBACK`, and inserts a collaboration for
+    the **proposer** of `type` `ACCEPTANCE` / `REJECTION` / `MODIFICATION` with
+    `workflow_status = PENDING` and the feedback in `content`.
+  - **Only an acceptance** also sets `initiatives.score` = Σ reviewer scores and derives
+    `initiatives.type` from it. A rejection or a change request leaves both untouched.
+- **Type ranges** (six criteria scored 1–3, total 6–18):
+
+  | Σ reviewer scores | Average per question | `type` |
+  |---|---|---|
+  | 6 – 9 | below 1.67 | `EXPLORATION` (Exploration) |
+  | 10 – 14 | 1.67 – 2.33 | `PROTOTYPING` (Prototyping) |
+  | 15 – 18 | 2.5 or more | `IMPLEMENTATION` (Implementation) |
+
+  Implementation is the narrowest band on purpose: it commits the most resources, so it needs
+  most answers at 3. The cuts are implemented on the average (below 5/3 → exploration, 2.5 or
+  more → implementation), so they keep their meaning if criteria are added or removed.
 - **Data:** `collaborations`, `diagnostics` (`creator_score` / `reviewer_score`),
-  `initiatives.status` / `.score`
+  `initiatives.status` / `.score` / `.type`
 - Detail of **HU-IN14**.
 
 ### HU-IN16 · – Modify Initiative
 > As a **proposer**, I want to **apply the changes a reviewer asked for and resubmit** **so
 > that** the diagnosis cycle can continue.
 - **Behavior:** opening the page records nothing — viewing is not resubmitting, so the
-  collaboration stays `PENDING`. On save, one transaction updates the initiative and its diagnosis answers in
+  collaboration stays `PENDING`. The type is not editable here either (it is derived on
+  acceptance). On save, one transaction updates the initiative and its diagnosis answers in
   place, inserts the `MODIFICATION` collaboration as `HANDLED`, returns the initiative to
   `ACTIVATED`, and re-arms the **same reviewer** with a new `DIAGNOSIS` collaboration as
   `PENDING`.
@@ -232,7 +258,9 @@ These stories implement the activation/diagnosis loop on `collaborations`. See t
 > As a **proposer**, I want to **see the outcome of my initiative** — accepted, rejected or
 > delivered, with the reviewer's message — **so that** I learn the result and can clear the
 > notification.
-- **Behavior:** read-only outcome card. Opening it records **nothing** — reading is not
+- **Behavior:** read-only outcome card showing the reviewer's feedback. On an **acceptance** it
+  also shows the initiative type the diagnosis assigned (Exploration, Prototyping or
+  Implementation, with its score range) and the diagnosis score. Opening it records **nothing** — reading is not
   acknowledging, so an outcome can never pass unregistered. The collaboration stays `PENDING`
   until the user presses the acknowledge button, which inserts it as `HANDLED`. Mirrors
   **HU-LI18** on the asset side.

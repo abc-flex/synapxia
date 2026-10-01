@@ -1319,6 +1319,8 @@ export interface Collaboration {
 
 export interface CollaborationDetail extends Collaboration {
   actor_name?: string | null;
+  /** Display name of the initiative's proposer. */
+  proposer_name?: string | null;
   initiative?: Initiative | null;
   /** The thread's CURRENT status (its newest row) — the row itself never
    *  changes, so pages check this to know whether the request is still open. */

@@ -164,7 +164,7 @@ As the assigned reviewer, I want to open a proposed initiative, see the proposer
    - saves R's answer per criterion;
    - records R's Diagnosis collaboration as handled;
    - sets the initiative's status to Accepted, Rejected or Feedback;
-   - records the initiative's resulting score;
+   - on acceptance only, records the initiative's resulting score and the type derived from it (6–9 Exploration, 10–14 Prototyping, 15–18 Implementation);
    - records a pending Acceptance, Rejection or Modification collaboration for the proposer, carrying R's message.
 4. **Given** the decision was saved, **When** the result is shown, **Then** R is taken to My Initiative Requests, where the initiative now appears as handled by them (or waiting on the proposer, after Request changes).
 5. **Given** a user who is not the initiative's assigned reviewer, or an initiative that is not Activated, **When** someone tries to submit a diagnosis, **Then** it is refused, and nothing changes.
@@ -291,7 +291,7 @@ As the proposer, I want to see whether my initiative was accepted or rejected, w
   - save the reviewer's answer per criterion;
   - record the reviewer's Diagnosis collaboration as handled;
   - set the initiative's status to Accepted, Rejected or Feedback;
-  - compute and store the initiative's score from the diagnosis;
+  - on acceptance only, compute and store the initiative's score (Σ reviewer scores) and its type derived from it: 6–9 Exploration, 10–14 Prototyping, 15–18 Implementation (six criteria scored 1–3; implemented on the average so the cuts survive a change in the number of criteria). Rejections and change requests leave score and type untouched;
   - record a pending Acceptance, Rejection or Modification collaboration for the proposer, carrying the reviewer's message.
 - **FR-044**: A diagnosis MUST be refused unless the caller holds a pending Diagnosis on that initiative, is still an eligible reviewer, and the initiative is Activated. The last check guards against double submission.
 

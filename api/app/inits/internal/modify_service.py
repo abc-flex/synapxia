@@ -31,8 +31,9 @@ TYPE_DIAGNOSIS = "DIAGNOSIS"
 TYPE_MODIFICATION = "MODIFICATION"
 WF_PENDING = "PENDING"
 WF_HANDLED = "HANDLED"
+# No `type`: the diagnosis derives it on acceptance; the proposer never sets it.
 EDITABLE_FIELDS = (
-    "name", "description", "type", "expected_impact", "priority_level",
+    "name", "description", "expected_impact", "priority_level",
     "reference", "tags", "detail",
 )
 

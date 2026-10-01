@@ -123,12 +123,20 @@ A single transaction writes:
                "DATA_INTEGRATIONS": 3, "RISK_IMPACT": 2, "SUSTAINABILITY": 2 } }
 ```
 
-`200` → `Initiative` with the new `status` and `score` (Σ reviewer scores).
+`200` → `Initiative` with the new `status`. On `accept` it also carries `score` (Σ reviewer scores) and the derived `type`; on `reject` / `changes` both keep their previous value.
 
 The transaction:
 - writes `reviewer_score` per criterion;
 - inserts DIAGNOSIS/HANDLED (caller);
 - sets the status (ACCEPTED / REJECTED / FEEDBACK);
+- on `accept` only, sets `score` and `type` (`diagnosis_service.derive_type`):
+
+  | Σ reviewer scores (6 criteria, 1–3) | `type` |
+  |---|---|
+  | 6 – 9 | `EXPLORATION` |
+  | 10 – 14 | `PROTOTYPING` |
+  | 15 – 18 | `IMPLEMENTATION` |
+
 - inserts ACCEPTANCE / REJECTION / MODIFICATION as PENDING for the proposer, with `content = feedback`.
 
 Errors are evaluated in this order:
@@ -217,7 +225,7 @@ This is always the `awaited_party == "SELF"` subset of #10.
 
 ## 13. GET /api/collaborations/{id}
 
-`200` → `Collaboration` `{id, init, user_id, type, workflow_status, content, reference, parent, detail, is_active, created_at, updated_at}` plus `initiative` (`InitiativeBase` + `id`), `actor_name` and `current_status`.
+`200` → `Collaboration` `{id, init, user_id, type, workflow_status, content, reference, parent, detail, is_active, created_at, updated_at}` plus `initiative` (`InitiativeBase` + `id`), `actor_name`, `proposer_name` (display name of the initiative's proposer — additive, shown in the diagnose header) and `current_status`.
 
 - `current_status` is the status of the thread's **newest** row. The row itself never changes status (resolving inserts a new row), so the action pages check `current_status` to know whether the request is still open.
 - Only **workflow** rows (non-null `workflow_status`) are served. A comment or vote id returns `404`, so an old discussion entry can't become a way to read an initiative after access is revoked. `404` unless the row belongs to the caller or the caller is a superuser. The action pages use it to resolve `?collab=`.

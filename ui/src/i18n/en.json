@@ -1368,6 +1368,10 @@
     "not_found": "This diagnosis request could not be found.",
     "to_requests": "Go to My Initiative Requests",
     "related_assets": "Related assets",
+    "no_description": "No description was given.",
+    "proposed_by": "Proposed by",
+    "tags": "Tags",
+    "type_hint": "On acceptance, your scores are added up and set the initiative type: 6–9 Exploration · 10–14 Prototyping · 15–18 Implementation.",
     "error": "The decision could not be saved."
   },
   "inits_modify": {
@@ -1384,7 +1388,12 @@
   "inits_show_collab": {
     "title_accepted": "Your initiative was accepted",
     "title_rejected": "Your initiative was rejected",
-    "message": "Reviewer's message",
+    "message": "Reviewer's feedback",
+    "type_assigned": "Initiative type assigned",
+    "score": "Diagnosis score",
+    "type_exploration": "Score 6–9: the need is still being understood — explore it first.",
+    "type_prototyping": "Score 10–14: build a prototype to validate the solution.",
+    "type_implementation": "Score 15–18: ready to be implemented.",
     "no_message": "The reviewer left no message.",
     "acknowledge": "Got it",
     "handled": "You already acknowledged this outcome.",

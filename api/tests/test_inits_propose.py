@@ -119,7 +119,15 @@ def test_invalid_list_values_refused(session, client):
     proposer = _world(session)
     _assert_refused(session, client, proposer, _body(expected_impact="NOPE"))
     _assert_refused(session, client, proposer, _body(priority_level=""))
-    _assert_refused(session, client, proposer, _body(type="NOPE"))
+
+
+def test_proposer_type_is_ignored(session, client):
+    # The type is derived by the diagnosis on acceptance, never by the proposer.
+    override(_world(session))
+    for sent in ("PROTOTYPING", "NOPE"):
+        resp = client.post("/api/initiatives/propose", json=_body(type=sent, name=f"Init {sent}"))
+        assert resp.status_code == 201, resp.text
+        assert data(resp)["type"] is None
 
 
 def test_incomplete_or_invalid_answers_refused(session, client):

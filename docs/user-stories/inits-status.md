@@ -33,6 +33,8 @@ When saving, request a reviewer (same rule as Propose an asset: ADMINISTRATOR / 
 - When saving (feedback/accept/reject), insert the corresponding collaboration with type 'DIAGNOSIS' and status 'HANDLED'
 - When feedback/accept/reject, update the init status to 'FEEDBACK'/'ACCEPTED'/'REJECTED' respectively
 - When feedback/accept/reject, insert a new collaboration for the creator user with type 'MODIFICATION'/'ACCEPTANCE'/'REJECTION' respectively and status 'PENDING'
+- Only when accept: set the init score to the sum of the reviewer's scores and the init type from it — 6–9 'EXPLORATION', 10–14 'PROTOTYPING', 15–18 'IMPLEMENTATION' (six criteria scored 1–3). Feedback/reject leave score and type untouched
+- The proposer never sets the type (it is not in Propose nor in Modify)
 
 ### HU-Modify Initiative
 - Upon entering, record NOTHING — viewing is not resubmitting, and the assignment stays 'PENDING' until the changes are sent back

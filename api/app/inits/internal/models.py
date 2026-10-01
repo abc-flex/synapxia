@@ -313,10 +313,12 @@ class ProposeAssetLink(SQLModel):
 
 class InitiativeProposeRequest(SQLModel):
     """Body of POST /api/initiatives/propose. No `status` (always ACTIVATED) and
-    no `score` (set by the diagnosis)."""
+    no `score`/`type` (both set by the diagnosis on acceptance)."""
     name: str = Field(max_length=100)
     description: Optional[str] = Field(default=None, max_length=500)
-    type: Optional[str] = Field(default=None, max_length=100)
+    type: Optional[str] = Field(
+        default=None, max_length=100,
+        description="Ignored — the type is derived by the diagnosis on acceptance")
     expected_impact: str = Field(max_length=100)
     priority_level: str = Field(max_length=100)
     reference: Optional[str] = Field(default=None)
@@ -341,7 +343,9 @@ class InitiativeResubmitRequest(SQLModel):
     """Body of POST /api/initiatives/{id}/resubmit — only sent keys apply."""
     name: Optional[str] = Field(default=None, max_length=100)
     description: Optional[str] = Field(default=None, max_length=500)
-    type: Optional[str] = Field(default=None, max_length=100)
+    type: Optional[str] = Field(
+        default=None, max_length=100,
+        description="Ignored — the type is derived by the diagnosis on acceptance")
     expected_impact: Optional[str] = Field(default=None, max_length=100)
     priority_level: Optional[str] = Field(default=None, max_length=100)
     reference: Optional[str] = Field(default=None)
@@ -422,6 +426,8 @@ class CollaborationDetail(SQLModel):
     created_at: datetime
     updated_at: Optional[datetime] = None
     actor_name: Optional[str] = None
+    # Display name of the initiative's proposer (author of its first ACTIVATION).
+    proposer_name: Optional[str] = None
     initiative: Optional[Initiative] = None
     # The thread's CURRENT state (its newest row). The row itself never changes
     # status — resolving inserts a new row — so pages check this, not

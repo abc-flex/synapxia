@@ -4,8 +4,9 @@ Mirrors lib's ``review_service`` over `collaborations` (specs/005 research R8).
 One transaction:
   1. writes the reviewer's score per criterion (`diagnostics.reviewer_score`;
      the proposer's `rationale` is left untouched),
-  2. sets `initiatives.score` = Σ reviewer scores and the new status
-     (ACCEPTED / REJECTED / FEEDBACK),
+  2. sets the new status (ACCEPTED / REJECTED / FEEDBACK); only an
+     acceptance also sets `initiatives.score` = Σ reviewer scores and the
+     `type` derived from it (`derive_type`),
   3. records the reviewer's DIAGNOSIS as HANDLED,
   4. notifies the proposer with a PENDING ACCEPTANCE / REJECTION / MODIFICATION
      carrying the feedback in `content`.
@@ -38,6 +39,27 @@ DECISIONS = {
     "changes": ("FEEDBACK", "MODIFICATION"),
 }
 FEEDBACK_REQUIRED = ("reject", "changes")
+
+# Initiative type from the reviewer's total score. The cuts are on the average
+# score per criterion so they keep their meaning if criteria are added or
+# removed; with the six seeded 1–3 criteria (total 6–18) they read
+# 6–9 → EXPLORATION · 10–14 → PROTOTYPING · 15–18 → IMPLEMENTATION.
+TYPE_EXPLORATION = "EXPLORATION"
+TYPE_PROTOTYPING = "PROTOTYPING"
+TYPE_IMPLEMENTATION = "IMPLEMENTATION"
+
+
+def derive_type(score: int, answered: int) -> Optional[str]:
+    """INITIATIVE_TYPE value for a total `score` over `answered` criteria:
+    average < 5/3 → exploration, average ≥ 2.5 → implementation, otherwise
+    prototyping. Integer arithmetic keeps the boundaries exact."""
+    if answered <= 0:
+        return None
+    if 3 * score < 5 * answered:
+        return TYPE_EXPLORATION
+    if 2 * score >= 5 * answered:
+        return TYPE_IMPLEMENTATION
+    return TYPE_PROTOTYPING
 
 
 class DiagnosisForbidden(Exception):
@@ -115,7 +137,10 @@ def diagnose_initiative(
             row.updated_at = now
             session.add(row)
 
-        initiative.score = sum(answers.values()) if answers else None
+        if decision == "accept":
+            # Rejections and change requests leave score and type untouched.
+            initiative.score = sum(answers.values()) if answers else None
+            initiative.type = derive_type(initiative.score or 0, len(answers))
         initiative.status = new_status
         initiative.updated_at = now
         session.add(initiative)
@@ -133,6 +158,6 @@ def diagnose_initiative(
         logger.error("Integrity error diagnosing initiative %s", init_id)
         raise
 
-    logger.info("Initiative diagnosed: id=%s reviewer=%s decision=%s score=%s",
-                init_id, reviewer.id, decision, initiative.score)
+    logger.info("Initiative diagnosed: id=%s reviewer=%s decision=%s score=%s type=%s",
+                init_id, reviewer.id, decision, initiative.score, initiative.type)
     return initiative

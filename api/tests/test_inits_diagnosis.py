@@ -2,7 +2,7 @@
 import pytest
 from sqlmodel import select
 
-from app.inits.internal import propose_service
+from app.inits.internal import diagnosis_service, propose_service
 from app.inits.internal.models import (
     Collaboration, Diagnostic, Initiative, InitiativeProposeRequest,
 )
@@ -54,7 +54,13 @@ def test_decision_writes_the_whole_transition(session, client, decision, status,
     resp = _diagnose(client, init.id, decision)
     assert resp.status_code == 200, resp.text
     body = data(resp)
-    assert body["status"] == status and body["score"] == 5  # 3 + 2
+    assert body["status"] == status
+    if decision == "accept":
+        # 3 + 2 = 5 over two criteria → average 2.5 → implementation
+        assert (body["score"], body["type"]) == (5, "IMPLEMENTATION")
+    else:
+        # Rejections and change requests leave score and type untouched.
+        assert (body["score"], body["type"]) == (None, None)
 
     diags = {d.criteria: d for d in session.exec(select(Diagnostic)).all()}
     assert (diags["C1"].creator_score, diags["C1"].reviewer_score) == (1, 3)
@@ -63,6 +69,41 @@ def test_decision_writes_the_whole_transition(session, client, decision, status,
     assert [r.workflow_status for r in _rows(session, "DIAGNOSIS")] == ["PENDING", "HANDLED"]
     sent = _rows(session, notice)[-1]
     assert (sent.user_id, sent.workflow_status, sent.content) == (PROPOSER, "PENDING", "fix it")
+
+
+@pytest.mark.parametrize("score,expected", [
+    (6, "EXPLORATION"), (9, "EXPLORATION"),
+    (10, "PROTOTYPING"), (14, "PROTOTYPING"),
+    (15, "IMPLEMENTATION"), (18, "IMPLEMENTATION"),
+])
+def test_derive_type_boundaries_for_six_criteria(score, expected):
+    assert diagnosis_service.derive_type(score, 6) == expected
+
+
+def test_derive_type_without_answers_is_none():
+    assert diagnosis_service.derive_type(0, 0) is None
+
+
+@pytest.mark.parametrize("answers,expected", [
+    ({"C1": 1, "C2": 2}, "EXPLORATION"),   # 3 / 2 = 1.5
+    ({"C1": 2, "C2": 2}, "PROTOTYPING"),   # 4 / 2 = 2.0
+    ({"C1": 3, "C2": 3}, "IMPLEMENTATION"),
+])
+def test_accept_sets_the_derived_type(session, client, answers, expected):
+    init = _proposed(session)
+    assert _diagnose(client, init.id, "accept", answers=answers).status_code == 200
+    assert session.get(Initiative, init.id).type == expected
+
+
+def test_changes_keep_existing_score_and_type(session, client):
+    init = _proposed(session)
+    row = session.get(Initiative, init.id)
+    row.type, row.score = "EXPLORATION", 4
+    session.add(row)
+    session.commit()
+    assert _diagnose(client, init.id, "changes", answers={"C1": 3, "C2": 3}).status_code == 200
+    session.refresh(row)
+    assert (row.type, row.score) == ("EXPLORATION", 4)
 
 
 def test_accept_feedback_is_optional(session, client):

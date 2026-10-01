@@ -77,12 +77,8 @@ const PROPOSE_TABS = [
             <textarea id="ip-description" rows="2" maxlength="500" class={inputClass}></textarea>
           </FormField>
 
-          <div class="grid gap-5 sm:grid-cols-3">
-            <FormField controlId="ip-type" labelKey="inits_propose.type" label="Type">
-              <select id="ip-type" class={inputClass}>
-                <option value="" data-i18n="inits_propose.choose">— choose —</option>
-              </select>
-            </FormField>
+          <!-- No Type field: the reviewer's diagnosis derives it on acceptance. -->
+          <div class="grid gap-5 sm:grid-cols-2">
             <FormField controlId="ip-impact" labelKey="inits_propose.expected_impact" label="Expected impact" required
               errorId="ip-impact-error" errorKey="inits_propose.required">
               <select id="ip-impact" class={inputClass}>
@@ -221,7 +217,6 @@ const PROPOSE_TABS = [
 
     const form = $<HTMLFormElement>("inits-propose-form");
     const nameIn = $<HTMLInputElement>("ip-name");
-    const typeSel = $<HTMLSelectElement>("ip-type");
     const impactSel = $<HTMLSelectElement>("ip-impact");
     const prioritySel = $<HTMLSelectElement>("ip-priority");
     const reviewerSel = $<HTMLSelectElement>("ip-reviewer");
@@ -281,11 +276,10 @@ const PROPOSE_TABS = [
       }
     }
     async function loadLists(): Promise<void> {
-      const [types, impacts, priorities, relTypes] = await Promise.all([
-        listOptions("INITIATIVE_TYPE"), listOptions("EXPECTED_IMPACT"),
-        listOptions("PRIORITY_LEVEL"), listOptions("RELATION_TYPE"),
+      const [impacts, priorities, relTypes] = await Promise.all([
+        listOptions("EXPECTED_IMPACT"), listOptions("PRIORITY_LEVEL"),
+        listOptions("RELATION_TYPE"),
       ]);
-      fillListSelect(typeSel, types);
       fillListSelect(impactSel, impacts);
       fillListSelect(prioritySel, priorities);
       relTypeOptions = relTypes;
@@ -452,7 +446,6 @@ const PROPOSE_TABS = [
       const payload: InitiativeProposeRequest = {
         name: (nameIn?.value || "").trim(),
         description: text("ip-description"),
-        type: typeSel?.value || null,
         expected_impact: impactSel?.value || "",
         priority_level: prioritySel?.value || "",
         reference: text("ip-reference"),

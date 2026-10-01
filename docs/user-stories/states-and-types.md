@@ -199,7 +199,7 @@ English labels are the seeded values; lists marked *(en/es)* are bilingual.
 | `TARGET_TYPE` | LIST_OF_VALUES | permissions (all modules) | Users, Roles, Projects, Teams, Units, Public |
 | `ACCESS_LEVEL` | LIST_OF_VALUES | permissions (all modules) | View, Manage |
 | `INITIATIVE_STATUS` | LIST_OF_VALUES | INITS | Activated, Feedback Provided, Accepted, Rejected, In Progress, Delivered, Archived |
-| `INITIATIVE_TYPE` | LIST_OF_VALUES | INITS | Exploration, Prototyping, Implementation |
+| `INITIATIVE_TYPE` | LIST_OF_VALUES | INITS | Exploration, Prototyping, Implementation — derived on acceptance from Σ reviewer scores: 6–9 / 10–14 / 15–18 ([HU-IN15](05-inits.md#hu-in15---diagnosis-of-the-initiative)) |
 | `COLLAB_TYPE` | LIST_OF_VALUES | INITS collaborations | Activation, Diagnosis, Modification, Acceptance, Rejection, Kickoff, Delivery, Archiving, Vote, Comment, Question, Answer |
 | `EXPECTED_IMPACT` | LIST_OF_VALUES | INITS | Time Reduction, Quality Improvement, Error Reduction, Decision Support, Improved User Experience, Cost Savings, Revenue Increase, Compliance Enhancement, Risk Reduction, Scalability Improvement, Innovation, Other |
 | `PRIORITY_LEVEL` | LIST_OF_VALUES | INITS | High, Medium, Low |

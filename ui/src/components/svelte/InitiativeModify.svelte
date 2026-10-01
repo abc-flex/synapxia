@@ -54,7 +54,7 @@
 
   // Editable core fields, seeded from the initiative.
   let form = $state({
-    name: "", description: "", type: "", expected_impact: "", priority_level: "",
+    name: "", description: "", expected_impact: "", priority_level: "",
     reference: "", tags: "", detail: "",
   });
   let original = { ...form };
@@ -82,7 +82,6 @@
       form = {
         name: i.name ?? "",
         description: i.description ?? "",
-        type: i.type ?? "",
         expected_impact: i.expected_impact ?? "",
         priority_level: i.priority_level ?? "",
         reference: i.reference ?? "",
@@ -124,7 +123,6 @@
     const text = (v: string) => v.trim() || null;
     if (form.name !== original.name) payload.name = form.name.trim();
     if (form.description !== original.description) payload.description = text(form.description);
-    if (form.type !== original.type) payload.type = form.type || null;
     if (form.expected_impact !== original.expected_impact) payload.expected_impact = form.expected_impact;
     if (form.priority_level !== original.priority_level) payload.priority_level = form.priority_level;
     if (form.reference !== original.reference) payload.reference = text(form.reference);
@@ -193,14 +191,8 @@
             <label for="im-description" class={label}>{t("inits_propose.description", "Description")}</label>
             <textarea id="im-description" rows="2" maxlength="500" class={input("description")} bind:value={form.description}></textarea>
           </div>
-          <div class="grid gap-4 sm:grid-cols-3">
-            <div>
-              <label for="im-type" class={label}>{t("inits_propose.type", "Type")}</label>
-              <select id="im-type" class={input("type")} bind:value={form.type}>
-                <option value="">{t("inits_propose.choose", "— choose —")}</option>
-                {#each lists.type as o (o.value)}<option value={o.value}>{optText(o)}</option>{/each}
-              </select>
-            </div>
+          <!-- No Type field: the diagnosis derives it on acceptance. -->
+          <div class="grid gap-4 sm:grid-cols-2">
             <div>
               <label for="im-impact" class={label}>{t("inits_propose.expected_impact", "Expected impact")} <span class="text-red-500">*</span></label>
               <select id="im-impact" class={input("expected_impact")} bind:value={form.expected_impact} onchange={() => clear("expected_impact")}>

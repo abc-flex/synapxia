@@ -8,7 +8,7 @@
 
 | Table | Role in this feature |
 |---|---|
-| `initiatives` | Created by Propose (ACTIVATED), status moved by Diagnosis and Modify, `score` set by Diagnosis |
+| `initiatives` | Created by Propose (ACTIVATED), status moved by Diagnosis and Modify, `score` and `type` set by Diagnosis on acceptance |
 | `criterias` | Defines the questions. Active rows = the required set. `list` → the answer scale |
 | `list_items` | Scale values and labels per criterion (`list = criterias.list`, `lang`) |
 | `diagnostics` | PK `(init, criteria)`. `creator_score` + `rationale` written by Propose and Modify; `reviewer_score` written by Diagnosis |
@@ -80,7 +80,7 @@ EXPLORE_STATUSES      = (ACCEPTED, IN_PROGRESS, DELIVERED)   # in initiatives_ex
 | `answers` | dict[criteria_code → DiagnosisAnswer] | Must cover exactly the active criteria. Unknown codes → 400 |
 | `assets` | list[{asset: int, type: str, rationale?: str}] | Each asset active and visible to the caller. `type` a `RELATION_TYPE` value. No duplicate `(asset, type)` |
 
-No `status`: the proposal is always `ACTIVATED`. No `score`: that is set by Diagnosis.
+No `status`: the proposal is always `ACTIVATED`. No `score`: that is set by Diagnosis. `type` is still accepted for compatibility but **ignored** — Diagnosis derives it on acceptance (Σ reviewer scores: 6–9 `EXPLORATION`, 10–14 `PROTOTYPING`, 15–18 `IMPLEMENTATION`). The same applies to `type` in `InitiativeResubmitRequest`.
 
 ### `InitiativeDiagnoseRequest`
 | Field | Type | Rule |

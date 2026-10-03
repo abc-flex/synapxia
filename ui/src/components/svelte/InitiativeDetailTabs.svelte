@@ -31,15 +31,11 @@
     deleteInitPermission,
   } from "@/lib/init_permissions";
   import { initiativeForoApi } from "@/lib/collaborations";
-  import { getUsersSelect } from "@/lib/users";
-  import { getRolesSelect } from "@/lib/roles";
-  import { getTeamsSelect } from "@/lib/teams";
-  import { getBusinessUnitsSelect } from "@/lib/business_units";
-  import { getProjectsSelect } from "@/lib/projects";
-  import { getUser } from "@/lib/auth";
+  import type { PermissionsApi } from "@/lib/permissionTargets";
   import { translate } from "@/utils/i18nClient";
   import Foro from "@/components/svelte/Foro.svelte";
   import DiagnosisTable from "@/components/svelte/DiagnosisTable.svelte";
+  import PermissionsTab from "@/components/svelte/PermissionsTab.svelte";
   import type { DiagnosticRow } from "@/types/api";
 
   type TabName = "core" | "diagnosis" | "related" | "permissions" | "discussion" | "history";
@@ -51,16 +47,6 @@
     typeLabel: string;
     rationale: string;
   };
-  type StagedPermission = {
-    id?: number;
-    targetType: string;
-    targetTypeLabel: string;
-    targetCode: string;
-    targetCodeLabel: string;
-    access: string;
-    accessLabel: string;
-  };
-
   let {
     idPrefix,
     onError,
@@ -73,15 +59,12 @@
 
   const reportError = (m: string) => (onError ? onError(m) : console.error(m));
 
-  const TARGET_LOADERS: Record<string, () => Promise<SelectOption[]>> = {
-    USER: getUsersSelect,
-    ROLE: getRolesSelect,
-    TEAM: getTeamsSelect,
-    UNIT: getBusinessUnitsSelect,
-    PROJECT: getProjectsSelect,
+  // The Permissions tab is the shared PermissionsTab island, bound to init_permissions.
+  const initPermissionsApi: PermissionsApi = {
+    list: (id) => getInitPermissionsByInit(id),
+    create: (id, body) => createInitPermission({ init: id, ...body }),
+    revoke: (grantId) => deleteInitPermission(grantId),
   };
-  // init_permissions stores PUBLIC grants with target_code "ALL" (seed convention).
-  const PUBLIC_CODE = "ALL";
 
   // ── i18n ──────────────────────────────────────────────────────────────
   let langTick = $state(0);
@@ -99,7 +82,7 @@
     (typeof localStorage !== "undefined" && localStorage.getItem("lang")) === "es" ? "es" : "en";
   // List values follow the header language switcher: every list is kept with
   // all of its languages and read through langTick (lib/listLang.ts).
-  // list code → every language's items (RELATION_TYPE, TARGET_TYPE, ACCESS_LEVEL).
+  // list code → every language's items (RELATION_TYPE).
   let listRaw = $state<Record<string, any[]>>({});
   const listOpts = (code: string): SelectOption[] => {
     void langTick;
@@ -133,20 +116,10 @@
   let relRationale = $state("");
   let relError = $state("");
 
-  // Permissions
-  let stagedPermissions = $state<StagedPermission[]>([]);
-  let initialPermById = $state(new Map<number, any>());
-  const targetTypeOptions = $derived(listOpts("TARGET_TYPE"));
-  const accessOptions = $derived(listOpts("ACCESS_LEVEL"));
-  let permType = $state("");
-  let permCode = $state("");
-  let permAccess = $state("");
-  let permCodeOptions = $state<SelectOption[]>([]);
-  let permCodeDisabled = $state(false);
-  let permError = $state("");
+  // Permissions — owned by the PermissionsTab child (bound below).
+  let permTab = $state<any>(undefined);
 
   const listItemsCache = new Map<string, any[]>();
-  const targetOptCache = new Map<string, SelectOption[]>();
 
   $effect(() => {
     onTabChange?.(activeTab);
@@ -172,9 +145,7 @@
   }
 
   export function permissionsDirty(): boolean {
-    const stagedIds = new Set(stagedPermissions.filter((p) => p.id != null).map((p) => p.id));
-    for (const [pid] of initialPermById) if (!stagedIds.has(pid)) return true;
-    return stagedPermissions.some((p) => p.id == null);
+    return permTab?.dirty() ?? false;
   }
 
   const pendingLinkKeys = $derived.by(() => {
@@ -212,7 +183,7 @@
     return t(keys[name][0], keys[name][1]);
   };
   const tabCount = (name: TabName): number | null =>
-    name === "related" ? stagedLinks.length : name === "permissions" ? stagedPermissions.length : null;
+    name === "related" ? stagedLinks.length : name === "permissions" ? (permTab?.count() ?? 0) : null;
   const tabClass = (name: TabName): string =>
     "whitespace-nowrap border-b-2 px-1 pb-3 " +
     (activeTab === name
@@ -258,7 +229,7 @@
     }
     const loaded: Record<string, any[]> = {};
     await Promise.all(
-      ["RELATION_TYPE", "TARGET_TYPE", "ACCESS_LEVEL"].map(async (code) => {
+      ["RELATION_TYPE"].map(async (code) => {
         try {
           loaded[code] = await listItems(code);
         } catch {
@@ -267,26 +238,6 @@
       }),
     );
     listRaw = { ...listRaw, ...loaded };
-  }
-
-  async function targetOptions(targetType: string): Promise<SelectOption[]> {
-    const loader = TARGET_LOADERS[targetType];
-    if (!loader) return [];
-    let opts = targetOptCache.get(targetType);
-    if (!opts) {
-      try {
-        opts = await loader();
-      } catch {
-        opts = [];
-      }
-      targetOptCache.set(targetType, opts);
-    }
-    return opts;
-  }
-
-  async function resolveTargetLabel(targetType: string, targetCode: string): Promise<string> {
-    if (targetType === "PUBLIC") return t("initiative_detail_modal.perm_public", "Public");
-    return (await targetOptions(targetType)).find((o) => o.value === targetCode)?.label || targetCode;
   }
 
   // ── Diagnosis ─────────────────────────────────────────────────────────
@@ -335,84 +286,18 @@
     stagedLinks = stagedLinks.filter((_, i) => i !== idx);
   }
 
-  // ── Permissions ───────────────────────────────────────────────────────
-  async function onPermTypeChange(): Promise<void> {
-    permCode = "";
-    permCodeOptions = [];
-    permCodeDisabled = permType === "PUBLIC";
-    if (!permType || permType === "PUBLIC") return;
-    permCodeOptions = await targetOptions(permType);
-  }
-
-  function addPermission(): void {
-    permError = "";
-    if (!permType || !permAccess) {
-      permError = t("initiative_detail_modal.perm_missing_fields", "Pick a target type, target and access level.");
-      return;
-    }
-    let targetCode: string;
-    let targetCodeLabel: string;
-    if (permType === "PUBLIC") {
-      targetCode = PUBLIC_CODE;
-      targetCodeLabel = t("initiative_detail_modal.perm_public", "Public");
-    } else {
-      targetCode = permCode;
-      if (!targetCode) {
-        permError = t("initiative_detail_modal.perm_missing_fields", "Pick a target type, target and access level.");
-        return;
-      }
-      targetCodeLabel = permCodeOptions.find((o) => o.value === targetCode)?.label || targetCode;
-    }
-    if (stagedPermissions.some((p) => p.targetType === permType && p.targetCode === targetCode && p.access === permAccess)) {
-      permError = t("initiative_detail_modal.perm_duplicate", "This target already has that access.");
-      return;
-    }
-    stagedPermissions = [
-      ...stagedPermissions,
-      {
-        targetType: permType,
-        targetTypeLabel: listText("TARGET_TYPE", permType) || permType,
-        targetCode,
-        targetCodeLabel,
-        access: permAccess,
-        accessLabel: listText("ACCESS_LEVEL", permAccess) || permAccess,
-      },
-    ];
-    permType = "";
-    permCode = "";
-    permCodeOptions = [];
-    permAccess = "";
-  }
-
-  // Revoking one's own MANAGE grant can lock the caller out — confirm first.
-  function removePermission(idx: number): void {
-    const p = stagedPermissions[idx];
-    const me = getUser() as { id?: number } | null;
-    const isOwnManage =
-      p?.id != null && p.access === "MANAGE" && p.targetType === "USER" &&
-      me && (me.id || me.id === 0) && String(me.id) === p.targetCode;
-    if (isOwnManage && !window.confirm(t(
-      "initiative_detail_modal.perm_self_revoke_confirm",
-      "You are about to revoke your own manage access. Continue?",
-    ))) return;
-    stagedPermissions = stagedPermissions.filter((_, i) => i !== idx);
-  }
-
   // ── hydrate / flush / reset ───────────────────────────────────────────
   export async function hydrate(id: number): Promise<void> {
     initId = id;
     await loadOptions();
     void loadDiagnosis(id);
 
-    const [links, permissions] = await Promise.all([
+    const [links] = await Promise.all([
       getInitiativeAssets(id).catch(() => {
         reportError(t("initiative_detail_modal.error_relations", "Could not load related assets."));
         return [] as any[];
       }),
-      getInitPermissionsByInit(id).catch(() => {
-        reportError(t("initiative_detail_modal.error_permissions", "Could not load permissions."));
-        return [] as any[];
-      }),
+      permTab?.hydrate(id),
     ]);
     if (initId !== id) return;
 
@@ -426,19 +311,6 @@
       typeLabel: relTypeOptions.find((o) => o.value === l.type)?.label || l.type,
       rationale: l.rationale ?? "",
     }));
-
-    initialPermById = new Map(permissions.map((p: any) => [p.id, p]));
-    stagedPermissions = await Promise.all(
-      permissions.map(async (p: any) => ({
-        id: p.id,
-        targetType: p.target_type,
-        targetTypeLabel: listText("TARGET_TYPE", p.target_type) || p.target_type,
-        targetCode: p.target_code,
-        targetCodeLabel: await resolveTargetLabel(p.target_type, p.target_code),
-        access: p.access_level,
-        accessLabel: listText("ACCESS_LEVEL", p.access_level) || p.access_level,
-      })),
-    );
   }
 
   export async function flush(
@@ -466,28 +338,9 @@
       );
     }
 
-    // 2. Permissions: revoke removed grants, create new ones.
+    // 2. Permissions: revoke removed grants, create new ones (PermissionsTab).
     if (!opts?.skipPermissions) {
-      const stagedIds = new Set(stagedPermissions.filter((p) => p.id != null).map((p) => p.id));
-      for (const [pid] of initialPermById) {
-        if (!stagedIds.has(pid)) await deleteInitPermission(pid);
-      }
-      for (const p of stagedPermissions) {
-        if (p.id != null) continue;
-        const created = await createInitPermission({
-          init: id,
-          target_type: p.targetType,
-          target_code: p.targetCode,
-          access_level: p.access,
-        });
-        p.id = created.id;
-      }
-      stagedPermissions = [...stagedPermissions];
-      initialPermById = new Map(
-        stagedPermissions
-          .filter((p) => p.id != null)
-          .map((p) => [p.id as number, { target_type: p.targetType, target_code: p.targetCode, access_level: p.access }]),
-      );
+      await permTab?.flush(id);
     }
   }
 
@@ -503,14 +356,7 @@
     relType = "";
     relRationale = "";
     relError = "";
-    stagedPermissions = [];
-    initialPermById = new Map();
-    permType = "";
-    permCode = "";
-    permCodeOptions = [];
-    permCodeDisabled = false;
-    permAccess = "";
-    permError = "";
+    permTab?.reset();
   }
 
   onMount(() => {
@@ -650,66 +496,15 @@
     </section>
   </div>
 
-  <!-- Permissions -->
+  <!-- Permissions — the shared PermissionsTab island (bound to init_permissions). -->
   <div data-tabpanel="permissions" role="tabpanel" class="pt-4 space-y-4" class:hidden={activeTab !== "permissions"}>
-    <section>
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div>
-          <label for={`${idPrefix}-perm-target-type`} class={labelClass}>{t("initiative_detail_modal.perm_target_type", "Target type")}</label>
-          <select id={`${idPrefix}-perm-target-type`} bind:value={permType} onchange={onPermTypeChange} class={fieldClass}>
-            <option value="">{t("initiative_detail_modal.perm_choose_target_type", "— choose type —")}</option>
-            {#each targetTypeOptions as o (o.value)}
-              <option value={o.value}>{o.label}</option>
-            {/each}
-          </select>
-        </div>
-        <div>
-          <label for={`${idPrefix}-perm-target-code`} class={labelClass}>{t("initiative_detail_modal.perm_target", "Target")}</label>
-          <select id={`${idPrefix}-perm-target-code`} bind:value={permCode} disabled={permCodeDisabled} class={fieldClass}>
-            <option value="">{t("initiative_detail_modal.perm_choose_target", "— choose target —")}</option>
-            {#each permCodeOptions as o (o.value)}
-              <option value={o.value}>{o.label}</option>
-            {/each}
-          </select>
-        </div>
-        <div>
-          <label for={`${idPrefix}-perm-access`} class={labelClass}>{t("initiative_detail_modal.perm_access", "Access level")}</label>
-          <select id={`${idPrefix}-perm-access`} bind:value={permAccess} class={fieldClass}>
-            <option value="">{t("initiative_detail_modal.perm_choose_access", "— choose access —")}</option>
-            {#each accessOptions as o (o.value)}
-              <option value={o.value}>{o.label}</option>
-            {/each}
-          </select>
-        </div>
-        <div class="md:col-span-3 flex justify-end">
-          <button type="button" class={addBtnClass} onclick={addPermission}>{t("initiative_detail_modal.perm_add", "Add permission")}</button>
-        </div>
-      </div>
-      {#if permError}
-        <p class="mt-2 text-xs text-red-600 dark:text-red-400">{permError}</p>
-      {/if}
-    </section>
-    <section>
-      {#if stagedPermissions.length === 0}
-        <div class={emptyClass}>{t("initiative_detail_modal.perm_empty", "No permissions yet.")}</div>
-      {:else}
-        <ul class="space-y-2">
-          {#each stagedPermissions as p, idx (p.id ?? `${p.targetType}:${p.targetCode}:${p.access}`)}
-            <li
-              class={p.id == null ? `${rowClass} ring-2 ring-amber-400` : rowClass}
-              data-pending={p.id == null ? "1" : undefined}
-            >
-              <span class="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-300">{listText("TARGET_TYPE", p.targetType) || p.targetType}</span>
-              <span class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-800 dark:text-gray-200" title={p.targetCodeLabel}>{p.targetCodeLabel}</span>
-              <span class="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">{listText("ACCESS_LEVEL", p.access) || p.access}</span>
-              <button type="button" class="shrink-0 rounded-md p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30" title={t("initiative_detail_modal.perm_remove", "Revoke")} aria-label={t("initiative_detail_modal.perm_remove", "Revoke")} onclick={() => removePermission(idx)}>
-                {@render removeIcon()}
-              </button>
-            </li>
-          {/each}
-        </ul>
-      {/if}
-    </section>
+    <PermissionsTab
+      bind:this={permTab}
+      {idPrefix}
+      api={initPermissionsApi}
+      i18nPrefix="initiative_detail_modal"
+      onError={reportError}
+    />
   </div>
 
   <!-- Discussion (interactive, like Edit Asset) — the Foro island loads the opened initiative's

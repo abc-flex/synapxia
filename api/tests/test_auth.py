@@ -48,3 +48,44 @@ def test_cookie_login_failure_has_the_same_contract(client):
     )
     assert r.status_code == 400
     assert r.json() == {"detail": "LOGIN_BAD_CREDENTIALS"}
+
+
+class _FakeRefreshStrategy:
+    """Stands in for the DB-backed refresh strategy: accepts "good-refresh"."""
+
+    def __init__(self, user):
+        self.user = user
+
+    async def read_token(self, token, user_manager):
+        return self.user if token == "good-refresh" else None
+
+
+def _with_refresh_user(user):
+    from app.auth.routes import get_refresh_strategy
+    from app.main import app
+
+    app.dependency_overrides[get_refresh_strategy] = lambda: _FakeRefreshStrategy(user)
+
+
+def test_refresh_renews_the_auth_cookie(client):
+    """The browser authenticates only through the `auth_token` cookie, so
+    POST /api/auth/refresh must renew it; the body keeps its contract."""
+    from types import SimpleNamespace
+
+    _with_refresh_user(SimpleNamespace(id=7, is_active=True))
+    r = client.post("/api/auth/refresh", headers={"Authorization": "Bearer good-refresh"})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["token_type"] == "bearer"
+    assert r.cookies.get("auth_token") == body["access_token"]
+    set_cookie = r.headers["set-cookie"].lower()
+    assert "httponly" in set_cookie and "path=/" in set_cookie
+
+
+def test_refresh_with_bad_token_sets_no_cookie(client):
+    from types import SimpleNamespace
+
+    _with_refresh_user(SimpleNamespace(id=7, is_active=True))
+    r = client.post("/api/auth/refresh", headers={"Authorization": "Bearer nope"})
+    assert r.status_code == 401
+    assert "auth_token" not in r.cookies

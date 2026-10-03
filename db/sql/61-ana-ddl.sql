@@ -137,6 +137,12 @@ INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
     ('DASHBOARD_TYPE', 'en', 'SCORECARD', 'Scorecard', 30),
     ('DASHBOARD_TYPE', 'en', 'KPI_VIEW', 'KPI View', 40),
     ('DASHBOARD_TYPE', 'en', 'ANALYTICAL_VIEW', 'Analytical View', 50);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('DASHBOARD_TYPE', 'es', 'DASHBOARD', 'Tablero', 10),
+    ('DASHBOARD_TYPE', 'es', 'REPORT', 'Informe', 20),
+    ('DASHBOARD_TYPE', 'es', 'SCORECARD', 'Cuadro de mando', 30),
+    ('DASHBOARD_TYPE', 'es', 'KPI_VIEW', 'Vista de KPI', 40),
+    ('DASHBOARD_TYPE', 'es', 'ANALYTICAL_VIEW', 'Vista analítica', 50);
 
 -- ===== List: Source Type =====
 INSERT INTO lists (code, name, description, type, module) VALUES (
@@ -152,6 +158,15 @@ INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
     ('SOURCE_TYPE', 'en', 'METABASE', 'Metabase', 60),
     ('SOURCE_TYPE', 'en', 'SUPERSET', 'Superset', 70),
     ('SOURCE_TYPE', 'en', 'CUSTOM_IFRAME', 'Custom Iframe', 80);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('SOURCE_TYPE', 'es', 'INTERNAL_PAGE', 'Página interna', 10),
+    ('SOURCE_TYPE', 'es', 'POWER_BI', 'Power BI', 20),
+    ('SOURCE_TYPE', 'es', 'LOOKER_STUDIO', 'Looker Studio', 30),
+    ('SOURCE_TYPE', 'es', 'TABLEAU', 'Tableau', 40),
+    ('SOURCE_TYPE', 'es', 'QLIK_SENSE', 'Qlik Sense', 50),
+    ('SOURCE_TYPE', 'es', 'METABASE', 'Metabase', 60),
+    ('SOURCE_TYPE', 'es', 'SUPERSET', 'Superset', 70),
+    ('SOURCE_TYPE', 'es', 'CUSTOM_IFRAME', 'Iframe personalizado', 80);
 
 -- ===== List: Dashboard Status =====
 INSERT INTO lists (code, name, description, type, module) VALUES (
@@ -163,6 +178,11 @@ INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
     ('DASHBOARD_STATUS', 'en', 'PUBLISHED', 'Published', 20),
     ('DASHBOARD_STATUS', 'en', 'ARCHIVED', 'Archived', 30),
     ('DASHBOARD_STATUS', 'en', 'RETIRED', 'Retired', 40);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('DASHBOARD_STATUS', 'es', 'DRAFT', 'Borrador', 10),
+    ('DASHBOARD_STATUS', 'es', 'PUBLISHED', 'Publicado', 20),
+    ('DASHBOARD_STATUS', 'es', 'ARCHIVED', 'Archivado', 30),
+    ('DASHBOARD_STATUS', 'es', 'RETIRED', 'Retirado', 40);
 
 -- ===== List: Parameter Type =====
 INSERT INTO lists (code, name, description, type, module) VALUES (
@@ -174,6 +194,11 @@ INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
     ('PARAM_TYPE', 'en', 'NUMBER', 'Number', 20),
     ('PARAM_TYPE', 'en', 'BOOLEAN', 'Boolean', 30),
     ('PARAM_TYPE', 'en', 'DATE', 'Date', 40);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('PARAM_TYPE', 'es', 'STRING', 'Texto', 10),
+    ('PARAM_TYPE', 'es', 'NUMBER', 'Número', 20),
+    ('PARAM_TYPE', 'es', 'BOOLEAN', 'Booleano', 30),
+    ('PARAM_TYPE', 'es', 'DATE', 'Fecha', 40);
 
 -- ===== List: Execution Status =====
 INSERT INTO lists (code, name, description, type, module) VALUES (
@@ -186,3 +211,9 @@ INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
     ('EXECUTION_STATUS', 'en', 'CANCELLED', 'Cancelled', 30),
     ('EXECUTION_STATUS', 'en', 'TIMEOUT', 'Timeout', 40),
     ('EXECUTION_STATUS', 'en', 'UNAUTHORIZED', 'Unauthorized', 50);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('EXECUTION_STATUS', 'es', 'SUCCESS', 'Exitosa', 10),
+    ('EXECUTION_STATUS', 'es', 'FAILED', 'Fallida', 20),
+    ('EXECUTION_STATUS', 'es', 'CANCELLED', 'Cancelada', 30),
+    ('EXECUTION_STATUS', 'es', 'TIMEOUT', 'Tiempo agotado', 40),
+    ('EXECUTION_STATUS', 'es', 'UNAUTHORIZED', 'No autorizada', 50);

@@ -17,7 +17,7 @@ import logging
 import secrets
 from typing import Optional, Tuple
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
 from fastapi_users import BaseUserManager, FastAPIUsers, IntegerIDMixin, exceptions, models
 from fastapi_users.authentication import (
     AuthenticationBackend,
@@ -301,6 +301,7 @@ router.include_router(
 # No password re-prompt, no DB session row created.
 @router.post("/refresh")
 async def refresh_access_token(
+    response: Response,
     authorization: str = Header(...),
     user_manager: UserManager = Depends(get_user_manager),
     refresh_strategy: DatabaseStrategy = Depends(get_refresh_strategy),
@@ -323,6 +324,20 @@ async def refresh_access_token(
         )
 
     new_access_token = await get_jwt_strategy().write_token(user)
+    # Also renew the `auth_token` cookie: the browser authenticates only
+    # through it (it never sends a stored Bearer), so a refresh that only
+    # returned the token in the body would not renew the browser session.
+    # The body is unchanged for non-browser clients.
+    response.set_cookie(
+        cookie_transport.cookie_name,
+        new_access_token,
+        max_age=cookie_transport.cookie_max_age,
+        path=cookie_transport.cookie_path,
+        domain=cookie_transport.cookie_domain,
+        secure=cookie_transport.cookie_secure,
+        httponly=cookie_transport.cookie_httponly,
+        samesite=cookie_transport.cookie_samesite,
+    )
     return {"access_token": new_access_token, "token_type": "bearer"}
 
 

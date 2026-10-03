@@ -1,23 +1,21 @@
-"""List-backed core field validation for initiatives.
+"""List-backed core field validation for dashboards (Dashboard Management).
 
-Shared by Initiative Management's PUT and by the propose / modify workflow so
-the same values are accepted everywhere. Raises ValueError (routes map to 400).
+Same semantics as ``inits/internal/list_validation.py``; the value check itself
+is shared (app/internal/list_values.py). Raises ValueError (routes map to 400).
 """
 from typing import Iterable
 
 from sqlmodel import Session
 
-# The value check itself is shared (app/internal/list_values.py); re-exported
-# here so existing `from .list_validation import validate_list_value` keeps working.
-from ...internal.list_values import validate_list_value  # noqa: F401
+from ...internal.list_values import validate_list_value
 
 # List-backed core fields and the list each value must come from.
 LIST_FIELDS = {
-    "type": "INITIATIVE_TYPE",
-    "expected_impact": "EXPECTED_IMPACT",
-    "priority_level": "PRIORITY_LEVEL",
+    "type": "DASHBOARD_TYPE",
+    "sources_types": "SOURCE_TYPE",
+    "status": "DASHBOARD_STATUS",
 }
-REQUIRED_FIELDS = ("name", "expected_impact", "priority_level")
+REQUIRED_FIELDS = ("name", "type", "sources_types", "source_url")
 
 
 def validate_core_fields(

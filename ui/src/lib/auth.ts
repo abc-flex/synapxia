@@ -32,29 +32,12 @@ export interface ChangePasswordRequest {
   new_password: string;
 }
 
-// Local storage keys
+// Local storage keys. The browser keeps NO access token: the HTTP-only
+// `auth_token` cookie is its only credential. TOKEN_STORAGE_KEY survives
+// only so clearToken() can purge a token left by older builds.
 const TOKEN_STORAGE_KEY = 'auth_token';
 const REFRESH_TOKEN_STORAGE_KEY = 'auth_refresh_token';
 const USER_STORAGE_KEY = 'auth_user';
-
-/**
- * Store JWT access token in localStorage
- */
-export function storeToken(token: string): void {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(TOKEN_STORAGE_KEY, token);
-  }
-}
-
-/**
- * Retrieve JWT access token from localStorage
- */
-export function getToken(): string | null {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem(TOKEN_STORAGE_KEY);
-  }
-  return null;
-}
 
 /**
  * Store the long-lived refresh token in localStorage.
@@ -237,6 +220,13 @@ async function postCookieLogin(credentials: LoginRequest): Promise<void> {
  * non-browser clients (cron / curl / mobile).
  */
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
+  // Drop whatever the previous session left behind before signing in (its
+  // refresh token, cached user and nav). When the last session ended
+  // without Sign out (cookie expired → middleware redirect to /login),
+  // leaving them would let the previous user's refresh token re-mint THEIR
+  // cookie, or their cached name show in the header, if anything below fails.
+  clearToken();
+
   await postCookieLogin(credentials);
 
   // Refresh-token leg uses the existing Bearer backend. If it fails we
@@ -260,7 +250,8 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
 
 /**
  * Exchange the stored refresh token for a fresh access token (no password
- * re-prompt). Updates ``auth_token`` in localStorage in place. Returns true
+ * re-prompt). The API renews the `auth_token` cookie in the same response;
+ * nothing is stored client-side. Returns true
  * on success, false otherwise — callers should treat false as "auth lost,
  * redirect to login".
  *
@@ -282,11 +273,9 @@ export function refreshAccessToken(): Promise<boolean> {
       const res = await fetch(`${getApiUrl()}/api/auth/refresh`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${refreshToken}` },
+        credentials: 'include',
       });
-      if (!res.ok) return false;
-      const data = (await res.json()) as { access_token: string };
-      storeToken(data.access_token);
-      return true;
+      return res.ok;
     } catch {
       return false;
     } finally {
@@ -330,19 +319,14 @@ export async function getCurrentUser(): Promise<UserRead> {
  * cache so the UI sees the new values immediately.
  */
 export async function updateMyProfile(data: Record<string, unknown>): Promise<UserRead> {
-  const token = getToken();
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
-
   const url = `${getApiUrl()}/api/auth/me`;
   const res = await fetch(url, {
     method: 'PATCH',
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
     },
+    credentials: 'include',
     body: JSON.stringify(data),
   });
 
@@ -413,11 +397,6 @@ export async function logout(): Promise<void> {
  * server-side check via a custom endpoint later without a UI rewrite.)
  */
 export async function changePassword(request: ChangePasswordRequest): Promise<UserRead> {
-  const token = getToken();
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
-
   const url = `${getApiUrl()}/api/auth/me`;
 
   try {
@@ -426,8 +405,8 @@ export async function changePassword(request: ChangePasswordRequest): Promise<Us
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
       },
+      credentials: 'include',
       body: JSON.stringify({ password: request.new_password }),
     });
 
@@ -457,18 +436,4 @@ export async function changePassword(request: ChangePasswordRequest): Promise<Us
     }
     throw new Error('Password change failed: unknown error');
   }
-}
-
-/**
- * Get authorization header with token
- * Useful for passing to API functions
- */
-export function getAuthHeader(): Record<string, string> {
-  const token = getToken();
-  if (!token) {
-    return {};
-  }
-  return {
-    Authorization: `Bearer ${token}`,
-  };
 }

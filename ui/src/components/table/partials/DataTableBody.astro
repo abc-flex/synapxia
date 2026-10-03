@@ -34,7 +34,7 @@ const {
 >
   {
     data.map((row) => (
-      <tr class="border-b border-gray-200 dark:border-gray-800">
+      <tr class="border-b border-gray-200 dark:border-gray-800" data-row-id={row.id ?? undefined}>
         {visibleColumns.map((col) => (
           <DataTableCell col={col} row={row} locale={locale} />
         ))}

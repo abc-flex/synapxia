@@ -80,7 +80,10 @@ api/
 │   ├── inits/                   # ⚠️ Mostly a stub — `criterias` has full CRUD, `initiatives`
 │   │                             #   has read-only GET routes (list/select/get) so assets can be
 │   │                             #   related to one; create/edit/score initiatives is unimplemented
-│   ├── insights/                # ⚠️ STUB
+│   ├── insights/                # Analytics (module ANA) — partial: Dashboard Management
+│   │                             #   (specs/006): dashboards, parameters, dashboard_permissions
+│   │                             #   (binds app/internal/resource_permissions). Catalog /
+│   │                             #   Execute / Favorite / Usage Metrics are not built yet
 │   └── workflows/               # ⚠️ STUB
 ├── pyproject.toml               # uv-managed deps; no [tool.X] lint sections yet
 ├── requirements.txt             # Pip mirror for Vercel build
@@ -105,7 +108,8 @@ All routes are prefixed `/api/`. Health check at `/health`. OpenAPI at `/docs`.
 |--------|------|---------|
 | POST | `/api/auth/login` | OAuth2PasswordRequestForm → JWT + user info |
 | POST | `/api/auth/register` | Create user (validates uniqueness on username + email) |
-| GET  | `/api/auth/me` | Current user from `Authorization: Bearer …` |
+| GET  | `/api/auth/me` | Current user from `Authorization: Bearer …` or the `auth_token` cookie (Bearer is tried first) |
+| POST | `/api/auth/refresh` | Refresh token (Bearer) → new access token in the body **and** a renewed `auth_token` cookie |
 | POST | `/api/auth/change-password` | Verify old, hash new, update |
 | POST | `/api/auth/logout` | Stateless (client clears token) |
 
@@ -177,9 +181,9 @@ Each resource implements the **canonical CRUD pattern**:
 ### `app/main.py` — application bootstrap
 - Instantiates `FastAPI(title="SynapxIA API", version="1.0.0", openapi_tags=[…])`.
 - Adds `CORSMiddleware` reading `CORS_ORIGINS` env (comma-separated; defaults `*`).
-- Registers routers from **auth → admin → taxo → lib → collab** in order. `genai`,
-  `inits`, `insights`, `workflows` are TODO — when you implement one, import its router
-  and `app.include_router(...)` here.
+- Registers routers from **auth → admin → taxo → lib → collab → inits → insights →
+  support** in order. `genai` and `workflows` are TODO — when you implement one, import
+  its router and `app.include_router(...)` here.
 - Defines startup/shutdown event handlers (currently log-only — no DB pre-warm).
 - `GET /` returns an index of available endpoint paths (cheap discovery).
 
@@ -389,8 +393,9 @@ from the root `.env`; Vercel injects them from the project dashboard.
 
 ## Adding a new domain (rare)
 
-The four stub domains (`genai`, `inits`, `insights`, `workflows`) ship empty so the
-import surface stays stable. When promoting a stub to a real module:
+The remaining stub domains (`genai`, `workflows`) ship empty so the import surface
+stays stable (`inits` and `insights` were promoted by SpecKit 004/005 and 006). When
+promoting a stub to a real module:
 
 1. Add SQL schema in `db/sql/{NN}-{module}-ddl.sql` + seeds in `{NN+1}-…-insert.sql`.
 2. Replace `app/{domain}/internal/models.py` stub with real SQLModel tables.

@@ -204,11 +204,11 @@ English labels are the seeded values; lists marked *(en/es)* are bilingual.
 | `EXPECTED_IMPACT` | LIST_OF_VALUES | INITS | Time Reduction, Quality Improvement, Error Reduction, Decision Support, Improved User Experience, Cost Savings, Revenue Increase, Compliance Enhancement, Risk Reduction, Scalability Improvement, Innovation, Other |
 | `PRIORITY_LEVEL` | LIST_OF_VALUES | INITS | High, Medium, Low |
 | `CLARITY_MATURITY`, `SUPPORT_OBJECTIVE`, `COMPLEXITY`, `DATA_INTEGRATIONS`, `RISK_IMPACT`, `SUSTAINABILITY` | CRITERIA | INITS diagnostics *(en/es)* | 1–3 scale per criterion |
-| `DASHBOARD_TYPE` | LIST_OF_VALUES | ANA | Dashboard, Report, Scorecard, KPI View, Analytical View |
-| `SOURCE_TYPE` | LIST_OF_VALUES | ANA | Internal Page, Power BI, Looker Studio, Tableau, Qlik Sense, Metabase, Superset, Custom Iframe |
-| `DASHBOARD_STATUS` | LIST_OF_VALUES | ANA | Draft, Published, Archived, Retired |
-| `PARAM_TYPE` | LIST_OF_VALUES | ANA parameters | String, Number, Boolean, Date |
-| `EXECUTION_STATUS` | LIST_OF_VALUES | ANA executions | Success, Failed, Cancelled, Timeout, Unauthorized |
+| `DASHBOARD_TYPE` | LIST_OF_VALUES | ANA *(en/es)* | Dashboard, Report, Scorecard, KPI View, Analytical View |
+| `SOURCE_TYPE` | LIST_OF_VALUES | ANA *(en/es)* | Internal Page, Power BI, Looker Studio, Tableau, Qlik Sense, Metabase, Superset, Custom Iframe |
+| `DASHBOARD_STATUS` | LIST_OF_VALUES | ANA *(en/es)* | Draft, Published, Archived, Retired |
+| `PARAM_TYPE` | LIST_OF_VALUES | ANA parameters *(en/es)* | String, Number, Boolean, Date |
+| `EXECUTION_STATUS` | LIST_OF_VALUES | ANA executions *(en/es)* | Success, Failed, Cancelled, Timeout, Unauthorized |
 | `PROCESS_TYPE` | LIST_OF_VALUES | PROC *(en/es)* | Primary, Support *(Porter's value chain)* |
 | `PROCESS_STATUS` | LIST_OF_VALUES | PROC *(en/es)* | Draft, Review, Published, Deprecated |
 

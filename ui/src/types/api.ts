@@ -1376,3 +1376,124 @@ export interface BugReportCreate {
   screenshot?: string;
   attachments?: string[];
 }
+
+// ── Dashboard Management (specs/006-dashboard-management) ───────────────────
+
+export interface Dashboard {
+  id: number;
+  name: string;
+  description?: string | null;
+  type: string;
+  sources_types: string;
+  source_url?: string | null;
+  status: string;
+  tags?: string[] | null;
+  detail?: string | null;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string | null;
+}
+
+export interface DashboardCreate {
+  name: string;
+  description?: string | null;
+  type: string;
+  sources_types: string;
+  source_url: string;
+  tags?: string[] | null;
+  detail?: string | null;
+}
+
+export interface DashboardUpdate {
+  name?: string;
+  description?: string | null;
+  type?: string;
+  sources_types?: string;
+  source_url?: string;
+  status?: string;
+  tags?: string[] | null;
+  detail?: string | null;
+}
+
+export interface DashboardWithAccess extends Dashboard {
+  my_access: "MANAGE" | "VIEW";
+  /** Whether the caller marked it as a favorite. */
+  is_favorite: boolean;
+  /** The current status first, then the moves allowed from it (1 entry = locked). */
+  allowed_statuses: string[];
+  /** Scope types through which a live grant reaches the caller. */
+  permission_scopes: string[];
+}
+
+/** How a parameter's value is obtained at run time (derived server-side). */
+export type ParameterValueSource = "GRANT" | "LIST" | "INPUT";
+
+export interface DashboardParameter {
+  dashboard: number;
+  name: string;
+  label: string;
+  data_type: string;
+  default_value?: string | null;
+  is_required: boolean;
+  list?: string | null;
+  context_binding?: number | null;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string | null;
+  value_source: ParameterValueSource;
+  binding_label?: string | null;
+}
+
+export interface DashboardParameterCreate {
+  name: string;
+  label: string;
+  data_type: string;
+  default_value?: string | null;
+  is_required?: boolean;
+  list?: string | null;
+  context_binding?: number | null;
+}
+
+export interface DashboardParameterUpdate {
+  label?: string;
+  data_type?: string;
+  default_value?: string | null;
+  is_required?: boolean;
+  list?: string | null;
+  context_binding?: number | null;
+}
+
+export interface DashboardPermission {
+  id: number;
+  dashboard: number;
+  target_type: string;
+  target_code: string;
+  access_level: string;
+  valid_from?: string;
+  valid_to?: string | null;
+}
+
+export interface DashboardPermissionCreate {
+  dashboard: number;
+  target_type: string;
+  target_code: string;
+  access_level: string;
+  valid_from?: string | null;
+  valid_to?: string | null;
+}
+
+export interface DashboardPermissionUpdate {
+  access_level?: string;
+  valid_from?: string | null;
+  valid_to?: string | null;
+}
+
+export interface RevokedDashboardPermission extends DashboardPermission {
+  /** Active parameters still bound to the revoked grant (their binding stops applying). */
+  bound_parameters: string[];
+}
+
+export interface ListOption {
+  value: string;
+  label: string;
+}

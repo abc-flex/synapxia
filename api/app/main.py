@@ -58,6 +58,10 @@ from .inits.routes import initiative_assets as initiative_assets_router
 from .inits.routes import init_permissions as init_permissions_router
 from .inits.routes import collaborations as collaborations_router
 
+from .insights.routes import dashboards as dashboards_router
+from .insights.routes import parameters as dashboard_parameters_router
+from .insights.routes import dashboard_permissions as dashboard_permissions_router
+
 from .support.routes import bug_reports as bug_reports_router
 
 # Configure logging
@@ -368,12 +372,16 @@ app.include_router(initiative_assets_router.router)
 app.include_router(init_permissions_router.router)
 app.include_router(collaborations_router.router)
 
+# Analytics module (insights domain)
+app.include_router(dashboards_router.router)
+app.include_router(dashboard_parameters_router.router)
+app.include_router(dashboard_permissions_router.router)
+
 # Support module
 app.include_router(bug_reports_router.router)
 
 # TODO: Add routers for other modules when implemented
 # - genai (Generative AI)
-# - insights (GenAI Insights)
 # - workflows (Processes)
 
 

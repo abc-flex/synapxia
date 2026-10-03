@@ -381,8 +381,12 @@ buildQueryString(params: Record<string, unknown>): string  // "?skip=0&limit=100
   (SSR)**, an absolute URL read in this precedence: `PROXY_API_TARGET` →
   `import.meta.env.API_BASE_URL` → `import.meta.env.PUBLIC_API_BASE_URL` → falls back to
   `http://synapxia-api:80` (the Compose service DNS name).
-- **Auth header** — auto-attaches `Authorization: Bearer ${getToken()}` from
-  `localStorage`. No injection if token missing (anonymous endpoints).
+- **Auth** — in the browser the HTTP-only `auth_token` cookie is the **only** credential
+  (`credentials: 'include'`); never add a Bearer from storage. The API tries Bearer before
+  the cookie, so a stored token would override the session the cookie and the SSR sidebar
+  belong to (seen 2026-10-02: the previous user's name and 403s after re-login). SSR
+  forwards the cookie's JWT as a Bearer from the middleware's AsyncLocalStorage. On a 401
+  the client calls `POST /api/auth/refresh`, which renews the cookie.
 - **Error handling** — non-2xx parses `{ detail }` from the body and throws an `Error`.
   Routes that 204 return `void`.
 - **SSR safety** — list calls during `astro build` happen with no token + no API; the
@@ -420,9 +424,10 @@ export async function deleteEntity(key: string): Promise<void> {
 - `login(credentials) → LoginResponse` — POST OAuth2PasswordRequestForm
 - `register(data) → UserRead`
 - `getCurrentUser() → UserRead` — `/api/auth/me`
-- `logout() → void` — clears token + user from `localStorage`
+- `logout() → void` — clears the cookie server-side, revokes the refresh token, clears local state
 - `changePassword({ old_password, new_password })`
-- Storage: `localStorage["auth_token"]`, `localStorage["auth_user"]` (JSON)
+- Storage: `localStorage["auth_refresh_token"]`, `localStorage["auth_user"]` (JSON). No access
+  token is stored; `clearToken()` still removes a legacy `auth_token` key.
 
 ---
 
@@ -614,13 +619,13 @@ Plus add the menu label in `menu_options` if it's a sidebar option.
 
 **No middleware** — pages don't gate themselves yet. The pattern is:
 - `BaseLayout.astro` assumes auth and reads `getCurrentUser()` for header display.
-- `lib/api.ts` injects the JWT into every request.
+- The `auth_token` cookie authenticates every browser request (no Bearer).
 - A 401 response → the page should redirect to `/login` (handled in `api.ts` error path).
 
 `localStorage` keys:
 | Key | Value |
 |-----|-------|
-| `auth_token` | JWT |
+| `auth_refresh_token` | Long-lived refresh token (renews the cookie) |
 | `auth_user` | UserRead (JSON-serialized) |
 | `lang` | `en` or `es` |
 | `theme` | `light` or `dark` |

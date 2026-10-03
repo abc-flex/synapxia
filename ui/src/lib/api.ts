@@ -14,7 +14,7 @@
  */
 
 import type { ApiError } from '../types/api';
-import { clearToken, getToken, refreshAccessToken } from './auth';
+import { clearToken, refreshAccessToken } from './auth';
 
 /* ============================================================
    SSR context — AsyncLocalStorage of the current request's auth token.
@@ -58,12 +58,11 @@ async function fetchWithAuth(url: string, init: RequestInit): Promise<Response> 
       return { ...init, headers };
     }
 
-    // Client: the cookie auto-attaches on same-origin requests, but we
-    // also keep the Bearer fallback for any legacy localStorage token
-    // hanging around mid-migration. credentials:'include' is what
-    // actually carries the cookie cross-origin.
-    const token = getToken();
-    if (token) headers.set('Authorization', `Bearer ${token}`);
+    // Client: the `auth_token` cookie is the ONLY credential. Never add a
+    // Bearer here — the API tries the Bearer backend before the cookie one,
+    // so any token kept in the browser would override the session the
+    // cookie (and the SSR sidebar) belong to. credentials:'include' is what
+    // carries the cookie cross-origin.
     return { ...init, headers, credentials: 'include' };
   };
 

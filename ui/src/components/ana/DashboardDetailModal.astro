@@ -1,0 +1,619 @@
+---
+/**
+ * DashboardDetailModal — Dashboard Management's tabbed dialog
+ * (specs/006-dashboard-management). Derived from InitiativeDetailModal.astro.
+ *
+ * Three modes:
+ *   - create: opened without an id ("New Dashboard"). Only Core Fields is
+ *     usable and the status is locked to Draft; after the first save the
+ *     dialog switches to edit mode on the new dashboard, so its Parameters and
+ *     Permissions can be added without closing.
+ *   - edit:   the caller manages the dashboard (MANAGE).
+ *   - view:   the caller only views it (VIEW) — every tab is read-only.
+ *
+ * Each tab saves ONLY its own slice. The status control offers exactly what the
+ * API reports as reachable (`allowed_statuses`): the current status plus its
+ * moves (Draft → Published; Published → Archived/Retired; Archived →
+ * Published/Retired; Retired is final). The server enforces the same rule.
+ *
+ * USAGE (from a page):
+ *   <DashboardDetailModal modalId="dashboard-detail-modal" lists={...} />
+ *   <button data-modal-open="dashboard-detail-modal" data-dashboard-id="3"
+ *           data-allowed-statuses="DRAFT,PUBLISHED" data-access="MANAGE">Edit</button>
+ */
+type ListOption = { value: string; byLang: Record<string, string> };
+interface Props {
+  modalId?: string;
+  lists: {
+    status: ListOption[];
+    type: ListOption[];
+    source: ListOption[];
+  };
+}
+const { modalId = "dashboard-detail-modal", lists } = Astro.props as Props;
+
+const inputClass =
+  "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 disabled:bg-gray-100 disabled:cursor-not-allowed dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:disabled:bg-gray-800";
+const labelClass = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1";
+const label = (o: ListOption) => o.byLang.en ?? o.byLang.es ?? o.value;
+const required = '<span class="ml-0.5 text-red-500" aria-hidden="true">*</span>';
+---
+
+<dialog
+  id={modalId}
+  data-dashboard-detail
+  class="rounded-2xl p-0 w-[min(1040px,95vw)] max-w-none bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 backdrop:bg-black/60 backdrop:backdrop-blur-sm"
+>
+  <form id={`${modalId}-form`} class="flex flex-col h-[min(760px,90vh)]" novalidate>
+    <div class="flex items-start justify-between gap-4 px-6 py-4 border-b border-gray-200 dark:border-gray-800">
+      <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+        <span id={`${modalId}-title`} data-i18n="dashboard_detail_modal.title_edit">Edit Dashboard</span><span id={`${modalId}-title-name`}></span>
+      </h3>
+      <div class="flex items-center gap-1">
+        {/* Favorite star — same look and behaviour as Edit Asset / Edit Initiative:
+            saves at once, the list behind is told on close. Hidden while creating. */}
+        <button
+          type="button"
+          id={`${modalId}-fav`}
+          aria-pressed="false"
+          title="Add to favorites"
+          data-i18n-title="dashboard_detail_modal.favorite_add"
+          class="hidden rounded-md p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        >
+          <svg class="w-5 h-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.3 4.02a1 1 0 00.95.69h4.22c.97 0 1.37 1.24.59 1.81l-3.42 2.48a1 1 0 00-.36 1.12l1.3 4.02c.3.92-.75 1.69-1.54 1.12l-3.41-2.48a1 1 0 00-1.18 0l-3.41 2.48c-.78.57-1.84-.2-1.54-1.12l1.3-4.02a1 1 0 00-.36-1.12L2 9.45c-.78-.57-.38-1.81.6-1.81h4.21a1 1 0 00.95-.69l1.3-4.02z" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          data-modal-close={modalId}
+          class="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+          aria-label="Close"
+          data-i18n-aria-label="common.close"
+        >
+          <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div id={`${modalId}-status`} class="hidden mx-6 mt-4 rounded-lg p-3 text-sm" role="status" aria-live="polite"></div>
+    <p id={`${modalId}-readonly`} class="hidden mx-6 mt-4 rounded-lg bg-gray-50 p-3 text-sm text-gray-600 dark:bg-gray-800 dark:text-gray-300" data-i18n="dashboard_detail_modal.readonly_hint">You have view access: this dashboard is read-only.</p>
+
+    <div class="flex-1 overflow-y-auto px-6 pb-5">
+      {/* Core fields — re-parented into the island's "core" tab after mount. */}
+      <section id={`${modalId}-core-section`}>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div class="md:col-span-2">
+            <label for={`${modalId}-name`} class={labelClass}><span data-i18n="dashboard_modal.name">Name</span><Fragment set:html={required} /></label>
+            <input id={`${modalId}-name`} name="name" type="text" maxlength="100" class={inputClass} />
+          </div>
+
+          <div>
+            <label for={`${modalId}-type`} class={labelClass}><span data-i18n="dashboard_modal.type">Type</span><Fragment set:html={required} /></label>
+            <select id={`${modalId}-type`} name="type" class={inputClass}>
+              <option value="" data-i18n="dashboard_detail_modal.choose">— choose —</option>
+              {lists.type.map((o) => <option value={o.value} data-list-labels={JSON.stringify(o.byLang)}>{label(o)}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label for={`${modalId}-status-select`} class={labelClass} data-i18n="dashboard_modal.status">Status</label>
+            <select id={`${modalId}-status-select`} name="status" class={inputClass}>
+              {lists.status.map((o) => <option value={o.value} data-list-labels={JSON.stringify(o.byLang)}>{label(o)}</option>)}
+            </select>
+            <p id={`${modalId}-status-hint`} class="mt-1 text-xs text-gray-500 dark:text-gray-400"></p>
+          </div>
+
+          <div>
+            <label for={`${modalId}-source`} class={labelClass}><span data-i18n="dashboard_modal.source">Source</span><Fragment set:html={required} /></label>
+            <select id={`${modalId}-source`} name="sources_types" class={inputClass}>
+              <option value="" data-i18n="dashboard_detail_modal.choose">— choose —</option>
+              {lists.source.map((o) => <option value={o.value} data-list-labels={JSON.stringify(o.byLang)}>{label(o)}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label for={`${modalId}-source-url`} class={labelClass}><span data-i18n="dashboard_modal.source_url">Source location</span><Fragment set:html={required} /></label>
+            <input id={`${modalId}-source-url`} name="source_url" type="text" maxlength="2048" class={inputClass} />
+            <p id={`${modalId}-source-url-hint`} class="mt-1 text-xs text-gray-500 dark:text-gray-400" data-i18n="dashboard_detail_modal.source_url_hint_external">An absolute https:// address of the embedded dashboard</p>
+          </div>
+
+          <div class="md:col-span-2">
+            <label for={`${modalId}-description`} class={labelClass} data-i18n="dashboard_modal.description">Description</label>
+            <textarea id={`${modalId}-description`} name="description" rows={2} maxlength="500" class={inputClass}></textarea>
+          </div>
+
+          <div class="md:col-span-2">
+            <label for={`${modalId}-tags`} class={labelClass} data-i18n="dashboard_modal.tags">Tags</label>
+            <input id={`${modalId}-tags`} name="tags" type="text" placeholder="tag1, tag2, tag3" data-i18n-placeholder="dashboard_detail_modal.tags_placeholder" class={inputClass} />
+          </div>
+
+          <div class="md:col-span-2">
+            <label for={`${modalId}-detail`} class={labelClass} data-i18n="dashboard_modal.detail">Detail</label>
+            <textarea id={`${modalId}-detail`} name="detail" rows={5} placeholder="Additional detail (optional)" data-i18n-placeholder="dashboard_detail_modal.detail_placeholder" class={inputClass}></textarea>
+          </div>
+        </div>
+      </section>
+
+      <div id={`${modalId}-detail-tabs`} class="pt-6"></div>
+    </div>
+
+    <div class="flex flex-wrap items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-800">
+      <button type="button" data-modal-close={modalId} class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800" data-i18n="common.cancel">Cancel</button>
+      <button id={`${modalId}-submit`} type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50" data-i18n="dashboard_detail_modal.save_core">Save core fields</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog
+  id={`${modalId}-discard-confirm`}
+  class="rounded-2xl p-6 w-[420px] max-w-full bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 backdrop:bg-black/60 backdrop:backdrop-blur-sm"
+>
+  <h3 class="text-base font-bold text-gray-900 dark:text-white" data-i18n="dashboard_detail_modal.discard_title">Discard changes?</h3>
+  <p class="mt-2 text-sm text-gray-600 dark:text-gray-400" data-i18n="dashboard_detail_modal.discard_message">You have unsaved changes. If you leave now, they will be lost.</p>
+  <div class="mt-5 flex justify-end gap-3">
+    <button type="button" id={`${modalId}-discard-keep`} class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800" data-i18n="dashboard_detail_modal.discard_keep_editing">Keep editing</button>
+    <button type="button" id={`${modalId}-discard-confirm-btn`} class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700" data-i18n="dashboard_detail_modal.discard_confirm">Discard changes</button>
+  </div>
+</dialog>
+
+<script>
+  import { mount, tick } from "svelte";
+  import DashboardDetailTabs from "@/components/svelte/DashboardDetailTabs.svelte";
+  import { createDashboard, getDashboard, setDashboardFavorite, updateDashboard } from "@/lib/dashboards";
+  import { apiErrorDetail } from "@/lib/api";
+  import { createStatusBanner } from "@/lib/statusBanner";
+  import { translate } from "@/utils/i18nClient";
+  import type { DashboardCreate, DashboardWithAccess } from "@/types/api";
+
+  type DetailTab = "core" | "parameters" | "permissions";
+  type Mode = "create" | "edit" | "view";
+  const SAVE_LABELS: Record<DetailTab, [string, string]> = {
+    core: ["dashboard_detail_modal.save_core", "Save core fields"],
+    parameters: ["dashboard_detail_modal.save_parameters", "Save parameters"],
+    permissions: ["dashboard_detail_modal.save_permissions", "Save permissions"],
+  };
+  const TITLES: Record<Mode, [string, string]> = {
+    create: ["dashboard_detail_modal.title_new", "New Dashboard"],
+    edit: ["dashboard_detail_modal.title_edit", "Edit Dashboard"],
+    view: ["dashboard_detail_modal.title_view", "View Dashboard"],
+  };
+  const LIFECYCLE = ["DRAFT", "PUBLISHED", "ARCHIVED", "RETIRED"];
+  const LOCKED_CLASSES = ["!bg-gray-100", "dark:!bg-gray-800", "cursor-not-allowed"];
+
+  const tr = (key: string, fallback: string): string => {
+    try {
+      const v = translate(key);
+      if (v && v !== key) return v;
+    } catch { /* non-fatal */ }
+    return fallback;
+  };
+  const bare = (raw: unknown) => String(raw ?? "").replace(/^\d+-/, "").trim().toUpperCase();
+
+  /** Mirrors api/app/insights/internal/source_validation.py (the server decides). */
+  function sourceUrlError(source: string, url: string): string | null {
+    const v = url.trim();
+    if (!v) return tr("dashboard_detail_modal.required", "Please fill the required fields.");
+    if (bare(source) === "INTERNAL_PAGE") {
+      return v.startsWith("/") && !v.startsWith("//") && !v.includes("://")
+        ? null
+        : tr("dashboard_detail_modal.source_url_invalid_internal", "An Internal Page must be a path inside the platform, starting with /.");
+    }
+    try {
+      const u = new URL(v);
+      return u.protocol === "https:" && u.host ? null : tr("dashboard_detail_modal.source_url_invalid_external", "Use an absolute https:// address.");
+    } catch {
+      return tr("dashboard_detail_modal.source_url_invalid_external", "Use an absolute https:// address.");
+    }
+  }
+
+  function init(dialog: HTMLDialogElement) {
+    const modalId = dialog.id;
+    const $ = <T extends HTMLElement>(suffix: string) => document.getElementById(`${modalId}${suffix}`) as T;
+    const form = $<HTMLFormElement>("-form");
+    const nameField = $<HTMLInputElement>("-name");
+    const typeSel = $<HTMLSelectElement>("-type");
+    const statusSel = $<HTMLSelectElement>("-status-select");
+    const statusHint = $<HTMLElement>("-status-hint");
+    const sourceSel = $<HTMLSelectElement>("-source");
+    const urlField = $<HTMLInputElement>("-source-url");
+    const urlHint = $<HTMLElement>("-source-url-hint");
+    const descField = $<HTMLTextAreaElement>("-description");
+    const tagsField = $<HTMLInputElement>("-tags");
+    const detailField = $<HTMLTextAreaElement>("-detail");
+    const titleEl = $<HTMLElement>("-title");
+    const titleNameEl = $<HTMLElement>("-title-name");
+    const readonlyNote = $<HTMLElement>("-readonly");
+    const submitBtn = $<HTMLButtonElement>("-submit");
+    const discardDialog = document.getElementById(`${modalId}-discard-confirm`) as HTMLDialogElement;
+    const status = createStatusBanner($<HTMLElement>("-status"), "mx-6 mt-4 rounded-lg p-3 text-sm");
+
+    let mode: Mode = "create";
+    let editingId: number | null = null;
+    let activeTab: DetailTab = "core";
+    let originalCoreSnapshot = "";
+    // Anything saved → the list behind is reloaded on close (new rows, statuses).
+    let changed = false;
+
+    const CORE_FIELDS: [HTMLElement, string][] = [
+      [nameField, "name"], [typeSel, "type"], [statusSel, "status"], [sourceSel, "sources_types"],
+      [urlField, "source_url"], [descField, "description"], [tagsField, "tags"], [detailField, "detail"],
+    ];
+    const requiredInputs = [nameField, typeSel, sourceSel, urlField];
+
+    function buildCorePayload() {
+      const tags = tagsField.value.split(",").map((t) => t.trim()).filter(Boolean);
+      return {
+        name: nameField.value.trim(),
+        type: typeSel.value,
+        status: statusSel.value,
+        sources_types: sourceSel.value,
+        source_url: urlField.value.trim(),
+        description: descField.value.trim() || null,
+        tags: tags.length ? tags : null,
+        detail: detailField.value.trim() || null,
+      };
+    }
+    function coreChangedFields(): HTMLElement[] {
+      const baseline = originalCoreSnapshot ? JSON.parse(originalCoreSnapshot) : {};
+      const current = buildCorePayload() as Record<string, unknown>;
+      return CORE_FIELDS
+        .filter(([, key]) => JSON.stringify(current[key]) !== JSON.stringify(baseline[key]))
+        .map(([el]) => el);
+    }
+
+    // ── Tabs island ───────────────────────────────────────────────────────
+    const tabs = mount(DashboardDetailTabs, {
+      target: $<HTMLElement>("-detail-tabs"),
+      props: {
+        idPrefix: modalId,
+        onError: (m: string) => status.show(m, "error"),
+        onTabChange: (name: DetailTab) => {
+          activeTab = name;
+          paintFooter();
+        },
+      },
+    });
+    document.getElementById(`${modalId}-core`)?.appendChild($<HTMLElement>("-core-section"));
+
+    function updateCoreHighlight() {
+      const changedEls = new Set(mode === "view" ? [] : coreChangedFields());
+      for (const [el] of CORE_FIELDS) {
+        el.classList.toggle("ring-2", changedEls.has(el));
+        el.classList.toggle("ring-amber-400", changedEls.has(el));
+      }
+      tabs.setCoreDirty(changedEls.size > 0);
+    }
+    for (const [el] of CORE_FIELDS) {
+      el.addEventListener("input", updateCoreHighlight);
+      el.addEventListener("change", updateCoreHighlight);
+    }
+    for (const el of requiredInputs) el.addEventListener("input", () => setInvalid(el, false));
+
+    function setInvalid(el: HTMLElement, on: boolean) {
+      el.classList.toggle("border-red-500", on);
+      el.setAttribute("aria-invalid", on ? "true" : "false");
+    }
+
+    function paintSourceHint() {
+      const internal = bare(sourceSel.value) === "INTERNAL_PAGE";
+      const [key, fallback] = internal
+        ? ["dashboard_detail_modal.source_url_hint_internal", "A path inside the platform, e.g. /ana/usage"]
+        : ["dashboard_detail_modal.source_url_hint_external", "An absolute https:// address of the embedded dashboard"];
+      urlHint.setAttribute("data-i18n", key);
+      urlHint.textContent = tr(key, fallback);
+      urlField.placeholder = internal ? "/ana/usage" : "https://";
+    }
+    sourceSel.addEventListener("change", paintSourceHint);
+
+    function paintTitle() {
+      const [key, fallback] = TITLES[mode];
+      titleEl.setAttribute("data-i18n", key);
+      titleEl.textContent = tr(key, fallback);
+    }
+
+    function paintFooter() {
+      if (mode === "view") {
+        submitBtn.classList.add("hidden");
+        return;
+      }
+      submitBtn.classList.remove("hidden");
+      const [key, fallback] = mode === "create"
+        ? ["dashboard_detail_modal.create", "Create dashboard"]
+        : SAVE_LABELS[activeTab];
+      submitBtn.setAttribute("data-i18n", key);
+      submitBtn.textContent = tr(key, fallback);
+    }
+
+    function setCoreDisabled(disabled: boolean) {
+      for (const [el] of CORE_FIELDS) (el as HTMLInputElement).disabled = disabled;
+    }
+
+    // ── Status policy: offer only what the API says is reachable ──────────
+    function applyStatusPolicy(currentStatus: string, allowed: string[]) {
+      const current = bare(currentStatus) || "DRAFT";
+      const offered = mode === "create" ? ["DRAFT"] : (allowed.length ? allowed.map(bare) : [current]);
+      let selectable = 0;
+      for (const opt of [...statusSel.options]) {
+        const keep = offered.includes(bare(opt.value));
+        opt.hidden = !keep;
+        opt.disabled = !keep;
+        if (keep) selectable += 1;
+      }
+      const match = [...statusSel.options].find((o) => bare(o.value) === current);
+      statusSel.value = match?.value ?? "";
+      const locked = selectable < 2 || mode !== "edit";
+      statusSel.disabled = locked;
+      for (const c of LOCKED_CLASSES) statusSel.classList.toggle(c, locked);
+      const [key, fallback] =
+        mode === "create" ? ["dashboard_detail_modal.status_hint_create", "New dashboards start as Draft."]
+        : !locked ? ["dashboard_detail_modal.status_hint_moves", "Only the moves allowed from the current status are offered."]
+        : current === "RETIRED" ? ["dashboard_detail_modal.status_hint_locked_retired", "Retired dashboards are closed; their status can no longer change."]
+        : !LIFECYCLE.includes(current) ? ["dashboard_detail_modal.status_hint_locked_unknown", "This status is not part of the dashboard lifecycle and cannot be changed here."]
+        : ["", ""];
+      if (key) statusHint.setAttribute("data-i18n", key);
+      else statusHint.removeAttribute("data-i18n");
+      statusHint.textContent = key ? tr(key, fallback) : "";
+    }
+
+    function fillCore(d: DashboardWithAccess) {
+      nameField.value = d.name ?? "";
+      titleNameEl.textContent = d.name ? `: ${d.name}` : "";
+      typeSel.value = bare(d.type);
+      sourceSel.value = bare(d.sources_types);
+      urlField.value = d.source_url ?? "";
+      descField.value = d.description ?? "";
+      tagsField.value = Array.isArray(d.tags) ? d.tags.join(", ") : String(d.tags ?? "");
+      detailField.value = d.detail ?? "";
+      paintSourceHint();
+      applyStatusPolicy(d.status, d.allowed_statuses ?? []);
+      originalCoreSnapshot = JSON.stringify(buildCorePayload());
+      updateCoreHighlight();
+    }
+
+    function setMode(next: Mode) {
+      mode = next;
+      paintTitle();
+      setCoreDisabled(next === "view");
+      readonlyNote.classList.toggle("hidden", next !== "view");
+      paintFooter();
+    }
+
+    // ── Favorite star: saves at once; the list is told on close ───────────
+    const favBtn = $<HTMLButtonElement>("-fav");
+    let favoriteOn = false;
+    let favoriteAtOpen: boolean | null = null;
+    function paintFavorite() {
+      favBtn.classList.toggle("hidden", editingId == null);
+      favBtn.setAttribute("aria-pressed", String(favoriteOn));
+      favBtn.querySelector("svg")?.setAttribute("fill", favoriteOn ? "currentColor" : "none");
+      favBtn.classList.toggle("text-yellow-400", favoriteOn);
+      favBtn.classList.toggle("text-gray-400", !favoriteOn);
+      const key = favoriteOn ? "dashboard_detail_modal.favorite_remove" : "dashboard_detail_modal.favorite_add";
+      favBtn.setAttribute("data-i18n-title", key);
+      favBtn.title = tr(key, favoriteOn ? "Remove from favorites" : "Add to favorites");
+    }
+    favBtn.addEventListener("click", async () => {
+      if (editingId == null) return;
+      const id = editingId;
+      const next = !favoriteOn;
+      favoriteOn = next;
+      paintFavorite();
+      try {
+        await setDashboardFavorite(id, next);
+      } catch {
+        favoriteOn = !next;
+        paintFavorite();
+        status.show(tr("dashboard_detail_modal.error_favorite", "Could not update favorite."), "error");
+      }
+    });
+
+    // ── Open / reset / close ──────────────────────────────────────────────
+    function resetForm() {
+      form.reset();
+      editingId = null;
+      favoriteOn = false;
+      paintFavorite();
+      titleNameEl.textContent = "";
+      tabs.reset();
+      activeTab = "core";
+      for (const el of requiredInputs) setInvalid(el, false);
+      status.clear();
+      setMode("create");
+      paintSourceHint();
+      applyStatusPolicy("DRAFT", ["DRAFT"]);
+      originalCoreSnapshot = JSON.stringify(buildCorePayload());
+      updateCoreHighlight();
+    }
+
+    function openCreate() {
+      resetForm();
+      dialog.showModal();
+      nameField.focus();
+    }
+
+    async function openExisting(id: number, accessHint: string, allowedHint: string[], favoriteHint = false) {
+      resetForm();
+      editingId = id;
+      favoriteOn = favoriteHint;
+      favoriteAtOpen = favoriteHint;
+      paintFavorite();
+      setMode(accessHint === "MANAGE" ? "edit" : "view");
+      applyStatusPolicy("", allowedHint);
+      dialog.showModal();
+      try {
+        const d = await getDashboard(id);
+        if (editingId !== id) return;
+        setMode(d.my_access === "MANAGE" ? "edit" : "view");
+        fillCore(d);
+        // The server's favorite state wins unless the star was clicked meanwhile.
+        if (favoriteOn === favoriteAtOpen) {
+          favoriteOn = favoriteAtOpen = !!d.is_favorite;
+          paintFavorite();
+        }
+        await tabs.hydrate(id, mode === "view");
+      } catch (e) {
+        status.show(apiErrorDetail(e, tr("dashboard_detail_modal.error_load", "Could not load the dashboard.")), "error");
+      }
+    }
+
+    function closeModal() {
+      // Tell the list behind on exit, so its row star and an active
+      // "My favorites" filter catch up (the page listens for `favorite:changed`).
+      if (editingId != null && favoriteAtOpen !== null && favoriteOn !== favoriteAtOpen) {
+        document.dispatchEvent(new CustomEvent("favorite:changed", {
+          detail: { tableId: "dashboards", id: editingId, on: favoriteOn },
+        }));
+      }
+      favoriteAtOpen = null;
+      dialog.close();
+      resetForm();
+      if (changed) window.location.reload();
+    }
+
+    function pendingTabs(): DetailTab[] {
+      if (mode === "view") return [];
+      const pending: DetailTab[] = [];
+      if (JSON.stringify(buildCorePayload()) !== originalCoreSnapshot) pending.push("core");
+      if (tabs.parametersDirty()) pending.push("parameters");
+      if (tabs.permissionsDirty()) pending.push("permissions");
+      return pending;
+    }
+
+    function requestClose() {
+      if (pendingTabs().length) discardDialog.showModal();
+      else closeModal();
+    }
+
+    document.getElementById(`${modalId}-discard-keep`)?.addEventListener("click", async () => {
+      discardDialog.close();
+      const [first] = pendingTabs();
+      if (!first) return;
+      tabs.activateTab(first);
+      await tick();
+      if (first === "core") coreChangedFields()[0]?.focus();
+      else tabs.focusFirstPending();
+    });
+    document.getElementById(`${modalId}-discard-confirm-btn`)?.addEventListener("click", () => {
+      discardDialog.close();
+      closeModal();
+    });
+
+    document.addEventListener("click", (e) => {
+      const target = (e.target as HTMLElement).closest?.(`[data-modal-open="${modalId}"]`) as HTMLElement | null;
+      if (target) {
+        e.preventDefault();
+        const id = Number(target.dataset.dashboardId);
+        if (id) {
+          openExisting(id, target.dataset.access || "VIEW",
+            (target.dataset.allowedStatuses || "").split(",").filter(Boolean),
+            target.dataset.favorite === "1");
+        } else {
+          openCreate();
+        }
+      }
+      const closer = (e.target as HTMLElement).closest?.(`[data-modal-close="${modalId}"]`);
+      if (closer) {
+        e.preventDefault();
+        requestClose();
+      }
+    });
+    dialog.addEventListener("cancel", (e) => {
+      e.preventDefault();
+      requestClose();
+    });
+
+    function validateCore(): boolean {
+      const payload = buildCorePayload();
+      let ok = true;
+      for (const [el, val] of [[nameField, payload.name], [typeSel, payload.type], [sourceSel, payload.sources_types]] as const) {
+        const bad = !val;
+        setInvalid(el, bad);
+        if (bad) ok = false;
+      }
+      if (!ok) {
+        status.show(tr("dashboard_detail_modal.required", "Please fill the required fields."), "error");
+        return false;
+      }
+      const urlErr = sourceUrlError(payload.sources_types, payload.source_url);
+      setInvalid(urlField, !!urlErr);
+      if (urlErr) {
+        status.show(urlErr, "error");
+        urlField.focus();
+        return false;
+      }
+      return true;
+    }
+
+    // ── Submit: only the active tab's slice ───────────────────────────────
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (mode === "view") return;
+      submitBtn.disabled = true;
+      status.clear();
+      try {
+        if (mode === "create") {
+          if (!validateCore()) return;
+          const { status: _ignored, ...body } = buildCorePayload();
+          const saved = await createDashboard(body as DashboardCreate);
+          changed = true;
+          editingId = saved.id;
+          favoriteOn = false;
+          favoriteAtOpen = false;
+          paintFavorite();
+          setMode("edit");
+          fillCore(saved);
+          await tabs.hydrate(saved.id, false);
+          status.show(tr("dashboard_detail_modal.created", "Dashboard created. You can now add its parameters and permissions."), "ok");
+          return;
+        }
+        const id = editingId as number;
+        let msg = "";
+        if (activeTab === "core") {
+          if (JSON.stringify(buildCorePayload()) !== originalCoreSnapshot) {
+            if (!validateCore()) return;
+            const saved = await updateDashboard(id, buildCorePayload());
+            changed = true;
+            fillCore(saved);
+            msg = tr("dashboard_detail_modal.core_saved", "Core fields saved.");
+          }
+        } else if (activeTab === "parameters") {
+          if (tabs.parametersDirty()) {
+            await tabs.flushParameters(id);
+            changed = true;
+            msg = tr("dashboard_detail_modal.parameters_saved", "Parameters saved.");
+          }
+        } else if (activeTab === "permissions") {
+          if (tabs.permissionsDirty()) {
+            await tabs.flushPermissions(id);
+            changed = true;
+            msg = tr("dashboard_detail_modal.permissions_saved", "Permissions saved.");
+            // The owner may have revoked their own access.
+            try {
+              const d = await getDashboard(id);
+              if (d.my_access !== "MANAGE") {
+                setMode("view");
+                await tabs.hydrate(id, true);
+              }
+            } catch {
+              status.show(tr("dashboard_detail_modal.lost_access", "You no longer have access to this dashboard."), "info");
+              setTimeout(closeModal, 1500);
+              return;
+            }
+          }
+        }
+        status.show(msg || tr("dashboard_detail_modal.no_changes", "No changes to save."), msg ? "ok" : "info");
+      } catch (err) {
+        status.show(apiErrorDetail(err, tr("dashboard_detail_modal.error_save", "Could not save the dashboard.")), "error");
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+
+    resetForm();
+  }
+
+  document.querySelectorAll<HTMLDialogElement>("dialog[data-dashboard-detail]").forEach(init);
+</script>

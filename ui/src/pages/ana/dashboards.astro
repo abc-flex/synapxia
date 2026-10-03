@@ -1,0 +1,304 @@
+---
+// Dashboard Management (HU-AN01–03, specs/006-dashboard-management).
+// Lists the dashboards the caller can access, registers new ones and opens the
+// tabbed dialog (Core Fields, Parameters, Permissions).
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import DataTable from "../../components/table/DataTable.astro";
+import CrudModal from "../../components/forms/CrudModal.astro";
+import Toast from "../../components/Toast.astro";
+import DashboardDetailModal from "../../components/ana/DashboardDetailModal.astro";
+import { getAllDashboardsWithAccess } from "@/lib/dashboards";
+import { getListItemsbyList } from "@/lib/list_items";
+import {
+  labelsByValue, labelsFor, listLabel, toListOptions, type ListLabels, type ListOption,
+} from "@/lib/listLang";
+
+let dashboards: any[] = [];
+let errorMessage: string | null = null;
+try {
+  dashboards = await getAllDashboardsWithAccess();
+} catch (error) {
+  console.error("Failed to fetch dashboards:", error);
+  errorMessage = error instanceof Error ? error.message : "Failed to fetch dashboards from API";
+  dashboards = [];
+}
+
+// The three list-backed fields. `/api/list_items/list/{code}` returns every
+// language; the server renders English and the client relabels to the
+// viewer's language (lib/listLang.ts), since the language lives in localStorage.
+const LISTS = {
+  status: "DASHBOARD_STATUS",
+  type: "DASHBOARD_TYPE",
+  source: "SOURCE_TYPE",
+} as const;
+
+const labels: Record<string, ListLabels> = {};
+const optionsEn: Record<string, ListOption[]> = {};
+for (const [field, list] of Object.entries(LISTS)) {
+  let items: any[] = [];
+  try {
+    items = await getListItemsbyList(list);
+  } catch {
+    items = [];
+  }
+  labels[field] = labelsByValue(items);
+  optionsEn[field] = toListOptions(items, "en");
+}
+
+const bare = (v: unknown) => String(v ?? "").replace(/^\d+-/, "").toUpperCase();
+const labelOf = (field: keyof typeof LISTS, raw: unknown): string =>
+  raw ? listLabel(labels[field], raw, "en") : "";
+const labelsOf = (field: keyof typeof LISTS, raw: unknown) => labelsFor(labels[field], raw);
+
+// Visible order: name, type, source, status, tags (+ the actions column the
+// DataTable appends). `permissions` is a hidden, filter-only column.
+const columns = [
+  { key: "name", label: "dashboard_modal.name", as: "title", subtitleKey: "updated_at", subtitleFormat: "relative" },
+  { key: "type", label: "dashboard_modal.type", visible: false },
+  { key: "type_name", label: "dashboard_modal.type", labelsKey: "type_labels" },
+  { key: "source", label: "dashboard_modal.source", visible: false },
+  { key: "source_name", label: "dashboard_modal.source", labelsKey: "source_labels" },
+  { key: "status", label: "dashboard_modal.status", visible: false },
+  { key: "status_name", label: "dashboard_modal.status", as: "status", labelsKey: "status_labels" },
+  { key: "tags_display", label: "dashboard_modal.tags", as: "tags" },
+  { key: "permissions", label: "dashboard_table.perm_filter_all", visible: false },
+];
+
+const data = dashboards.map((item) => ({
+  id: item.id,
+  name: item.name,
+  description: item.description,
+  type: bare(item.type),
+  type_name: labelOf("type", item.type),
+  type_labels: labelsOf("type", item.type),
+  source: bare(item.sources_types),
+  source_name: labelOf("source", item.sources_types),
+  source_labels: labelsOf("source", item.sources_types),
+  status: bare(item.status),
+  status_name: labelOf("status", item.status),
+  status_labels: labelsOf("status", item.status),
+  // Scope types by which a grant reaches the user, comma-joined for the
+  // privileges filter's membership match.
+  permissions: (item.permission_scopes ?? []).join(","),
+  tags_display: Array.isArray(item.tags) ? item.tags.join(", ") : item.tags || "",
+  // Row action gating: only MANAGE holders get edit/remove (backend enforces too).
+  can_manage: item.my_access === "MANAGE",
+  my_access: item.my_access,
+  // "yes"/"no" so the favorites toggle's equality check works.
+  favorite: item.is_favorite ? "yes" : "no",
+  allowed_statuses: (item.allowed_statuses ?? []).join(","),
+  updated_at: item.updated_at ?? item.created_at,
+  created_at: item.created_at,
+}));
+
+const deleteFields = [
+  { key: "name", label: "dashboard_modal.name", pk: true, disabled: true },
+];
+const fieldKeys = deleteFields.map((f) => f.key);
+
+// Options the detail modal's selects need, in sort order, with every language.
+const modalLists = {
+  status: optionsEn.status.map((o) => ({ value: o.value, byLang: o.labels })),
+  type: optionsEn.type.map((o) => ({ value: o.value, byLang: o.labels })),
+  source: optionsEn.source.map((o) => ({ value: o.value, byLang: o.labels })),
+};
+---
+
+<BaseLayout>
+  {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
+
+  <div class="mx-auto w-full max-w-full md:p-0">
+    <Breadcrumb
+      moduleName="Analytics"
+      pageName="Dashboard Management"
+      pageTitle="Dashboard Management"
+      homeLink="/"
+      moduleNameKey="modules.ANA"
+      pageNameKey="menu_options.dashboards"
+      pageTitleKey="menu_options.dashboards"
+    />
+
+    <DashboardDetailModal modalId="dashboard-detail-modal" lists={modalLists} />
+
+    <CrudModal
+      mode="delete"
+      modalId="dashboard-delete-modal"
+      entityName="Dashboard"
+      fields={deleteFields}
+      showTrigger={false}
+    />
+
+    <div
+      id="dashboards-data"
+      data-rows={encodeURIComponent(JSON.stringify(data))}
+      data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
+      class="hidden"
+      aria-hidden="true"
+    >
+    </div>
+
+    <script>
+      import { initCrudPage } from "@/lib/crudClient";
+      import { deleteDashboard, setDashboardFavorite } from "@/lib/dashboards";
+      import { showToast, flashToast } from "@/lib/toast";
+      import { translate } from "@/utils/i18nClient";
+
+      initCrudPage({
+        dataId: "dashboards-data",
+        editModalId: "dashboard-edit-modal", // shim — DataTable still emits this id
+        deleteModalId: "dashboard-delete-modal",
+      });
+
+      const carrier = document.getElementById("dashboards-data");
+      const rows: { id: number; allowed_statuses: string; my_access: string }[] = JSON.parse(
+        decodeURIComponent(carrier?.dataset.rows || "%5B%5D"),
+      );
+
+      // ── Per-row favorite star (same behaviour as Asset / Initiative Management):
+      // optimistic repaint, revert on failure. Capture phase so we beat
+      // advancedTable. Also patches the row data so an active "My favorites"
+      // filter updates at once.
+      const paintStar = (btn: HTMLElement, on: boolean) => {
+        document.dispatchEvent(new CustomEvent("datatable:row-update", {
+          detail: { tableId: "dashboards", id: btn.getAttribute("data-id"), changes: { favorite: on ? "yes" : "no" } },
+        }));
+        btn.setAttribute("data-fav", on ? "1" : "0");
+        btn.setAttribute("aria-pressed", on ? "true" : "false");
+        const span = btn.querySelector("span");
+        span?.classList.toggle("text-yellow-400", on);
+        span?.classList.toggle("text-gray-400", !on);
+        btn.querySelector("svg")?.setAttribute("fill", on ? "currentColor" : "none");
+      };
+      document.addEventListener(
+        "click",
+        async (e) => {
+          const favBtn = (e.target as HTMLElement).closest?.('#dashboards [data-action="favorite"]') as HTMLElement | null;
+          if (!favBtn) return;
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          const id = Number(favBtn.getAttribute("data-id"));
+          const wasOn = favBtn.getAttribute("data-fav") === "1";
+          paintStar(favBtn, !wasOn);
+          try {
+            await setDashboardFavorite(id, !wasOn);
+          } catch (err) {
+            paintStar(favBtn, wasOn);
+            showToast(err instanceof Error ? err.message : "Could not update favorite", "error");
+          }
+        },
+        true,
+      );
+
+      // The dialog's own star saves immediately and reports on close; sync the
+      // row star (and, through paintStar, an active "My favorites" filter).
+      document.addEventListener("favorite:changed", (e: Event) => {
+        const { tableId, id, on } = (e as CustomEvent).detail || {};
+        if (tableId !== "dashboards") return;
+        const btn = document.querySelector(`#dashboards [data-action="favorite"][data-id="${id}"]`) as HTMLElement | null;
+        if (btn) paintStar(btn, on);
+      });
+
+      // ── Bridge: DataTable's "+ New" (`dashboard-create-modal`) and row
+      // pencil (`dashboard-edit-modal`) → DashboardDetailModal. Capture phase
+      // so we run before crudClient's default modal handling.
+      const openDetail = (id: string | null) => {
+        const synthetic = document.createElement("button");
+        synthetic.style.display = "none";
+        synthetic.setAttribute("data-modal-open", "dashboard-detail-modal");
+        if (id) {
+          synthetic.setAttribute("data-dashboard-id", id);
+          const row = rows.find((r) => String(r.id) === id);
+          if (row) {
+            synthetic.setAttribute("data-allowed-statuses", row.allowed_statuses);
+            synthetic.setAttribute("data-access", row.my_access);
+          }
+          // The row star is the live favorite state (the row JSON can be stale).
+          const star = document.querySelector(`#dashboards [data-action="favorite"][data-id="${id}"]`);
+          synthetic.setAttribute("data-favorite", star?.getAttribute("data-fav") === "1" ? "1" : "0");
+        }
+        document.body.appendChild(synthetic);
+        synthetic.click();
+        synthetic.remove();
+      };
+      // The name cell opens the dialog for every row — view-only rows (VIEW
+      // access) have no pencil, but must still be readable (spec US1-8).
+      document.querySelectorAll<HTMLElement>('#dashboards tbody tr[data-row-id] td[data-col="title"]').forEach((td) => {
+        td.classList.add("cursor-pointer", "hover:text-indigo-600", "dark:hover:text-indigo-400");
+      });
+      document.addEventListener("click", (e) => {
+        const td = (e.target as HTMLElement).closest?.('#dashboards tbody td[data-col="title"]');
+        const tr = td?.closest("tr[data-row-id]") as HTMLElement | null;
+        if (tr?.dataset.rowId) openDetail(tr.dataset.rowId);
+      });
+
+      document.addEventListener(
+        "click",
+        (e) => {
+          const el = e.target as HTMLElement;
+          const create = el.closest?.('[data-modal-open="dashboard-create-modal"]');
+          const edit = el.closest?.('[data-modal-open="dashboard-edit-modal"]');
+          if (!create && !edit) return;
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          openDetail(edit ? edit.getAttribute("data-id") : null);
+        },
+        true,
+      );
+
+      document.addEventListener("crud-submit", async (e: Event) => {
+        const { mode, data } = (e as CustomEvent).detail;
+        if (mode !== "delete") return;
+        try {
+          await deleteDashboard(Number(data.id));
+          flashToast(translate("dashboard_table.deleted"));
+          window.location.reload();
+        } catch (error) {
+          showToast(error instanceof Error ? error.message : "An error occurred", "error");
+        }
+      });
+    </script>
+
+    <div class="space-y-5 sm:space-y-6">
+      <div class="border-0 p-0">
+        <DataTable
+          columns={columns}
+          data={data}
+          tableId="dashboards"
+          i18Item="dashboard"
+          showAddButton={true}
+          columnFilter="status"
+          filterOptions={optionsEn.status}
+          filterHeaderColumn="status_name"
+          columnFilter2="type"
+          filterOptions2={optionsEn.type}
+          filter2HeaderColumn="type_name"
+          filter2AllLabel="dashboard_table.all_types"
+          columnFilter3="favorite"
+          filter3AsToggle={true}
+          filterOptions3={[
+            { value: "yes", label: "My favorites", i18n: "dashboard_table.fav_filter_mine" },
+          ]}
+          {/* Privileges → toolbar dropdown over how the dashboard is shared with
+              the user (membership match, same as Asset/Initiative Management). */}
+          columnFilter4="permissions"
+          filter4AllLabel="dashboard_table.perm_filter_all"
+          filterOptions4={[
+            { value: "USER", label: "Shared with me", i18n: "dashboard_table.perm_filter_user" },
+            { value: "ROLE", label: "My role", i18n: "dashboard_table.perm_filter_role" },
+            { value: "TEAM", label: "My team", i18n: "dashboard_table.perm_filter_team" },
+            { value: "UNIT", label: "My unit", i18n: "dashboard_table.perm_filter_unit" },
+            { value: "PROJECT", label: "My projects", i18n: "dashboard_table.perm_filter_project" },
+            { value: "PUBLIC", label: "Public", i18n: "dashboard_table.perm_filter_public" },
+          ]}
+          extraFilters={[
+            { key: "source", options: optionsEn.source, headerColumn: "source_name", allLabel: "dashboard_table.all_sources" },
+          ]}
+          favoriteAction={true}
+          favoriteKey="favorite"
+          manageKey="can_manage"
+        />
+      </div>
+    </div>
+  </div>
+</BaseLayout>

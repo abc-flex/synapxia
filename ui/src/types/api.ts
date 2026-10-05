@@ -1497,3 +1497,74 @@ export interface ListOption {
   value: string;
   label: string;
 }
+
+// ── Dashboard Catalog & executions (specs/007-dashboard-catalog) ─────────────
+
+export type EffectiveSource = ParameterValueSource;
+export type ExecutionStatus = "SUCCESS" | "FAILED" | "CANCELLED" | "TIMEOUT" | "UNAUTHORIZED";
+export type LaunchMode = "VIEWER" | "TAB";
+
+export interface CatalogDashboard {
+  id: number;
+  name: string;
+  description?: string | null;
+  type: string;
+  sources_types: string;
+  tags?: string[] | null;
+  detail?: string | null;
+  created_at?: string | null;
+  is_favorite: boolean;
+  permission_scopes: string[];
+  parameter_count: number;
+}
+
+export interface RunFormOption {
+  value: string;
+  lang: string;
+  label: string;
+  sort_order: number;
+}
+
+export interface RunFormParameter {
+  name: string;
+  label: string;
+  data_type: string;
+  is_required: boolean;
+  default_value?: string | null;
+  effective_source: EffectiveSource;
+  bound_value?: string | null;
+  bound_label?: string | null;
+  list?: string | null;
+  options?: RunFormOption[] | null;
+  list_unavailable: boolean;
+}
+
+export interface RunForm {
+  dashboard: number;
+  name: string;
+  mode: LaunchMode;
+  has_last_values: boolean;
+  parameters: RunFormParameter[];
+}
+
+export interface ExecutionStarted {
+  execution_id: number;
+  launch_url: string;
+  mode: LaunchMode;
+}
+
+export interface ExecutionRead {
+  id: number;
+  dashboard: number;
+  user_id: number;
+  executed_at: string;
+  payload?: unknown;
+  status?: ExecutionStatus | null;
+  error_message?: string | null;
+  duration_ms?: number | null;
+}
+
+export interface LastValues {
+  values: Record<string, string>;
+  executed_at?: string | null;
+}

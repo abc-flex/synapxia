@@ -20,14 +20,21 @@ const {
 // they'd already have been redirected by the middleware, so this call
 // always runs in an authenticated context. On API failure the helper
 // returns empty arrays — the SideBar renders gracefully.
+// Embed mode (`?embed=1`): an Internal Page dashboard opened inside the
+// Dashboard Catalog's viewer renders without the app shell — no sidebar,
+// header or bug-report widget, and no nav fetch (specs/007-dashboard-catalog R8).
+const embed = Astro.url.searchParams.get("embed") === "1";
+
 let primaryNav: import("@/types/nav").NavModule[] = [];
 let itemsNav: import("@/types/nav").NavOption[] = [];
-try {
-  const nav = await getNavigationData();
-  primaryNav = nav.primaryNav;
-  itemsNav = nav.itemsNav;
-} catch {
-  /* swallow — SideBar will fall back to its localStorage cache + client refetch */
+if (!embed) {
+  try {
+    const nav = await getNavigationData();
+    primaryNav = nav.primaryNav;
+    itemsNav = nav.itemsNav;
+  } catch {
+    /* swallow — SideBar will fall back to its localStorage cache + client refetch */
+  }
 }
 
 // Get current path for sidebar active state
@@ -64,6 +71,12 @@ const currentModuleName = pathSegments[0] || "";
   </head>
   <body class="bg-slate-50 text-slate-900 dark:bg-gray-950 dark:text-white">
     <ClientTranslations />
+    {embed ? (
+      <main class="mx-auto w-full max-w-screen-2xl p-4 sm:p-6">
+        <slot />
+      </main>
+    ) : (
+    <Fragment>
     <div class="min-h-screen flex">
       {/* The sidebar brand text must never vary by page — SideBar's own
           default ("SynapxIA") is used unconditionally. `title` only ever
@@ -85,6 +98,8 @@ const currentModuleName = pathSegments[0] || "";
     </div>
 
     <BugReportWidget />
+    </Fragment>
+    )}
   </body>
 </html>
 

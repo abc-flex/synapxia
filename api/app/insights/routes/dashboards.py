@@ -12,7 +12,7 @@ from typing import Dict, List
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select
 
-from ..internal import permissions_service, status_service
+from ..internal import catalog_service, permissions_service, status_service
 from ..internal.dependencies import get_db_session
 from ..internal.list_validation import REQUIRED_FIELDS, validate_core_fields
 from ..internal.models import (
@@ -21,7 +21,8 @@ from ..internal.models import (
 )
 from ..internal.source_validation import validate_source_url
 from ...admin.internal.models import List as ListModel, User
-from ...internal.permissions import require_privilege
+from ...auth.routes import current_active_user
+from ...internal.permissions import check_any_privilege, require_privilege
 from ...internal.status import normalize
 
 logger = logging.getLogger(__name__)
@@ -56,17 +57,8 @@ def _with_access(
     )
 
 
-def _favorite_ids(session: Session, user: User, dashboard_ids: List[int]) -> set:
-    """The subset of `dashboard_ids` the caller has marked as a favorite (one query)."""
-    if not dashboard_ids:
-        return set()
-    return set(session.exec(
-        select(FavoriteDashboard.dashboard).where(
-            FavoriteDashboard.user_id == user.id,
-            FavoriteDashboard.is_active == True,  # noqa: E712
-            FavoriteDashboard.dashboard.in_(dashboard_ids),
-        )
-    ).all())
+# One definition of "the caller's favorites", shared with the Dashboard Catalog.
+_favorite_ids = catalog_service.favorite_ids
 
 
 def _projection(session: Session, user: User, dashboard: Dashboard) -> DashboardWithAccess:
@@ -266,6 +258,12 @@ def delete(
 # ── Favorites (same behaviour as Asset / Initiative Management) ──────────────
 
 
+def _ensure_favorite_module(session: Session, user: User) -> None:
+    """Favorites are personal and shared by Management and the Catalog, so
+    either module option at read level opens them."""
+    check_any_privilege(session, user, "ANA", ["DASHBOARDS", "CATALOG"], can_edit=False)
+
+
 def _set_favorite(
     session: Session, user: User, dashboard_id: int, on: bool,
 ) -> DashboardFavoriteState:
@@ -289,9 +287,12 @@ def _set_favorite(
 def add_favorite(
     dashboard_id: int,
     session: Session = Depends(get_db_session),
-    current: User = Depends(require_privilege("ANA", "DASHBOARDS", can_edit=False)),
+    current: User = Depends(current_active_user),
 ) -> DashboardFavoriteState:
-    """Mark the dashboard as one of the caller's favorites. Requires VIEW."""
+    """Mark the dashboard as one of the caller's favorites. Requires VIEW on it
+    and read access to Dashboard Management OR the Dashboard Catalog (the same
+    favorites show in both — specs/007-dashboard-catalog R2)."""
+    _ensure_favorite_module(session, current)
     return _set_favorite(session, current, dashboard_id, True)
 
 
@@ -299,7 +300,8 @@ def add_favorite(
 def remove_favorite(
     dashboard_id: int,
     session: Session = Depends(get_db_session),
-    current: User = Depends(require_privilege("ANA", "DASHBOARDS", can_edit=False)),
+    current: User = Depends(current_active_user),
 ) -> DashboardFavoriteState:
-    """Remove the dashboard from the caller's favorites. Requires VIEW."""
+    """Remove the dashboard from the caller's favorites. Same rules as marking."""
+    _ensure_favorite_module(session, current)
     return _set_favorite(session, current, dashboard_id, False)

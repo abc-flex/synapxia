@@ -13,7 +13,7 @@ already exist in db/sql/61-ana-ddl.sql; this module only maps them.
   never deleted, so there is deliberately no ``is_active``.
 """
 from datetime import datetime
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from sqlalchemy import JSON, BigInteger
 from sqlmodel import Column, Field, ForeignKey, SQLModel, String
@@ -214,3 +214,116 @@ class ParameterRead(SQLModel):
     value_source: str
     # "<TARGET_TYPE> <target_code>" of the bound grant, when there is one.
     binding_label: Optional[str] = None
+
+
+# ── Dashboard Catalog & executions (specs/007-dashboard-catalog) ─────────────
+# HU-AN04 / HU-AN05 / HU-AN06. `executions` already exists in 61-ana-ddl.sql.
+
+EXEC_SUCCESS = "SUCCESS"
+EXEC_FAILED = "FAILED"
+EXEC_CANCELLED = "CANCELLED"
+EXEC_TIMEOUT = "TIMEOUT"
+EXEC_UNAUTHORIZED = "UNAUTHORIZED"
+FINISH_STATUSES = (EXEC_SUCCESS, EXEC_FAILED, EXEC_TIMEOUT, EXEC_CANCELLED)
+
+MODE_VIEWER = "VIEWER"   # Internal Page, opened in the catalog's viewer
+MODE_TAB = "TAB"         # external BI, opened in a new browser tab
+
+SOURCE_DEFAULT = "DEFAULT"  # payload source of a value equal to the parameter's default
+
+
+class Execution(SQLModel, table=True):
+    """One run attempt. Append-only: the only change ever made is the
+    one-time completion of an in-progress row (status NULL → final)."""
+    __tablename__ = "executions"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    dashboard: int = Field(sa_column=Column(
+        "dashboard", BigInteger, ForeignKey("dashboards.id"), nullable=False))
+    user_id: int = Field(sa_column=Column(
+        "user_id", BigInteger, ForeignKey("users.id"), nullable=False))
+    executed_at: datetime = Field(default_factory=datetime.utcnow)
+    payload: Optional[Any] = Field(default=None, sa_column=Column("payload", JSON))
+    status: Optional[str] = Field(default=None, max_length=100)
+    error_message: Optional[str] = None
+    duration_ms: Optional[int] = None
+
+
+class ExecutionRead(SQLModel):
+    id: int
+    dashboard: int
+    user_id: int
+    executed_at: datetime
+    payload: Optional[Any] = None
+    status: Optional[str] = None
+    error_message: Optional[str] = None
+    duration_ms: Optional[int] = None
+
+
+class CatalogDashboard(SQLModel):
+    """Catalog read projection. `source_url` is deliberately absent: the
+    client never builds the launch address itself."""
+    id: int
+    name: str
+    description: Optional[str] = None
+    type: str
+    sources_types: str
+    tags: Optional[Any] = None
+    detail: Optional[str] = None
+    created_at: Optional[datetime] = None
+    is_favorite: bool = False
+    permission_scopes: List[str] = Field(default_factory=list)
+    parameter_count: int = 0
+
+
+class RunFormOption(SQLModel):
+    value: str
+    lang: str
+    label: str
+    sort_order: int = 0
+
+
+class RunFormParameter(SQLModel):
+    name: str
+    label: str
+    data_type: str
+    is_required: bool = False
+    default_value: Optional[str] = None
+    effective_source: str  # GRANT / LIST / INPUT, resolved for this viewer
+    bound_value: Optional[str] = None
+    bound_label: Optional[str] = None
+    list: Optional[str] = None
+    options: Optional[List[RunFormOption]] = None
+    list_unavailable: bool = False
+
+
+class RunForm(SQLModel):
+    dashboard: int
+    name: str
+    mode: str
+    has_last_values: bool = False
+    parameters: List[RunFormParameter] = Field(default_factory=list)
+
+
+class ExecutionStart(SQLModel):
+    values: Dict[str, Any] = Field(default_factory=dict)
+
+
+class ExecutionStarted(SQLModel):
+    execution_id: int
+    launch_url: str
+    mode: str
+
+
+class ExecutionFinish(SQLModel):
+    status: str
+    error_message: Optional[str] = None
+
+
+class ExecutionCancelled(SQLModel):
+    values: Dict[str, Any] = Field(default_factory=dict)
+    duration_ms: Optional[int] = None
+
+
+class LastValues(SQLModel):
+    values: Dict[str, str] = Field(default_factory=dict)
+    executed_at: Optional[datetime] = None

@@ -66,3 +66,29 @@ def test_favorite_requires_rbac(client, session):
     mk_grant(session, d.id, "USER", "1")
     override(user(1))
     assert client.put(fav_url(d)).status_code == 403
+
+
+# ── Dashboard Catalog (specs/007-dashboard-catalog US4, research R2) ─────────
+
+
+def test_catalog_only_profile_can_favorite(client, session):
+    seed_privileges(session, profile="COLLABORATOR", options=("CATALOG",), can_edit=False)
+    seed_ana_lists(session)
+    d = mk_dashboard(session, status="PUBLISHED")
+    mk_grant(session, d.id, "USER", "1", access_level="VIEW")
+    hidden = mk_dashboard(session, name="Hidden", status="PUBLISHED")
+    override(user(1, profile="COLLABORATOR"))
+    assert client.put(fav_url(d)).status_code == 200
+    assert data(client.get("/api/dashboards/catalog"))[0]["is_favorite"] is True
+    assert client.delete(fav_url(d)).status_code == 200
+    assert data(client.get("/api/dashboards/catalog"))[0]["is_favorite"] is False
+    assert client.put(fav_url(hidden)).status_code == 403  # still needs a live grant
+
+
+def test_favorite_needs_dashboards_or_catalog(client, session):
+    seed_ana_lists(session)
+    d = mk_dashboard(session, status="PUBLISHED")
+    mk_grant(session, d.id, "USER", "1", access_level="VIEW")
+    override(user(1, profile="COLLABORATOR"))
+    assert client.put(fav_url(d)).status_code == 403
+    assert client.delete(fav_url(d)).status_code == 403

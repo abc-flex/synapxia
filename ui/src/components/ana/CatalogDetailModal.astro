@@ -1,0 +1,308 @@
+---
+/**
+ * CatalogDetailModal — read-only detail of a Dashboard Catalog card
+ * (specs/007-dashboard-catalog US1-8): description, detail text and the
+ * parameters the dashboard accepts, plus the same star and Execute button as
+ * the card.
+ *
+ * Opened by the gallery's whole-card click (a synthetic
+ * `[data-modal-open="catalog-detail-modal"]` button carrying
+ * `data-dashboard-id`). The card data comes from the page's JSON blob
+ * (`#catalog-data`), so only the parameters need a request (`run-form`).
+ * Execute is handled by the page's DashboardRun island like the card's.
+ */
+export interface Props {
+  modalId?: string;
+  galleryId?: string;
+}
+const { modalId = "catalog-detail-modal", galleryId = "catalog-gallery" } = Astro.props as Props;
+
+// A small icon per dashboard type (DASHBOARD_TYPE), shown beside the type in
+// the header; rendered once as <template>s the script clones. Unknown → chart-pie.
+const icons = import.meta.glob("/src/images/icons/*.svg", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+}) as Record<string, string>;
+const icon = (name: string) => icons[`/src/images/icons/${name}.svg`] ?? "";
+const TYPE_ICONS: [string, string][] = [
+  ["DASHBOARD", icon("squares-2x2")],
+  ["REPORT", icon("document-text")],
+  ["SCORECARD", icon("clipboard-document-check")],
+  ["KPI_VIEW", icon("presentation-chart-bar")],
+  ["ANALYTICAL_VIEW", icon("chart-bar")],
+  ["_DEFAULT", icon("chart-pie")],
+];
+---
+
+<dialog
+  id={modalId}
+  data-gallery-id={galleryId}
+  class="m-auto w-[min(760px,calc(100vw-2rem))] max-h-[calc(100vh-2rem)] overflow-hidden rounded-2xl border border-gray-200 bg-white p-0 text-gray-900 shadow-xl backdrop:bg-gray-900/50 dark:border-gray-800 dark:bg-gray-900 dark:text-white"
+>
+  <div class="flex max-h-[calc(100vh-2rem)] flex-col">
+    <header class="flex items-start justify-between gap-3 border-b border-gray-100 px-5 py-4 dark:border-gray-800">
+      <div class="min-w-0">
+        <h2 data-detail-name class="truncate text-lg font-semibold"></h2>
+        <!-- Type (with its icon) and source: what the dashboard is — kept apart from the #tags. -->
+        <div data-detail-meta class="mt-1.5 flex flex-wrap items-center gap-1.5"></div>
+        <div data-detail-tags class="mt-2 flex flex-wrap gap-1.5"></div>
+        {TYPE_ICONS.map(([code, svg]) => (
+          <template data-type-icon={code}><Fragment set:html={svg} /></template>
+        ))}
+      </div>
+      <div class="flex shrink-0 items-center gap-1">
+        <button
+          type="button"
+          data-detail-star
+          aria-pressed="false"
+          title="Favorite"
+          data-i18n-title="dashboard_catalog.favorite"
+          class="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 aria-pressed:text-yellow-400 dark:hover:bg-gray-800"
+        >
+          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.3 4.02a1 1 0 00.95.69h4.22c.97 0 1.37 1.24.59 1.81l-3.42 2.48a1 1 0 00-.36 1.12l1.3 4.02c.3.92-.75 1.69-1.54 1.12l-3.41-2.48a1 1 0 00-1.18 0l-3.41 2.48c-.78.57-1.84-.2-1.54-1.12l1.3-4.02a1 1 0 00-.36-1.12L2 9.45c-.78-.57-.38-1.81.6-1.81h4.21a1 1 0 00.95-.69l1.3-4.02z" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          data-detail-close
+          aria-label="Close"
+          data-i18n-aria-label="dashboard_catalog.viewer_close"
+          class="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+        >
+          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="flex-1 space-y-5 overflow-y-auto px-5 py-4">
+      <section data-detail-description-wrap>
+        <h3 class="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="dashboard_catalog.detail_description">Description</h3>
+        <p data-detail-description class="text-sm text-gray-700 dark:text-gray-300"></p>
+      </section>
+
+      <section data-detail-detail-wrap>
+        <h3 class="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="dashboard_catalog.detail_detail">Detail</h3>
+        <div data-detail-detail class="whitespace-pre-wrap break-words rounded-lg bg-gray-50 p-3 text-sm text-gray-700 dark:bg-gray-800/60 dark:text-gray-300"></div>
+      </section>
+
+      <section>
+        <h3 class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" data-i18n="dashboard_catalog.detail_parameters">Parameters</h3>
+        <p data-detail-params-status class="text-sm text-gray-500 dark:text-gray-400"></p>
+        <div class="overflow-x-auto">
+          <table data-detail-params class="hidden w-full text-left text-sm">
+            <thead class="text-xs uppercase text-gray-500 dark:text-gray-400">
+              <tr>
+                <th class="py-1.5 pr-3 font-medium" data-i18n="dashboard_catalog.col_label">Parameter</th>
+                <th class="py-1.5 pr-3 font-medium" data-i18n="dashboard_catalog.col_type">Type</th>
+                <th class="py-1.5 font-medium" data-i18n="dashboard_catalog.col_required">Required</th>
+              </tr>
+            </thead>
+            <tbody data-detail-params-body class="divide-y divide-gray-100 dark:divide-gray-800"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <footer class="flex justify-end border-t border-gray-100 px-5 py-3 dark:border-gray-800">
+      <button
+        type="button"
+        data-action="execute"
+        data-detail-execute
+        class="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-800"
+      >
+        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path d="M6.3 2.84A1.5 1.5 0 004 4.11v11.78a1.5 1.5 0 002.3 1.27l9.34-5.89a1.5 1.5 0 000-2.54L6.3 2.84z" />
+        </svg>
+        <span data-i18n="dashboard_catalog.execute">Execute</span>
+      </button>
+    </footer>
+  </div>
+</dialog>
+
+<script>
+  import { getRunForm } from "@/lib/dashboardExecutions";
+  import { setDashboardFavorite } from "@/lib/dashboards";
+  import { listLabelsAttr, relabelLists } from "@/lib/listLang";
+  import { translate } from "@/utils/i18nClient";
+  import { showToast } from "@/lib/toast";
+  import { apiErrorDetail } from "@/lib/api";
+
+  interface CardData {
+    id: number;
+    name: string;
+    description: string;
+    detail: string;
+    favorite: boolean;
+    type: string;
+    typeLabels: Record<string, string>;
+    sourceLabels: Record<string, string>;
+    tags: string[];
+    mode: string;
+    parameterCount: number;
+  }
+
+  const t = (key: string, fallback: string): string => {
+    const v = translate(`dashboard_catalog.${key}`);
+    return v && v !== `dashboard_catalog.${key}` ? v : fallback;
+  };
+
+  const dialog = document.getElementById("catalog-detail-modal") as HTMLDialogElement | null;
+  const blob = document.getElementById("catalog-data");
+  const cards: Record<string, CardData> = blob ? JSON.parse(blob.textContent || "{}") : {};
+
+  if (dialog) {
+    const galleryId = dialog.dataset.galleryId || "catalog-gallery";
+    const $ = <T extends HTMLElement>(sel: string) => dialog.querySelector<T>(sel)!;
+    const star = $<HTMLButtonElement>("[data-detail-star]");
+    const execute = $<HTMLButtonElement>("[data-detail-execute]");
+    let current: CardData | null = null;
+    let seq = 0;
+
+    const paintStar = (on: boolean) => {
+      star.setAttribute("aria-pressed", on ? "true" : "false");
+      star.querySelector("svg")?.setAttribute("fill", on ? "currentColor" : "none");
+    };
+
+    const chip = (text: string, labels: Record<string, string> | undefined, tone: string) => {
+      const el = document.createElement("span");
+      el.className = `inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${tone}`;
+      el.textContent = text;
+      const attr = labels ? listLabelsAttr(labels) : undefined;
+      if (attr) el.setAttribute("data-list-labels", attr);
+      return el;
+    };
+
+    /** The type as a solid pill with its icon. The labels go on an inner span:
+     * relabelLists() rewrites textContent, which would wipe the icon. */
+    function typePill(card: CardData): HTMLElement {
+      const pill = document.createElement("span");
+      pill.className = "inline-flex items-center gap-1 rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-semibold text-sky-800 ring-1 ring-inset ring-sky-200 dark:bg-sky-500/15 dark:text-sky-200 dark:ring-sky-500/30";
+      const tpl = (dialog!.querySelector(`template[data-type-icon="${card.type}"]`)
+        ?? dialog!.querySelector('template[data-type-icon="_DEFAULT"]')) as HTMLTemplateElement | null;
+      if (tpl) {
+        const ico = document.createElement("span");
+        ico.className = "h-3.5 w-3.5 shrink-0 [&>svg]:h-3.5 [&>svg]:w-3.5";
+        ico.setAttribute("aria-hidden", "true");
+        ico.appendChild(tpl.content.cloneNode(true));
+        pill.appendChild(ico);
+      }
+      pill.appendChild(chip(card.typeLabels.en ?? card.type, card.typeLabels, "!p-0 !font-semibold"));
+      return pill;
+    }
+
+    /** The source as an outlined pill, so it reads as metadata rather than a tag. */
+    function sourcePill(card: CardData): HTMLElement {
+      const el = chip(card.sourceLabels.en ?? "", card.sourceLabels, "");
+      el.className = "inline-flex items-center rounded-full border border-gray-300 px-2.5 py-0.5 text-xs font-medium text-gray-600 dark:border-gray-600 dark:text-gray-300";
+      return el;
+    }
+
+    async function loadParameters(id: number) {
+      const mine = ++seq;
+      const status = $<HTMLParagraphElement>("[data-detail-params-status]");
+      const table = $<HTMLTableElement>("[data-detail-params]");
+      const body = $<HTMLTableSectionElement>("[data-detail-params-body]");
+      table.classList.add("hidden");
+      body.replaceChildren();
+      status.textContent = t("loading", "Loading…");
+      try {
+        const form = await getRunForm(id);
+        if (mine !== seq) return;
+        if (!form.parameters.length) {
+          status.textContent = t("detail_no_parameters", "This dashboard has no parameters.");
+          return;
+        }
+        status.textContent = "";
+        for (const p of form.parameters) {
+          const tr = document.createElement("tr");
+          const cells = [
+            p.label,
+            t(`type_${p.data_type}`, p.data_type),
+            p.is_required ? t("yes", "Yes") : t("no", "No"),
+          ];
+          cells.forEach((text, i) => {
+            const td = document.createElement("td");
+            td.className = i < 2 ? "py-1.5 pr-3" : "py-1.5";
+            td.textContent = text;
+            tr.appendChild(td);
+          });
+          body.appendChild(tr);
+        }
+        table.classList.remove("hidden");
+      } catch (err) {
+        if (mine === seq) status.textContent = apiErrorDetail(err, t("load_error", "Could not load this dashboard's parameters."));
+      }
+    }
+
+    function open(id: string) {
+      const card = cards[id];
+      if (!card) return;
+      current = card;
+      $("[data-detail-name]").textContent = card.name;
+      const meta = $("[data-detail-meta]");
+      meta.replaceChildren(typePill(card), sourcePill(card));
+      relabelLists(meta);
+      const tags = $("[data-detail-tags]");
+      tags.replaceChildren(
+        ...card.tags.map((tag) => chip(`#${tag}`, undefined, "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300")),
+      );
+      tags.classList.toggle("hidden", card.tags.length === 0);
+      $("[data-detail-description]").textContent = card.description;
+      $("[data-detail-description-wrap]").classList.toggle("hidden", !card.description);
+      $("[data-detail-detail]").textContent = card.detail;
+      $("[data-detail-detail-wrap]").classList.toggle("hidden", !card.detail);
+      execute.dataset.dashboardId = String(card.id);
+      execute.dataset.dashboardName = card.name;
+      execute.dataset.mode = card.mode;
+      execute.dataset.paramCount = String(card.parameterCount);
+      paintStar(card.favorite);
+      if (!dialog!.open) dialog!.showModal();
+      void loadParameters(card.id);
+    }
+
+    document.addEventListener("click", (e) => {
+      const opener = (e.target as HTMLElement).closest?.('[data-modal-open="catalog-detail-modal"]') as HTMLElement | null;
+      if (opener?.dataset.dashboardId) open(opener.dataset.dashboardId);
+    });
+
+    $("[data-detail-close]").addEventListener("click", () => dialog.close());
+    dialog.addEventListener("click", (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+    // Execute: the DashboardRun island's document listener still receives the
+    // click (it bubbles after this handler); the detail steps aside first.
+    execute.addEventListener("click", () => dialog.close());
+
+    star.addEventListener("click", async () => {
+      if (!current) return;
+      const card = current;
+      const next = !card.favorite;
+      paintStar(next);
+      try {
+        await setDashboardFavorite(card.id, next);
+        card.favorite = next;
+        document.dispatchEvent(new CustomEvent("gallery:card-update", {
+          detail: { galleryId, id: card.id, favorite: next },
+        }));
+      } catch (err) {
+        paintStar(card.favorite);
+        showToast(apiErrorDetail(err, t("fav_error", "Could not update the favorite.")), "error");
+      }
+    });
+
+    // Keep the blob in sync when the star is toggled on the card itself.
+    document.addEventListener("click", (e) => {
+      const fav = (e.target as HTMLElement).closest?.('[data-card] [data-action="favorite"]') as HTMLElement | null;
+      if (!fav) return;
+      const id = fav.dataset.id;
+      // The gallery flips aria-pressed synchronously before its request.
+      queueMicrotask(() => {
+        if (id && cards[id]) cards[id].favorite = fav.getAttribute("aria-pressed") === "true";
+      });
+    });
+  }
+</script>

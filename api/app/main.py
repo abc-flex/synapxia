@@ -61,6 +61,8 @@ from .inits.routes import collaborations as collaborations_router
 from .insights.routes import dashboards as dashboards_router
 from .insights.routes import parameters as dashboard_parameters_router
 from .insights.routes import dashboard_permissions as dashboard_permissions_router
+from .insights.routes import catalog as dashboard_catalog_router
+from .insights.routes import executions as dashboard_executions_router
 
 from .support.routes import bug_reports as bug_reports_router
 
@@ -373,6 +375,10 @@ app.include_router(init_permissions_router.router)
 app.include_router(collaborations_router.router)
 
 # Analytics module (insights domain)
+# Catalog + executions first: `/api/dashboards/catalog` must not be captured by
+# `GET /api/dashboards/{dashboard_id}` (specs/007-dashboard-catalog).
+app.include_router(dashboard_catalog_router.router)
+app.include_router(dashboard_executions_router.router)
 app.include_router(dashboards_router.router)
 app.include_router(dashboard_parameters_router.router)
 app.include_router(dashboard_permissions_router.router)

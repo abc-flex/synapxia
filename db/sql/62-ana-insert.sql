@@ -92,12 +92,12 @@ INSERT INTO parameters (dashboard, name, label, data_type, default_value, is_req
 -- **********************************
 
 INSERT INTO executions (id, dashboard, user_id, payload, status, error_message, duration_ms) VALUES
-    (1, 1, 0,  '{"date_from": "2026-01-01", "date_to": "2026-06-30", "granularity": "WEEK"}',  'SUCCESS', NULL, 842),
-    (2, 1, 37, '{"date_from": "2026-04-01", "date_to": "2026-06-30", "granularity": "WEEK"}',  'SUCCESS', NULL, 765),
-    (3, 2, 38, '{"date_from": "2026-01-01", "date_to": "2026-06-30", "role": "BACK"}',         'SUCCESS', NULL, 612),
-    (4, 2, 1,  '{"date_from": "2026-01-01", "date_to": "2026-06-30", "role": "FRONT"}',        'SUCCESS', NULL, 689),
-    (5, 3, 0,  '{"date_from": "2026-01-01", "date_to": "2026-06-30", "team": "CORE"}',         'SUCCESS', NULL, 904),
-    (6, 3, 40, '{"date_from": "2026-01-01", "date_to": "2026-06-30", "team": "LAB"}',          'TIMEOUT', 'Source query exceeded the 30s limit.', 30000);
+    (1, 1, 0,  '{"values": {"date_from": "2026-01-01", "date_to": "2026-06-30", "granularity": "WEEK"}, "sources": {"date_from": "DEFAULT", "date_to": "DEFAULT", "granularity": "DEFAULT"}, "mode": "TAB"}', 'SUCCESS', NULL, 842),
+    (2, 1, 37, '{"values": {"date_from": "2026-04-01", "date_to": "2026-06-30", "granularity": "WEEK"}, "sources": {"date_from": "INPUT", "date_to": "DEFAULT", "granularity": "DEFAULT"}, "mode": "TAB"}', 'SUCCESS', NULL, 765),
+    (3, 2, 38, '{"values": {"date_from": "2026-01-01", "date_to": "2026-06-30", "role": "BACK"}, "sources": {"date_from": "DEFAULT", "date_to": "DEFAULT", "role": "INPUT"}, "mode": "TAB"}', 'SUCCESS', NULL, 612),
+    (4, 2, 1,  '{"values": {"date_from": "2026-01-01", "date_to": "2026-06-30", "role": "FRONT"}, "sources": {"date_from": "DEFAULT", "date_to": "DEFAULT", "role": "INPUT"}, "mode": "TAB"}', 'SUCCESS', NULL, 689),
+    (5, 3, 0,  '{"values": {"date_from": "2026-01-01", "date_to": "2026-06-30", "team": "CORE"}, "sources": {"date_from": "DEFAULT", "date_to": "DEFAULT", "team": "INPUT"}, "mode": "TAB"}', 'SUCCESS', NULL, 904),
+    (6, 3, 40, '{"values": {"date_from": "2026-01-01", "date_to": "2026-06-30", "team": "LAB"}, "sources": {"date_from": "DEFAULT", "date_to": "DEFAULT", "team": "INPUT"}, "mode": "TAB"}', 'TIMEOUT', 'Source query exceeded the 30s limit.', 30000);
 
 SELECT setval(pg_get_serial_sequence('executions', 'id'), (SELECT MAX(id) FROM executions));
 

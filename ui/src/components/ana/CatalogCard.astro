@@ -1,0 +1,141 @@
+---
+/**
+ * CatalogCard — a Dashboard Catalog card (specs/007-dashboard-catalog). Wraps
+ * the shared GalleryCard (same grid, star and filtering hooks as Explore
+ * Category) with: an icon chosen by the dashboard's source, type and source pills on
+ * one line under the title, followed by the timestamp (the labels follow
+ * the language switcher), `#tag` chips and a small Execute button with no divider above it.
+ * No votes or discussion — dashboards have no such substrate.
+ *
+ * The Execute button is handled by the page's DashboardRun island (delegated
+ * `[data-action="execute"]` listener); `data-gallery-passthrough` keeps the
+ * gallery from treating its click as a whole-card click.
+ *
+ * The detail opens through `editModalId` (the gallery falls back to it on a
+ * whole-card click): passing `detailModalId` would also render GalleryCard's
+ * discussion button, which dashboards do not have.
+ */
+import GalleryCard from "@/components/lib/gallery/GalleryCard.astro";
+import { listLabelsAttr } from "@/lib/listLang";
+
+const icons = import.meta.glob("/src/images/icons/*.svg", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+}) as Record<string, string>;
+
+// One icon per source family; anything unknown falls back to chart-pie.
+const SOURCE_ICON: Record<string, string> = {
+  INTERNAL_PAGE: "document-text",
+  POWER_BI: "chart-bar",
+  TABLEAU: "chart-bar",
+  QLIK_SENSE: "chart-bar",
+  LOOKER_STUDIO: "chart-pie",
+  METABASE: "chart-pie",
+  SUPERSET: "chart-pie",
+  CUSTOM_IFRAME: "presentation-chart-bar",
+};
+
+function sourceIcon(source: string): string {
+  const name = SOURCE_ICON[String(source ?? "").toUpperCase()] ?? "chart-pie";
+  return icons[`/src/images/icons/${name}.svg`] ?? icons["/src/images/icons/chart-pie.svg"] ?? "";
+}
+
+export interface Props {
+  id: number;
+  name: string;
+  subtitle?: string;
+  subtitleTs?: string;
+  description?: string;
+  favorite?: string;
+  searchText?: string;
+  permissions?: string;
+  source: string;
+  /** lang → label for the dashboard's type and source (list_items). */
+  typeLabels?: Record<string, string>;
+  sourceLabels?: Record<string, string>;
+  tags?: string[];
+  detailModalId?: string;
+  /** "VIEWER" (Internal Page) or "TAB" (external) — lets DashboardRun pre-open a tab. */
+  mode?: string;
+  parameterCount?: number;
+}
+
+const {
+  id,
+  name,
+  subtitle,
+  subtitleTs,
+  description,
+  favorite,
+  searchText,
+  permissions,
+  source,
+  typeLabels = {},
+  sourceLabels = {},
+  tags = [],
+  detailModalId = "catalog-detail-modal",
+  mode = "TAB",
+  parameterCount = 0,
+} = Astro.props as Props;
+
+const iconSvg = sourceIcon(source);
+const chip = "inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium";
+---
+
+<GalleryCard
+  id={id}
+  name={name}
+  favorite={favorite}
+  searchText={searchText}
+  permissions={permissions}
+  editModalId={detailModalId}
+  compactActions
+>
+  <!-- Under the title: type and source as pills styled like the detail's (kept
+       apart from the #tags), followed by the timestamp. -->
+  <Fragment slot="meta">
+    <span class="inline-flex max-w-full items-center truncate rounded-full bg-sky-100 px-2 py-0.5 font-semibold text-sky-800 ring-1 ring-inset ring-sky-200 dark:bg-sky-500/15 dark:text-sky-200 dark:ring-sky-500/30" data-list-labels={listLabelsAttr(typeLabels)}>
+      {typeLabels.en ?? ""}
+    </span>
+    <span class="inline-flex max-w-full items-center truncate rounded-full border border-gray-300 px-2 py-0.5 font-medium text-gray-600 dark:border-gray-600 dark:text-gray-300" data-list-labels={listLabelsAttr(sourceLabels)}>
+      {sourceLabels.en ?? source}
+    </span>
+    {subtitle && (
+      <span class="shrink-0 text-gray-400" data-relative-ts={subtitleTs}>{subtitle}</span>
+    )}
+  </Fragment>
+
+  <span slot="icon" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
+    <span class="h-5 w-5 [&>svg]:h-5 [&>svg]:w-5">
+      <Fragment set:html={iconSvg} />
+    </span>
+  </span>
+
+  {description && (
+    <p slot="body" class="line-clamp-2 text-sm text-gray-500 dark:text-gray-400">{description}</p>
+  )}
+
+  <Fragment slot="chips">
+    {tags.map((tag) => (
+      <span class={`${chip} bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300`}>#{tag}</span>
+    ))}
+  </Fragment>
+
+  <button
+    slot="actions"
+    type="button"
+    data-action="execute"
+    data-gallery-passthrough
+    data-dashboard-id={String(id)}
+    data-dashboard-name={name}
+    data-mode={mode}
+    data-param-count={String(parameterCount)}
+    class="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-indigo-800"
+  >
+    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+      <path d="M6.3 2.84A1.5 1.5 0 004 4.11v11.78a1.5 1.5 0 002.3 1.27l9.34-5.89a1.5 1.5 0 000-2.54L6.3 2.84z" />
+    </svg>
+    <span data-i18n="dashboard_catalog.execute">Execute</span>
+  </button>
+</GalleryCard>

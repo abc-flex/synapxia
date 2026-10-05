@@ -1509,7 +1509,7 @@
     "status_hint_locked_unknown": "This status is not part of the dashboard lifecycle and cannot be changed here.",
     "param_empty": "No parameters yet.",
     "param_name": "Name",
-    "param_name_hint": "Lowercase letters, digits and _, starting with a letter (e.g. date_from).",
+    "param_name_hint": "Lowercase letters, digits and _, starting with a letter (e.g. employee_id).",
     "param_name_immutable_hint": "The name cannot be changed. Remove the parameter and add it again instead.",
     "param_label": "Label",
     "param_type": "Data type",
@@ -1566,6 +1566,16 @@
     "favorite_add": "Add to favorites",
     "favorite_remove": "Remove from favorites",
     "error_favorite": "Could not update favorite.",
-    "param_source_pick": "choose one"
+    "param_source_pick": "choose one",
+    "param_source_input_short": "Typed",
+    "param_source_list_short": "From list",
+    "param_source_grant_short": "From grant",
+    "param_source_settings": "Source settings",
+    "param_source_nothing": "Nothing to configure: the viewer types the value",
+    "param_name_placeholder": "e.g. employee_id",
+    "param_label_placeholder": "e.g. Employee ID",
+    "param_default_placeholder": "e.g. EMP-00125",
+    "param_default_placeholder_number": "e.g. 10",
+    "param_required_legend": "required field"
   }
 }

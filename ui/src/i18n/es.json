@@ -1509,7 +1509,7 @@
     "status_hint_locked_unknown": "Este estado no forma parte del ciclo de vida del tablero y no se puede cambiar aquí.",
     "param_empty": "Aún no hay parámetros.",
     "param_name": "Nombre",
-    "param_name_hint": "Minúsculas, dígitos y _, empezando por una letra (p. ej. date_from).",
+    "param_name_hint": "Minúsculas, dígitos y _, empezando por una letra (p. ej. employee_id).",
     "param_name_immutable_hint": "El nombre no se puede cambiar. Retira el parámetro y agrégalo de nuevo.",
     "param_label": "Etiqueta",
     "param_type": "Tipo de dato",
@@ -1566,6 +1566,16 @@
     "favorite_add": "Agregar a favoritos",
     "favorite_remove": "Quitar de favoritos",
     "error_favorite": "No se pudo actualizar el favorito.",
-    "param_source_pick": "elige uno"
+    "param_source_pick": "elige uno",
+    "param_source_input_short": "Ingresado",
+    "param_source_list_short": "De lista",
+    "param_source_grant_short": "De permiso",
+    "param_source_settings": "Configuración del origen",
+    "param_source_nothing": "Nada que configurar: el usuario escribe el valor",
+    "param_name_placeholder": "p. ej. employee_id",
+    "param_label_placeholder": "p. ej. ID de empleado",
+    "param_default_placeholder": "p. ej. EMP-00125",
+    "param_default_placeholder_number": "p. ej. 10",
+    "param_required_legend": "campo obligatorio"
   }
 }

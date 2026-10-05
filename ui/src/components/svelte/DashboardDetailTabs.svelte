@@ -15,7 +15,7 @@
    * grant's recipient), from a list (the viewer picks a value), or entered by
    * the viewer. The run-time parameters window belongs to HU-AN05 Execute.
    */
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import { getListItemsbyList } from "@/lib/list_items";
   import { labelsByValue, listLabel, toListOptions } from "@/lib/listLang";
   import { getParameterLists } from "@/lib/dashboards";
@@ -127,6 +127,7 @@
   let fBinding = $state("");
   let fDefault = $state("");
   let fError = $state("");
+  let fErrorField = $state<string | null>(null);
 
   const typeOptions = $derived(listOpts("PARAM_TYPE"));
   // The list whose values the default (and the viewer) pick from: the chosen
@@ -280,6 +281,13 @@
       : s === "LIST"
         ? t("param_source_list_help", "The viewer picks one of the list's values in the parameters window before the dashboard runs.")
         : t("param_source_input_help", "The viewer types the value in the parameters window before the dashboard runs.");
+  // Short labels for the radio group (the long ones stay in the list rows and tooltips).
+  const sourceShort = (s: ParameterValueSource): string =>
+    s === "GRANT"
+      ? t("param_source_grant_short", "From grant")
+      : s === "LIST"
+        ? t("param_source_list_short", "From list")
+        : t("param_source_input_short", "Typed");
   const sourceLabel = (s: ParameterValueSource): string =>
     s === "GRANT"
       ? t("param_source_grant", "Bound to a grant")
@@ -307,35 +315,55 @@
     return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v;
   }
 
-  function validateForm(): string | null {
+  // The first invalid field and its message. The field also names the control
+  // (`${idPrefix}-param-${field}`), so the form can focus and flag it.
+  type ParamField = "name" | "label" | "type" | "list" | "binding" | "default";
+  type FormError = { field: ParamField; msg: string };
+
+  function validateForm(): FormError | null {
+    const err = (field: ParamField, msg: string): FormError => ({ field, msg });
     const name = fName.trim();
     if (editingName == null) {
       if (!NAME_RE.test(name) || name.length > 100) {
-        return t("param_err_name", "Use lowercase letters, digits and _, starting with a letter (at most 100).");
+        return err("name", t("param_err_name", "Use lowercase letters, digits and _, starting with a letter (at most 100)."));
       }
       if (staged.some((p) => p.name === name)) {
-        return t("param_err_duplicate", "This dashboard already has a parameter with that name.");
+        return err("name", t("param_err_duplicate", "This dashboard already has a parameter with that name."));
       }
     }
-    if (!fLabel.trim()) return t("param_err_label", "The label is required.");
-    if (!fType) return t("param_err_type", "Choose a data type.");
-    if (fSource === "LIST" && !fList) return t("param_err_list", "Choose the allowed values list.");
-    if (fSource === "GRANT" && !fBinding) return t("param_err_binding", "Choose the grant to bind to.");
+    if (!fLabel.trim()) return err("label", t("param_err_label", "The label is required."));
+    if (!fType) return err("type", t("param_err_type", "Choose a data type."));
+    if (fSource === "LIST" && !fList) return err("list", t("param_err_list", "Choose the allowed values list."));
+    if (fSource === "GRANT" && !fBinding) return err("binding", t("param_err_binding", "Choose the grant to bind to."));
     const d = fDefault.trim();
     if (d) {
       if (effectiveList) {
         if (!(listRaw[effectiveList] ?? []).some((i: any) => i.value === d)) {
-          return t("param_err_default_list", "The default must be one of the list's values.");
+          return err("default", t("param_err_default_list", "The default must be one of the list's values."));
         }
       } else if (fType === "NUMBER" && !/^[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?$/.test(d)) {
-        return t("param_err_default_number", "The default must be a number (e.g. 10 or 1.5).");
+        return err("default", t("param_err_default_number", "The default must be a number (e.g. 10 or 1.5)."));
       } else if (fType === "BOOLEAN" && d !== "true" && d !== "false") {
-        return t("param_err_default_boolean", "The default must be true or false.");
+        return err("default", t("param_err_default_boolean", "The default must be true or false."));
       } else if (fType === "DATE" && !validDate(d)) {
-        return t("param_err_default_date", "The default must be a valid date (YYYY-MM-DD).");
+        return err("default", t("param_err_default_date", "The default must be a valid date (YYYY-MM-DD)."));
       }
     }
     return null;
+  }
+
+  /** Field class, flagged red while that field holds the current error. */
+  const fieldCls = (field: ParamField): string =>
+    fErrorField === field
+      ? `${compactFieldClass} !border-red-500 ring-2 ring-red-200 dark:ring-red-900/50`
+      : compactFieldClass;
+
+  /** Editing the flagged field clears the error. */
+  function touch(field: ParamField): void {
+    if (fErrorField === field) {
+      fErrorField = null;
+      fError = "";
+    }
   }
 
   function clearForm(): void {
@@ -349,11 +377,21 @@
     fBinding = "";
     fDefault = "";
     fError = "";
+    fErrorField = null;
   }
 
-  function commitParam(): void {
-    fError = validateForm() ?? "";
-    if (fError) return;
+  async function commitParam(): Promise<void> {
+    const invalid = validateForm();
+    fError = invalid?.msg ?? "";
+    fErrorField = invalid?.field ?? null;
+    if (invalid) {
+      // Take the user to the offending field (it is already flagged red).
+      await tick();
+      const el = document.getElementById(`${idPrefix}-param-${invalid.field}`);
+      el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      el?.focus({ preventScroll: true });
+      return;
+    }
     const binding = fSource === "GRANT" ? Number(fBinding) : null;
     const next: StagedParam = {
       name: editingName ?? fName.trim(),
@@ -382,6 +420,14 @@
     fBinding = p.context_binding != null ? String(p.context_binding) : "";
     fDefault = p.default_value ?? "";
     fError = "";
+    fErrorField = null;
+  }
+
+  /** Switching the source drops an error that belonged to the previous source's fields. */
+  function pickSource(src: ParameterValueSource): void {
+    fSource = src;
+    touch("list");
+    touch("binding");
   }
 
   function removeParam(name: string): void {
@@ -470,8 +516,12 @@
   const compactFieldClass =
     "w-full rounded-lg border border-gray-300 px-2.5 py-1.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 disabled:bg-gray-100 disabled:cursor-not-allowed dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:disabled:bg-gray-800";
   const miniLabelClass = "block text-xs font-medium text-gray-600 dark:text-gray-400 mb-0.5 truncate";
+  // A non-input control (switch, radio group, "nothing to configure") drawn at
+  // exactly the height and border of a compact field, so all slots line up.
+  const boxClass =
+    "flex w-full items-center gap-2 rounded-lg border border-gray-300 px-2.5 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800";
   const compactAddBtnClass =
-    "w-full whitespace-nowrap rounded-lg border border-indigo-600 px-3 py-1.5 text-sm font-semibold text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-900/30";
+    "whitespace-nowrap rounded-lg bg-indigo-600 px-3 py-1 text-xs font-semibold text-white hover:bg-indigo-700";
   const rowClass =
     "flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-white/[0.02] px-3 py-2";
   const emptyClass =
@@ -530,147 +580,196 @@
   <!-- Parameters -->
   <div data-tabpanel="parameters" role="tabpanel" class="pt-4 space-y-4" class:hidden={activeTab !== "parameters"}>
     {#if !readonly}
-      <!-- Compact add/edit form: two dense rows + one help line, so the declared
-           parameters stay in view below it (spec US3-12). -->
-      <section class="rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2.5">
+      <!-- Add/edit form in three fixed bands (spec US3-12: compact, list stays in view):
+           1. identity  — name · label · data type · required
+           2. value     — value source · source settings · default value
+           3. footer    — help / error on the left, legend + actions on the right
+           Every control has the same height and every slot a fixed position and
+           width: picking a value source only swaps what is INSIDE the "source
+           settings" slot, so nothing else moves or resizes. A red * marks the
+           mandatory fields; a failed "Add" flags and focuses the offending one. -->
+      {#snippet req()}<span class="ml-0.5 text-red-500" aria-hidden="true">*</span>{/snippet}
+      <section class="rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-2">
         <div class="grid grid-cols-2 gap-x-3 gap-y-2 md:grid-cols-12">
-          <div class="md:col-span-3">
-            <label for={`${idPrefix}-param-name`} class={miniLabelClass}>{t("param_name", "Name")}</label>
+          <!-- Band 1: identity -->
+          <div class="col-span-2 md:col-span-4">
+            <label for={`${idPrefix}-param-name`} class={miniLabelClass}>{t("param_name", "Name")}{@render req()}</label>
             <input
               id={`${idPrefix}-param-name`} type="text" maxlength="100" bind:value={fName}
-              disabled={editingName != null} placeholder="date_from"
+              oninput={() => touch("name")} aria-required="true" aria-invalid={fErrorField === "name"}
+              disabled={editingName != null} placeholder={t("param_name_placeholder", "e.g. employee_id")}
               title={editingName != null
                 ? t("param_name_immutable_hint", "The name cannot be changed. Remove the parameter and add it again instead.")
-                : t("param_name_hint", "Lowercase letters, digits and _, starting with a letter (e.g. date_from).")}
-              class={compactFieldClass}
+                : t("param_name_hint", "Lowercase letters, digits and _, starting with a letter (e.g. employee_id).")}
+              class={fieldCls("name")}
+            />
+          </div>
+          <div class="col-span-2 md:col-span-4">
+            <label for={`${idPrefix}-param-label`} class={miniLabelClass}>{t("param_label", "Label")}{@render req()}</label>
+            <input
+              id={`${idPrefix}-param-label`} type="text" maxlength="100" bind:value={fLabel}
+              oninput={() => touch("label")} aria-required="true" aria-invalid={fErrorField === "label"}
+              placeholder={t("param_label_placeholder", "e.g. Employee ID")}
+              class={fieldCls("label")}
             />
           </div>
           <div class="md:col-span-3">
-            <label for={`${idPrefix}-param-label`} class={miniLabelClass}>{t("param_label", "Label")}</label>
-            <input id={`${idPrefix}-param-label`} type="text" maxlength="100" bind:value={fLabel} class={compactFieldClass} />
-          </div>
-          <div class="md:col-span-2">
-            <label for={`${idPrefix}-param-type`} class={miniLabelClass}>{t("param_type", "Data type")}</label>
-            <select id={`${idPrefix}-param-type`} bind:value={fType} class={compactFieldClass}>
+            <label for={`${idPrefix}-param-type`} class={miniLabelClass}>{t("param_type", "Data type")}{@render req()}</label>
+            <select
+              id={`${idPrefix}-param-type`} bind:value={fType}
+              onchange={() => { touch("type"); touch("default"); }}
+              aria-required="true" aria-invalid={fErrorField === "type"}
+              class={fieldCls("type")}
+            >
               <option value="">{t("choose", "— choose —")}</option>
               {#each typeOptions as o (o.value)}
                 <option value={o.value}>{o.label}</option>
               {/each}
             </select>
           </div>
-          <div class="flex items-end pb-1.5 md:col-span-2">
-            <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-              <input type="checkbox" bind:checked={fRequired} class="rounded border-gray-300" />
-              {t("param_required", "Required")}
+          <div class="md:col-span-1">
+            <span id={`${idPrefix}-param-required-label`} class={miniLabelClass} title={t("param_required", "Required")}>{t("param_required", "Required")}</span>
+            <!-- Just the switch, centred in a field-height box: as narrow as its title. -->
+            <label
+              class={`${boxClass} cursor-pointer justify-center !px-1`}
+              title={fRequired ? t("param_yes", "Yes") : t("param_no", "No")}
+            >
+              <input
+                type="checkbox" role="switch" bind:checked={fRequired} class="peer sr-only"
+                aria-labelledby={`${idPrefix}-param-required-label`}
+              />
+              <span class="relative h-5 w-9 shrink-0 rounded-full bg-gray-300 transition-colors peer-checked:bg-indigo-600 peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-300 after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-4 dark:bg-gray-600" aria-hidden="true"></span>
             </label>
           </div>
-          <div class="col-span-2 flex items-end justify-end gap-1.5 md:col-span-2">
-            {#if editingName != null}
-              <button type="button" class="rounded-lg px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800" onclick={clearForm}>{t("param_cancel_edit", "Cancel")}</button>
-            {/if}
-            <button type="button" class={compactAddBtnClass} onclick={commitParam}>
-              {editingName != null ? t("param_update", "Update parameter") : t("param_add", "Add parameter")}
-            </button>
+
+          <!-- Band 2: value -->
+          <div class="col-span-2 md:col-span-4">
+            <span id={`${idPrefix}-param-source-label`} class={miniLabelClass}>{t("param_source", "Value source")}{@render req()}</span>
+            <!-- Compact framed radio group at field height. The selected look is
+                 driven by state (not CSS :has), so the default "Typed" always shows. -->
+            <div role="radiogroup" aria-labelledby={`${idPrefix}-param-source-label`} aria-required="true" class={`${boxClass} gap-0.5 !px-0.5 !py-1`}>
+              {#each SOURCES as src (src)}
+                <label
+                  class={`flex min-w-0 flex-1 cursor-pointer items-center justify-center gap-1 rounded-md px-1 py-0.5 text-xs leading-5 transition-colors focus-within:ring-2 focus-within:ring-indigo-300 ${
+                    fSource === src
+                      ? "bg-indigo-50 font-semibold text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200"
+                      : "font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                  }`}
+                  title={`${sourceLabel(src)}: ${sourceHelp(src)}`}
+                >
+                  <input
+                    type="radio" name={`${idPrefix}-param-source`} value={src}
+                    checked={fSource === src} onchange={() => pickSource(src)}
+                    class="h-3.5 w-3.5 shrink-0 accent-indigo-600 focus:outline-none"
+                  />
+                  <span class="truncate">{sourceShort(src)}</span>
+                </label>
+              {/each}
+            </div>
           </div>
 
+          <!-- Source settings: a fixed slot; only its content follows the source. -->
           <div class="col-span-2 md:col-span-5">
-            <!-- A real radio group: each option is a card with a visible radio
-                 circle, so it reads as "pick exactly one". Native radios keep
-                 arrow-key navigation and screen-reader semantics. -->
-            <!-- Framed group: the legend sits on the frame's top edge, so the
-                 three options visibly belong to "Value source". -->
-            <fieldset class="rounded-lg border border-gray-300 bg-gray-50/60 px-2 pb-2 pt-0.5 dark:border-gray-700 dark:bg-white/[0.02]">
-              <legend class="px-1 text-xs font-medium text-gray-600 dark:text-gray-400">
-                {t("param_source", "Value source")}
-                <span class="font-normal text-gray-400 dark:text-gray-500">· {t("param_source_pick", "choose one")}</span>
-              </legend>
-              <div class="grid grid-cols-3 gap-1.5">
-                {#each SOURCES as src (src)}
-                  <label
-                    class="flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs font-medium leading-tight text-gray-600 transition-colors hover:border-indigo-400 hover:bg-indigo-50/50 has-[:checked]:border-indigo-600 has-[:checked]:bg-indigo-50 has-[:checked]:font-semibold has-[:checked]:text-indigo-700 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-indigo-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-indigo-900/20 dark:has-[:checked]:border-indigo-400 dark:has-[:checked]:bg-indigo-900/40 dark:has-[:checked]:text-indigo-200"
-                    title={sourceHelp(src)}
+            {#if fSource === "GRANT"}
+              <div class="grid grid-cols-2 gap-2">
+                <div class="min-w-0">
+                  <label for={`${idPrefix}-param-binding`} class={miniLabelClass}>{t("param_binding", "Grant")}{@render req()}</label>
+                  <select
+                    id={`${idPrefix}-param-binding`} bind:value={fBinding} onchange={() => touch("binding")}
+                    aria-required="true" aria-invalid={fErrorField === "binding"}
+                    class={fieldCls("binding")}
                   >
-                    <input
-                      type="radio"
-                      name={`${idPrefix}-param-source`}
-                      value={src}
-                      bind:group={fSource}
-                      class="h-3.5 w-3.5 shrink-0 accent-indigo-600 focus:outline-none"
-                    />
-                    <svg class="h-3.5 w-3.5 shrink-0 opacity-70" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                      {#if src === "INPUT"}
-                        <!-- pencil: the viewer types it -->
-                        <path d="M13.5 3.5l3 3L7 16H4v-3l9.5-9.5z" />
-                      {:else if src === "LIST"}
-                        <!-- list: the viewer picks from it -->
-                        <path d="M7 5h10M7 10h10M7 15h10M3.5 5h.01M3.5 10h.01M3.5 15h.01" />
-                      {:else}
-                        <!-- key: fixed by the grant -->
-                        <circle cx="6.5" cy="13.5" r="3" /><path d="M8.6 11.4L16 4m-2.5 2.5L15.5 8.5M12 8l1.5 1.5" />
-                      {/if}
-                    </svg>
-                    <span>{sourceLabel(src)}</span>
-                  </label>
-                {/each}
+                    <option value="">{t("param_choose_binding", "— choose grant —")}</option>
+                    {#each grantOptions as o (o.value)}
+                      <option value={o.value}>{o.label}</option>
+                    {/each}
+                  </select>
+                </div>
+                <div class="min-w-0">
+                  <label for={`${idPrefix}-param-list`} class={miniLabelClass} title={t("param_fallback_list", "Fallback list (optional)")}>{t("param_fallback_list", "Fallback list (optional)")}</label>
+                  <select
+                    id={`${idPrefix}-param-list`} bind:value={fList}
+                    onchange={() => { fDefault = ""; touch("list"); touch("default"); }}
+                    class={fieldCls("list")}
+                  >
+                    <option value="">{t("param_choose_list", "— choose list —")}</option>
+                    {#each paramLists as o (o.value)}
+                      <option value={o.value}>{o.label}</option>
+                    {/each}
+                  </select>
+                </div>
               </div>
-            </fieldset>
-          </div>
-          {#if fSource === "GRANT"}
-            <div class="md:col-span-3">
-              <label for={`${idPrefix}-param-binding`} class={miniLabelClass}>{t("param_binding", "Grant")}</label>
-              <select id={`${idPrefix}-param-binding`} bind:value={fBinding} class={compactFieldClass}>
-                <option value="">{t("param_choose_binding", "— choose grant —")}</option>
-                {#each grantOptions as o (o.value)}
-                  <option value={o.value}>{o.label}</option>
-                {/each}
-              </select>
-            </div>
-          {/if}
-          {#if fSource !== "INPUT"}
-            <div class={fSource === "GRANT" ? "md:col-span-2" : "md:col-span-3"}>
-              <label for={`${idPrefix}-param-list`} class={miniLabelClass} title={fSource === "GRANT" ? t("param_fallback_list", "Fallback list (optional)") : undefined}>
-                {fSource === "GRANT" ? t("param_fallback_list", "Fallback list (optional)") : t("param_list", "Allowed values list")}
-              </label>
-              <select id={`${idPrefix}-param-list`} bind:value={fList} onchange={() => (fDefault = "")} class={compactFieldClass}>
+            {:else if fSource === "LIST"}
+              <label for={`${idPrefix}-param-list`} class={miniLabelClass}>{t("param_list", "Allowed values list")}{@render req()}</label>
+              <select
+                id={`${idPrefix}-param-list`} bind:value={fList}
+                onchange={() => { fDefault = ""; touch("list"); touch("default"); }}
+                aria-required="true" aria-invalid={fErrorField === "list"}
+                class={fieldCls("list")}
+              >
                 <option value="">{t("param_choose_list", "— choose list —")}</option>
                 {#each paramLists as o (o.value)}
                   <option value={o.value}>{o.label}</option>
                 {/each}
               </select>
-            </div>
-          {/if}
-          <div class={fSource === "GRANT" ? "md:col-span-2" : fSource === "LIST" ? "md:col-span-4" : "md:col-span-7"}>
+            {:else}
+              <span class={miniLabelClass}>{t("param_source_settings", "Source settings")}</span>
+              <div class={`${boxClass} border-dashed bg-gray-50 text-xs leading-5 text-gray-500 dark:bg-white/[0.02] dark:text-gray-400`}>
+                <span class="truncate" title={t("param_source_nothing", "Nothing to configure: the viewer types the value")}>{t("param_source_nothing", "Nothing to configure: the viewer types the value")}</span>
+              </div>
+            {/if}
+          </div>
+
+          <!-- Default value: always here, always this width (optional). -->
+          <div class="col-span-2 md:col-span-3">
             <label for={`${idPrefix}-param-default`} class={miniLabelClass}>{t("param_default", "Default value")}</label>
-            <div class="flex gap-2">
-              {#if effectiveList}
-                <select id={`${idPrefix}-param-default`} bind:value={fDefault} class={compactFieldClass}>
-                  <option value="">{t("param_default_none", "— no default —")}</option>
-                  {#each defaultValueOptions as o (o.value)}
-                    <option value={o.value}>{o.label}</option>
-                  {/each}
-                </select>
-              {:else if fType === "BOOLEAN"}
-                <select id={`${idPrefix}-param-default`} bind:value={fDefault} class={compactFieldClass}>
-                  <option value="">{t("param_default_none", "— no default —")}</option>
-                  <option value="true">{t("param_true", "True")}</option>
-                  <option value="false">{t("param_false", "False")}</option>
-                </select>
-              {:else if fType === "DATE"}
-                <input id={`${idPrefix}-param-default`} type="date" bind:value={fDefault} class={compactFieldClass} />
-              {:else}
-                <input id={`${idPrefix}-param-default`} type="text" inputmode={fType === "NUMBER" ? "decimal" : "text"} bind:value={fDefault} class={compactFieldClass} />
-              {/if}
-            </div>
+            {#if effectiveList}
+              <select id={`${idPrefix}-param-default`} bind:value={fDefault} onchange={() => touch("default")} aria-invalid={fErrorField === "default"} class={fieldCls("default")}>
+                <option value="">{t("param_default_none", "— no default —")}</option>
+                {#each defaultValueOptions as o (o.value)}
+                  <option value={o.value}>{o.label}</option>
+                {/each}
+              </select>
+            {:else if fType === "BOOLEAN"}
+              <select id={`${idPrefix}-param-default`} bind:value={fDefault} onchange={() => touch("default")} aria-invalid={fErrorField === "default"} class={fieldCls("default")}>
+                <option value="">{t("param_default_none", "— no default —")}</option>
+                <option value="true">{t("param_true", "True")}</option>
+                <option value="false">{t("param_false", "False")}</option>
+              </select>
+            {:else if fType === "DATE"}
+              <input id={`${idPrefix}-param-default`} type="date" bind:value={fDefault} oninput={() => touch("default")} aria-invalid={fErrorField === "default"} class={fieldCls("default")} />
+            {:else}
+              <input
+                id={`${idPrefix}-param-default`} type="text" inputmode={fType === "NUMBER" ? "decimal" : "text"}
+                bind:value={fDefault} oninput={() => touch("default")} aria-invalid={fErrorField === "default"}
+                placeholder={fType === "NUMBER"
+                  ? t("param_default_placeholder_number", "e.g. 10")
+                  : t("param_default_placeholder", "e.g. EMP-00125")}
+                class={fieldCls("default")}
+              />
+            {/if}
           </div>
         </div>
-        <!-- One line of context: the error if any, else the active source's help. -->
-        {#if fError}
-          <p class="mt-1.5 text-xs text-red-600 dark:text-red-400" role="alert">{fError}</p>
-        {:else if fSource === "GRANT" && grantOptions.length === 0}
-          <p class="mt-1.5 text-xs text-amber-600 dark:text-amber-400">{t("param_no_grants", "This dashboard has no grant to a user, role, project, team or unit yet.")}</p>
-        {:else}
-          <p class="mt-1.5 truncate text-xs text-gray-500 dark:text-gray-400" title={sourceHelp(fSource)}>{sourceHelp(fSource)}</p>
-        {/if}
+
+        <!-- Band 3: one line — context on the left, legend + actions on the right. -->
+        <div class="mt-1.5 flex items-center justify-between gap-3">
+          {#if fError}
+            <p class="min-w-0 truncate text-xs font-medium text-red-600 dark:text-red-400" role="alert" title={fError}>{fError}</p>
+          {:else if fSource === "GRANT" && grantOptions.length === 0}
+            <p class="min-w-0 truncate text-xs text-amber-600 dark:text-amber-400">{t("param_no_grants", "This dashboard has no grant to a user, role, project, team or unit yet.")}</p>
+          {:else}
+            <p class="min-w-0 truncate text-xs text-gray-500 dark:text-gray-400" title={sourceHelp(fSource)}>{sourceHelp(fSource)}</p>
+          {/if}
+          <div class="flex shrink-0 items-center gap-2">
+            <span class="hidden text-[11px] text-gray-400 sm:inline dark:text-gray-500"><span class="text-red-500">*</span> {t("param_required_legend", "required field")}</span>
+            {#if editingName != null}
+              <button type="button" class="rounded-lg px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800" onclick={clearForm}>{t("param_cancel_edit", "Cancel")}</button>
+            {/if}
+            <button type="button" class={compactAddBtnClass} onclick={commitParam}>
+              {editingName != null ? t("param_update", "Update parameter") : t("param_add", "Add parameter")}
+            </button>
+          </div>
+        </div>
       </section>
     {/if}
 

@@ -336,6 +336,10 @@ export function initCardGallery(cfg: CardGalleryConfig): void {
     // ignore them here so we don't double-open.
     if (target.closest('[data-modal-open]')) return;
 
+    // Page-owned card controls (e.g. the Dashboard Catalog's Execute button)
+    // handle their own click — never treat them as a whole-card click.
+    if (target.closest("[data-gallery-passthrough]")) return;
+
     // Whole-card click → open the read-only detail view if the card declares
     // one (`data-detail-modal`), else fall back to the edit modal.
     const card = target.closest<HTMLElement>("[data-card]");

@@ -62,6 +62,9 @@ export interface Props {
    * instead of its own row below — a more compact layout for a gallery that
    * never shows a status pill anyway. Opt-in — Explore only, for now. */
   versionInline?: boolean;
+  /** Render the `actions` slot tight under the content — no divider, less
+   * spacing — so the card stays compact. Opt-in (Dashboard Catalog). */
+  compactActions?: boolean;
 }
 
 const {
@@ -85,7 +88,11 @@ const {
   discussCount = 0,
   version,
   versionInline = false,
+  compactActions = false,
 } = Astro.props as Props;
+
+// Optional line under the title (e.g. the catalog's type · source pills + timestamp).
+const hasMeta = Astro.slots.has("meta");
 
 const favOn = favorite === "yes";
 
@@ -130,6 +137,7 @@ const favBtnHero = base + "hover:bg-white/20 " + (favOn ? "text-yellow-300" : "t
         <slot name="icon" />
         <div class="min-w-0">
           <h3 class="truncate font-semibold text-white">{name}</h3>
+          {hasMeta && <div class="mt-1 flex min-w-0 flex-wrap items-center gap-1.5 text-xs"><slot name="meta" /></div>}
           {subtitle && <p class="mt-0.5 truncate text-xs text-white/70" data-relative-ts={subtitleTs}>{subtitle}</p>}
         </div>
       </div>
@@ -153,6 +161,7 @@ const favBtnHero = base + "hover:bg-white/20 " + (favOn ? "text-yellow-300" : "t
         <slot name="icon" />
         <div class="min-w-0">
           <h3 class="truncate font-semibold text-gray-900 dark:text-white">{name}</h3>
+          {hasMeta && <div class="mt-1 flex min-w-0 flex-wrap items-center gap-1.5 text-xs"><slot name="meta" /></div>}
           {versionInline ? (
             (subtitle || version) && (
               <p class="mt-0.5 flex items-center gap-1.5 truncate text-xs text-gray-400">
@@ -269,7 +278,9 @@ const favBtnHero = base + "hover:bg-white/20 " + (favOn ? "text-yellow-300" : "t
   )}
 
   {Astro.slots.has("actions") && (
-    <div class="mt-4 flex items-center justify-end gap-2 border-t border-gray-100 pt-3 dark:border-gray-800">
+    <div class={compactActions
+      ? "mt-3 flex items-center justify-end gap-2"
+      : "mt-4 flex items-center justify-end gap-2 border-t border-gray-100 pt-3 dark:border-gray-800"}>
       <slot name="actions" />
     </div>
   )}

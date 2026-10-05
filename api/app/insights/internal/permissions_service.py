@@ -53,6 +53,14 @@ def dashboards_user_scopes(
     return rp.user_scopes_for(session, user, DashboardPermission, _FK, dashboard_ids)
 
 
+def dashboard_matching_grants(
+    session: Session, user: User, dashboard_id: int
+) -> List[DashboardPermission]:
+    """The caller's live grants on one dashboard — the rows that give access.
+    Grant-bound parameters apply only when their bound grant is among them."""
+    return rp.matching_grants(session, user, DashboardPermission, _FK, [dashboard_id])
+
+
 def accessible_dashboards(session: Session, user: User) -> Dict[int, str]:
     """Every dashboard id the user can access → effective level (superuser
     bypass is the caller's responsibility)."""

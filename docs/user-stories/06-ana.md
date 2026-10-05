@@ -85,6 +85,11 @@ executions.
 - **Data:** read view over `dashboards` (published) scoped by `dashboard_permissions`, plus the
   viewer's `favorite_dashboards`.
 - **Option:** `ANA.CATALOG` → `/ana/catalog`
+- **Status:** ✅ implemented (SpecKit [`specs/007-dashboard-catalog`](../../specs/007-dashboard-catalog/spec.md)).
+  A card grid with the same privileges filter (Public, Shared with me, My role, My team, My
+  unit, My projects; Public by default, no "all"), search and favorites as Explore Category
+  and Explore Initiatives. It shows only Published dashboards reached by a live grant. Type
+  and source are searchable in both languages; there are no separate dropdowns for them.
 
 ### HU-AN05 · – Execute
 > As any **user**, I want to **run a dashboard with parameter values** and have the run
@@ -92,14 +97,29 @@ executions.
 - **Data:** `executions` — `id`, `dashboard`, `user_id`, `executed_at`, `payload` (JSONB, the
   parameter values used), `status` (→ `EXECUTION_STATUS`: Success, Failed, Cancelled, Timeout,
   Unauthorized), `duration_ms`, `error_message`. Detail of **HU-AN04**.
+- **Status:** ✅ implemented (SpecKit 007). Execute opens a parameters window built for the
+  viewer.
+  - A grant-bound value is fixed only when the viewer came through the bound grant. Otherwise
+    the value comes from the parameter's list or from free input.
+  - Fields start at their defaults, and "Use my last values" fills them from the viewer's last
+    successful run.
+  - Internal Page dashboards open in a viewer inside the catalog; external BI opens in a new
+    tab.
+
+  Every attempt is recorded. Start always writes one row: Unauthorized, Failed, or in
+  progress. The outcome is then set once: Success, Failed, Timeout (30 s, Internal Page only)
+  or Cancelled. A parameters window closed without running is recorded as Cancelled.
+  `payload` = `{values, sources, mode}`, where `sources` says per parameter whether the value
+  came from the grant, a list, the viewer's input or the default.
 
 ### HU-AN06 · – Favorite
 > As any **user**, I want to **favorite a dashboard** **so that** the ones I use most are one
 > click away.
 - **Data:** `favorite_dashboards` — PK `(user_id, dashboard)`. Detail of **HU-AN04**.
-- **Status:** 🟡 partial. The storage and the API (`PUT`/`DELETE /api/dashboards/{id}/favorite`,
-  VIEW required, logical removal) plus the star and filter in **Dashboard Management** shipped
-  with SpecKit 006. The Catalog side will reuse them when HU-AN04 is built.
+- **Status:** ✅ implemented. The storage, the API (`PUT`/`DELETE /api/dashboards/{id}/favorite`,
+  VIEW required, logical removal) and the star and filter in **Dashboard Management** shipped
+  with SpecKit 006. The Catalog's star and "★ My favorites" toggle (SpecKit 007) use the same
+  favorites; the endpoints now accept `ANA/CATALOG` as well as `ANA/DASHBOARDS`.
 
 ---
 

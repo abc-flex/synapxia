@@ -1,0 +1,192 @@
+---
+/**
+ * Dashboard Catalog (`/ana/catalog`, specs/007-dashboard-catalog — HU-AN04,
+ * HU-AN05 Execute, HU-AN06 Favorite).
+ *
+ * Same gallery as Explore Category / Explore Initiatives: SSR fetch, then the
+ * shared CardGallery filters on the client — privileges (six scopes, Public by
+ * default, no "all"), search and "★ My favorites". The server only returns
+ * Published dashboards reached by a live grant. Search also matches each
+ * dashboard's type and source in both languages.
+ *
+ * Execute is the DashboardRun island (parameters window → run → viewer or new
+ * tab, every attempt recorded in `executions`).
+ */
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import Toast from "../../components/Toast.astro";
+import CardGallery from "../../components/lib/gallery/CardGallery.astro";
+import CatalogCard from "../../components/ana/CatalogCard.astro";
+import CatalogDetailModal from "../../components/ana/CatalogDetailModal.astro";
+import { getCatalog } from "@/lib/dashboardExecutions";
+import { getListItemsbyList } from "@/lib/list_items";
+import { getOption } from "@/lib/options";
+import { labelsByValue } from "@/lib/listLang";
+import { getLocale } from "@/utils/getLocale";
+import { formatRelative } from "@/lib/datatable";
+import type { CatalogDashboard, ListItem } from "@/types/api";
+
+const locale = getLocale(Astro);
+
+let pageName = "Dashboard Catalog";
+try {
+  const opt = await getOption("ANA", "CATALOG");
+  pageName = opt.name || pageName;
+} catch {
+  /* keep the default */
+}
+
+// No "all" option: one scope at a time, PUBLIC first (the <select>'s default).
+const PRIVILEGE_OPTIONS = [
+  { value: "PUBLIC", label: "Public", i18n: "dashboard_table.perm_filter_public" },
+  { value: "USER", label: "Shared with me", i18n: "dashboard_table.perm_filter_user" },
+  { value: "ROLE", label: "My role", i18n: "dashboard_table.perm_filter_role" },
+  { value: "TEAM", label: "My team", i18n: "dashboard_table.perm_filter_team" },
+  { value: "UNIT", label: "My unit", i18n: "dashboard_table.perm_filter_unit" },
+  { value: "PROJECT", label: "My projects", i18n: "dashboard_table.perm_filter_project" },
+];
+
+let errorMessage: string | null = null;
+let dashboards: CatalogDashboard[] = [];
+try {
+  dashboards = await getCatalog(0, 500);
+} catch (error) {
+  console.error("Failed to fetch the dashboard catalog:", error);
+  errorMessage = error instanceof Error ? error.message : "Failed to fetch the dashboard catalog";
+}
+
+let typeItems: ListItem[] = [];
+let sourceItems: ListItem[] = [];
+try {
+  [typeItems, sourceItems] = await Promise.all([
+    getListItemsbyList("DASHBOARD_TYPE", 0, 500),
+    getListItemsbyList("SOURCE_TYPE", 0, 500),
+  ]);
+} catch {
+  /* chips fall back to the raw codes */
+}
+const typeLabels = labelsByValue(typeItems);
+const sourceLabels = labelsByValue(sourceItems);
+const bare = (v: string) => String(v ?? "").replace(/^\d+-/, "");
+
+const rows = dashboards.map((d) => {
+  const tags = Array.isArray(d.tags) ? d.tags.map(String) : [];
+  const tLabels = typeLabels[bare(d.type)] ?? { en: bare(d.type) };
+  const sLabels = sourceLabels[bare(d.sources_types)] ?? { en: bare(d.sources_types) };
+  return {
+    id: d.id,
+    name: d.name,
+    description: d.description ?? "",
+    detail: d.detail ?? "",
+    subtitle: formatRelative(d.created_at ?? undefined, locale),
+    subtitleTs: d.created_at ?? undefined,
+    favorite: d.is_favorite ? "yes" : "no",
+    source: bare(d.sources_types),
+    type: bare(d.type).toUpperCase(),
+    mode: bare(d.sources_types).toUpperCase() === "INTERNAL_PAGE" ? "VIEWER" : "TAB",
+    parameterCount: d.parameter_count,
+    tags,
+    typeLabels: tLabels,
+    sourceLabels: sLabels,
+    // FR-004: name, description, tags, plus type and source in every language.
+    searchText: [d.name, d.description, tags.join(" "), ...Object.values(tLabels), ...Object.values(sLabels)]
+      .filter(Boolean)
+      .join(" "),
+    permissions: (d.permission_scopes ?? []).join(","),
+  };
+});
+
+// The detail modal reads the card data from here — no extra request.
+const cardData = Object.fromEntries(rows.map((r) => [String(r.id), {
+  id: r.id,
+  name: r.name,
+  description: r.description,
+  detail: r.detail,
+  favorite: r.favorite === "yes",
+  type: r.type,
+  typeLabels: r.typeLabels,
+  sourceLabels: r.sourceLabels,
+  tags: r.tags,
+  mode: r.mode,
+  parameterCount: r.parameterCount,
+}]));
+---
+
+<BaseLayout>
+  {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
+
+  <div class="mx-auto w-full max-w-full">
+    <Breadcrumb
+      moduleName="Analytics"
+      pageName={pageName}
+      pageTitle={pageName}
+      homeLink="/"
+      moduleNameKey="modules.ANA"
+      pageNameKey="menu_options.catalog"
+      pageTitleKey="menu_options.catalog"
+    />
+
+    <CatalogDetailModal modalId="catalog-detail-modal" galleryId="catalog-gallery" />
+    <script type="application/json" id="catalog-data" set:html={JSON.stringify(cardData).replace(/</g, "\\u003c")} />
+
+    <CardGallery
+      galleryId="catalog-gallery"
+      emptyKey="dashboard_catalog.empty"
+      searchPlaceholderKey="dashboard_catalog.search_placeholder"
+      statuses={[]}
+      privileges={PRIVILEGE_OPTIONS}
+      growSearch={false}
+    >
+      {rows.map((r) => (
+        <CatalogCard
+          id={r.id}
+          name={r.name}
+          subtitle={r.subtitle}
+          subtitleTs={r.subtitleTs}
+          description={r.description}
+          favorite={r.favorite}
+          searchText={r.searchText}
+          permissions={r.permissions}
+          source={r.source}
+          typeLabels={r.typeLabels}
+          sourceLabels={r.sourceLabels}
+          tags={r.tags}
+          mode={r.mode}
+          parameterCount={r.parameterCount}
+        />
+      ))}
+    </CardGallery>
+
+    <div id="dashboard-run-root"></div>
+  </div>
+
+  <script>
+    // Bundled module (Astro resolves @/ + TS) — never the inline
+    // `type="module"` + `/src/...` pattern, which 404s in the production build.
+    import { mount } from "svelte";
+    import DashboardRun from "@/components/svelte/DashboardRun.svelte";
+    import { initCardGallery } from "@/lib/catalogGallery";
+    import { setDashboardFavorite } from "@/lib/dashboards";
+    import { loadClientTranslations } from "@/utils/i18nClient";
+    import { installGlobalToast } from "@/lib/toast";
+
+    initCardGallery({
+      galleryId: "catalog-gallery",
+      pageSize: 12,
+      idAttr: "dashboardId",
+      services: {
+        toggleFavorite: (id: number, on: boolean) => setDashboardFavorite(Number(id), on),
+        // Dashboards have no votes: the cards render no vote buttons, so these
+        // are never called — they exist to satisfy GalleryServices.
+        vote: () => Promise.reject(new Error("Dashboards have no votes")),
+        tally: async () => ({ positive: 0, negative: 0, my_vote: null }),
+      },
+    });
+
+    const target = document.getElementById("dashboard-run-root");
+    if (target) mount(DashboardRun, { target });
+
+    loadClientTranslations();
+    installGlobalToast();
+  </script>
+</BaseLayout>

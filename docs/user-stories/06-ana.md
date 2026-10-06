@@ -130,3 +130,26 @@ executions.
 - **Data:** aggregate view over `executions`, joined to `users` → `business_units` and to the
   user's `assignments` → `teams`.
 - **Option:** `ANA.USAGE` → `/ana/usage`
+- **Status:** ✅ implemented (SpecKit [`specs/008-usage-metrics`](../../specs/008-usage-metrics/spec.md)).
+  A read-only page with period presets (7/30/90 days, 12 months) or a custom range of up to 24
+  months, in local dates (`APP_TIMEZONE`, default America/Bogota).
+  - **Headline:** runs, people, dashboards, success rate, median duration, abandoned or
+    refused attempts and incomplete runs, each compared with the previous period.
+  - **Chart:** runs over time, stacked by outcome.
+  - **Dashboards table:** sortable, with unused dashboards and the most frequent errors.
+  - **Adoption:** by unit (a tree that rolls up sub-units) and by team, with members, people
+    who ran something and an adoption rate. Selecting a row filters the rest of the page.
+
+  Both tables export to CSV and Excel. The rules:
+  - **Scope:** superusers and Administrators see every execution. Anyone else holding the
+    option sees only dashboards they MANAGE.
+  - **Runs** are Success, Failed, Timeout and Incomplete records. Cancelled and Unauthorized
+    are counted apart, as abandoned or refused attempts.
+  - **Success rate** = Success ÷ (Success + Failed + Timeout).
+  - **Teams:** a run counts in the teams its user belonged to when it started, falling back
+    to their current teams.
+
+  Aggregates only: no individual execution or parameter value is shown. Development data:
+  `specs/008-usage-metrics/synthetic-usage.sql` writes only to `executions`, over the existing
+  dashboards and users (removal script alongside). Indexes for
+  provisioned DBs: `specs/008-usage-metrics/provisioned-db.sql`.

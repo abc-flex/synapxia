@@ -111,6 +111,9 @@ class Settings(BaseSettings):
     # ==================== Application ====================
     app_env: str = os.getenv("APP_ENV", "development")
     log_level: str = os.getenv("LOG_LEVEL", "INFO")
+    # Organization time zone: Usage Metrics periods and day/week/month buckets
+    # are local dates in this zone (specs/008-usage-metrics, research R3).
+    app_timezone: str = os.getenv("APP_TIMEZONE", "America/Bogota")
 
     class Config:
         env_file = ".env"

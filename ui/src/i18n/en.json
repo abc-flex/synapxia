@@ -1629,5 +1629,112 @@
     "run_refused": "This dashboard could not be run.",
     "favorite": "Favorite",
     "fav_error": "Could not update the favorite."
+  },
+  "usage_metrics": {
+    "title": "Usage Metrics",
+    "loading": "Loading…",
+    "load_error": "The usage figures could not be loaded.",
+    "scope_note": "Limited to the {n} dashboards you manage",
+    "period": {
+      "label": "Period",
+      "7d": "Last 7 days",
+      "30d": "Last 30 days",
+      "90d": "Last 90 days",
+      "12m": "Last 12 months",
+      "from": "From",
+      "to": "To",
+      "apply": "Apply",
+      "error_missing": "Choose a start and an end date.",
+      "error_inverted": "The end date must not be before the start date.",
+      "error_long": "The period can span at most 24 months."
+    },
+    "filter": {
+      "unit": "Unit: {name}",
+      "team": "Team: {name}",
+      "clear": "Clear filter",
+      "project": "Project: {name}",
+      "none": "No filter: select a row in Adoption to filter by unit, team or project"
+    },
+    "outcome": {
+      "incomplete": "Incomplete"
+    },
+    "summary": {
+      "runs": "Runs",
+      "users": "People who ran a dashboard",
+      "dashboards": "Dashboards run",
+      "success_rate": "Success rate",
+      "rate_hint": "Success ÷ (Success + Failed + Timeout)",
+      "median": "Median duration",
+      "average": "Average {v}",
+      "attempts": "Abandoned or refused",
+      "attempts_hint": "Cancelled + Unauthorized — not counted as runs",
+      "incomplete": "Incomplete",
+      "incomplete_hint": "The browser closed before reporting the outcome",
+      "vs_previous": "vs {from} – {to}",
+      "empty": "No dashboard usage in this period."
+    },
+    "timeline": {
+      "title": "Runs over time",
+      "show_table": "Show as table",
+      "show_chart": "Show chart",
+      "attempts_group": "Abandoned or refused:",
+      "col_period": "Period",
+      "aria": "Stacked bar chart of {n} periods, {runs} runs in total."
+    },
+    "dashboards": {
+      "title": "Dashboards",
+      "search": "Search dashboards…",
+      "show_unused": "Show unused ({n})",
+      "unused_badge": "Unused",
+      "col_name": "Dashboard",
+      "col_type": "Type",
+      "col_source": "Source",
+      "col_status": "Status",
+      "col_runs": "Runs",
+      "col_attempts": "Abandoned",
+      "col_users": "Users",
+      "col_rate": "Success rate",
+      "col_median": "Median duration",
+      "col_last": "Last run",
+      "errors_toggle": "Show the most frequent errors",
+      "errors_loading": "Loading errors…",
+      "errors_failed": "The errors could not be loaded.",
+      "errors_none": "No errors recorded in this period.",
+      "errors_total": "{n} records with an error message in this period",
+      "empty": "No dashboards match.",
+      "sheet": "Dashboards",
+      "col_attempts_full": "Abandoned or refused: Cancelled + Unauthorized"
+    },
+    "adoption": {
+      "title": "Adoption",
+      "tab_unit": "By unit",
+      "tab_team": "By team",
+      "hint_unit": "Each unit includes its sub-units. Select a row to filter the page by it.",
+      "hint_team": "A run counts in every team its user belonged to at the time, so team totals can exceed the overall total. Select a row to filter the page by it.",
+      "col_unit": "Unit",
+      "col_team": "Team",
+      "col_members": "Members",
+      "col_users": "Users",
+      "col_adoption": "Adoption",
+      "col_runs": "Runs",
+      "col_rate": "Success rate",
+      "no_team": "No team",
+      "direct": "{n} direct",
+      "expand": "Expand or collapse",
+      "empty": "No data for this period.",
+      "sheet_units": "Units",
+      "sheet_teams": "Teams",
+      "tab_project": "By project",
+      "col_project": "Project",
+      "no_project": "No project",
+      "col_users_full": "Users who ran a dashboard",
+      "help": "How adoption is counted",
+      "hint_project": "A run counts in the active projects of its user's team at the time (within the project's dates), so project totals can exceed the overall total. Select a row to filter the page by it.",
+      "empty_projects": "There are no active projects yet.",
+      "sheet_projects": "Projects"
+    },
+    "export": {
+      "button": "Export"
+    }
   }
 }

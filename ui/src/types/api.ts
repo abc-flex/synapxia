@@ -1568,3 +1568,128 @@ export interface LastValues {
   values: Record<string, string>;
   executed_at?: string | null;
 }
+
+// ── Usage Metrics (specs/008-usage-metrics, HU-AN07) ─────────────────────────
+// Aggregates only: no user id, payload or individual execution.
+
+export type UsageBucketKind = "day" | "week" | "month";
+export type UsageOutcome =
+  | "SUCCESS" | "FAILED" | "TIMEOUT" | "INCOMPLETE" | "CANCELLED" | "UNAUTHORIZED";
+
+export interface UsagePeriod {
+  date_from: string;
+  date_to: string;
+  previous_from: string;
+  previous_to: string;
+  bucket: UsageBucketKind;
+  timezone: string;
+}
+
+export interface UsageFigures {
+  runs: number;
+  attempts: number;
+  users: number;
+  dashboards: number;
+  success_rate: number | null;
+  median_ms: number | null;
+  avg_ms: number | null;
+  incomplete: number;
+  outcomes: Record<string, number>;
+}
+
+/** Ratios for counts; plain differences for success_rate (points) and durations (ms). */
+export interface UsageChange {
+  runs: number | null;
+  attempts: number | null;
+  users: number | null;
+  dashboards: number | null;
+  success_rate: number | null;
+  median_ms: number | null;
+  avg_ms: number | null;
+  incomplete: number | null;
+}
+
+export interface UsageSummary {
+  current: UsageFigures;
+  previous: UsageFigures;
+  change: UsageChange;
+}
+
+export interface UsageBucket {
+  start: string;
+  end: string;
+  outcomes: Record<string, number>;
+}
+
+export interface UsageDashboardRow {
+  id: number;
+  name: string;
+  type: string;
+  source: string;
+  status: string;
+  runs: number;
+  attempts: number;
+  users: number;
+  success_rate: number | null;
+  median_ms: number | null;
+  last_run_at: string | null;
+  unused: boolean;
+}
+
+export interface UsageUnitNode {
+  code: string;
+  name: string;
+  members: number;
+  direct_members: number;
+  runs: number;
+  users: number;
+  success_rate: number | null;
+  adoption_rate: number | null;
+  children: UsageUnitNode[];
+}
+
+export interface UsageTeamRow {
+  code: string; // "__none__" = No team
+  name: string | null;
+  members: number | null;
+  runs: number;
+  users: number;
+  success_rate: number | null;
+  adoption_rate: number | null;
+}
+
+export interface UsageProjectRow {
+  code: string; // "__none__" = No project
+  name: string | null;
+  team: string | null;
+  team_name: string | null;
+  members: number | null;
+  runs: number;
+  users: number;
+  success_rate: number | null;
+  adoption_rate: number | null;
+}
+
+export interface UsageMetrics {
+  period: UsagePeriod;
+  scope: { restricted: boolean; dashboards: number | null };
+  filter: { unit: string | null; team: string | null; project: string | null };
+  summary: UsageSummary;
+  timeline: UsageBucket[];
+  dashboards: UsageDashboardRow[];
+  units: UsageUnitNode[];
+  teams: UsageTeamRow[];
+  projects: UsageProjectRow[];
+}
+
+export interface UsageErrorItem {
+  message: string;
+  count: number;
+  statuses: string[];
+}
+
+export interface UsageErrors {
+  dashboard: number;
+  items: UsageErrorItem[];
+  total_with_error: number;
+}

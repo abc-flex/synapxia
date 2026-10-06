@@ -1,4 +1,5 @@
 import { ui } from "@/i18n";
+import { downloadFile, toCSV } from "@/lib/tableExport";
 
 export function initAdvancedTable(
     tableId: string,
@@ -667,20 +668,6 @@ export function initAdvancedTable(
 
 }
 
-function toCSV(
-    data: Record<string, any>[],
-    columns: { key: string; label: string }[]
-): string {
-    const header = columns.map(c => `"${c.label}"`).join(",");
-
-    const rows = data.map(row =>
-        columns
-            .map(c => `"${row[c.key] ?? ""}"`)
-            .join(",")
-    );
-
-    return [header, ...rows].join("\n");
-}
 
 function toTXT(
     data: Record<string, any>[],
@@ -714,15 +701,4 @@ function tableName() {
     return "table_name";
 }
 
-function downloadFile(content: string, filename: string, type: string) {
-    const blob = new Blob([content], { type });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-
-    URL.revokeObjectURL(url);
-}
 

@@ -327,3 +327,139 @@ class ExecutionCancelled(SQLModel):
 class LastValues(SQLModel):
     values: Dict[str, str] = Field(default_factory=dict)
     executed_at: Optional[datetime] = None
+
+
+# ── Usage Metrics (specs/008-usage-metrics, HU-AN07) ─────────────────────────
+# Aggregate-only response shapes: nothing here carries a user id, a payload or
+# an individual execution (FR-015). See contracts/usage-api.md.
+
+
+class UsagePeriod(SQLModel):
+    date_from: str
+    date_to: str
+    previous_from: str
+    previous_to: str
+    bucket: str  # day / week / month
+    timezone: str
+
+
+class UsageScope(SQLModel):
+    restricted: bool
+    dashboards: Optional[int] = None  # dashboards in scope when restricted
+
+
+class UsageFilter(SQLModel):
+    unit: Optional[str] = None
+    team: Optional[str] = None
+    project: Optional[str] = None
+
+
+class UsageFigures(SQLModel):
+    runs: int = 0
+    attempts: int = 0
+    users: int = 0
+    dashboards: int = 0
+    success_rate: Optional[float] = None
+    median_ms: Optional[int] = None
+    avg_ms: Optional[int] = None
+    incomplete: int = 0
+    outcomes: Dict[str, int] = Field(default_factory=dict)
+
+
+class UsageChange(SQLModel):
+    runs: Optional[float] = None
+    attempts: Optional[float] = None
+    users: Optional[float] = None
+    dashboards: Optional[float] = None
+    success_rate: Optional[float] = None  # difference in rate points
+    median_ms: Optional[int] = None       # difference in ms
+    avg_ms: Optional[int] = None
+    incomplete: Optional[float] = None
+
+
+class UsageSummary(SQLModel):
+    current: UsageFigures
+    previous: UsageFigures
+    change: UsageChange
+
+
+class UsageBucket(SQLModel):
+    start: str
+    end: str
+    outcomes: Dict[str, int] = Field(default_factory=dict)
+
+
+class UsageDashboardRow(SQLModel):
+    id: int
+    name: str
+    type: str
+    source: str
+    status: str
+    runs: int = 0
+    attempts: int = 0
+    users: int = 0
+    success_rate: Optional[float] = None
+    median_ms: Optional[int] = None
+    last_run_at: Optional[datetime] = None
+    unused: bool = False
+
+
+class UsageUnitNode(SQLModel):
+    code: str
+    name: str
+    members: int = 0
+    direct_members: int = 0
+    runs: int = 0
+    users: int = 0
+    success_rate: Optional[float] = None
+    adoption_rate: Optional[float] = None
+    children: List["UsageUnitNode"] = Field(default_factory=list)
+
+
+class UsageTeamRow(SQLModel):
+    code: str
+    name: Optional[str] = None
+    members: Optional[int] = None
+    runs: int = 0
+    users: int = 0
+    success_rate: Optional[float] = None
+    adoption_rate: Optional[float] = None
+
+
+class UsageProjectRow(SQLModel):
+    code: str  # "__none__" = No project
+    name: Optional[str] = None
+    team: Optional[str] = None       # owning team code
+    team_name: Optional[str] = None
+    members: Optional[int] = None
+    runs: int = 0
+    users: int = 0
+    success_rate: Optional[float] = None
+    adoption_rate: Optional[float] = None
+
+
+class UsageMetrics(SQLModel):
+    period: UsagePeriod
+    scope: UsageScope
+    filter: UsageFilter
+    summary: UsageSummary
+    timeline: List[UsageBucket] = Field(default_factory=list)
+    dashboards: List[UsageDashboardRow] = Field(default_factory=list)
+    units: List[UsageUnitNode] = Field(default_factory=list)
+    teams: List[UsageTeamRow] = Field(default_factory=list)
+    projects: List[UsageProjectRow] = Field(default_factory=list)
+
+
+class UsageErrorItem(SQLModel):
+    message: str
+    count: int
+    statuses: List[str] = Field(default_factory=list)
+
+
+class UsageErrors(SQLModel):
+    dashboard: int
+    items: List[UsageErrorItem] = Field(default_factory=list)
+    total_with_error: int = 0
+
+
+UsageUnitNode.model_rebuild()

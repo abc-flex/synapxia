@@ -63,6 +63,7 @@ from .insights.routes import parameters as dashboard_parameters_router
 from .insights.routes import dashboard_permissions as dashboard_permissions_router
 from .insights.routes import catalog as dashboard_catalog_router
 from .insights.routes import executions as dashboard_executions_router
+from .insights.routes import usage as usage_metrics_router
 
 from .support.routes import bug_reports as bug_reports_router
 
@@ -382,6 +383,7 @@ app.include_router(dashboard_executions_router.router)
 app.include_router(dashboards_router.router)
 app.include_router(dashboard_parameters_router.router)
 app.include_router(dashboard_permissions_router.router)
+app.include_router(usage_metrics_router.router)  # specs/008-usage-metrics
 
 # Support module
 app.include_router(bug_reports_router.router)

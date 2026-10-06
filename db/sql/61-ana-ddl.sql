@@ -122,6 +122,13 @@ ALTER TABLE executions
     FOREIGN KEY (user_id)
     REFERENCES users (id);
 
+-- Usage Metrics (specs/008-usage-metrics): every aggregate is a range on
+-- executed_at, narrowed by dashboard for managers limited to their MANAGE scope.
+CREATE INDEX ix_executions_executed_at
+    ON executions (executed_at);
+CREATE INDEX ix_executions_dashboard_executed_at
+    ON executions (dashboard, executed_at);
+
 -- **********************************
 -- ***** Table lists/list_items *****
 -- **********************************

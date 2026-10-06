@@ -1,0 +1,52 @@
+---
+/**
+ * Usage Metrics (`/ana/usage`, specs/008-usage-metrics — HU-AN07).
+ *
+ * A thin SSR shell: header + breadcrumb, then the UsageMetrics Svelte island,
+ * which fetches `/api/usage/metrics` client-side for the chosen period (an SSR
+ * snapshot would be stale as soon as the period changes). Access: `ANA/USAGE`;
+ * Administrators see every execution, other managers only the dashboards they
+ * MANAGE — enforced by the API.
+ */
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import { getOption } from "@/lib/options";
+
+let pageName = "Usage Metrics";
+try {
+  const opt = await getOption("ANA", "USAGE");
+  pageName = opt.name || pageName;
+} catch {
+  /* keep the default */
+}
+---
+
+<BaseLayout>
+  <div class="mx-auto w-full max-w-full">
+    <Breadcrumb
+      moduleName="Analytics"
+      pageName={pageName}
+      pageTitle={pageName}
+      homeLink="/"
+      moduleNameKey="modules.ANA"
+      pageNameKey="menu_options.usage"
+      pageTitleKey="menu_options.usage"
+    />
+    <div id="usage-metrics-root" class="mt-4"></div>
+  </div>
+
+  <script>
+    // Bundled module (Astro resolves @/ + TS) — never the inline
+    // `type="module"` + `/src/...` pattern, which 404s in the production build.
+    import { mount } from "svelte";
+    import UsageMetrics from "@/components/svelte/UsageMetrics.svelte";
+    import { loadClientTranslations } from "@/utils/i18nClient";
+    import { installGlobalToast } from "@/lib/toast";
+
+    const target = document.getElementById("usage-metrics-root");
+    if (target) mount(UsageMetrics, { target });
+
+    loadClientTranslations();
+    installGlobalToast();
+  </script>
+</BaseLayout>

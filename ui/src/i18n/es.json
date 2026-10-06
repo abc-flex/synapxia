@@ -1629,5 +1629,112 @@
     "run_refused": "No se pudo ejecutar este tablero.",
     "favorite": "Favorito",
     "fav_error": "No se pudo actualizar el favorito."
+  },
+  "usage_metrics": {
+    "title": "Métricas de Uso",
+    "loading": "Cargando…",
+    "load_error": "No se pudieron cargar las cifras de uso.",
+    "scope_note": "Limitado a los {n} tableros que administras",
+    "period": {
+      "label": "Periodo",
+      "7d": "Últimos 7 días",
+      "30d": "Últimos 30 días",
+      "90d": "Últimos 90 días",
+      "12m": "Últimos 12 meses",
+      "from": "Desde",
+      "to": "Hasta",
+      "apply": "Aplicar",
+      "error_missing": "Elige una fecha de inicio y una de fin.",
+      "error_inverted": "La fecha final no puede ser anterior a la inicial.",
+      "error_long": "El periodo puede abarcar como máximo 24 meses."
+    },
+    "filter": {
+      "unit": "Unidad: {name}",
+      "team": "Equipo: {name}",
+      "clear": "Quitar filtro",
+      "project": "Proyecto: {name}",
+      "none": "Sin filtro: selecciona una fila en Adopción para filtrar por unidad, equipo o proyecto"
+    },
+    "outcome": {
+      "incomplete": "Incompleta"
+    },
+    "summary": {
+      "runs": "Ejecuciones",
+      "users": "Personas que ejecutaron un tablero",
+      "dashboards": "Tableros ejecutados",
+      "success_rate": "Tasa de éxito",
+      "rate_hint": "Exitosas ÷ (Exitosas + Fallidas + Timeout)",
+      "median": "Duración mediana",
+      "average": "Promedio {v}",
+      "attempts": "Abandonadas o rechazadas",
+      "attempts_hint": "Canceladas + No autorizadas — no cuentan como ejecuciones",
+      "incomplete": "Incompletas",
+      "incomplete_hint": "El navegador se cerró antes de reportar el resultado",
+      "vs_previous": "vs {from} – {to}",
+      "empty": "No hubo uso de tableros en este periodo."
+    },
+    "timeline": {
+      "title": "Ejecuciones en el tiempo",
+      "show_table": "Ver como tabla",
+      "show_chart": "Ver gráfico",
+      "attempts_group": "Abandonadas o rechazadas:",
+      "col_period": "Periodo",
+      "aria": "Gráfico de barras apiladas de {n} periodos, {runs} ejecuciones en total."
+    },
+    "dashboards": {
+      "title": "Tableros",
+      "search": "Buscar tableros…",
+      "show_unused": "Mostrar sin uso ({n})",
+      "unused_badge": "Sin uso",
+      "col_name": "Tablero",
+      "col_type": "Tipo",
+      "col_source": "Origen",
+      "col_status": "Estado",
+      "col_runs": "Ejecuciones",
+      "col_attempts": "Abandonadas",
+      "col_users": "Usuarios",
+      "col_rate": "Tasa de éxito",
+      "col_median": "Duración mediana",
+      "col_last": "Última ejecución",
+      "errors_toggle": "Ver los errores más frecuentes",
+      "errors_loading": "Cargando errores…",
+      "errors_failed": "No se pudieron cargar los errores.",
+      "errors_none": "No hay errores registrados en este periodo.",
+      "errors_total": "{n} registros con mensaje de error en este periodo",
+      "empty": "Ningún tablero coincide.",
+      "sheet": "Tableros",
+      "col_attempts_full": "Abandonadas o rechazadas: Canceladas + No autorizadas"
+    },
+    "adoption": {
+      "title": "Adopción",
+      "tab_unit": "Por unidad",
+      "tab_team": "Por equipo",
+      "hint_unit": "Cada unidad incluye sus subunidades. Selecciona una fila para filtrar la página por ella.",
+      "hint_team": "Una ejecución cuenta en cada equipo al que pertenecía su usuario en ese momento, así que los totales por equipo pueden superar el total general. Selecciona una fila para filtrar la página por ella.",
+      "col_unit": "Unidad",
+      "col_team": "Equipo",
+      "col_members": "Miembros",
+      "col_users": "Usuarios",
+      "col_adoption": "Adopción",
+      "col_runs": "Ejecuciones",
+      "col_rate": "Tasa de éxito",
+      "no_team": "Sin equipo",
+      "direct": "{n} directos",
+      "expand": "Expandir o contraer",
+      "empty": "No hay datos para este periodo.",
+      "sheet_units": "Unidades",
+      "sheet_teams": "Equipos",
+      "tab_project": "Por proyecto",
+      "col_project": "Proyecto",
+      "no_project": "Sin proyecto",
+      "col_users_full": "Usuarios que ejecutaron un tablero",
+      "help": "Cómo se cuenta la adopción",
+      "hint_project": "Una ejecución cuenta en los proyectos activos del equipo de su usuario en ese momento (dentro de las fechas del proyecto), así que los totales por proyecto pueden superar el total general. Selecciona una fila para filtrar la página por ella.",
+      "empty_projects": "Todavía no hay proyectos activos.",
+      "sheet_projects": "Proyectos"
+    },
+    "export": {
+      "button": "Exportar"
+    }
   }
 }

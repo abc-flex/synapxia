@@ -1,0 +1,11 @@
+-- =============================================================================
+-- Remove the synthetic usage data of SpecKit 008 (Usage Metrics). DEVELOPMENT ONLY.
+--
+--   docker compose exec -T db psql -U synapxia -d synapxia -v ON_ERROR_STOP=1 \
+--     < specs/008-usage-metrics/synthetic-usage-remove.sql
+--
+-- synthetic-usage.sql writes only to `executions`, and every row it writes has
+-- `"synthetic": true` in its payload. This deletes exactly those rows; real
+-- executions and every other table are untouched.
+-- =============================================================================
+DELETE FROM executions WHERE payload @> '{"synthetic": true}'::jsonb;

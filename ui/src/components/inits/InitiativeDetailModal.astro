@@ -269,7 +269,7 @@ const label = (o: ListOption) => o.byLang.en ?? o.byLang.es ?? o.value;
     function updateCoreHighlight() {
       const changed = new Set(coreChangedFields());
       for (const [el] of CORE_FIELDS) {
-        el.classList.toggle("ring-2", changed.has(el));
+        el.classList.toggle("ring-1", changed.has(el));
         el.classList.toggle("ring-amber-400", changed.has(el));
       }
       tabs.setCoreDirty(changed.size > 0);

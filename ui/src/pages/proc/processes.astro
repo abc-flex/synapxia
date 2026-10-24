@@ -1,0 +1,219 @@
+---
+// Process Management (HU-PR01–04, specs/009-process-management).
+// Lists the organization's processes, registers new ones and opens the tabbed
+// dialog (Core Fields, Related processes, Related assets, Related inits).
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import DataTable from "../../components/table/DataTable.astro";
+import CrudModal from "../../components/forms/CrudModal.astro";
+import Toast from "../../components/Toast.astro";
+import ProcessDetailModal from "../../components/proc/ProcessDetailModal.astro";
+import { getProcesses, getProcessFormOptions } from "@/lib/processes";
+import { getListItemsbyList } from "@/lib/list_items";
+import {
+  labelsByValue, labelsFor, listLabel, toListOptions, type ListLabels, type ListOption,
+} from "@/lib/listLang";
+import type { Process, ProcessFormOptions } from "@/types/api";
+
+let processes: Process[] = [];
+let formOptions: ProcessFormOptions | null = null;
+let errorMessage: string | null = null;
+try {
+  // One bounded page (the API caps limit at 500) — ample for a process
+  // inventory, and the table filters client-side.
+  [processes, formOptions] = await Promise.all([getProcesses(0, 500), getProcessFormOptions()]);
+} catch (error) {
+  console.error("Failed to fetch processes:", error);
+  errorMessage = error instanceof Error ? error.message : "Failed to fetch processes from API";
+  processes = [];
+}
+const canEdit = !!formOptions?.can_edit;
+
+// The list-backed fields. `/api/list_items/list/{code}` returns every language;
+// the server renders English and the client relabels to the viewer's language.
+const LISTS = { type: "PROCESS_TYPE", status: "PROCESS_STATUS" } as const;
+const labels: Record<string, ListLabels> = {};
+const optionsEn: Record<string, ListOption[]> = {};
+for (const [field, list] of Object.entries(LISTS)) {
+  let items: any[] = [];
+  try {
+    items = await getListItemsbyList(list);
+  } catch {
+    items = [];
+  }
+  labels[field] = labelsByValue(items);
+  optionsEn[field] = toListOptions(items, "en");
+}
+
+const bare = (v: unknown) => String(v ?? "").replace(/^\d+-/, "").toUpperCase();
+const labelOf = (field: keyof typeof LISTS, raw: unknown): string =>
+  raw ? listLabel(labels[field], raw, "en") : "";
+const labelsOf = (field: keyof typeof LISTS, raw: unknown) => labelsFor(labels[field], raw);
+
+const unitOptions = (formOptions?.units ?? []).map((u) => ({ value: u.code, label: u.name }));
+
+// Visible order: code, name, type, owner, status, tags (+ actions). Type and
+// status filter from their column headers; `unit` is a hidden, filter-only
+// column (toolbar filter).
+const columns = [
+  { key: "code", label: "process_modal.code" },
+  { key: "name", label: "process_modal.name", as: "title" },
+  { key: "type", label: "process_modal.type", visible: false },
+  { key: "type_name", label: "process_modal.type", labelsKey: "type_labels" },
+  { key: "owner_name", label: "process_modal.owner" },
+  { key: "status", label: "process_modal.status", visible: false },
+  { key: "status_name", label: "process_modal.status", as: "status", labelsKey: "status_labels" },
+  { key: "tags_display", label: "process_modal.tags", as: "tags" },
+  { key: "unit", label: "process_modal.unit", visible: false },
+];
+
+const data = processes.map((p) => ({
+  id: p.code,
+  code: p.code,
+  name: p.name,
+  type: bare(p.type),
+  type_name: labelOf("type", p.type),
+  type_labels: labelsOf("type", p.type),
+  unit: p.unit ?? "",
+  owner_name: p.owner_name ?? "",
+  status: bare(p.status),
+  status_name: labelOf("status", p.status),
+  status_labels: labelsOf("status", p.status),
+  tags_display: Array.isArray(p.tags) ? p.tags.join(", ") : "",
+  // Row action gating: edit/remove need the edit right (the API enforces too).
+  can_manage: canEdit,
+}));
+
+const deleteFields = [
+  { key: "name", label: "process_modal.name", pk: true, disabled: true },
+];
+const fieldKeys = deleteFields.map((f) => f.key);
+
+// Options the detail modal's selects need, in sort order, with every language.
+const modalLists = {
+  status: optionsEn.status.map((o) => ({ value: o.value, byLang: o.labels })),
+  type: optionsEn.type.map((o) => ({ value: o.value, byLang: o.labels })),
+};
+---
+
+<BaseLayout>
+  {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
+
+  <div class="mx-auto w-full max-w-full md:p-0">
+    <Breadcrumb
+      moduleName="Processes"
+      pageName="Process Management"
+      pageTitle="Process Management"
+      homeLink="/"
+      moduleNameKey="modules.PROC"
+      pageNameKey="menu_options.processes"
+      pageTitleKey="menu_options.processes"
+    />
+
+    <ProcessDetailModal modalId="process-detail-modal" lists={modalLists} canEdit={canEdit} />
+
+    <CrudModal
+      mode="delete"
+      modalId="process-delete-modal"
+      entityName="Process"
+      fields={deleteFields}
+      showTrigger={false}
+    />
+
+    <div
+      id="processes-data"
+      data-rows={encodeURIComponent(JSON.stringify(data))}
+      data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
+      class="hidden"
+      aria-hidden="true"
+    >
+    </div>
+
+    <script>
+      import { initCrudPage } from "@/lib/crudClient";
+      import { deleteProcess } from "@/lib/processes";
+      import { apiErrorDetail } from "@/lib/api";
+      import { showToast, flashToast } from "@/lib/toast";
+      import { translate } from "@/utils/i18nClient";
+
+      initCrudPage({
+        dataId: "processes-data",
+        editModalId: "process-edit-modal", // shim — DataTable still emits this id
+        deleteModalId: "process-delete-modal",
+      });
+
+      // ── Bridge: DataTable's "+ New" (`process-create-modal`) and row pencil
+      // (`process-edit-modal`) → ProcessDetailModal. Capture phase so we run
+      // before crudClient's default modal handling.
+      const openDetail = (code: string | null) => {
+        const synthetic = document.createElement("button");
+        synthetic.style.display = "none";
+        synthetic.setAttribute("data-modal-open", "process-detail-modal");
+        if (code) synthetic.setAttribute("data-process-code", code);
+        document.body.appendChild(synthetic);
+        synthetic.click();
+        synthetic.remove();
+      };
+      // The name cell opens the dialog for every row — read-only holders have
+      // no pencil but must still be able to read a process.
+      document.querySelectorAll<HTMLElement>('#processes tbody tr[data-row-id] td[data-col="title"]').forEach((td) => {
+        td.classList.add("cursor-pointer", "hover:text-indigo-600", "dark:hover:text-indigo-400");
+      });
+      document.addEventListener("click", (e) => {
+        const td = (e.target as HTMLElement).closest?.('#processes tbody td[data-col="title"]');
+        const tr = td?.closest("tr[data-row-id]") as HTMLElement | null;
+        if (tr?.dataset.rowId) openDetail(tr.dataset.rowId);
+      });
+
+      document.addEventListener(
+        "click",
+        (e) => {
+          const el = e.target as HTMLElement;
+          const create = el.closest?.('[data-modal-open="process-create-modal"]');
+          const edit = el.closest?.('[data-modal-open="process-edit-modal"]');
+          if (!create && !edit) return;
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          openDetail(edit ? edit.getAttribute("data-id") : null);
+        },
+        true,
+      );
+
+      document.addEventListener("crud-submit", async (e: Event) => {
+        const { mode, data } = (e as CustomEvent).detail;
+        if (mode !== "delete") return;
+        try {
+          await deleteProcess(String(data.id));
+          flashToast(translate("process_table.deleted"));
+          window.location.reload();
+        } catch (error) {
+          // 409: the process still has active sub-processes.
+          showToast(apiErrorDetail(error, "An error occurred"), "error");
+        }
+      });
+    </script>
+
+    <div class="space-y-5 sm:space-y-6">
+      <div class="border-0 p-0">
+        <DataTable
+          columns={columns}
+          data={data}
+          tableId="processes"
+          i18Item="process"
+          showAddButton={canEdit}
+          columnFilter="status"
+          filterOptions={optionsEn.status}
+          filterHeaderColumn="status_name"
+          columnFilter2="type"
+          filterOptions2={optionsEn.type}
+          filter2HeaderColumn="type_name"
+          filter2AllLabel="process_table.all_types"
+          columnFilter3="unit"
+          filterOptions3={unitOptions}
+          filter3AllLabel="process_table.all_units"
+          manageKey="can_manage"
+        />
+      </div>
+    </div>
+  </div>
+</BaseLayout>

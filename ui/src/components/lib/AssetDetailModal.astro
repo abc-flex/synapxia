@@ -612,9 +612,12 @@ const {
     }
     function updateCoreHighlight() {
       const changed = new Set(coreChangedFields());
+      // Only an edit marks the changed fields (a thin ring); while creating every
+      // field is new, so only the tab's pending dot shows.
+      const marked = editingAssetId != null ? changed : new Set<HTMLElement>();
       for (const [el] of CORE_FIELD_ENTRIES) {
-        el.classList.toggle("ring-2", changed.has(el));
-        el.classList.toggle("ring-amber-400", changed.has(el));
+        el.classList.toggle("ring-1", marked.has(el));
+        el.classList.toggle("ring-amber-400", marked.has(el));
       }
       tabs.setCoreDirty(changed.size > 0);
     }

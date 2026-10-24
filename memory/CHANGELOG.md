@@ -20,6 +20,24 @@ Entries before the 2026-06-10 switchover (Keep-a-Changelog–style, auto-generat
 
 ---
 
+## 2026-10-23 13:25 — feat(proc): Process Management (SpecKit 009, HU-PR01–04)
+- New `/proc/processes` (`PROC/PROCESSES`): a list of processes and a dialog with the tabs Core Fields, Related processes, Related assets and Related inits, in that order. The `workflows` stub domain becomes the Processes domain, with 12 additive endpoints under `/api/processes`.
+  - **Server rules:** a new process starts in Draft. Status moves are Draft → Review → Published → Deprecated, plus Review → Draft. The code is immutable, the parent hierarchy is acyclic, and a process with active children cannot be removed.
+  - **Links:** each Related tab saves its whole set in one atomic `PUT`, and create writes the process with every staged link all-or-nothing. Removed links are deactivated, and adding the same link again reactivates the row.
+  - **Relation types:** process relations use a new BPMN-oriented list, `PROCESS_RELATION_TYPE`: Precedes, Triggers, Calls, Feeds Into, Interacts With (undirected), Supports and Governs. Two rules apply: Supports only goes from a Support process to a Primary one, and Precedes only links processes of the same type. A type change that would break such links is refused.
+  - **UI:** a new shared `RelatedLinksTab.svelte` reproduces Asset Management's Related tab; `AssetDetailTabs` has not adopted it yet. `menu_options.processes` is now "Process Management / Gestión de Procesos".
+  - **List columns** (user's follow-up): code, name (no description subtitle), type, owner, status, tags, actions. Type and status filter from their column headers; the unit filter is in the toolbar.
+  - **Pending-change highlight** (user's follow-up, Process, Asset and Dashboard Management): while creating, fields and staged rows are no longer outlined in amber; only the tab's pending dot shows. While editing, the outline is now a 1px ring (was 2px). `RelatedLinksTab` gained a `highlight` prop for this. The shared `PermissionsTab` ring is thinner too, which also reaches Initiative Management's Permissions tab. At the user's request the 1px ring now applies app-wide: Edit Initiative's core fields and its Related Assets rows got it too (`InitiativeDetailModal.astro`, `InitiativeDetailTabs.svelte`), so no 2px amber ring is left in the UI.
+  - **Button labels** (user's follow-up, also applied to Dashboard Management): the add button reads "+ Process / + Proceso" and "+ Dashboard / + Tablero" (`*_modal.one_title`), and the dialog's create button reads "Save / Guardar" (`*_detail_modal.create`).
+- **Schema edited in place, no migration (the user's call, pre-production):** `process_assets` and `process_inits` gain `type` in their PK, `71-proc-ddl.sql` adds the new list, and the `72-proc-insert.sql` relations are rewritten (Depends On → Precedes reversed, Used By → Supports, asset and initiative links → Related To). **A provisioned DB needs `make rebuild`** or the same change applied by hand once; the local dev DB was patched that way.
+- Verified:
+  - 88 new tests; the suite stands at 837 passed.
+  - An 18-check live API smoke run as felipe.cardenas and adriana.velez; its rows were deleted afterwards.
+  - The fresh-init path ran on a throwaway Postgres.
+  - `bun run build` is clean, and `astro check` only adds the usual "not a module" error once.
+  - **Not click-tested in a browser.**
+- Files affected: `db/sql/71-proc-ddl.sql`, `db/sql/72-proc-insert.sql`, `api/app/workflows/{internal,routes}/*`, `api/app/main.py`, `api/tests/{proc_helpers,test_proc_*}.py`, `ui/src/pages/proc/processes.astro`, `ui/src/components/proc/ProcessDetailModal.astro`, `ui/src/components/svelte/{ProcessDetailTabs,RelatedLinksTab}.svelte`, `ui/src/lib/processes.ts`, `ui/src/types/api.ts`, `ui/src/i18n/{en,es}.json`, `ui/src/components/ana/DashboardDetailModal.astro`, `docs/user-stories/07-proc.md`, `api/CLAUDE.md`, `api/AGENTS.md`, `specs/009-process-management/*`
+
 ## 2026-10-06 00:18 — feat(ana): Usage Metrics (SpecKit 008, HU-AN07)
 - New read-only `/ana/usage` for managers (`ANA/USAGE`). Two additive endpoints: `GET /api/usage/metrics` (one aggregate document) and `GET /api/usage/dashboards/{id}/errors` (top errors, `limit` 1–50).
   - **Scope:** superusers and the ADMINISTRATOR profile see every execution. Anyone else sees only dashboards they hold a live MANAGE grant to, through the shared permission engine; out-of-scope errors answer 404.

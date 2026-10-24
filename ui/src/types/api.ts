@@ -1693,3 +1693,124 @@ export interface UsageErrors {
   items: UsageErrorItem[];
   total_with_error: number;
 }
+
+// ── Process Management (specs/009-process-management) ─────────────────────────
+
+export interface Process {
+  code: string;
+  name: string;
+  description?: string | null;
+  type: string;
+  parent?: string | null;
+  parent_name?: string | null;
+  unit?: string | null;
+  unit_name?: string | null;
+  owner: number;
+  owner_name?: string | null;
+  reference?: string | null;
+  status: string;
+  tags?: string[] | null;
+  detail?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+/** The single-process read: list shape + the status control's options
+ *  (current status first, then the allowed moves). */
+export interface ProcessDetail extends Process {
+  allowed_statuses: string[];
+}
+
+export interface ProcessRelationItem {
+  target: string;
+  type: string;
+  rationale?: string | null;
+}
+
+export interface ProcessAssetItem {
+  asset: number;
+  type: string;
+  rationale?: string | null;
+}
+
+export interface ProcessInitItem {
+  init: number;
+  type: string;
+  rationale?: string | null;
+}
+
+export interface ProcessCreate {
+  code: string;
+  name: string;
+  description?: string | null;
+  type: string;
+  parent?: string | null;
+  unit?: string | null;
+  owner?: number | null;
+  reference?: string | null;
+  status?: string | null;
+  tags?: string[] | null;
+  detail?: string | null;
+  relations?: ProcessRelationItem[];
+  assets?: ProcessAssetItem[];
+  inits?: ProcessInitItem[];
+}
+
+/** Core fields only; the code is immutable, so it is not here. */
+export interface ProcessUpdate {
+  name?: string;
+  description?: string | null;
+  type?: string;
+  parent?: string | null;
+  unit?: string | null;
+  owner?: number;
+  reference?: string | null;
+  status?: string;
+  tags?: string[] | null;
+  detail?: string | null;
+}
+
+export interface ProcessRelation {
+  source: string;
+  /** The other process (the source, for an incoming INTERACTS_WITH row). */
+  target: string;
+  target_name?: string | null;
+  target_type?: string | null;
+  target_active: boolean;
+  type: string;
+  rationale?: string | null;
+  direction: "outgoing" | "incoming";
+}
+
+export interface ProcessAssetLink {
+  asset: number;
+  asset_name?: string | null;
+  category?: string | null;
+  asset_active: boolean;
+  type: string;
+  rationale?: string | null;
+}
+
+export interface ProcessInitLink {
+  init: number;
+  init_name?: string | null;
+  init_active: boolean;
+  type: string;
+  rationale?: string | null;
+}
+
+export interface ProcessRelationRule {
+  source?: string[];
+  target?: string[];
+  same_type?: boolean;
+}
+
+export interface ProcessFormOptions {
+  can_edit: boolean;
+  processes: { code: string; name: string; type: string }[];
+  units: { code: string; name: string }[];
+  owners: { id: number; name: string }[];
+  assets: { id: number; name: string; category?: string | null }[];
+  initiatives: { id: number; name: string }[];
+  relation_rules: Record<string, ProcessRelationRule>;
+}

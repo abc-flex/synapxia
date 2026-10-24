@@ -19,7 +19,7 @@ api/app/
 ```
 
 Domains: `admin, auth, collab, taxo, lib, support` (implemented), plus
-stub/partial `genai, inits, insights, workflows`.
+stub/partial `genai, inits, insights, workflows` (`workflows` is the Processes domain, module PROC).
 New features go inside their owning domain — never add cross-domain plumbing per module.
 
 ## Commands

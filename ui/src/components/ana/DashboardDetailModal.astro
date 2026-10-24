@@ -280,9 +280,12 @@ const required = '<span class="ml-0.5 text-red-500" aria-hidden="true">*</span>'
 
     function updateCoreHighlight() {
       const changedEls = new Set(mode === "view" ? [] : coreChangedFields());
+      // Only an edit marks the changed fields (a thin ring); while creating every
+      // field is new, so only the tab's pending dot shows.
+      const marked = mode === "edit" ? changedEls : new Set<HTMLElement>();
       for (const [el] of CORE_FIELDS) {
-        el.classList.toggle("ring-2", changedEls.has(el));
-        el.classList.toggle("ring-amber-400", changedEls.has(el));
+        el.classList.toggle("ring-1", marked.has(el));
+        el.classList.toggle("ring-amber-400", marked.has(el));
       }
       tabs.setCoreDirty(changedEls.size > 0);
     }
@@ -321,7 +324,7 @@ const required = '<span class="ml-0.5 text-red-500" aria-hidden="true">*</span>'
       }
       submitBtn.classList.remove("hidden");
       const [key, fallback] = mode === "create"
-        ? ["dashboard_detail_modal.create", "Create dashboard"]
+        ? ["dashboard_detail_modal.create", "Save"]
         : SAVE_LABELS[activeTab];
       submitBtn.setAttribute("data-i18n", key);
       submitBtn.textContent = tr(key, fallback);

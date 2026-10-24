@@ -478,7 +478,7 @@
         <ul class="space-y-2">
           {#each stagedLinks as link, idx (linkKey(link.asset, link.type))}
             <li
-              class={pendingLinkKeys.has(linkKey(link.asset, link.type)) ? `${rowClass} ring-2 ring-amber-400` : rowClass}
+              class={pendingLinkKeys.has(linkKey(link.asset, link.type)) ? `${rowClass} ring-1 ring-amber-400` : rowClass}
               data-pending={pendingLinkKeys.has(linkKey(link.asset, link.type)) ? "1" : undefined}
             >
               <span class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-800 dark:text-gray-200" title={link.assetLabel}>{link.assetLabel}</span>

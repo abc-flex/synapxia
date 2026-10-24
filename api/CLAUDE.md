@@ -84,7 +84,10 @@ api/
 │   │                             #   (specs/006): dashboards, parameters, dashboard_permissions
 │   │                             #   (binds app/internal/resource_permissions). Catalog /
 │   │                             #   Execute / Favorite / Usage Metrics are not built yet
-│   └── workflows/               # ⚠️ STUB
+│   └── workflows/               # Processes (module PROC) — partial: Process Management
+│                                 #   (specs/009): processes, related_processes (BPMN-oriented
+│                                 #   PROCESS_RELATION_TYPE), process_assets, process_inits.
+│                                 #   Value Chain / Process Map are not built yet
 ├── pyproject.toml               # uv-managed deps; no [tool.X] lint sections yet
 ├── requirements.txt             # Pip mirror for Vercel build
 ├── index.py                     # `handler = Mangum(app, lifespan="off")` for Vercel
@@ -182,8 +185,8 @@ Each resource implements the **canonical CRUD pattern**:
 - Instantiates `FastAPI(title="SynapxIA API", version="1.0.0", openapi_tags=[…])`.
 - Adds `CORSMiddleware` reading `CORS_ORIGINS` env (comma-separated; defaults `*`).
 - Registers routers from **auth → admin → taxo → lib → collab → inits → insights →
-  support** in order. `genai` and `workflows` are TODO — when you implement one, import
-  its router and `app.include_router(...)` here.
+  workflows → support** in order. `genai` is TODO — when you implement it, import its
+  router and `app.include_router(...)` here.
 - Defines startup/shutdown event handlers (currently log-only — no DB pre-warm).
 - `GET /` returns an index of available endpoint paths (cheap discovery).
 
@@ -393,8 +396,8 @@ from the root `.env`; Vercel injects them from the project dashboard.
 
 ## Adding a new domain (rare)
 
-The remaining stub domains (`genai`, `workflows`) ship empty so the import surface
-stays stable (`inits` and `insights` were promoted by SpecKit 004/005 and 006). When
+The remaining stub domain (`genai`) ships empty so the import surface stays stable
+(`inits`, `insights` and `workflows` were promoted by SpecKit 004/005, 006 and 009). When
 promoting a stub to a real module:
 
 1. Add SQL schema in `db/sql/{NN}-{module}-ddl.sql` + seeds in `{NN+1}-…-insert.sql`.

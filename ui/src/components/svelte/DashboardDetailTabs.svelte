@@ -782,7 +782,7 @@
         <ul class="space-y-2">
           {#each staged as p (p.name)}
             <li
-              class={pendingNames.has(p.name) ? `${rowClass} ring-2 ring-amber-400` : rowClass}
+              class={pendingNames.has(p.name) ? `${rowClass} ring-1 ring-amber-400` : rowClass}
               data-pending={pendingNames.has(p.name) ? "1" : undefined}
             >
               <span class="min-w-0 flex-1">

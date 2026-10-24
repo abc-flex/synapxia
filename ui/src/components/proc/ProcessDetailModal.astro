@@ -1,0 +1,619 @@
+---
+/**
+ * ProcessDetailModal — Process Management's tabbed dialog
+ * (specs/009-process-management). Derived from DashboardDetailModal.astro.
+ *
+ * Tabs, in order: Core Fields, Related processes, Related assets, Related inits.
+ *
+ * Three modes:
+ *   - create: "New Process". Every tab is usable; one Save sends the process
+ *     and all staged links together (all-or-nothing). The status is locked to
+ *     Draft. After the save the dialog switches to edit mode on the new process.
+ *   - edit:   the caller holds PROC/PROCESSES with edit rights. Each tab saves
+ *     ONLY its own slice (Save core fields / related processes / assets / inits).
+ *   - view:   read-only privilege — no save, no add rows, no remove.
+ *
+ * The status control offers exactly what the API reports (`allowed_statuses`):
+ * Draft → Review; Review → Published or back to Draft; Published → Deprecated;
+ * Deprecated is final. The code is fixed after creation.
+ *
+ * USAGE (from a page):
+ *   <ProcessDetailModal modalId="process-detail-modal" lists={...} canEdit={true} />
+ *   <button data-modal-open="process-detail-modal" data-process-code="OPER">Edit</button>
+ */
+type ListOption = { value: string; byLang: Record<string, string> };
+interface Props {
+  modalId?: string;
+  canEdit: boolean;
+  lists: {
+    status: ListOption[];
+    type: ListOption[];
+  };
+}
+const { modalId = "process-detail-modal", canEdit, lists } = Astro.props as Props;
+
+const inputClass =
+  "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 disabled:bg-gray-100 disabled:cursor-not-allowed dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:disabled:bg-gray-800";
+const labelClass = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1";
+const label = (o: ListOption) => o.byLang.en ?? o.byLang.es ?? o.value;
+const required = '<span class="ml-0.5 text-red-500" aria-hidden="true">*</span>';
+---
+
+<dialog
+  id={modalId}
+  data-process-detail
+  data-can-edit={canEdit ? "1" : "0"}
+  class="rounded-2xl p-0 w-[min(1040px,95vw)] max-w-none bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 backdrop:bg-black/60 backdrop:backdrop-blur-sm"
+>
+  <form id={`${modalId}-form`} class="flex flex-col h-[min(760px,90vh)]" novalidate>
+    <div class="flex items-start justify-between gap-4 px-6 py-4 border-b border-gray-200 dark:border-gray-800">
+      <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+        <span id={`${modalId}-title`} data-i18n="process_detail_modal.title_edit">Edit Process</span><span id={`${modalId}-title-name`}></span>
+      </h3>
+      <button
+        type="button"
+        data-modal-close={modalId}
+        class="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+        aria-label="Close"
+        data-i18n-aria-label="common.close"
+      >
+        <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+        </svg>
+      </button>
+    </div>
+
+    <div id={`${modalId}-status`} class="hidden mx-6 mt-4 rounded-lg p-3 text-sm" role="status" aria-live="polite"></div>
+    <p id={`${modalId}-readonly`} class="hidden mx-6 mt-4 rounded-lg bg-gray-50 p-3 text-sm text-gray-600 dark:bg-gray-800 dark:text-gray-300" data-i18n="process_detail_modal.readonly_hint">You have view access: this process is read-only.</p>
+
+    <div class="flex-1 overflow-y-auto px-6 pb-5">
+      {/* Core fields — re-parented into the island's "core" tab after mount. */}
+      <section id={`${modalId}-core-section`}>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <label for={`${modalId}-code`} class={labelClass}><span data-i18n="process_modal.code">Code</span><Fragment set:html={required} /></label>
+            <input id={`${modalId}-code`} name="code" type="text" maxlength="50" autocomplete="off" class={`${inputClass} uppercase`} />
+            <p id={`${modalId}-code-hint`} class="mt-1 text-xs text-gray-500 dark:text-gray-400" data-i18n="process_detail_modal.code_hint">Letters A–Z, digits, '_' or '-'. It cannot change later.</p>
+          </div>
+
+          <div>
+            <label for={`${modalId}-name`} class={labelClass}><span data-i18n="process_modal.name">Name</span><Fragment set:html={required} /></label>
+            <input id={`${modalId}-name`} name="name" type="text" maxlength="100" class={inputClass} />
+          </div>
+
+          <div>
+            <label for={`${modalId}-type`} class={labelClass}><span data-i18n="process_modal.type">Type</span><Fragment set:html={required} /></label>
+            <select id={`${modalId}-type`} name="type" class={inputClass}>
+              <option value="" data-i18n="process_detail_modal.choose">— choose —</option>
+              {lists.type.map((o) => <option value={o.value} data-list-labels={JSON.stringify(o.byLang)}>{label(o)}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label for={`${modalId}-status-select`} class={labelClass} data-i18n="process_modal.status">Status</label>
+            <select id={`${modalId}-status-select`} name="status" class={inputClass}>
+              {lists.status.map((o) => <option value={o.value} data-list-labels={JSON.stringify(o.byLang)}>{label(o)}</option>)}
+            </select>
+            <p id={`${modalId}-status-hint`} class="mt-1 text-xs text-gray-500 dark:text-gray-400"></p>
+          </div>
+
+          <div>
+            <label for={`${modalId}-parent`} class={labelClass} data-i18n="process_modal.parent">Parent process</label>
+            <select id={`${modalId}-parent`} name="parent" class={inputClass}>
+              <option value="" data-i18n="process_detail_modal.no_parent">— none (top level) —</option>
+            </select>
+          </div>
+
+          <div>
+            <label for={`${modalId}-unit`} class={labelClass} data-i18n="process_modal.unit">Business unit</label>
+            <select id={`${modalId}-unit`} name="unit" class={inputClass}>
+              <option value="" data-i18n="process_detail_modal.no_unit">— none —</option>
+            </select>
+          </div>
+
+          <div>
+            <label for={`${modalId}-owner`} class={labelClass}><span data-i18n="process_modal.owner">Owner</span><Fragment set:html={required} /></label>
+            <select id={`${modalId}-owner`} name="owner" class={inputClass}>
+              <option value="" data-i18n="process_detail_modal.choose">— choose —</option>
+            </select>
+          </div>
+
+          <div>
+            <label for={`${modalId}-reference`} class={labelClass} data-i18n="process_modal.reference">Reference</label>
+            <input id={`${modalId}-reference`} name="reference" type="text" class={inputClass} />
+          </div>
+
+          <div class="md:col-span-2">
+            <label for={`${modalId}-description`} class={labelClass} data-i18n="process_modal.description">Description</label>
+            <textarea id={`${modalId}-description`} name="description" rows={2} maxlength="500" class={inputClass}></textarea>
+          </div>
+
+          <div class="md:col-span-2">
+            <label for={`${modalId}-tags`} class={labelClass} data-i18n="process_modal.tags">Tags</label>
+            <input id={`${modalId}-tags`} name="tags" type="text" placeholder="tag1, tag2, tag3" data-i18n-placeholder="process_detail_modal.tags_placeholder" class={inputClass} />
+          </div>
+
+          <div class="md:col-span-2">
+            <label for={`${modalId}-detail`} class={labelClass} data-i18n="process_modal.detail">Detail</label>
+            <textarea id={`${modalId}-detail`} name="detail" rows={4} placeholder="Additional detail (optional)" data-i18n-placeholder="process_detail_modal.detail_placeholder" class={inputClass}></textarea>
+          </div>
+        </div>
+      </section>
+
+      <div id={`${modalId}-detail-tabs`} class="pt-6"></div>
+    </div>
+
+    <div class="flex flex-wrap items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-800">
+      <button type="button" data-modal-close={modalId} class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800" data-i18n="common.cancel">Cancel</button>
+      <button id={`${modalId}-submit`} type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50" data-i18n="process_detail_modal.save_core">Save core fields</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog
+  id={`${modalId}-discard-confirm`}
+  class="rounded-2xl p-6 w-[420px] max-w-full bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 backdrop:bg-black/60 backdrop:backdrop-blur-sm"
+>
+  <h3 class="text-base font-bold text-gray-900 dark:text-white" data-i18n="process_detail_modal.discard_title">Discard changes?</h3>
+  <p class="mt-2 text-sm text-gray-600 dark:text-gray-400" data-i18n="process_detail_modal.discard_message">You have unsaved changes. If you leave now, they will be lost.</p>
+  <div class="mt-5 flex justify-end gap-3">
+    <button type="button" id={`${modalId}-discard-keep`} class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800" data-i18n="process_detail_modal.discard_keep_editing">Keep editing</button>
+    <button type="button" id={`${modalId}-discard-confirm-btn`} class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700" data-i18n="process_detail_modal.discard_confirm">Discard changes</button>
+  </div>
+</dialog>
+
+<script>
+  import { mount, tick } from "svelte";
+  import ProcessDetailTabs from "@/components/svelte/ProcessDetailTabs.svelte";
+  import {
+    createProcess, getProcess, getProcessAssets, getProcessFormOptions, getProcessInits,
+    getProcessRelations, saveProcessAssets, saveProcessInits, saveProcessRelations, updateProcess,
+  } from "@/lib/processes";
+  import { apiErrorDetail } from "@/lib/api";
+  import { getUser } from "@/lib/auth";
+  import { createStatusBanner } from "@/lib/statusBanner";
+  import { translate } from "@/utils/i18nClient";
+  import type { ProcessDetail, ProcessFormOptions } from "@/types/api";
+
+  type DetailTab = "core" | "related_processes" | "related_assets" | "related_inits";
+  type Mode = "create" | "edit" | "view";
+  const SAVE_LABELS: Record<DetailTab, [string, string]> = {
+    core: ["process_detail_modal.save_core", "Save core fields"],
+    related_processes: ["process_detail_modal.save_related_processes", "Save related processes"],
+    related_assets: ["process_detail_modal.save_related_assets", "Save related assets"],
+    related_inits: ["process_detail_modal.save_related_inits", "Save related inits"],
+  };
+  const SAVED_MESSAGES: Record<DetailTab, [string, string]> = {
+    core: ["process_detail_modal.core_saved", "Core fields saved."],
+    related_processes: ["process_detail_modal.related_processes_saved", "Related processes saved."],
+    related_assets: ["process_detail_modal.related_assets_saved", "Related assets saved."],
+    related_inits: ["process_detail_modal.related_inits_saved", "Related inits saved."],
+  };
+  const TITLES: Record<Mode, [string, string]> = {
+    create: ["process_detail_modal.title_new", "New Process"],
+    edit: ["process_detail_modal.title_edit", "Edit Process"],
+    view: ["process_detail_modal.title_view", "View Process"],
+  };
+  const LOCKED_CLASSES = ["!bg-gray-100", "dark:!bg-gray-800", "cursor-not-allowed"];
+
+  const tr = (key: string, fallback: string): string => {
+    try {
+      const v = translate(key);
+      if (v && v !== key) return v;
+    } catch { /* non-fatal */ }
+    return fallback;
+  };
+  const bare = (raw: unknown) => String(raw ?? "").replace(/^\d+-/, "").trim().toUpperCase();
+  const CODE_RE = /^[A-Z0-9][A-Z0-9_-]{0,49}$/;
+
+  function init(dialog: HTMLDialogElement) {
+    const modalId = dialog.id;
+    const canEdit = dialog.dataset.canEdit === "1";
+    const $ = <T extends HTMLElement>(suffix: string) => document.getElementById(`${modalId}${suffix}`) as T;
+    const form = $<HTMLFormElement>("-form");
+    const codeField = $<HTMLInputElement>("-code");
+    const codeHint = $<HTMLElement>("-code-hint");
+    const nameField = $<HTMLInputElement>("-name");
+    const typeSel = $<HTMLSelectElement>("-type");
+    const statusSel = $<HTMLSelectElement>("-status-select");
+    const statusHint = $<HTMLElement>("-status-hint");
+    const parentSel = $<HTMLSelectElement>("-parent");
+    const unitSel = $<HTMLSelectElement>("-unit");
+    const ownerSel = $<HTMLSelectElement>("-owner");
+    const refField = $<HTMLInputElement>("-reference");
+    const descField = $<HTMLTextAreaElement>("-description");
+    const tagsField = $<HTMLInputElement>("-tags");
+    const detailField = $<HTMLTextAreaElement>("-detail");
+    const titleEl = $<HTMLElement>("-title");
+    const titleNameEl = $<HTMLElement>("-title-name");
+    const readonlyNote = $<HTMLElement>("-readonly");
+    const submitBtn = $<HTMLButtonElement>("-submit");
+    const discardDialog = document.getElementById(`${modalId}-discard-confirm`) as HTMLDialogElement;
+    const status = createStatusBanner($<HTMLElement>("-status"), "mx-6 mt-4 rounded-lg p-3 text-sm");
+
+    let mode: Mode = "create";
+    let editingCode: string | null = null;
+    let activeTab: DetailTab = "core";
+    let originalCoreSnapshot = "";
+    let options: ProcessFormOptions | null = null;
+    // Anything saved → the list behind is reloaded on close.
+    let changed = false;
+
+    const CORE_FIELDS: [HTMLElement, string][] = [
+      [codeField, "code"], [nameField, "name"], [typeSel, "type"], [statusSel, "status"],
+      [parentSel, "parent"], [unitSel, "unit"], [ownerSel, "owner"], [refField, "reference"],
+      [descField, "description"], [tagsField, "tags"], [detailField, "detail"],
+    ];
+    const requiredInputs: HTMLElement[] = [codeField, nameField, typeSel, ownerSel];
+
+    function buildCorePayload() {
+      const tags = tagsField.value.split(",").map((t) => t.trim()).filter(Boolean);
+      return {
+        code: codeField.value.trim().toUpperCase(),
+        name: nameField.value.trim(),
+        type: typeSel.value,
+        status: statusSel.value,
+        parent: parentSel.value || null,
+        unit: unitSel.value || null,
+        owner: ownerSel.value ? Number(ownerSel.value) : null,
+        reference: refField.value.trim() || null,
+        description: descField.value.trim() || null,
+        tags: tags.length ? tags : null,
+        detail: detailField.value.trim() || null,
+      };
+    }
+    function coreChangedFields(): HTMLElement[] {
+      const baseline = originalCoreSnapshot ? JSON.parse(originalCoreSnapshot) : {};
+      const current = buildCorePayload() as Record<string, unknown>;
+      return CORE_FIELDS
+        .filter(([, key]) => JSON.stringify(current[key]) !== JSON.stringify(baseline[key]))
+        .map(([el]) => el);
+    }
+
+    // ── Tabs island ───────────────────────────────────────────────────────
+    const tabs = mount(ProcessDetailTabs, {
+      target: $<HTMLElement>("-detail-tabs"),
+      props: {
+        idPrefix: modalId,
+        onTabChange: (name: DetailTab) => {
+          activeTab = name;
+          paintFooter();
+        },
+      },
+    });
+    document.getElementById(`${modalId}-core`)?.appendChild($<HTMLElement>("-core-section"));
+
+    function updateCoreHighlight() {
+      const changedEls = new Set(mode === "view" ? [] : coreChangedFields());
+      // Only an edit marks the changed fields (a thin ring); while creating every
+      // field is new, so only the tab's pending dot shows.
+      const marked = mode === "edit" ? changedEls : new Set<HTMLElement>();
+      for (const [el] of CORE_FIELDS) {
+        el.classList.toggle("ring-1", marked.has(el));
+        el.classList.toggle("ring-amber-400", marked.has(el));
+      }
+      tabs.setCoreDirty(changedEls.size > 0);
+    }
+    for (const [el] of CORE_FIELDS) {
+      el.addEventListener("input", updateCoreHighlight);
+      el.addEventListener("change", updateCoreHighlight);
+    }
+    for (const el of requiredInputs) {
+      el.addEventListener("input", () => setInvalid(el, false));
+      el.addEventListener("change", () => setInvalid(el, false));
+    }
+    typeSel.addEventListener("change", () => tabs.setProcessType(typeSel.value));
+
+    function setInvalid(el: HTMLElement, on: boolean) {
+      el.classList.toggle("border-red-500", on);
+      el.setAttribute("aria-invalid", on ? "true" : "false");
+    }
+
+    // ── Options (parent / unit / owner + the tabs' pickers), loaded once ──
+    function fillSelect(sel: HTMLSelectElement, items: { value: string; label: string }[]) {
+      const placeholder = sel.options[0];
+      sel.replaceChildren(placeholder);
+      for (const item of items) sel.add(new Option(item.label, item.value));
+    }
+    function fillParentOptions() {
+      const items = (options?.processes ?? [])
+        .filter((p) => p.code !== editingCode)
+        .map((p) => ({ value: p.code, label: `${p.code} · ${p.name}` }));
+      const keep = parentSel.value;
+      fillSelect(parentSel, items);
+      parentSel.value = keep;
+    }
+    async function ensureOptions(): Promise<void> {
+      if (options) return;
+      try {
+        options = await getProcessFormOptions();
+      } catch (e) {
+        status.show(apiErrorDetail(e, tr("process_detail_modal.error_options", "Could not load the form options.")), "error");
+        return;
+      }
+      fillSelect(unitSel, options.units.map((u) => ({ value: u.code, label: u.name })));
+      fillSelect(ownerSel, options.owners.map((o) => ({ value: String(o.id), label: o.name })));
+      fillParentOptions();
+      tabs.setOptions(options);
+    }
+
+    function paintTitle() {
+      const [key, fallback] = TITLES[mode];
+      titleEl.setAttribute("data-i18n", key);
+      titleEl.textContent = tr(key, fallback);
+    }
+
+    function paintFooter() {
+      if (mode === "view") {
+        submitBtn.classList.add("hidden");
+        return;
+      }
+      submitBtn.classList.remove("hidden");
+      const [key, fallback] = mode === "create"
+        ? ["process_detail_modal.create", "Save"]
+        : SAVE_LABELS[activeTab];
+      submitBtn.setAttribute("data-i18n", key);
+      submitBtn.textContent = tr(key, fallback);
+    }
+
+    function setCoreDisabled(disabled: boolean) {
+      for (const [el] of CORE_FIELDS) (el as HTMLInputElement).disabled = disabled;
+      // The code is the process's permanent identity.
+      codeField.disabled = disabled || mode !== "create";
+      codeHint.classList.toggle("hidden", mode !== "create");
+    }
+
+    // ── Status policy: offer only what the API says is reachable ──────────
+    function applyStatusPolicy(currentStatus: string, allowed: string[]) {
+      const current = bare(currentStatus) || "DRAFT";
+      const offered = mode === "create" ? ["DRAFT"] : (allowed.length ? allowed.map(bare) : [current]);
+      let selectable = 0;
+      for (const opt of [...statusSel.options]) {
+        const keep = offered.includes(bare(opt.value));
+        opt.hidden = !keep;
+        opt.disabled = !keep;
+        if (keep) selectable += 1;
+      }
+      const match = [...statusSel.options].find((o) => bare(o.value) === current);
+      statusSel.value = match?.value ?? "";
+      const locked = selectable < 2 || mode !== "edit";
+      statusSel.disabled = locked;
+      for (const c of LOCKED_CLASSES) statusSel.classList.toggle(c, locked);
+      const [key, fallback] =
+        mode === "create" ? ["process_detail_modal.status_hint_create", "New processes start as Draft."]
+        : mode === "view" ? ["", ""]
+        : !locked ? ["process_detail_modal.status_hint_moves", "Only the moves allowed from the current status are offered."]
+        : current === "DEPRECATED" ? ["process_detail_modal.status_hint_locked_deprecated", "Deprecated processes are closed; their status can no longer change."]
+        : ["", ""];
+      if (key) statusHint.setAttribute("data-i18n", key);
+      else statusHint.removeAttribute("data-i18n");
+      statusHint.textContent = key ? tr(key, fallback) : "";
+    }
+
+    function fillCore(d: ProcessDetail) {
+      codeField.value = d.code;
+      nameField.value = d.name ?? "";
+      titleNameEl.textContent = d.name ? `: ${d.name}` : "";
+      typeSel.value = bare(d.type);
+      tabs.setProcessType(typeSel.value);
+      fillParentOptions();
+      parentSel.value = d.parent ?? "";
+      unitSel.value = d.unit ?? "";
+      ownerSel.value = d.owner != null ? String(d.owner) : "";
+      refField.value = d.reference ?? "";
+      descField.value = d.description ?? "";
+      tagsField.value = Array.isArray(d.tags) ? d.tags.join(", ") : String(d.tags ?? "");
+      detailField.value = d.detail ?? "";
+      applyStatusPolicy(d.status, d.allowed_statuses ?? []);
+      originalCoreSnapshot = JSON.stringify(buildCorePayload());
+      updateCoreHighlight();
+    }
+
+    function setMode(next: Mode) {
+      mode = next;
+      paintTitle();
+      setCoreDisabled(next === "view");
+      readonlyNote.classList.toggle("hidden", next !== "view");
+      tabs.setContext(editingCode, next === "view");
+      paintFooter();
+    }
+
+    async function loadLinks(code: string) {
+      const [relations, assets, inits] = await Promise.all([
+        getProcessRelations(code), getProcessAssets(code), getProcessInits(code),
+      ]);
+      if (editingCode !== code) return;
+      tabs.applyRelations(relations);
+      tabs.applyAssets(assets);
+      tabs.applyInits(inits);
+    }
+
+    // ── Open / reset / close ──────────────────────────────────────────────
+    function resetForm() {
+      form.reset();
+      editingCode = null;
+      titleNameEl.textContent = "";
+      tabs.reset();
+      activeTab = "core";
+      for (const el of requiredInputs) setInvalid(el, false);
+      status.clear();
+      setMode("create");
+      applyStatusPolicy("DRAFT", ["DRAFT"]);
+      fillParentOptions();
+      // The creator is the default owner (the API applies the same default).
+      const me = getUser();
+      if (me?.id != null && [...ownerSel.options].some((o) => o.value === String(me.id))) {
+        ownerSel.value = String(me.id);
+      }
+      originalCoreSnapshot = JSON.stringify(buildCorePayload());
+      updateCoreHighlight();
+    }
+
+    async function openCreate() {
+      if (!canEdit) return;
+      await ensureOptions();
+      resetForm();
+      dialog.showModal();
+      codeField.focus();
+    }
+
+    async function openExisting(code: string) {
+      await ensureOptions();
+      resetForm();
+      editingCode = code;
+      setMode(canEdit ? "edit" : "view");
+      dialog.showModal();
+      try {
+        const d = await getProcess(code);
+        if (editingCode !== code) return;
+        fillCore(d);
+        await loadLinks(code);
+      } catch (e) {
+        status.show(apiErrorDetail(e, tr("process_detail_modal.error_load", "Could not load the process.")), "error");
+      }
+    }
+
+    function closeModal() {
+      dialog.close();
+      resetForm();
+      if (changed) window.location.reload();
+    }
+
+    function pendingTabs(): DetailTab[] {
+      if (mode === "view") return [];
+      const pending: DetailTab[] = [];
+      if (JSON.stringify(buildCorePayload()) !== originalCoreSnapshot) pending.push("core");
+      if (tabs.relationsDirty()) pending.push("related_processes");
+      if (tabs.assetsDirty()) pending.push("related_assets");
+      if (tabs.initsDirty()) pending.push("related_inits");
+      return pending;
+    }
+
+    function requestClose() {
+      if (pendingTabs().length) discardDialog.showModal();
+      else closeModal();
+    }
+
+    document.getElementById(`${modalId}-discard-keep`)?.addEventListener("click", async () => {
+      discardDialog.close();
+      const [first] = pendingTabs();
+      if (!first) return;
+      tabs.activateTab(first);
+      await tick();
+      if (first === "core") coreChangedFields()[0]?.focus();
+      else tabs.focusFirstPending();
+    });
+    document.getElementById(`${modalId}-discard-confirm-btn`)?.addEventListener("click", () => {
+      discardDialog.close();
+      closeModal();
+    });
+
+    document.addEventListener("click", (e) => {
+      const target = (e.target as HTMLElement).closest?.(`[data-modal-open="${modalId}"]`) as HTMLElement | null;
+      if (target) {
+        e.preventDefault();
+        const code = target.dataset.processCode;
+        if (code) void openExisting(code);
+        else void openCreate();
+      }
+      const closer = (e.target as HTMLElement).closest?.(`[data-modal-close="${modalId}"]`);
+      if (closer) {
+        e.preventDefault();
+        requestClose();
+      }
+    });
+    dialog.addEventListener("cancel", (e) => {
+      e.preventDefault();
+      requestClose();
+    });
+
+    function validateCore(): boolean {
+      const payload = buildCorePayload();
+      const checks: [HTMLElement, boolean][] = [
+        [codeField, mode !== "create" || CODE_RE.test(payload.code)],
+        [nameField, !!payload.name],
+        [typeSel, !!payload.type],
+        [ownerSel, payload.owner != null],
+      ];
+      let ok = true;
+      for (const [el, valid] of checks) {
+        setInvalid(el, !valid);
+        if (!valid) ok = false;
+      }
+      if (!ok) {
+        tabs.activateTab("core");
+        const codeBad = mode === "create" && !CODE_RE.test(payload.code) && payload.code !== "";
+        status.show(codeBad
+          ? tr("process_detail_modal.code_invalid", "The code may only use letters A–Z, digits, '_' or '-', starting with a letter or digit.")
+          : tr("process_detail_modal.required", "Please fill the required fields."), "error");
+      }
+      return ok;
+    }
+
+    // ── Submit: create sends everything; edit saves only the active tab ───
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (mode === "view") return;
+      submitBtn.disabled = true;
+      status.clear();
+      try {
+        if (mode === "create") {
+          if (!validateCore()) return;
+          const { status: _ignored, ...core } = buildCorePayload();
+          const saved = await createProcess({
+            ...core,
+            owner: core.owner ?? undefined,
+            relations: tabs.relationsStaged(),
+            assets: tabs.assetsStaged(),
+            inits: tabs.initsStaged(),
+          });
+          changed = true;
+          editingCode = saved.code;
+          if (options) options.processes = [...options.processes, { code: saved.code, name: saved.name, type: saved.type }];
+          setMode("edit");
+          fillCore(saved);
+          await loadLinks(saved.code);
+          status.show(tr("process_detail_modal.created", "Process created with its links."), "ok");
+          return;
+        }
+        const code = editingCode as string;
+        let saved = false;
+        if (activeTab === "core") {
+          if (JSON.stringify(buildCorePayload()) !== originalCoreSnapshot) {
+            if (!validateCore()) return;
+            const { code: _code, ...core } = buildCorePayload();
+            const d = await updateProcess(code, { ...core, owner: core.owner ?? undefined });
+            fillCore(d);
+            saved = true;
+          }
+        } else if (activeTab === "related_processes") {
+          if (tabs.relationsDirty()) {
+            tabs.applyRelations(await saveProcessRelations(code, tabs.relationsStaged()));
+            saved = true;
+          }
+        } else if (activeTab === "related_assets") {
+          if (tabs.assetsDirty()) {
+            tabs.applyAssets(await saveProcessAssets(code, tabs.assetsStaged()));
+            saved = true;
+          }
+        } else if (activeTab === "related_inits") {
+          if (tabs.initsDirty()) {
+            tabs.applyInits(await saveProcessInits(code, tabs.initsStaged()));
+            saved = true;
+          }
+        }
+        if (saved) changed = true;
+        const [key, fallback] = SAVED_MESSAGES[activeTab];
+        status.show(saved ? tr(key, fallback) : tr("process_detail_modal.no_changes", "No changes to save."), saved ? "ok" : "info");
+      } catch (err) {
+        status.show(apiErrorDetail(err, tr("process_detail_modal.error_save", "Could not save the process.")), "error");
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+
+    resetForm();
+  }
+
+  document.querySelectorAll<HTMLDialogElement>("dialog[data-process-detail]").forEach(init);
+</script>

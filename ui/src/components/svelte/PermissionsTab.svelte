@@ -295,7 +295,7 @@
     <ul class="space-y-2">
       {#each staged as p, idx (p.id ?? `${p.targetType}:${p.targetCode}:${p.access}`)}
         <li
-          class={p.id == null ? `${rowClass} ring-2 ring-amber-400` : rowClass}
+          class={p.id == null ? `${rowClass} ring-1 ring-amber-400` : rowClass}
           data-pending={p.id == null ? "1" : undefined}
         >
           <span class="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-300">{listText("TARGET_TYPE", p.targetType) || p.targetType}</span>

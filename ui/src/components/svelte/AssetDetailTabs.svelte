@@ -1061,7 +1061,8 @@
     "w-full rounded-md border border-gray-300 dark:border-gray-700 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:bg-gray-800 dark:text-white";
   const charBorderClass = (feature: string): string => {
     if (charInvalid[feature]) return "border-red-500 dark:border-red-500";
-    if (charChanged.has(feature)) return "border-amber-400 dark:border-amber-500";
+    // Only an edit marks a changed characteristic; while creating every value is new.
+    if (editingAssetId != null && charChanged.has(feature)) return "border-amber-400 dark:border-amber-500";
     return "border-gray-300 dark:border-gray-700";
   };
   const clearCharInvalid = (feature: string): void => {
@@ -1352,7 +1353,7 @@
         <ul class="space-y-2">
           {#each stagedRelations as rel, idx (linkKey(rel.target, rel.type))}
             <li
-              class={pendingRelationKeys.has(linkKey(rel.target, rel.type)) ? `${rowClass} ring-2 ring-amber-400` : rowClass}
+              class={editingAssetId != null && pendingRelationKeys.has(linkKey(rel.target, rel.type)) ? `${rowClass} ring-1 ring-amber-400` : rowClass}
               data-pending={pendingRelationKeys.has(linkKey(rel.target, rel.type)) ? "1" : undefined}
             >
               <span class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-800 dark:text-gray-200" title={rel.targetLabel}>{rel.targetLabel}</span>
@@ -1411,7 +1412,7 @@
         <ul class="space-y-2">
           {#each stagedInits as rel, idx (linkKey(rel.init, rel.type))}
             <li
-              class={pendingInitKeys.has(linkKey(rel.init, rel.type)) ? `${rowClass} ring-2 ring-amber-400` : rowClass}
+              class={editingAssetId != null && pendingInitKeys.has(linkKey(rel.init, rel.type)) ? `${rowClass} ring-1 ring-amber-400` : rowClass}
               data-pending={pendingInitKeys.has(linkKey(rel.init, rel.type)) ? "1" : undefined}
             >
               <span class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-800 dark:text-gray-200" title={rel.initLabel}>{rel.initLabel}</span>
@@ -1477,7 +1478,7 @@
         <ul class="space-y-2">
           {#each stagedPermissions as p, idx (p.id ?? `${p.targetType}:${p.targetCode}`)}
             <li
-              class={pendingPermissionKeys.has(permPendingKey(p)) ? `${rowClass} ring-2 ring-amber-400` : rowClass}
+              class={editingAssetId != null && pendingPermissionKeys.has(permPendingKey(p)) ? `${rowClass} ring-1 ring-amber-400` : rowClass}
               data-pending={pendingPermissionKeys.has(permPendingKey(p)) ? "1" : undefined}
             >
               <span class="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-300">{listText("TARGET_TYPE", p.targetType) || p.targetType}</span>

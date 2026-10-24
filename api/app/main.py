@@ -65,6 +65,9 @@ from .insights.routes import catalog as dashboard_catalog_router
 from .insights.routes import executions as dashboard_executions_router
 from .insights.routes import usage as usage_metrics_router
 
+from .workflows.routes import processes as processes_router
+from .workflows.routes import process_links as process_links_router
+
 from .support.routes import bug_reports as bug_reports_router
 
 # Configure logging
@@ -384,6 +387,10 @@ app.include_router(dashboards_router.router)
 app.include_router(dashboard_parameters_router.router)
 app.include_router(dashboard_permissions_router.router)
 app.include_router(usage_metrics_router.router)  # specs/008-usage-metrics
+
+# Processes (specs/009-process-management)
+app.include_router(processes_router.router)
+app.include_router(process_links_router.router)
 
 # Support module
 app.include_router(bug_reports_router.router)

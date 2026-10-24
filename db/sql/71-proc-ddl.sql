@@ -25,18 +25,19 @@ CREATE TABLE processes (
 CREATE TABLE process_assets (
     process     VARCHAR(50)   NOT NULL,
     asset       BIGINT        NOT NULL,
+    type        VARCHAR(100)  NOT NULL, -- references List_items.value where list='RELATION_TYPE'
     rationale   TEXT,
     is_active   BOOLEAN       NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ,
-    CONSTRAINT pk_process_assets PRIMARY KEY (process, asset)
+    CONSTRAINT pk_process_assets PRIMARY KEY (process, asset, type)
 );
 
 -- Table related_processes
 CREATE TABLE related_processes (
     source      VARCHAR(50)   NOT NULL,
     target      VARCHAR(50)   NOT NULL,
-    type        VARCHAR(100)  NOT NULL, -- references List_items.value where list='RELATION_TYPE'
+    type        VARCHAR(100)  NOT NULL, -- references List_items.value where list='PROCESS_RELATION_TYPE'
     rationale   TEXT,
     is_active   BOOLEAN       NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
@@ -48,11 +49,12 @@ CREATE TABLE related_processes (
 CREATE TABLE process_inits (
     process     VARCHAR(50)   NOT NULL,
     init        BIGINT        NOT NULL,
+    type        VARCHAR(100)  NOT NULL, -- references List_items.value where list='RELATION_TYPE'
     rationale   TEXT,
     is_active   BOOLEAN       NOT NULL DEFAULT TRUE,
     created_at  TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ,
-    CONSTRAINT pk_process_inits PRIMARY KEY (process, init)
+    CONSTRAINT pk_process_inits PRIMARY KEY (process, init, type)
 );
 
 -- ****************************************
@@ -144,3 +146,30 @@ INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
     ('PROCESS_STATUS', 'es', 'REVIEW',     'Revisión',    20),
     ('PROCESS_STATUS', 'es', 'PUBLISHED',  'Publicado',   30),
     ('PROCESS_STATUS', 'es', 'DEPRECATED', 'Obsoleto',    40);
+
+-- ===== List: Process Relation Type (BPMN-oriented) =====
+-- Process-to-process relations only (related_processes.type). Each value maps to a
+-- BPMN connecting object so the Value Chain and Process Map can draw it:
+-- PRECEDES = sequence flow, TRIGGERS = event start, CALLS = call activity,
+-- FEEDS_INTO = data association, INTERACTS_WITH = message flow (undirected),
+-- SUPPORTS / GOVERNS = association. Hierarchy is processes.parent, never a relation.
+INSERT INTO lists (code, name, description, type, module) VALUES (
+    'PROCESS_RELATION_TYPE', 'List of process relation types for system configuration',
+    'List that classifies the relations between processes, each mapped to a BPMN connecting object (sequence flow, event, call activity, data association, message flow, association).',
+    'LIST_OF_VALUES', 'PROC');
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('PROCESS_RELATION_TYPE', 'en', 'PRECEDES',       'Precedes',       10),
+    ('PROCESS_RELATION_TYPE', 'en', 'TRIGGERS',       'Triggers',       20),
+    ('PROCESS_RELATION_TYPE', 'en', 'CALLS',          'Calls',          30),
+    ('PROCESS_RELATION_TYPE', 'en', 'FEEDS_INTO',     'Feeds Into',     40),
+    ('PROCESS_RELATION_TYPE', 'en', 'INTERACTS_WITH', 'Interacts With', 50),
+    ('PROCESS_RELATION_TYPE', 'en', 'SUPPORTS',       'Supports',       60),
+    ('PROCESS_RELATION_TYPE', 'en', 'GOVERNS',        'Governs',        70);
+INSERT INTO list_items (list, lang, value, label, sort_order) VALUES
+    ('PROCESS_RELATION_TYPE', 'es', 'PRECEDES',       'Precede a',      10),
+    ('PROCESS_RELATION_TYPE', 'es', 'TRIGGERS',       'Dispara',        20),
+    ('PROCESS_RELATION_TYPE', 'es', 'CALLS',          'Invoca a',       30),
+    ('PROCESS_RELATION_TYPE', 'es', 'FEEDS_INTO',     'Alimenta a',     40),
+    ('PROCESS_RELATION_TYPE', 'es', 'INTERACTS_WITH', 'Interactúa con', 50),
+    ('PROCESS_RELATION_TYPE', 'es', 'SUPPORTS',       'Apoya a',        60),
+    ('PROCESS_RELATION_TYPE', 'es', 'GOVERNS',        'Regula a',       70);

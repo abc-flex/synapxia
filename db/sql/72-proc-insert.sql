@@ -157,37 +157,37 @@ INSERT INTO processes (code, name, description, type, parent, unit, owner, statu
 -- ******** Related Processes *******
 -- **********************************
 
--- ===== Primary value chain sequence (source DEPENDS_ON target) =====
+-- ===== Primary value chain sequence (source PRECEDES target) =====
 INSERT INTO related_processes (source, target, type, rationale) VALUES
-    ('OPER', 'INBL', 'DEPENDS_ON', 'Operations consume the components and code intake from inbound logistics.'),
-    ('OUTL', 'OPER', 'DEPENDS_ON', 'Outbound delivery depends on the software produced by operations.'),
-    ('MKTS', 'OUTL', 'DEPENDS_ON', 'Marketing & sales rely on products delivered by outbound logistics.'),
-    ('SERV', 'MKTS', 'DEPENDS_ON', 'Service follows the customer relationships created by marketing & sales.');
+    ('INBL', 'OPER', 'PRECEDES', 'Inbound logistics delivers the components and code intake that operations consume.'),
+    ('OPER', 'OUTL', 'PRECEDES', 'Operations produce the software that outbound logistics delivers.'),
+    ('OUTL', 'MKTS', 'PRECEDES', 'Outbound logistics delivers the products that marketing & sales bring to customers.'),
+    ('MKTS', 'SERV', 'PRECEDES', 'Marketing & sales create the customer relationships that service follows up.');
 
--- ===== Support activities enabling primary ones (source USED_BY target) =====
+-- ===== Support activities enabling primary ones (source SUPPORTS target) =====
 INSERT INTO related_processes (source, target, type, rationale) VALUES
-    ('TECH', 'OPER', 'USED_BY', 'Technology development is leveraged by operations to build software.'),
-    ('PROC', 'INBL', 'USED_BY', 'Procurement supplies the inputs consumed by inbound logistics.'),
-    ('HRMG', 'OPER', 'USED_BY', 'Human resource management staffs the operations teams.'),
-    ('INFR', 'SERV', 'USED_BY', 'Firm infrastructure governs and supports the service activity.');
+    ('TECH', 'OPER', 'SUPPORTS', 'Technology development is leveraged by operations to build software.'),
+    ('PROC', 'INBL', 'SUPPORTS', 'Procurement supplies the inputs consumed by inbound logistics.'),
+    ('HRMG', 'OPER', 'SUPPORTS', 'Human resource management staffs the operations teams.'),
+    ('INFR', 'SERV', 'SUPPORTS', 'Firm infrastructure governs and supports the service activity.');
 
 -- **********************************
 -- ********* Process Assets **********
 -- **********************************
 
-INSERT INTO process_assets (process, asset, rationale) VALUES
-    ('OPER-DEVELOP', 1, 'Python web development prompt used during software development.'),
-    ('OPER-DEVELOP', 3, 'Python web developer agent supporting the development process.'),
-    ('INBL-CODEMGT', 2, 'GitHub MCP server backing centralized source code management.'),
-    ('TECH-AIPLATF', 2, 'GitHub MCP server reused while building AI platform tooling.');
+INSERT INTO process_assets (process, asset, type, rationale) VALUES
+    ('OPER-DEVELOP', 1, 'RELATED_TO', 'Python web development prompt used during software development.'),
+    ('OPER-DEVELOP', 3, 'RELATED_TO', 'Python web developer agent supporting the development process.'),
+    ('INBL-CODEMGT', 2, 'RELATED_TO', 'GitHub MCP server backing centralized source code management.'),
+    ('TECH-AIPLATF', 2, 'RELATED_TO', 'GitHub MCP server reused while building AI platform tooling.');
 
 -- **********************************
 -- ********* Process Inits ***********
 -- **********************************
 
-INSERT INTO process_inits (process, init, rationale) VALUES
-    ('TECH-RESEARC', 1, 'R&D drives the Organizational Knowledge Management Platform.'),
-    ('INFR-GOVERNA', 2, 'Governance oversees the Centralized Knowledge Base.'),
-    ('TECH-AIPLATF', 3, 'AI platform engineering powers the Knowledge Assistant (RAG).'),
-    ('HRMG-LEARNIN', 4, 'Learning & development owns the Onboarding Knowledge Hub.'),
-    ('SERV-COMMUNI', 5, 'Community engagement sustains the Community of Practice & Expert Directory.');
+INSERT INTO process_inits (process, init, type, rationale) VALUES
+    ('TECH-RESEARC', 1, 'RELATED_TO', 'R&D drives the Organizational Knowledge Management Platform.'),
+    ('INFR-GOVERNA', 2, 'RELATED_TO', 'Governance oversees the Centralized Knowledge Base.'),
+    ('TECH-AIPLATF', 3, 'RELATED_TO', 'AI platform engineering powers the Knowledge Assistant (RAG).'),
+    ('HRMG-LEARNIN', 4, 'RELATED_TO', 'Learning & development owns the Onboarding Knowledge Hub.'),
+    ('SERV-COMMUNI', 5, 'RELATED_TO', 'Community engagement sustains the Community of Practice & Expert Directory.');

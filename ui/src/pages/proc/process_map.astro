@@ -1,0 +1,51 @@
+---
+/**
+ * Process Map (`/proc/process_map`, specs/010-process-landscape-views — HU-PR06).
+ *
+ * A thin SSR shell: breadcrumb, then the ProcessMap Svelte island, which reads
+ * `/api/processes/landscape` client-side (the view state lives in the
+ * address). Access: `PROC/MAP`, enforced by the API; the island shows a
+ * not-authorized state on 403.
+ */
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import { getOption } from "@/lib/options";
+
+let pageName = "Process Map";
+try {
+  const opt = await getOption("PROC", "MAP");
+  pageName = opt.name || pageName;
+} catch {
+  /* keep the default */
+}
+---
+
+<BaseLayout>
+  <div class="mx-auto w-full max-w-full">
+    <Breadcrumb
+      moduleName="Processes"
+      pageName={pageName}
+      pageTitle={pageName}
+      homeLink="/"
+      moduleNameKey="modules.PROC"
+      pageNameKey="menu_options.map"
+      pageTitleKey="menu_options.map"
+    />
+    <div id="process-map-root" class="mt-4"></div>
+  </div>
+
+  <script>
+    // Bundled module (Astro resolves @/ + TS) — never the inline
+    // `type="module"` + `/src/...` pattern, which 404s in the production build.
+    import { mount } from "svelte";
+    import ProcessMap from "@/components/svelte/ProcessMap.svelte";
+    import { loadClientTranslations } from "@/utils/i18nClient";
+    import { installGlobalToast } from "@/lib/toast";
+
+    const target = document.getElementById("process-map-root");
+    if (target) mount(ProcessMap, { target });
+
+    loadClientTranslations();
+    installGlobalToast();
+  </script>
+</BaseLayout>

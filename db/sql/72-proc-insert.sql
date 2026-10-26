@@ -171,6 +171,52 @@ INSERT INTO related_processes (source, target, type, rationale) VALUES
     ('HRMG', 'OPER', 'SUPPORTS', 'Human resource management staffs the operations teams.'),
     ('INFR', 'SERV', 'SUPPORTS', 'Firm infrastructure governs and supports the service activity.');
 
+-- ===== Inside each activity: the flow between its sub-processes =====
+-- (drawn by the Process Map's internal diagrams, specs/010-process-landscape-views;
+-- PRECEDES only between processes of the same type, SUPPORTS only Support → Primary)
+INSERT INTO related_processes (source, target, type, rationale) VALUES
+    -- Inbound Logistics
+    ('INBL-COMPSRC', 'INBL-DEPENDM', 'PRECEDES', 'Sourced components are registered as managed dependencies.'),
+    ('INBL-CODEMGT', 'INBL-DEPENDM', 'PRECEDES', 'Code intake is followed by dependency resolution and pinning.'),
+    -- Operations
+    ('OPER-DEVELOP', 'OPER-QUALITY', 'PRECEDES', 'Developed software goes through quality assurance.'),
+    ('OPER-QUALITY', 'OPER-DEVOPSA', 'PRECEDES', 'Validated builds enter the automated delivery pipeline.'),
+    ('OPER-CLOUDIN', 'OPER-DEVOPSA', 'PRECEDES', 'Provisioned infrastructure is ready before pipelines deploy to it.'),
+    ('OPER-DEVOPSA', 'OPER-DEVELOP', 'FEEDS_INTO', 'Pipeline telemetry feeds back into development.'),
+    -- Outbound Logistics
+    ('OUTL-RELEASE', 'OUTL-DEPLOYM', 'PRECEDES', 'A cut release is deployed and delivered digitally.'),
+    ('OUTL-RELEASE', 'OUTL-DISTRIB', 'PRECEDES', 'A cut release is shipped on devices.'),
+    -- Marketing & Sales
+    ('MKTS-DIGMKTG', 'MKTS-CAMPAIG', 'PRECEDES', 'Digital marketing insight shapes the campaigns.'),
+    ('MKTS-CAMPAIG', 'MKTS-SALESOP', 'PRECEDES', 'Campaign leads are worked by sales operations.'),
+    ('MKTS-PARTNER', 'MKTS-SALESOP', 'INTERACTS_WITH', 'Partners and sales operations coordinate shared deals.'),
+    -- Service
+    ('SERV-MONITOR', 'SERV-SUPPORT', 'PRECEDES', 'Monitoring detects the issues that customer support resolves.'),
+    ('SERV-SUPPORT', 'SERV-COMMUNI', 'PRECEDES', 'Resolved cases feed community knowledge and engagement.'),
+    -- Firm Infrastructure
+    ('INFR-FINPLAN', 'INFR-GOVERNA', 'PRECEDES', 'Financial plans are approved through corporate governance.'),
+    ('INFR-GOVERNA', 'INFR-ETHICAI', 'PRECEDES', 'Governance decisions are reviewed for ethical AI compliance.'),
+    -- Human Resource Management
+    ('HRMG-RECRUIT', 'HRMG-LEARNIN', 'PRECEDES', 'New hires enter the learning and onboarding programs.'),
+    ('HRMG-LEARNIN', 'HRMG-PEOPLEM', 'PRECEDES', 'Developed people are managed for performance and growth.'),
+    -- Technology Development
+    ('TECH-RESEARC', 'TECH-ARCHITE', 'PRECEDES', 'Research results become architecture standards.'),
+    ('TECH-ARCHITE', 'TECH-AIPLATF', 'PRECEDES', 'Standards guide how the AI platform is built.'),
+    -- Procurement
+    ('PROC-SOURCIN', 'PROC-VENDORM', 'PRECEDES', 'Selected suppliers are onboarded into vendor management.'),
+    ('PROC-SUSTAIN', 'PROC-SOURCIN', 'GOVERNS', 'Sustainability criteria constrain sourcing decisions.');
+
+-- ===== Between sub-processes of different activities =====
+INSERT INTO related_processes (source, target, type, rationale) VALUES
+    ('INBL-CODEMGT', 'OPER-DEVELOP', 'FEEDS_INTO', 'Managed source code is the input of development.'),
+    ('OPER-DEVOPSA', 'OUTL-RELEASE', 'PRECEDES', 'Pipelines produce the builds that release management cuts.'),
+    ('OUTL-DEPLOYM', 'SERV-MONITOR', 'TRIGGERS', 'Each deployment starts its monitoring.'),
+    ('MKTS-SALESOP', 'SERV-SUPPORT', 'TRIGGERS', 'A closed sale opens the customer support relationship.'),
+    ('TECH-AIPLATF', 'OPER-DEVELOP', 'SUPPORTS', 'The AI platform provides the tooling developers use.'),
+    ('HRMG-LEARNIN', 'OPER-DEVELOP', 'SUPPORTS', 'Learning programs upskill the development teams.'),
+    ('PROC-VENDORM', 'INBL-COMPSRC', 'SUPPORTS', 'Vendor management keeps component suppliers available.'),
+    ('INFR-ETHICAI', 'TECH-AIPLATF', 'GOVERNS', 'Ethical AI oversight sets guardrails for the AI platform.');
+
 -- **********************************
 -- ********* Process Assets **********
 -- **********************************

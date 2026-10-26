@@ -179,6 +179,17 @@ const modalLists = {
         true,
       );
 
+      // `?open=CODE` (the landscape views' "Open in Process Management",
+      // specs/010-process-landscape-views FR-016): open that process's dialog
+      // once the page's scripts are wired, then drop the parameter.
+      const openParam = new URLSearchParams(location.search).get("open");
+      if (openParam) {
+        const url = new URL(location.href);
+        url.searchParams.delete("open");
+        history.replaceState(history.state, "", url.pathname + url.search);
+        requestAnimationFrame(() => openDetail(openParam));
+      }
+
       document.addEventListener("crud-submit", async (e: Event) => {
         const { mode, data } = (e as CustomEvent).detail;
         if (mode !== "delete") return;

@@ -134,7 +134,7 @@ const tagsOf = (i: InitiativeExploreItem): string[] => (Array.isArray(i.tags) ? 
     import { setInitiativeFavorite } from "@/lib/initiatives";
     import { getInitiativeVoteTally, setInitiativeVote } from "@/lib/collaborations";
     import { loadClientTranslations, translate } from "@/utils/i18nClient";
-    import { installGlobalToast } from "@/lib/toast";
+    import { installGlobalToast, showToast } from "@/lib/toast";
 
     initCardGallery({
       galleryId: "inits-gallery",
@@ -165,5 +165,37 @@ const tagsOf = (i: InitiativeExploreItem): string[] => (Array.isArray(i.tags) ? 
     paintCounts();
     window.addEventListener("languageChanged", paintCounts);
     document.addEventListener("synapxia:locale-changed", paintCounts);
+
+    // `?initiative=ID` (from the process landscape's detail panel,
+    // specs/010-process-landscape-views): open that initiative's detail as a
+    // card click would, then drop the parameter. The detail reads the page's
+    // own list, so an initiative this page does not list (not accepted yet,
+    // or not shared with the caller) gets a notice instead.
+    const initParam = new URLSearchParams(location.search).get("initiative");
+    if (initParam) {
+      const url = new URL(location.href);
+      url.searchParams.delete("initiative");
+      history.replaceState(history.state, "", url.pathname + url.search);
+      let listed = false;
+      try {
+        const data = JSON.parse(document.getElementById("inits-view-modal-data")?.textContent || "{}");
+        listed = (data.items ?? []).some((i: { id: number | string }) => String(i.id) === initParam);
+      } catch {
+        listed = false;
+      }
+      if (listed) {
+        requestAnimationFrame(() => {
+          const opener = document.createElement("button");
+          opener.style.display = "none";
+          opener.setAttribute("data-modal-open", "inits-view-modal");
+          opener.dataset.initId = initParam;
+          document.body.appendChild(opener);
+          opener.click();
+          opener.remove();
+        });
+      } else {
+        showToast(translate("inits_explore.not_listed"), "info");
+      }
+    }
   </script>
 </BaseLayout>

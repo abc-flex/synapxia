@@ -71,10 +71,30 @@ link out to other processes, library assets and initiatives.
 > operations create value end to end — and where AI could help.
 - **Data:** view over `processes` grouped by `type` (`PRIMARY` / `SUPPORT`), enriched with the
   count of related assets and initiatives.
+- **Behavior:** primary activities in one row ordered along their Precedes links, ending in the
+  margin marker; support activities as bands underneath. Shows every active process except
+  Deprecated (Draft and Review marked). Each block shows its asset and initiative counts rolled
+  up over its sub-processes and expands one level; processes with neither are highlighted as AI
+  opportunities, and *Only opportunities* dims the rest. Business-unit filter; a read-only
+  detail panel leads to the Process Map and, for process managers, to Process Management.
+  Access: `PROC/VALUE_CHAIN` (read).
 - **Option:** `PROC.VALUE_CHAIN` → `/proc/value_chain`
+- **UI:** [`proc/value_chain.astro`](../../ui/src/pages/proc/value_chain.astro) +
+  [`ValueChain.svelte`](../../ui/src/components/svelte/ValueChain.svelte).
+  Spec: [`specs/010-process-landscape-views`](../../specs/010-process-landscape-views/spec.md).
 
 ### HU-PR06 · Process Map
 > As a **manager**, I want to **see a process map** — the hierarchy of processes and the
 > relations between them — **so that** the landscape is navigable visually.
 - **Data:** view over `processes` (`parent` hierarchy) + `related_processes`.
+- **Behavior:** two lanes (Primary, Support) in the Value Chain's order, one level at a time:
+  a process's "+" (BPMN collapsed sub-process) replaces the map with its internal diagram —
+  sub-processes along their sequence flows with start and end events, and the outside
+  processes they relate to — with Back and a breadcrumb to return. Relations are drawn after
+  their BPMN counterpart, with a legend (shown or hidden) and a per-type filter, merged onto
+  the nearest drawn ancestor. Search, focus on a process's neighborhood, pan and zoom; the
+  shared detail panel leads back to the Value Chain. Access: `PROC/MAP` (read).
 - **Option:** `PROC.MAP` → `/proc/process_map`
+- **UI:** [`proc/process_map.astro`](../../ui/src/pages/proc/process_map.astro) +
+  [`ProcessMap.svelte`](../../ui/src/components/svelte/ProcessMap.svelte).
+  Spec: [`specs/010-process-landscape-views`](../../specs/010-process-landscape-views/spec.md).

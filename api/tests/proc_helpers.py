@@ -20,6 +20,15 @@ def seed_privileges(session, profile=OWNER_PROFILE, can_edit=True):
     session.commit()
 
 
+def seed_view_privileges(session, profile="COLLABORATOR", options=("VALUE_CHAIN", "MAP"),
+                         can_edit=False):
+    """The landscape views' options (specs/010-process-landscape-views)."""
+    for option in options:
+        session.add(Privilege(profile=profile, module="PROC", option=option,
+                              can_edit=can_edit, is_active=True))
+    session.commit()
+
+
 def seed_proc_lists(session):
     mk_list(session, "PROCESS_TYPE", [("PRIMARY", "Primary"), ("SUPPORT", "Support")])
     mk_list(session, "PROCESS_STATUS", [

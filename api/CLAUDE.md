@@ -84,10 +84,12 @@ api/
 │   │                             #   (specs/006): dashboards, parameters, dashboard_permissions
 │   │                             #   (binds app/internal/resource_permissions). Catalog /
 │   │                             #   Execute / Favorite / Usage Metrics are not built yet
-│   └── workflows/               # Processes (module PROC) — partial: Process Management
+│   └── workflows/               # Processes (module PROC): Process Management
 │                                 #   (specs/009): processes, related_processes (BPMN-oriented
-│                                 #   PROCESS_RELATION_TYPE), process_assets, process_inits.
-│                                 #   Value Chain / Process Map are not built yet
+│                                 #   PROCESS_RELATION_TYPE), process_assets, process_inits;
+│                                 #   Value Chain / Process Map read model (specs/010):
+│                                 #   landscape_service + GET /api/processes/landscape[/{code}],
+│                                 #   gated by PROC/VALUE_CHAIN or PROC/MAP
 ├── pyproject.toml               # uv-managed deps; no [tool.X] lint sections yet
 ├── requirements.txt             # Pip mirror for Vercel build
 ├── index.py                     # `handler = Mangum(app, lifespan="off")` for Vercel

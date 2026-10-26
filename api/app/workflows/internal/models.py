@@ -234,3 +234,94 @@ class ProcessFormOptions(SQLModel):
     assets: List[AssetOption] = []
     initiatives: List[InitOption] = []
     relation_rules: Dict[str, Dict[str, Any]] = {}
+
+
+# ── Landscape (Value Chain / Process Map) ────────────────────────────────────
+# specs/010-process-landscape-views: read models only, derived from the tables
+# above by workflows/internal/landscape_service.py. Nothing here is stored.
+
+
+class LandscapeProcess(SQLModel):
+    code: str
+    name: str
+    type: str
+    status: str
+    unit: Optional[str] = None
+    unit_name: Optional[str] = None
+    owner_name: Optional[str] = None
+    parent: Optional[str] = None
+    display_parent: Optional[str] = Field(
+        default=None, description="Nearest shown ancestor (null = top level)")
+    depth: int = 0
+    child_order: List[str] = []
+    context: bool = Field(
+        default=False, description="Shown only as an ancestor of a unit-filtered process")
+    own_assets: int = 0
+    own_inits: int = 0
+    assets: int = Field(default=0, description="Distinct, over the process and its shown descendants")
+    inits: int = Field(default=0, description="Distinct, over the process and its shown descendants")
+    is_opportunity: bool = False
+
+
+class LandscapeRelation(SQLModel):
+    source: str
+    target: str
+    type: str
+    directed: bool = True
+
+
+class ProcessLandscape(SQLModel):
+    processes: List[LandscapeProcess] = []
+    relations: List[LandscapeRelation] = []
+    primary_order: List[str] = []
+    support_order: List[str] = []
+    unit: Optional[str] = None
+    truncated: bool = False
+    can_value_chain: bool = False
+    can_map: bool = False
+    can_manage: bool = False
+
+
+class LandscapeRelationDetail(SQLModel):
+    other: str
+    other_name: Optional[str] = None
+    other_type: Optional[str] = None
+    type: str
+    rationale: Optional[str] = None
+    directed: bool = True
+
+
+class LandscapeAssetLink(SQLModel):
+    asset: int
+    asset_name: Optional[str] = None
+    category: Optional[str] = None
+    type: str
+    rationale: Optional[str] = None
+    via: Optional[str] = Field(default=None, description="Sub-process holding the link (null = own)")
+
+
+class LandscapeInitLink(SQLModel):
+    init: int
+    init_name: Optional[str] = None
+    type: str
+    rationale: Optional[str] = None
+    via: Optional[str] = Field(default=None, description="Sub-process holding the link (null = own)")
+
+
+class LandscapeProcessDetail(SQLModel):
+    code: str
+    name: str
+    description: Optional[str] = None
+    type: str
+    parent: Optional[str] = None
+    parent_name: Optional[str] = None
+    unit: Optional[str] = None
+    unit_name: Optional[str] = None
+    owner_name: Optional[str] = None
+    reference: Optional[str] = None
+    status: str
+    tags: Optional[Any] = None
+    outgoing: List[LandscapeRelationDetail] = []
+    incoming: List[LandscapeRelationDetail] = []
+    assets: List[LandscapeAssetLink] = []
+    inits: List[LandscapeInitLink] = []

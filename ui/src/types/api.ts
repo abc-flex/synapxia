@@ -1814,3 +1814,94 @@ export interface ProcessFormOptions {
   initiatives: { id: number; name: string }[];
   relation_rules: Record<string, ProcessRelationRule>;
 }
+
+// ── Process landscape (Value Chain + Process Map, specs/010-process-landscape-views) ──
+// Read models only: nothing is created or updated, so there are no Create/Update variants.
+
+export interface LandscapeProcess {
+  code: string;
+  name: string;
+  type: string;
+  status: string;
+  unit?: string | null;
+  unit_name?: string | null;
+  owner_name?: string | null;
+  parent?: string | null;
+  /** Nearest shown ancestor; null = top level. */
+  display_parent?: string | null;
+  depth: number;
+  child_order: string[];
+  /** Shown only as an ancestor of a unit-filtered process. */
+  context: boolean;
+  own_assets: number;
+  own_inits: number;
+  /** Distinct over the process and its shown descendants. */
+  assets: number;
+  inits: number;
+  is_opportunity: boolean;
+}
+
+export interface LandscapeRelation {
+  source: string;
+  target: string;
+  type: string;
+  directed: boolean;
+}
+
+export interface ProcessLandscape {
+  processes: LandscapeProcess[];
+  relations: LandscapeRelation[];
+  primary_order: string[];
+  support_order: string[];
+  unit?: string | null;
+  truncated: boolean;
+  can_value_chain: boolean;
+  can_map: boolean;
+  can_manage: boolean;
+}
+
+export interface LandscapeRelationDetail {
+  other: string;
+  other_name?: string | null;
+  other_type?: string | null;
+  type: string;
+  rationale?: string | null;
+  directed: boolean;
+}
+
+export interface LandscapeAssetLink {
+  asset: number;
+  asset_name?: string | null;
+  category?: string | null;
+  type: string;
+  rationale?: string | null;
+  /** Sub-process holding the link; null = the process's own link. */
+  via?: string | null;
+}
+
+export interface LandscapeInitLink {
+  init: number;
+  init_name?: string | null;
+  type: string;
+  rationale?: string | null;
+  via?: string | null;
+}
+
+export interface LandscapeProcessDetail {
+  code: string;
+  name: string;
+  description?: string | null;
+  type: string;
+  parent?: string | null;
+  parent_name?: string | null;
+  unit?: string | null;
+  unit_name?: string | null;
+  owner_name?: string | null;
+  reference?: string | null;
+  status: string;
+  tags?: string[] | null;
+  outgoing: LandscapeRelationDetail[];
+  incoming: LandscapeRelationDetail[];
+  assets: LandscapeAssetLink[];
+  inits: LandscapeInitLink[];
+}

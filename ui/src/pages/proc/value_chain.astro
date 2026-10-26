@@ -1,0 +1,51 @@
+---
+/**
+ * Value Chain (`/proc/value_chain`, specs/010-process-landscape-views — HU-PR05).
+ *
+ * A thin SSR shell: breadcrumb, then the ValueChain Svelte island, which reads
+ * `/api/processes/landscape` client-side (the view state lives in the
+ * address). Access: `PROC/VALUE_CHAIN`, enforced by the API; the island shows a
+ * not-authorized state on 403.
+ */
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumb from "../../components/core/Breadcrumb.astro";
+import { getOption } from "@/lib/options";
+
+let pageName = "Value Chain";
+try {
+  const opt = await getOption("PROC", "VALUE_CHAIN");
+  pageName = opt.name || pageName;
+} catch {
+  /* keep the default */
+}
+---
+
+<BaseLayout>
+  <div class="mx-auto w-full max-w-full">
+    <Breadcrumb
+      moduleName="Processes"
+      pageName={pageName}
+      pageTitle={pageName}
+      homeLink="/"
+      moduleNameKey="modules.PROC"
+      pageNameKey="menu_options.value_chain"
+      pageTitleKey="menu_options.value_chain"
+    />
+    <div id="value-chain-root" class="mt-4"></div>
+  </div>
+
+  <script>
+    // Bundled module (Astro resolves @/ + TS) — never the inline
+    // `type="module"` + `/src/...` pattern, which 404s in the production build.
+    import { mount } from "svelte";
+    import ValueChain from "@/components/svelte/ValueChain.svelte";
+    import { loadClientTranslations } from "@/utils/i18nClient";
+    import { installGlobalToast } from "@/lib/toast";
+
+    const target = document.getElementById("value-chain-root");
+    if (target) mount(ValueChain, { target });
+
+    loadClientTranslations();
+    installGlobalToast();
+  </script>
+</BaseLayout>

@@ -202,6 +202,26 @@ try {
     initCardGallery({ galleryId: "explore-gallery", pageSize: 12 });
     loadClientTranslations();
 
+    // `?asset=ID` (from the process landscape's detail panel,
+    // specs/010-process-landscape-views): open that asset's detail as a card
+    // click would, then drop the parameter. The modal loads the asset by id,
+    // so it opens even when the gallery's privilege filter hides its card.
+    const assetParam = new URLSearchParams(location.search).get("asset");
+    if (assetParam) {
+      const url = new URL(location.href);
+      url.searchParams.delete("asset");
+      history.replaceState(history.state, "", url.pathname + url.search);
+      requestAnimationFrame(() => {
+        const opener = document.createElement("button");
+        opener.style.display = "none";
+        opener.setAttribute("data-modal-open", "explore-view-modal");
+        opener.dataset.assetId = assetParam;
+        document.body.appendChild(opener);
+        opener.click();
+        opener.remove();
+      });
+    }
+
     // Top-layer toast: renders above the native <dialog> detail modal (a plain
     // body-appended toast loses to the modal's browser top layer).
     installGlobalToast();

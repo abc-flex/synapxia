@@ -20,6 +20,50 @@ Entries before the 2026-06-10 switchover (Keep-a-Changelog–style, auto-generat
 
 ---
 
+## 2026-10-24 21:46 — feat(proc): Value Chain + Process Map (SpecKit 010, HU-PR05/06)
+- Two new read-only views over one shared read. Both are gated by `PROC/VALUE_CHAIN` or `PROC/MAP`, never by Process Management, so Collaborator and Reviewer can use them.
+  - **Value Chain** (`/proc/value_chain`): a compact chain that fits one screen. Primary activities follow the Precedes order and end in a margin marker; support activities sit in bands underneath. Each block shows its rolled-up asset and initiative counts and a Draft or Review marker, and blocks expand one level. Processes with no links are amber; a legend explains the color (no badge), and an *Only opportunities* switch dims the rest.
+  - **Process Map** (`/proc/process_map`): an SVG map that shows one level at a time. The overview has Primary and Support lanes. A process's BPMN "+" marker replaces the map with its internal diagram: a pool with its sub-processes along their sequence flows, start and end events, and the outside processes they relate to in a lane below. Back and a breadcrumb return to the main diagram. Connectors follow BPMN notation; a legend and type filter can be shown or hidden with a button next to +, − and Fit. Search, focus, pan and zoom are included.
+  - **Shared detail panel:** a small title with an arrow that closes it, compact properties, and the outgoing and incoming relations, linked assets and linked initiatives as tabs whose body alone scrolls. The buttons at the bottom move between the two views or open the process in Process Management through a new additive `?open=CODE` link.
+  - The compact chain, the panel layout, the legend toggle and the drill-down were reworked after the user's first review, on 2026-10-25.
+  - **Second review, same day:**
+    - The panel now sits above the sticky header (it had hidden its title and close arrow) and has roomier spacing.
+    - The support bands are taller.
+    - The counts use the sidebar's AI Library and rocket icons.
+    - The Margin chevron spans the primary and the support rows.
+  - **Third review, same day:**
+    - **Bug fix:** internal diagrams looked empty because a focus left on the drilled process faded all their connectors to 10%. Focus now applies only to boxes drawn at the current level, and opening a level clears it.
+    - Both pages have a one-row toolbar with shorter texts.
+    - The map legend is a narrow panel docked on the right, opened by a larger "Legend" button under +, − and Fit, with separate start and end events.
+    - The panel title shows the code before the name and closes with an "x", and its buttons fit on one line.
+    - The Value Chain emphasizes the code over the name, and "Margin" is larger and centered.
+  - **Fourth review:**
+    - The map's "Legends" button now sits beside +, − and Fit, and the lane titles are more prominent.
+    - The Value Chain gains *Expand all / Collapse all*.
+    - *Only opportunities* now looks inside the blocks: a block with opportunity sub-processes keeps an amber ring while collapsed, and once expanded only its header dims.
+  - **Fifth review:**
+    - The legend's Elements section is more compact, one line per item.
+    - "Clear focus" now sits left of +, −, Fit and Legends, at the same height and type size.
+    - The Margin chevron is narrower.
+  - **Sixth review:**
+    - The AI-opportunity legend now follows the Value Chain subtitle, and "Margin" moves right to sit centered on the chevron.
+    - The legend's Relations section is compact, matching Elements: one line per item and the same type size and columns.
+  - **Panel links:** linked assets and initiatives in the panel now open their read-only detail.
+    - Assets go to `/lib/explore?code=<category>&asset=<id>`, and initiatives to `/inits/explore?initiative=<id>`.
+    - Both Explore pages gained that additive deep link.
+    - Explore Initiatives shows a notice when it doesn't list the initiative (not accepted yet, or not shared with the caller).
+- Files affected (follow-ups): `ui/src/pages/lib/explore.astro`, `ui/src/pages/inits/explore.astro`, `db/sql/72-proc-insert.sql`.
+- **Seed:** `db/sql/72-proc-insert.sql` gains 29 relations between sub-processes, so each activity's internal diagram has a flow with a start and an end. They are a Precedes chain per activity plus Feeds Into, Triggers, Supports, Governs and Interacts With links inside and across activities, all within the compatibility rules. The local dev DB was patched with the same rows. **A provisioned DB needs that block run by hand** (or `make rebuild`).
+- **API:** `GET /api/processes/landscape` and `GET /api/processes/landscape/{code}`, built by the new `landscape_service`. It hides Deprecated processes, rolls up distinct counts over sub-processes, orders the chain with a topological sort over Precedes, filters by unit while keeping ancestors as context, and caps the result at 2 000 processes with a `truncated` flag. The number of queries is constant. The router is registered before `processes.py`. There is no DDL, no seed change and no new dependency.
+- Verified:
+  - 20 new tests; the suite stands at 857 passed.
+  - A live smoke run as three profiles matches an SQL hand count.
+  - Both pages render server-side, `bun run build` is clean, and `svelte-check` reports nothing for the new files.
+  - The drill layout was checked on seed data and on injected relations, including a cycle.
+  - The scale script (`synthetic-landscape.sql` plus its remove script) was validated in a rolled-back transaction but not run; it awaits the user's OK.
+  - **Not click-tested in a browser.**
+- Files affected: `api/app/workflows/internal/{models,landscape_service}.py`, `api/app/workflows/routes/landscape.py`, `api/app/main.py`, `api/tests/{proc_helpers,test_proc_landscape}.py`, `ui/src/pages/proc/{value_chain,process_map,processes}.astro`, `ui/src/components/svelte/{ValueChain,ProcessMap,ProcessLandscapePanel}.svelte`, `ui/src/lib/processLandscape.ts`, `ui/src/types/api.ts`, `ui/src/i18n/{en,es}.json`, `docs/user-stories/07-proc.md`, `api/CLAUDE.md`, `CLAUDE.md`, `memory/MEMORY.md`, `specs/010-process-landscape-views/*`
+
 ## 2026-10-23 13:25 — feat(proc): Process Management (SpecKit 009, HU-PR01–04)
 - New `/proc/processes` (`PROC/PROCESSES`): a list of processes and a dialog with the tabs Core Fields, Related processes, Related assets and Related inits, in that order. The `workflows` stub domain becomes the Processes domain, with 12 additive endpoints under `/api/processes`.
   - **Server rules:** a new process starts in Draft. Status moves are Draft → Review → Published → Deprecated, plus Review → Draft. The code is immutable, the parent hierarchy is acyclic, and a process with active children cannot be removed.

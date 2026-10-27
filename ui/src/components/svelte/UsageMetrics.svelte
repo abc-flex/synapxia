@@ -167,10 +167,11 @@
   <!-- Period selector, one compact bar (FR-004) -->
   <div class="rounded-lg border border-gray-200 bg-white px-3 py-2 dark:border-gray-700 dark:bg-gray-800">
     <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
-      <div class="flex flex-wrap items-center gap-1" role="group" aria-label={t("period.label", "Period")}>
+      <div class="flex flex-wrap items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 dark:border-gray-600 dark:bg-gray-900/40" role="group" aria-label={t("period.label", "Period")}>
+        <span class="mr-1 text-xs font-medium text-gray-600 dark:text-gray-300">{t("period.last", "Last:")}</span>
         {#each PRESETS as p}
           <button type="button" class={presetClass(preset === p)} aria-pressed={preset === p} onclick={() => choosePreset(p)}>
-            {t(`period.${p}`, { "7d": "Last 7 days", "30d": "Last 30 days", "90d": "Last 90 days", "12m": "Last 12 months" }[p])}
+            {t(`period.${p}`, { "7d": "7 days", "30d": "30 days", "90d": "90 days", "12m": "12 months" }[p])}
           </button>
         {/each}
       </div>

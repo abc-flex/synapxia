@@ -20,6 +20,11 @@ Entries before the 2026-06-10 switchover (Keep-a-Changelog–style, auto-generat
 
 ---
 
+## 2026-10-30 17:41 — feat(admin): hierarchical Business Units table, hierarchy modal removed
+- `/admin/business_units` now lists units as a tree: roots first, each child indented under its parent with a boxed +/− toggle. Roots start expanded, so two levels show by default; deeper levels open from their parent, and every level can collapse. Search and filters show the matches together with their ancestors. The "View Hierarchy" button and its ECharts modal were removed at the user's request.
+- Built as an opt-in `treeParentKey` prop on the shared `DataTable` (`buildTreeRows` in `lib/datatable.ts` orders rows depth-first and breaks missing parents and cycles; `advancedTable.ts` owns the expand state and starts tree tables at 50 rows per page). The cell renderer moved to `DataTableCellValue.astro` so `DataTableCell` can wrap it. Other tables are unchanged. New i18n key `data_table.expand_collapse` (en/es). Verified by SSR markup and `bun run build`; **not click-tested in a browser**.
+- Files affected: `ui/src/components/table/{DataTable.astro,advancedTable.ts}`, `ui/src/components/table/partials/{DataTableBody,DataTableCell,DataTableCellValue}.astro`, `ui/src/lib/datatable.ts`, `ui/src/styles/globals.css`, `ui/src/i18n/{en,es}.json`, `ui/src/pages/admin/business_units.astro`
+
 ## 2026-10-30 15:02 — refactor(ana): rename the `insights` API package to `ana`
 - The analytics domain package `api/app/insights` is now `api/app/ana`, matching module `ANA`, the `/ana/*` UI routes, `ui/src/components/ana` and the DB band. Only the package path changed: no endpoint, request/response key, table or privilege was touched (Constitution II intact).
 - Updated the imports in `api/app/main.py` and the ANA test suites, docstrings and path comments, and the architecture docs (constitution, `AGENTS.md`, `api/AGENTS.md`, `api/CLAUDE.md`, `db/CLAUDE.md`, `docs/user-stories/06-ana.md`, `MEMORY.md`) plus the path references in `specs/006`–`009`. Older CHANGELOG entries keep the old name as history.

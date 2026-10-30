@@ -148,6 +148,7 @@
   },
   "data_table": {
     "actions": "Actions",
+    "expand_collapse": "Expand or collapse",
     "add": "Add",
     "add_new": "Add New",
     "all": "Show all...",

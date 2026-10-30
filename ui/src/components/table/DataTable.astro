@@ -12,13 +12,13 @@ import DataTablePagination from "./partials/DataTablePagination.astro";
 import DataTableEmpty from "./partials/DataTableEmpty.astro";
 import type { ColumnConfig, FilterOption } from "@/types/datatable";
 import type { FilterSlotInput } from "@/lib/datatable";
-import { buildFilterConfigs } from "@/lib/datatable";
+import { buildFilterConfigs, buildTreeRows } from "@/lib/datatable";
 
 const locale = getLocale(Astro);
 
 const {
   columns = [],
-  data = [],
+  data: rawData = [],
   tableId = "datatable",
   i18Item = "i18item",
   showAddButton = true,
@@ -73,6 +73,10 @@ const {
   // numbered slots (`key`, `options`, `headerColumn`, `asToggle`, …). Empty by
   // default, so existing tables are unaffected.
   extraFilters = [],
+  // Optional tree mode: name of the row field holding the parent's id. Rows are
+  // ordered depth-first, the first visible column is indented with a +/− toggle,
+  // and only the first two levels start visible. null = flat table (default).
+  treeParentKey = null,
 } = Astro.props as {
   columns?: ColumnConfig[];
   data?: Record<string, any>[];
@@ -111,7 +115,13 @@ const {
   detailExpand?: boolean;
   manageKey?: string | null;
   extraFilters?: FilterSlotInput[];
+  treeParentKey?: string | null;
 };
+
+// Tree mode reorders the rows once, here, so the body, the client config and
+// advancedTable's data[rowIndex] alignment all see the same order.
+const tree = treeParentKey ? buildTreeRows(rawData, treeParentKey) : null;
+const data = tree ? tree.rows : rawData;
 
 // Filtrar columnas visibles (ocultar si visible: false)
 const visibleColumns = columns.filter((col) => col.visible !== false);
@@ -148,6 +158,7 @@ const filterConfigs = buildFilterConfigs(tableId, [
   <div class="overflow-x-auto">
     <table
       id={tableId}
+      data-tree={tree ? "" : undefined}
       class="w-full text-sm text-left text-gray-700 dark:text-gray-300 datatable-dense"
     >
       <DataTableHead visibleColumns={visibleColumns} filters={filterConfigs} />
@@ -162,6 +173,7 @@ const filterConfigs = buildFilterConfigs(tableId, [
         favoriteAction={favoriteAction}
         favoriteKey={favoriteKey}
         manageKey={manageKey}
+        treeMeta={tree?.meta ?? null}
       />
     </table>
   </div>

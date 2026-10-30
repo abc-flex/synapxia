@@ -65,6 +65,53 @@ export function initAdvancedTable(
     if (!tbody) return;
 
     /* ======================
+       TREE MODE (DataTable `treeParentKey`)
+       Rows arrive depth-first with data-tree-id / data-tree-parent. A row shows
+       only when every ancestor is expanded; roots start expanded (the server
+       renders their toggles aria-expanded="true"), so two levels show by default.
+       While a search or filter is active, matches show with their ancestors so
+       each hit keeps its place in the hierarchy.
+    ====================== */
+    const isTree = table.hasAttribute("data-tree");
+    const treeParent = new Map<string, string | null>();
+    const expanded = new Set<string>();
+    if (isTree) {
+        tbody.querySelectorAll<HTMLTableRowElement>("tr[data-tree-id]").forEach((r) => {
+            treeParent.set(r.dataset.treeId!, r.dataset.treeParent || null);
+        });
+        tbody
+            .querySelectorAll<HTMLElement>('[data-tree-toggle][aria-expanded="true"]')
+            .forEach((b) => expanded.add(b.dataset.treeToggle!));
+    }
+    const ancestorsExpanded = (id: string): boolean => {
+        for (let p = treeParent.get(id) ?? null; p; p = treeParent.get(p) ?? null) {
+            if (!expanded.has(p)) return false;
+        }
+        return true;
+    };
+    if (isTree) {
+        // A hierarchy reads best on one page: expanding a node shouldn't push its
+        // children onto the next one. Start at the largest page size offered.
+        perPage = 50;
+        const sizeSelect = document.getElementById(`${tableId}-per-page`) as HTMLSelectElement | null;
+        if (sizeSelect) sizeSelect.value = "50";
+
+        tbody.addEventListener("click", (e) => {
+            const btn = (e.target as HTMLElement).closest<HTMLElement>("[data-tree-toggle]");
+            if (!btn) return;
+            e.stopPropagation();
+            const id = btn.dataset.treeToggle!;
+            const open = !expanded.has(id);
+            if (open) expanded.add(id);
+            else expanded.delete(id);
+            btn.setAttribute("aria-expanded", String(open));
+            const glyph = btn.querySelector("span");
+            if (glyph) glyph.textContent = open ? "−" : "+";
+            applyFilters({ keepPage: true });
+        });
+    }
+
+    /* ======================
        SEARCH
     ====================== */
     const searchInput = document.getElementById(
@@ -342,6 +389,7 @@ export function initAdvancedTable(
         extraSlots.forEach((s, i) => markHeaderFilterActive(s.el, !!extraValues[i]));
 
         const rows = Array.from(tbody.querySelectorAll("tr")) as HTMLTableRowElement[];
+        const matched: boolean[] = [];
 
         rows.forEach((row, rowIndex) => {
             let visible = true;
@@ -391,8 +439,24 @@ export function initAdvancedTable(
                 }
             });
 
-            row.classList.toggle("hidden-by-filter", !visible);
+            matched[rowIndex] = visible;
         });
+
+        if (isTree) {
+            if (isFilterActive()) {
+                const keep = new Set<string>();
+                rows.forEach((row, i) => {
+                    if (!matched[i]) return;
+                    for (let id = row.dataset.treeId ?? null; id && !keep.has(id); id = treeParent.get(id) ?? null) {
+                        keep.add(id);
+                    }
+                });
+                rows.forEach((row, i) => (matched[i] = keep.has(row.dataset.treeId ?? "")));
+            } else {
+                rows.forEach((row, i) => (matched[i] = ancestorsExpanded(row.dataset.treeId ?? "")));
+            }
+        }
+        rows.forEach((row, i) => row.classList.toggle("hidden-by-filter", !matched[i]));
         if (!opts.keepPage) currentPage = 1;
         renderPagination();
         updateResetVisibility();

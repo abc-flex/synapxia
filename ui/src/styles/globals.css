@@ -539,6 +539,61 @@
   /* slate-400 */
 }
 
+/* Tree mode (DataTable `treeParentKey`): indent by depth (inline padding) and a
+   boxed +/− toggle before the name; leaves get a same-width spacer so names at
+   one level line up. */
+.datatable-dense .dt-tree {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.datatable-dense .dt-tree-toggle,
+.datatable-dense .dt-tree-spacer {
+  flex: 0 0 auto;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin-top: 0.125rem;
+}
+.datatable-dense .dt-tree-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #cbd5e1;
+  /* slate-300 */
+  border-radius: 0.25rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1;
+  color: #4f46e5;
+  /* indigo-600 */
+  background: #fff;
+}
+.datatable-dense .dt-tree-toggle:hover {
+  border-color: #4f46e5;
+  background: #eef2ff;
+  /* indigo-50 */
+}
+.datatable-dense .dt-tree-toggle:focus-visible {
+  outline: 2px solid #a5b4fc;
+  /* indigo-300 */
+  outline-offset: 1px;
+}
+.dark .datatable-dense .dt-tree-toggle {
+  border-color: #475569;
+  /* slate-600 */
+  color: #a5b4fc;
+  background: transparent;
+}
+.dark .datatable-dense .dt-tree-toggle:hover {
+  border-color: #818cf8;
+  background: rgba(79, 70, 229, 0.2);
+}
+/* Before advancedTable.ts hydrates, keep rows below the second level hidden so
+   the collapsed tree doesn't flash open. */
+.datatable-dense tbody[data-dt-prepaginate] > tr[data-tree-depth-hidden] {
+  display: none;
+}
+
 /* Actions column tighter */
 .datatable-dense td:last-child {
   white-space: nowrap;

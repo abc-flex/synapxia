@@ -2,6 +2,7 @@
 import DataTableCell from "./DataTableCell.astro";
 import DataTableActions from "./DataTableActions.astro";
 import type { ColumnConfig } from "@/types/datatable";
+import type { TreeRowMeta } from "@/lib/datatable";
 
 interface Props {
   data: Record<string, any>[];
@@ -14,6 +15,8 @@ interface Props {
   favoriteAction?: boolean;
   favoriteKey?: string;
   manageKey?: string | null;
+  /** Tree mode: per-row position, aligned with `data` (null = flat table). */
+  treeMeta?: TreeRowMeta[] | null;
 }
 const {
   data,
@@ -26,6 +29,7 @@ const {
   favoriteAction = false,
   favoriteKey = "favorite",
   manageKey = null,
+  treeMeta = null,
 } = Astro.props as Props;
 ---
 <tbody
@@ -33,10 +37,16 @@ const {
   class="[&>tr:nth-child(even)]:bg-gray-50 [&>tr:hover]:bg-gray-100 dark:[&>tr:nth-child(even)]:bg-gray-800/40 dark:[&>tr:hover]:bg-gray-800/70"
 >
   {
-    data.map((row) => (
-      <tr class="border-b border-gray-200 dark:border-gray-800" data-row-id={row.id ?? undefined}>
-        {visibleColumns.map((col) => (
-          <DataTableCell col={col} row={row} locale={locale} />
+    data.map((row, i) => (
+      <tr
+        class="border-b border-gray-200 dark:border-gray-800"
+        data-row-id={row.id ?? undefined}
+        data-tree-id={treeMeta ? treeMeta[i].id : undefined}
+        data-tree-parent={treeMeta ? (treeMeta[i].parent ?? "") : undefined}
+        data-tree-depth-hidden={treeMeta && treeMeta[i].depth >= 2 ? "" : undefined}
+      >
+        {visibleColumns.map((col, c) => (
+          <DataTableCell col={col} row={row} locale={locale} tree={treeMeta && c === 0 ? treeMeta[i] : null} />
         ))}
         <DataTableActions
           row={row}

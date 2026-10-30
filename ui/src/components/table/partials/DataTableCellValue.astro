@@ -1,0 +1,67 @@
+---
+// The `as`-dispatch renderer for one cell's content (the <td> lives in
+// DataTableCell.astro, which may wrap this in a tree indent + toggle).
+import checkSvg from "@/images/icons/check.svg?raw";
+import { statusTone, formatDate, formatRelative, renderSubtitle } from "@/lib/datatable";
+import { listLabelsAttr } from "@/lib/listLang";
+import type { ColumnConfig } from "@/types/datatable";
+
+interface Props {
+  col: ColumnConfig;
+  row: Record<string, any>;
+  locale: string;
+}
+const { col, row, locale } = Astro.props as Props;
+// List-backed column → every language's label, so the cell follows the
+// language switcher (relabelLists in lib/listLang.ts).
+const listLabels = col.labelsKey ? listLabelsAttr(row[col.labelsKey]) : undefined;
+---
+{col.as === "title" ? (
+  <>
+    <span class="dt-title">
+      {row[col.key]}
+      {col.titleSecondaryKey && row[col.titleSecondaryKey] && (
+        <span class="dt-title-secondary">{row[col.titleSecondaryKey]}</span>
+      )}
+    </span>
+    {col.subtitleKey && renderSubtitle(col, row, locale) && (
+      <span class="dt-subtitle">{renderSubtitle(col, row, locale)}</span>
+    )}
+  </>
+) : col.as === "status" && row[col.key] ? (
+  <span class={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusTone(row[col.key])}`}
+    data-list-labels={listLabels}>
+    {row[col.key]}
+  </span>
+) : col.as === "tags" ? (
+  <span class="flex flex-wrap gap-1.5">
+    {String(row[col.key] ?? "")
+      .split(",")
+      .map((tg) => tg.trim())
+      .filter(Boolean)
+      .map((tag) => (
+        <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+          {tag}
+        </span>
+      ))}
+  </span>
+) : col.as === "date" ? (
+  col.dateFormat === "relative" ? formatRelative(row[col.key], locale) : formatDate(row[col.key], locale)
+) : col.as === "badge" && row[col.key] ? (
+  <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+    data-list-labels={listLabels}>
+    {row[col.key]}
+  </span>
+) : col.as === "boolean" || row[col.key] === true || row[col.key] === "true" ? (
+  row[col.key] === true || row[col.key] === "true" ? (
+    <span class="w-5 h-5 inline-block text-blue-600">
+      <Fragment set:html={checkSvg} />
+    </span>
+  ) : (
+    ""
+  )
+) : listLabels ? (
+  <span data-list-labels={listLabels}>{row[col.key]}</span>
+) : (
+  row[col.key]
+)}

@@ -101,3 +101,52 @@ export const renderSubtitle = (col: ColumnConfig, row: Record<string, any>, loca
   if (fmt === "date") return formatDate(raw, locale);
   return String(raw);
 };
+
+/** Per-row position in a tree-mode DataTable (aligned 1:1 with the ordered rows). */
+export interface TreeRowMeta {
+  id: string;
+  /** Effective parent id: null for roots and for rows whose parent isn't in the data. */
+  parent: string | null;
+  depth: number;
+  hasChildren: boolean;
+}
+
+/**
+ * Order rows depth-first (each parent followed by its descendants), keeping the
+ * incoming order among siblings, and describe each row's place in the tree.
+ * A row whose parent is missing becomes a root; a parent cycle is broken by
+ * placing its unvisited rows as roots, so every row appears exactly once.
+ */
+export function buildTreeRows<T extends Record<string, any>>(
+  rows: T[],
+  parentKey: string,
+): { rows: T[]; meta: TreeRowMeta[] } {
+  const idOf = (r: T) => String(r.id);
+  const ids = new Set(rows.map(idOf));
+  const parentOf = (r: T): string | null => {
+    const p = r[parentKey];
+    return p != null && p !== "" && ids.has(String(p)) && String(p) !== idOf(r) ? String(p) : null;
+  };
+  const children = new Map<string | null, T[]>();
+  for (const r of rows) {
+    const p = parentOf(r);
+    if (!children.has(p)) children.set(p, []);
+    children.get(p)!.push(r);
+  }
+
+  const out: T[] = [];
+  const meta: TreeRowMeta[] = [];
+  const seen = new Set<string>();
+  const visit = (r: T, parent: string | null, depth: number) => {
+    const id = idOf(r);
+    if (seen.has(id)) return;
+    seen.add(id);
+    const kids = (children.get(id) ?? []).filter((k) => !seen.has(idOf(k)));
+    out.push(r);
+    meta.push({ id, parent, depth, hasChildren: kids.length > 0 });
+    for (const k of kids) visit(k, id, depth + 1);
+  };
+  for (const r of children.get(null) ?? []) visit(r, null, 0);
+  for (const r of rows) visit(r, null, 0); // rows only reachable through a cycle
+  return { rows: out, meta };
+}

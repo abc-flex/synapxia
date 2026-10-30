@@ -148,6 +148,7 @@
   },
   "data_table": {
     "actions": "Acciones",
+    "expand_collapse": "Expandir o contraer",
     "add": "Crear",
     "add_new": "Crear nuevo",
     "all": "Ver todos",

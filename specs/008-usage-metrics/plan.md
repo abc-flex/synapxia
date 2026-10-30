@@ -6,7 +6,7 @@
 
 ## Summary
 
-HU-AN07 Usage Metrics adds a read-only manager page, `/ana/usage`, to the `insights` domain (module `ANA`). It aggregates the `executions` records that the Dashboard Catalog (SpecKit 007) writes.
+HU-AN07 Usage Metrics adds a read-only manager page, `/ana/usage`, to the `ana` domain (module `ANA`). It aggregates the `executions` records that the Dashboard Catalog (SpecKit 007) writes.
 
 - **API.** There are two endpoints, gated on `ANA/USAGE`:
   - `GET /api/usage/metrics` returns one aggregate document: headline with previous-period change, timeline buckets, dashboards table (with unused rows), unit tree and team rows.
@@ -57,7 +57,7 @@ HU-AN07 Usage Metrics adds a read-only manager page, `/ana/usage`, to the `insig
 
 | Principle | How the design complies | Status |
 |-----------|------------------------|--------|
-| **I. Modular monolith boundaries** | All backend code lives in `api/app/insights` (`routes/usage.py`, `internal/usage_service.py`, response models in `internal/models.py`). The MANAGE scope reuses `insights/internal/permissions_service.accessible_dashboards`, which is the binding of the shared `app/internal/resource_permissions` engine. The module gate uses `app/internal/permissions.require_privilege`. Other domains' tables (`users`, `business_units`, `assignments`, `teams`) are read through their existing SQLModel classes; no plumbing is duplicated. The CSV escaping is extracted from `advancedTable.ts` into a shared `lib/` helper rather than copied. | ✅ |
+| **I. Modular monolith boundaries** | All backend code lives in `api/app/ana` (`routes/usage.py`, `internal/usage_service.py`, response models in `internal/models.py`). The MANAGE scope reuses `ana/internal/permissions_service.accessible_dashboards`, which is the binding of the shared `app/internal/resource_permissions` engine. The module gate uses `app/internal/permissions.require_privilege`. Other domains' tables (`users`, `business_units`, `assignments`, `teams`) are read through their existing SQLModel classes; no plumbing is duplicated. The CSV escaping is extracted from `advancedTable.ts` into a shared `lib/` helper rather than copied. | ✅ |
 | **II. API-first contract stability** | The two endpoints are new, and nothing is removed or renamed. `metrics` is an aggregate document bounded by entities, not a list of records. The one list-like endpoint (errors) takes a bounded `limit` (1–50). The UI unwraps the envelope centrally. | ✅ |
 | **III. Risk-based testing** | New contracts plus a permission rule (Administrator vs MANAGE scope) are high risk. pytest suites cover access and scope, run classification and rates, buckets and time zone, the unit tree, hybrid teams, the comparison, the errors endpoint, validation and the no-leak rule (research R14). The UI is checked manually through the quickstart. `make test` must pass. | ✅ |
 | **IV. Security & secret hygiene** | JWT and RBAC are unchanged. Scope is enforced on the server for every section and for the errors endpoint (404 outside scope, without revealing existence). No personal-level data is exposed: aggregates only, with no user ids or payloads. Read-only. No secrets. `is_active` / `is_superuser` semantics are preserved: inactive users don't count as members, and superusers keep the bypass. | ✅ |
@@ -90,7 +90,7 @@ specs/008-usage-metrics/
 
 ```text
 api/app/core/config.py                 # + APP_TIMEZONE (default "America/Bogota")
-api/app/insights/
+api/app/ana/
 ├── internal/
 │   ├── models.py                      # + Usage* response models (Summary, Bucket, DashboardRow,
 │   │                                  #   UnitNode, TeamRow, Metrics, ErrorItem, Errors)
@@ -127,7 +127,7 @@ ui/src/
 specs/008-usage-metrics/synthetic-usage.sql   # + optional `scale` psql variable (SC-003 benchmark)
 ```
 
-**Structure Decision**: This keeps the repo's web-app layout (`api/` + `ui/` + `db/`). The backend sits in the owning `insights` domain. The UI follows the Svelte-island convention for an interactive page whose data changes with the period, because an SSR snapshot would be stale by construction (the same reasoning as My Asset Requests, 2026-09-16).
+**Structure Decision**: This keeps the repo's web-app layout (`api/` + `ui/` + `db/`). The backend sits in the owning `ana` domain. The UI follows the Svelte-island convention for an interactive page whose data changes with the period, because an SSR snapshot would be stale by construction (the same reasoning as My Asset Requests, 2026-09-16).
 
 ## Phase summary
 

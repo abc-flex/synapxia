@@ -6,7 +6,7 @@
 
 ## Summary
 
-This plan builds HU-AN04 Dashboard Catalog, HU-AN05 Execute and the catalog side of HU-AN06 Favorite in the `insights` domain (module `ANA`). Every table already exists, so there is no DDL.
+This plan builds HU-AN04 Dashboard Catalog, HU-AN05 Execute and the catalog side of HU-AN06 Favorite in the `ana` domain (module `ANA`). Every table already exists, so there is no DDL.
 
 - **Catalog page.** `/ana/catalog` is a card gallery. It reuses the Explore pages' `CardGallery` + `initCardGallery`: SSR fetch, a privileges filter with six options (Public by default, no "all"), search and a "★ My favorites" toggle. It is fed by a new `GET /api/dashboards/catalog` gated on `ANA/CATALOG`. That endpoint returns Published dashboards only, filters by grant before paginating, and adds `permission_scopes` and `is_favorite` to each row.
 - **Execute.** A Svelte island renders a parameters window from `GET /api/dashboards/{id}/run-form`. The server has already resolved each parameter's *effective* source for this viewer: a grant-bound value applies only when the viewer came through the bound grant, otherwise it falls back to the list or to free input. The window prefills defaults and offers "use my last values", derived from the payload of the viewer's last Success execution. It validates inline before running.
@@ -43,7 +43,7 @@ This plan builds HU-AN04 Dashboard Catalog, HU-AN05 Execute and the catalog side
 
 | Principle | How the design complies | Status |
 |-----------|------------------------|--------|
-| **I. Modular monolith boundaries** | All backend code lives in `api/app/insights` (`routes/catalog.py`, `routes/executions.py`, `internal/catalog_service.py`, `internal/execution_service.py`). Grant matching reuses `app/internal/resource_permissions.py` (`matching_grants`, `user_scopes_for`) through the existing `insights/internal/permissions_service.py`, and run-value validation extends the existing `parameter_validation.py`. Module gates use `app/internal/permissions` (`require_privilege`, `check_any_privilege`). Favorites reuse the existing endpoints. Nothing is duplicated per module. | ✅ |
+| **I. Modular monolith boundaries** | All backend code lives in `api/app/ana` (`routes/catalog.py`, `routes/executions.py`, `internal/catalog_service.py`, `internal/execution_service.py`). Grant matching reuses `app/internal/resource_permissions.py` (`matching_grants`, `user_scopes_for`) through the existing `ana/internal/permissions_service.py`, and run-value validation extends the existing `parameter_validation.py`. Module gates use `app/internal/permissions` (`require_privilege`, `check_any_privilege`). Favorites reuse the existing endpoints. Nothing is duplicated per module. | ✅ |
 | **II. API-first contract stability** | Six new endpoints. No endpoint or key is removed or renamed. The favorite endpoints keep their request and response shape and only widen *who* may call them (additive). The list endpoint keeps bounded `skip`/`limit` (`limit ≤ 500`). The UI unwraps the envelope centrally in `lib/api.ts`. | ✅ |
 | **III. Risk-based testing** | New contracts, a permission change (favorites gate), auth on execution records and value validation are all high risk, so each gets pytest suites (research R12). The UI is verified manually through the quickstart. `make test` must pass. | ✅ |
 | **IV. Security & secret hygiene** | JWT stays unchanged. The actor always comes from the session, never the body. Grant-bound values are computed by the server and submitted ones are ignored. The client never receives `source_url` in the list and never builds the launch address. Only the owner can finish an execution, and only once. Values and error messages are capped. External tabs open with `noopener`. No secrets involved. `is_active` / `is_superuser` semantics are preserved. | ✅ |
@@ -74,7 +74,7 @@ specs/007-dashboard-catalog/
 ### Source Code (repository root)
 
 ```text
-api/app/insights/
+api/app/ana/
 ├── internal/
 │   ├── models.py                 # + Execution (table), CatalogDashboard, RunForm(+Parameter),
 │   │                             #   ExecutionStart/Started/Finish/Cancelled/Read, LastValues
@@ -107,7 +107,7 @@ ui/src/
 └── i18n/{en,es}.json                          # + dashboard_catalog.* keys
 ```
 
-**Structure Decision**: This keeps the repo's existing web-app layout (`api/` + `ui/` + `db/`). The backend goes inside the owning `insights` domain; the UI follows the Explore pages (SSR page + shared gallery) and the Svelte-island convention for the dynamic window.
+**Structure Decision**: This keeps the repo's existing web-app layout (`api/` + `ui/` + `db/`). The backend goes inside the owning `ana` domain; the UI follows the Explore pages (SSR page + shared gallery) and the Svelte-island convention for the dynamic window.
 
 ## Phase summary
 

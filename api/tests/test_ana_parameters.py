@@ -1,6 +1,6 @@
 """Dashboard Management — `/api/dashboards/{id}/parameters`
 (specs/006-dashboard-management, US3 / FR-014–FR-018)."""
-from app.insights.internal.models import Parameter
+from app.ana.internal.models import Parameter
 from tests.ana_helpers import (
     PAST, data, mk_dashboard, mk_grant, mk_param, override, setup_owner, user,
 )

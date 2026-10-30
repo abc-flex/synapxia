@@ -9,7 +9,7 @@ from tests.catalog_helpers import (
     data, executions, mk_dashboard, mk_grant, mk_list_def, mk_param, override,
     seed_ana_lists, setup_catalog, user, viewer,
 )
-from app.insights.internal.models import Execution
+from app.ana.internal.models import Execution
 
 
 def start_url(d):

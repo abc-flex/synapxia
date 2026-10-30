@@ -22,12 +22,12 @@
 
 ## Conventions every task follows
 
-- **Backend**: copy the style of `api/app/insights/routes/dashboards.py` and `parameters.py`.
+- **Backend**: copy the style of `api/app/ana/routes/dashboards.py` and `parameters.py`.
   - Routes wrap guard exceptions in a local `_ensure_*` → `HTTPException(403)`.
   - `ValueError` maps to 400.
   - Module RBAC is `require_privilege("ANA", "CATALOG", can_edit=False)` unless a task says otherwise.
   - Lists take `skip: int = Query(0, ge=0)` and `limit: int = Query(100, ge=1, le=500)`.
-  - Business logic lives in `api/app/insights/internal/*_service.py`, never in routes.
+  - Business logic lives in `api/app/ana/internal/*_service.py`, never in routes.
   - The actor is always the `current` user from the dependency, never from the body.
 - **Tests**: use `api/tests/ana_helpers.py` (`seed_privileges`, `mk_dashboard`, `mk_grant`, `mk_param`, `seed_ana_lists`) and run with `docker compose exec -T api uv run pytest -q <path>`.
 - **UI**: copy `ui/src/pages/lib/explore.astro` (SSR gallery) and `ui/src/components/lib/ExploreCard.astro`.
@@ -42,7 +42,7 @@
 
 **Purpose**: prepare the files every story touches.
 
-- [X] T001 Create the empty modules with module docstrings referencing `specs/007-dashboard-catalog`: `api/app/insights/internal/catalog_service.py`, `api/app/insights/internal/execution_service.py`, `api/app/insights/routes/catalog.py` (`APIRouter(prefix="/api/dashboards", tags=["dashboard_catalog"])`) and `api/app/insights/routes/executions.py` (`APIRouter(tags=["dashboard_executions"])`, full paths per route).
+- [X] T001 Create the empty modules with module docstrings referencing `specs/007-dashboard-catalog`: `api/app/ana/internal/catalog_service.py`, `api/app/ana/internal/execution_service.py`, `api/app/ana/routes/catalog.py` (`APIRouter(prefix="/api/dashboards", tags=["dashboard_catalog"])`) and `api/app/ana/routes/executions.py` (`APIRouter(tags=["dashboard_executions"])`, full paths per route).
 - [X] T002 Register both routers in `api/app/main.py` under the "Analytics module" block. `catalog` and `executions` MUST be included **before** `dashboards_router`, so `/api/dashboards/catalog` is not captured by `GET /api/dashboards/{dashboard_id}`. Add a comment saying why.
 - [X] T003 [P] Add the `dashboard_catalog.*` i18n skeleton (title, subtitle, search placeholder, empty state, execute, detail headings, parameters window, viewer, errors) to `ui/src/i18n/en.json` and `ui/src/i18n/es.json`. Reuse the existing `dashboard_table.perm_filter_*` keys for the privilege options and `gallery.favorites_only` for the favorites pill.
 
@@ -52,10 +52,10 @@
 
 **Purpose**: the model, validation and permission helpers shared by US1–US3.
 
-- [X] T004 Map the `executions` table in `api/app/insights/internal/models.py` as `Execution(SQLModel, table=True)`: `id`, `dashboard` (BigInteger FK `dashboards.id`), `user_id` (BigInteger FK `users.id`), `executed_at` (default utcnow), `payload` (`Column("payload", JSON)`), `status` (nullable), `error_message` (nullable), `duration_ms` (nullable int). Add the projections from data-model.md: `CatalogDashboard`, `RunFormOption`, `RunFormParameter`, `RunForm`, `ExecutionStart` (`values: Dict[str, Optional[str]] = {}`), `ExecutionStarted`, `ExecutionFinish` (`status: str`, `error_message: Optional[str]`), `ExecutionCancelled` (`values`, `duration_ms: Optional[int]`), `ExecutionRead`, `LastValues`. Add constants `EXEC_SUCCESS/FAILED/CANCELLED/TIMEOUT/UNAUTHORIZED`, `MODE_VIEWER/TAB` and `SOURCE_DEFAULT = "DEFAULT"`.
-- [X] T005 [P] In `api/app/insights/internal/parameter_validation.py`, add `validate_run_value(data_type, value, allowed) -> None` (NUMBER finite decimal, BOOLEAN `true|false`, DATE `YYYY-MM-DD` real date, list membership when `allowed` is not None, max 1 000 chars; raises ValueError with the parameter-agnostic message) and `list_values(session, code) -> Optional[Set[str]]` (None when the list is missing, inactive or not LIST_OF_VALUES; else its values). Make `validate_default` delegate to `validate_run_value` with identical messages. `api/tests/test_ana_parameters.py` must stay green unchanged.
-- [X] T006 [P] In `api/app/insights/internal/permissions_service.py`, add `dashboard_matching_grants(session, user, dashboard_id) -> List[DashboardPermission]` (thin wrapper over `rp.matching_grants(session, user, DashboardPermission, _FK, [dashboard_id])`).
-- [X] T007 In `api/app/insights/internal/catalog_service.py`, implement `is_catalog_visible(dashboard) -> bool` (`is_active` and `normalize(status) == "PUBLISHED"`). Also implement `resolve_effective_parameters(session, user, dashboard_id) -> List[EffectiveParam]`, where each item holds the parameter row, `effective_source` (GRANT/LIST/INPUT), `bound_value`, `bound_label` and `allowed: Optional[Set[str]]`. Use the R3 rule: GRANT only if `context_binding` ∈ ids of `dashboard_matching_grants` and that grant is not revoked; otherwise LIST if `list` is set, else INPUT. Read only active parameters, ordered by name, with one query for parameters and one for the grants.
+- [X] T004 Map the `executions` table in `api/app/ana/internal/models.py` as `Execution(SQLModel, table=True)`: `id`, `dashboard` (BigInteger FK `dashboards.id`), `user_id` (BigInteger FK `users.id`), `executed_at` (default utcnow), `payload` (`Column("payload", JSON)`), `status` (nullable), `error_message` (nullable), `duration_ms` (nullable int). Add the projections from data-model.md: `CatalogDashboard`, `RunFormOption`, `RunFormParameter`, `RunForm`, `ExecutionStart` (`values: Dict[str, Optional[str]] = {}`), `ExecutionStarted`, `ExecutionFinish` (`status: str`, `error_message: Optional[str]`), `ExecutionCancelled` (`values`, `duration_ms: Optional[int]`), `ExecutionRead`, `LastValues`. Add constants `EXEC_SUCCESS/FAILED/CANCELLED/TIMEOUT/UNAUTHORIZED`, `MODE_VIEWER/TAB` and `SOURCE_DEFAULT = "DEFAULT"`.
+- [X] T005 [P] In `api/app/ana/internal/parameter_validation.py`, add `validate_run_value(data_type, value, allowed) -> None` (NUMBER finite decimal, BOOLEAN `true|false`, DATE `YYYY-MM-DD` real date, list membership when `allowed` is not None, max 1 000 chars; raises ValueError with the parameter-agnostic message) and `list_values(session, code) -> Optional[Set[str]]` (None when the list is missing, inactive or not LIST_OF_VALUES; else its values). Make `validate_default` delegate to `validate_run_value` with identical messages. `api/tests/test_ana_parameters.py` must stay green unchanged.
+- [X] T006 [P] In `api/app/ana/internal/permissions_service.py`, add `dashboard_matching_grants(session, user, dashboard_id) -> List[DashboardPermission]` (thin wrapper over `rp.matching_grants(session, user, DashboardPermission, _FK, [dashboard_id])`).
+- [X] T007 In `api/app/ana/internal/catalog_service.py`, implement `is_catalog_visible(dashboard) -> bool` (`is_active` and `normalize(status) == "PUBLISHED"`). Also implement `resolve_effective_parameters(session, user, dashboard_id) -> List[EffectiveParam]`, where each item holds the parameter row, `effective_source` (GRANT/LIST/INPUT), `bound_value`, `bound_label` and `allowed: Optional[Set[str]]`. Use the R3 rule: GRANT only if `context_binding` ∈ ids of `dashboard_matching_grants` and that grant is not revoked; otherwise LIST if `list` is set, else INPUT. Read only active parameters, ordered by name, with one query for parameters and one for the grants.
 - [X] T008 [P] Add the TS types to `ui/src/types/api.ts`: `CatalogDashboard`, `RunFormOption`, `RunFormParameter`, `RunForm`, `ExecutionStarted`, `ExecutionRead`, `LastValues`, `ExecutionStatus` and `EffectiveSource`. Create `ui/src/lib/dashboardExecutions.ts` with `getCatalog(skip, limit)`, `getRunForm(id)`, `startExecution(id, values)`, `finishExecution(execId, status, errorMessage?)`, `recordCancelled(id, values, durationMs)` and `getLastValues(id)` over `lib/api.ts`. Start, finish and cancel must surface `apiErrorDetail()` messages.
 - [X] T009 Foundational tests in `api/tests/test_ana_catalog_foundation.py`:
   - `validate_run_value` accepts and rejects each type, the list check and the 1 000-character cap.
@@ -85,12 +85,12 @@
 
 ### Implementation for User Story 1
 
-- [X] T011 [US1] In `api/app/insights/internal/catalog_service.py`, implement `list_catalog(session, user, skip, limit) -> List[CatalogDashboard]`:
+- [X] T011 [US1] In `api/app/ana/internal/catalog_service.py`, implement `list_catalog(session, user, skip, limit) -> List[CatalogDashboard]`:
   - The base query is active and PUBLISHED.
   - Non-superusers are restricted to `permissions_service.accessible_dashboards`, returning `[]` early when empty.
   - Order by name, id, then apply offset/limit.
   - Batch scopes via `dashboards_user_scopes`, favorites via one query over `FavoriteDashboard` (copy `_favorite_ids` from `routes/dashboards.py` into the service and have the route reuse it), and active parameter counts via one grouped `COUNT` over `Parameter`.
-- [X] T012 [US1] In `api/app/insights/routes/catalog.py`, add `GET /catalog` → `List[CatalogDashboard]` calling `list_catalog`, with a docstring per contract.
+- [X] T012 [US1] In `api/app/ana/routes/catalog.py`, add `GET /catalog` → `List[CatalogDashboard]` calling `list_catalog`, with a docstring per contract.
 - [X] T013 [P] [US1] Create `ui/src/components/ana/CatalogCard.astro` wrapping `ui/src/components/lib/gallery/GalleryCard.astro`, modelled on `ExploreCard.astro`.
   - Icon chosen by source: a local map `SOURCE_TYPE → icon` (e.g. `POWER_BI`/`TABLEAU`/`QLIK_SENSE` → `chart-bar`, `LOOKER_STUDIO`/`METABASE`/`SUPERSET` → `chart-pie`, `INTERNAL_PAGE` → `document-text`, `CUSTOM_IFRAME` → `code`), each verified to exist in `ui/src/images/icons/`, falling back to `chart-pie`.
   - Type and source chips carry `data-list-labels` via `listLabelsAttr`.
@@ -143,21 +143,21 @@
 
 ### Implementation for User Story 2
 
-- [X] T020 [US2] In `api/app/insights/internal/catalog_service.py`, implement `build_run_form(session, user, dashboard) -> RunForm`:
+- [X] T020 [US2] In `api/app/ana/internal/catalog_service.py`, implement `build_run_form(session, user, dashboard) -> RunForm`:
   - Use `resolve_effective_parameters`.
   - For LIST, load all `ListItem` rows of every LIST code in one query (value, lang, label, sort_order), with `list_unavailable` when `list_values` is None or empty.
   - `has_last_values` comes from an EXISTS over `Execution` for (user, dashboard, SUCCESS).
-- [X] T021 [US2] In `api/app/insights/internal/execution_service.py`, implement:
+- [X] T021 [US2] In `api/app/ana/internal/execution_service.py`, implement:
   - `ExecutionUnauthorized` and `ExecutionInvalid(ValueError)`.
   - `check_runnable(session, user, dashboard)`, which raises Unauthorized when the dashboard is inactive, not PUBLISHED or has no live grant (superuser passes).
   - `resolve_values(session, user, dashboard_id, submitted) -> (values, sources)`, which applies GRANT, then defaults, then `validate_run_value`, the required check and the `list_unavailable` + required → "cannot be run" check. Sources use DEFAULT when the value equals `default_value`.
   - `build_launch_url(dashboard, values) -> (url, mode)` with `urllib.parse` (merge `parse_qsl` of the existing query, `urlencode`, `embed=1` for INTERNAL_PAGE).
   - `start_execution(session, user, dashboard_id, submitted) -> ExecutionStarted`, which inserts exactly one row in every outcome. On Unauthorized: status UNAUTHORIZED, `error_message`, a sanitised payload (`{values}` restricted to active names, truncated), commit, then re-raise. On invalid values: status FAILED likewise. On success: status None and payload `{values, sources, mode}`.
   - Log each outcome with `logger.info` (dashboard, user, status).
-- [X] T022 [US2] In `api/app/insights/internal/catalog_service.py`, implement `last_values(session, user, dashboard_id) -> LastValues`: the newest SUCCESS row of (user, dashboard) ordered by `executed_at desc, id desc` limit 1; `payload.values`, or the payload itself when it is a flat legacy dict; then filter by `resolve_effective_parameters` (drop GRANT and unknown names) and `validate_run_value` (drop invalid values).
+- [X] T022 [US2] In `api/app/ana/internal/catalog_service.py`, implement `last_values(session, user, dashboard_id) -> LastValues`: the newest SUCCESS row of (user, dashboard) ordered by `executed_at desc, id desc` limit 1; `payload.values`, or the payload itself when it is a flat legacy dict; then filter by `resolve_effective_parameters` (drop GRANT and unknown names) and `validate_run_value` (drop invalid values).
 - [X] T023 [US2] Routes:
-  - In `api/app/insights/routes/catalog.py`: `GET /{dashboard_id}/run-form` (404 missing or inactive, `_ensure_runnable` → 403 via `check_runnable` without recording).
-  - In `api/app/insights/routes/executions.py`: `POST /api/dashboards/{dashboard_id}/executions` (201; `ExecutionUnauthorized` → 403, `ExecutionInvalid` → 400, both after the row is committed) and `GET /api/dashboards/{dashboard_id}/executions/last-values`.
+  - In `api/app/ana/routes/catalog.py`: `GET /{dashboard_id}/run-form` (404 missing or inactive, `_ensure_runnable` → 403 via `check_runnable` without recording).
+  - In `api/app/ana/routes/executions.py`: `POST /api/dashboards/{dashboard_id}/executions` (201; `ExecutionUnauthorized` → 403, `ExecutionInvalid` → 400, both after the row is committed) and `GET /api/dashboards/{dashboard_id}/executions/last-values`.
 - [X] T024 [US2] In `ui/src/layouts/BaseLayout.astro`, add the embed mode. When `Astro.url.searchParams.get("embed") === "1"`, render only the main slot (no `SideBar`, no `Header`), keeping `<head>`, theme and i18n scripts. Default rendering is unchanged.
 - [X] T025 [US2] Create `ui/src/components/svelte/DashboardRun.svelte`. Its parameters window is a `<dialog>`; mount it from `catalog.astro`'s bundled script with `mount(DashboardRun, { target })`.
   - A delegated document listener on `[data-action="execute"]` reads `data-dashboard-id` and the name.
@@ -199,10 +199,10 @@
 
 ### Implementation for User Story 3
 
-- [X] T028 [US3] In `api/app/insights/internal/execution_service.py`, implement `finish_execution(session, user, execution_id, status, error_message) -> ExecutionRead` and `record_cancelled(session, user, dashboard_id, values, duration_ms) -> ExecutionRead`.
+- [X] T028 [US3] In `api/app/ana/internal/execution_service.py`, implement `finish_execution(session, user, execution_id, status, error_message) -> ExecutionRead` and `record_cancelled(session, user, dashboard_id, values, duration_ms) -> ExecutionRead`.
   - `finish_execution`: 404 via `LookupError`, 403 via `ExecutionForbidden` when `user_id != user.id`, 409 via `ExecutionConflict` when the status is already set, ValueError for a status outside SUCCESS/FAILED/TIMEOUT/CANCELLED. It sets `duration_ms` from `utcnow() - as_naive_utc(executed_at)` and selects with `with_for_update()` so concurrent finishes can't both win.
   - `record_cancelled`: `check_runnable` (→ UNAUTHORIZED row + raise), else a CANCELLED row with `{values}` sanitised and the duration clamped.
-- [X] T029 [US3] In `api/app/insights/routes/executions.py`, add `POST /api/executions/{execution_id}/finish` (mapping 404/403/409/400) and `POST /api/dashboards/{dashboard_id}/executions/cancelled` (201; 403 after the row is committed). Gate both on `require_privilege("ANA","CATALOG", can_edit=False)`.
+- [X] T029 [US3] In `api/app/ana/routes/executions.py`, add `POST /api/executions/{execution_id}/finish` (mapping 404/403/409/400) and `POST /api/dashboards/{dashboard_id}/executions/cancelled` (201; 403 after the row is committed). Gate both on `require_privilege("ANA","CATALOG", can_edit=False)`.
 - [X] T030 [US3] Complete outcome reporting in `ui/src/components/svelte/DashboardRun.svelte`:
   - Closing the parameters window (Cancel button, Esc or backdrop) without Execute → `recordCancelled(id, currentValues, elapsedMs)`, best effort and silent on error.
   - VIEWER:
@@ -236,7 +236,7 @@
 
 ### Implementation for User Story 4
 
-- [X] T033 [US4] In `api/app/insights/routes/dashboards.py`, change `add_favorite` and `remove_favorite` to depend on `current_active_user` and call `check_any_privilege(session, current, "ANA", ["DASHBOARDS", "CATALOG"], can_edit=False)` (import from `app/internal/permissions`). Update both docstrings. `_set_favorite` (VIEW check) is unchanged.
+- [X] T033 [US4] In `api/app/ana/routes/dashboards.py`, change `add_favorite` and `remove_favorite` to depend on `current_active_user` and call `check_any_privilege(session, current, "ANA", ["DASHBOARDS", "CATALOG"], can_edit=False)` (import from `app/internal/permissions`). Update both docstrings. `_set_favorite` (VIEW check) is unchanged.
 - [X] T034 [US4] Verify the star wiring end-to-end in `ui/src/pages/ana/catalog.astro` and `ui/src/components/ana/CatalogDetailModal.astro`: the card star goes through `initCardGallery` services; the detail star calls `setDashboardFavorite` and dispatches `gallery:card-update` `{galleryId, id, favorite}` so the card and the active favorites filter update without a reload (US4-2).
 
 **Checkpoint**: US4 passes its tests and quickstart B.
@@ -252,7 +252,7 @@
 - [X] T039 [P] Update `docs/user-stories/06-ana.md`: HU-AN04, HU-AN05 and HU-AN06 statuses with links to `specs/007-dashboard-catalog`.
 - [X] T040 Update `memory/MEMORY.md`:
   - Feature-status row "Dashboard Catalog".
-  - `insights` stub row: pending is now only Usage Metrics.
+  - `ana` stub row: pending is now only Usage Metrics.
   - Decisions-log entry covering the catalog endpoints gated on CATALOG, the widened favorites gate, the two-step record finished once, the payload shape, the `embed=1` mode and the blank-tab-first popup strategy.
   - Updated test baseline.
 - [X] T041 Add the single rollup entry for this branch at the top of `memory/CHANGELOG.md` (`## YYYY-MM-DD HH:MM — …`, from `date '+%Y-%m-%d %H:%M'`), listing the files affected.

@@ -2,7 +2,7 @@
 
 Running a dashboard is consumption, not editing: ``ANA/CATALOG`` at read level
 plus a live grant on the dashboard. Every attempt past the module gate leaves
-exactly one `executions` row — see insights/internal/execution_service.py. There
+exactly one `executions` row — see ana/internal/execution_service.py. There
 is deliberately no update or delete route: the only change is the one-time
 ``finish`` of an in-progress run.
 """

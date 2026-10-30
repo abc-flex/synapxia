@@ -80,10 +80,10 @@ api/
 │   ├── inits/                   # ⚠️ Mostly a stub — `criterias` has full CRUD, `initiatives`
 │   │                             #   has read-only GET routes (list/select/get) so assets can be
 │   │                             #   related to one; create/edit/score initiatives is unimplemented
-│   ├── insights/                # Analytics (module ANA) — partial: Dashboard Management
-│   │                             #   (specs/006): dashboards, parameters, dashboard_permissions
-│   │                             #   (binds app/internal/resource_permissions). Catalog /
-│   │                             #   Execute / Favorite / Usage Metrics are not built yet
+│   ├── ana/                     # Analytics (module ANA; formerly `insights`): Dashboard
+│   │                             #   Management (specs/006: dashboards, parameters,
+│   │                             #   dashboard_permissions on app/internal/resource_permissions),
+│   │                             #   Catalog + Execute (specs/007), Usage Metrics (specs/008)
 │   └── workflows/               # Processes (module PROC): Process Management
 │                                 #   (specs/009): processes, related_processes (BPMN-oriented
 │                                 #   PROCESS_RELATION_TYPE), process_assets, process_inits;
@@ -186,7 +186,7 @@ Each resource implements the **canonical CRUD pattern**:
 ### `app/main.py` — application bootstrap
 - Instantiates `FastAPI(title="SynapxIA API", version="1.0.0", openapi_tags=[…])`.
 - Adds `CORSMiddleware` reading `CORS_ORIGINS` env (comma-separated; defaults `*`).
-- Registers routers from **auth → admin → taxo → lib → collab → inits → insights →
+- Registers routers from **auth → admin → taxo → lib → collab → inits → ana →
   workflows → support** in order. `genai` is TODO — when you implement it, import its
   router and `app.include_router(...)` here.
 - Defines startup/shutdown event handlers (currently log-only — no DB pre-warm).
@@ -399,7 +399,7 @@ from the root `.env`; Vercel injects them from the project dashboard.
 ## Adding a new domain (rare)
 
 The remaining stub domain (`genai`) ships empty so the import surface stays stable
-(`inits`, `insights` and `workflows` were promoted by SpecKit 004/005, 006 and 009). When
+(`inits`, `ana` and `workflows` were promoted by SpecKit 004/005, 006 and 009). When
 promoting a stub to a real module:
 
 1. Add SQL schema in `db/sql/{NN}-{module}-ddl.sql` + seeds in `{NN+1}-…-insert.sql`.

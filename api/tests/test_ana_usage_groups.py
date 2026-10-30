@@ -7,7 +7,7 @@ from tests.usage_helpers import (
     mk_unit,
     mk_user, override, period, run, seed_usage, today,
 )
-from app.insights.internal import usage_service
+from app.ana.internal import usage_service
 
 NOW = datetime.utcnow()
 

@@ -10,7 +10,7 @@ Static paths (`/catalog`) are declared before `/{dashboard_id}` in `dashboards.p
 
 ---
 
-## Catalog — `api/app/insights/routes/catalog.py` (prefix `/api/dashboards`)
+## Catalog — `api/app/ana/routes/catalog.py` (prefix `/api/dashboards`)
 
 ### `GET /api/dashboards/catalog?skip=0&limit=100` (`limit ≤ 500`)
 
@@ -56,7 +56,7 @@ The parameters come in name order. `options` lists **every language** of the lis
 
 ---
 
-## Executions — `api/app/insights/routes/executions.py`
+## Executions — `api/app/ana/routes/executions.py`
 
 ### `POST /api/dashboards/{dashboard_id}/executions`
 
@@ -144,7 +144,7 @@ With no previous SUCCESS → `{ "values": {}, "executed_at": null }`.
 
 ---
 
-## Favorites — `api/app/insights/routes/dashboards.py` *(existing, gate widened)*
+## Favorites — `api/app/ana/routes/dashboards.py` *(existing, gate widened)*
 
 ### `PUT /api/dashboards/{dashboard_id}/favorite` · `DELETE /api/dashboards/{dashboard_id}/favorite`
 

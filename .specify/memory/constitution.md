@@ -5,7 +5,7 @@ Sync Impact Report
 	- I. Modular Monolith Boundaries -> domain list corrected: the `catalog` module was
 	  renamed to `taxo` in 2026-05 and this file was never updated; also added the `lib`
 	  and `support` domains (implemented since 2026-06 and 2026-07 respectively, never
-	  listed here) and marked `genai`/`inits`/`insights`/`workflows` explicitly as
+	  listed here) and marked `genai`/`inits`/`ana`/`workflows` explicitly as
 	  stub/partial rather than just "planned"
 - Added sections:
 	- Established Domain Patterns (new, under governance — codifies the per-resource
@@ -32,7 +32,7 @@ Sync Impact Report
 ### I. Modular Monolith Boundaries
 The backend MUST remain a modular monolith organized by bounded domains under
 `api/app`: `admin`, `auth`, `collab`, `taxo`, `lib`, `support` (implemented), and
-`genai`, `inits`, `insights`, `workflows` (stub/partial — see `memory/MEMORY.md`
+`genai`, `inits`, `ana`, `workflows` (stub/partial — see `memory/MEMORY.md`
 "In progress / stubs" for current status). New features MUST be implemented
 inside the owning domain module with routes in `routes/`, data access in
 `internal/`, and shared cross-domain dependencies only in `api/app/internal`.

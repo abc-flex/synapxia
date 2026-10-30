@@ -58,12 +58,12 @@ from .inits.routes import initiative_assets as initiative_assets_router
 from .inits.routes import init_permissions as init_permissions_router
 from .inits.routes import collaborations as collaborations_router
 
-from .insights.routes import dashboards as dashboards_router
-from .insights.routes import parameters as dashboard_parameters_router
-from .insights.routes import dashboard_permissions as dashboard_permissions_router
-from .insights.routes import catalog as dashboard_catalog_router
-from .insights.routes import executions as dashboard_executions_router
-from .insights.routes import usage as usage_metrics_router
+from .ana.routes import dashboards as dashboards_router
+from .ana.routes import parameters as dashboard_parameters_router
+from .ana.routes import dashboard_permissions as dashboard_permissions_router
+from .ana.routes import catalog as dashboard_catalog_router
+from .ana.routes import executions as dashboard_executions_router
+from .ana.routes import usage as usage_metrics_router
 
 from .workflows.routes import landscape as process_landscape_router
 from .workflows.routes import processes as processes_router
@@ -379,7 +379,7 @@ app.include_router(initiative_assets_router.router)
 app.include_router(init_permissions_router.router)
 app.include_router(collaborations_router.router)
 
-# Analytics module (insights domain)
+# Analytics module (ana domain)
 # Catalog + executions first: `/api/dashboards/catalog` must not be captured by
 # `GET /api/dashboards/{dashboard_id}` (specs/007-dashboard-catalog).
 app.include_router(dashboard_catalog_router.router)

@@ -72,7 +72,7 @@ The scope filters executions in SQL (`dashboard IN scope`), and it also filters 
 
 ## R6 — API shape: one metrics document plus one lazy errors endpoint
 
-**Decision.** There are two endpoints, both under `insights/routes/usage.py`:
+**Decision.** There are two endpoints, both under `ana/routes/usage.py`:
 1. `GET /api/usage/metrics?date_from&date_to[&unit|&team]` returns one document: period info, headline (current and previous period), timeline buckets, dashboards table (used plus unused rows), unit tree and team rows.
 2. `GET /api/usage/dashboards/{id}/errors?date_from&date_to[&unit|&team]&limit=10` returns the most frequent error messages for that dashboard in the period, inside the caller's scope (404 if the dashboard is outside it).
 

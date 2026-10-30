@@ -22,9 +22,9 @@
 
 ## Conventions every task follows
 
-- **Backend**: copy the style of `api/app/insights/routes/catalog.py` and `internal/catalog_service.py`.
+- **Backend**: copy the style of `api/app/ana/routes/catalog.py` and `internal/catalog_service.py`.
   - Module RBAC is `Depends(require_privilege("ANA", "USAGE", can_edit=False))`.
-  - Business logic lives in `api/app/insights/internal/usage_service.py`, never in routes.
+  - Business logic lives in `api/app/ana/internal/usage_service.py`, never in routes.
   - `ValueError` maps to 400.
   - Every request logs one structured line: period, scope size, rows read, elapsed ms.
   - **Never** return `user_id`, `payload` or an execution row (FR-015).
@@ -77,11 +77,11 @@
 
 ### Implementation
 
-- [X] T006 Add the response models to `api/app/insights/internal/models.py`, as plain `SQLModel` (non-table) classes following data-model.md and contracts/usage-api.md:
+- [X] T006 Add the response models to `api/app/ana/internal/models.py`, as plain `SQLModel` (non-table) classes following data-model.md and contracts/usage-api.md:
   - `UsagePeriod`, `UsageScope`, `UsageFilter`, `UsageFigures` (runs, attempts, users, dashboards, success_rate, median_ms, avg_ms, incomplete, outcomes dict), `UsageChange`, `UsageSummary`;
   - `UsageBucket`, `UsageDashboardRow`, `UsageUnitNode` (self-referencing `children`), `UsageTeamRow`, `UsageMetrics`;
   - `UsageErrorItem`, `UsageErrors`.
-- [X] T007 Create `api/app/insights/internal/usage_service.py` with the shared core:
+- [X] T007 Create `api/app/ana/internal/usage_service.py` with the shared core:
   - `ORG_WIDE_PROFILES = ("ADMINISTRATOR",)`.
   - `OUTCOME_CLASS` table and `classify(status) -> (outcome_key, is_run)` per research R5, with unknown codes treated as runs under their raw key.
   - `parse_period(date_from, date_to) -> Period`: validation per data-model, raising `ValueError`. Computes the local window converted to naive UTC with `zoneinfo.ZoneInfo(settings.APP_TIMEZONE)`, the previous window, the inclusive length N, and `bucket` (day ≤ 31, week ≤ 183, else month).
@@ -89,7 +89,7 @@
   - `load_rows(session, start_utc, end_utc, scope)`: one projected `select(Execution.id, .dashboard, .user_id, .executed_at, .status, .duration_ms)` on the combined current and previous window, filtered by scope (`IN`; an empty scope short-circuits to `[]`), with `execution_options(yield_per=5000)`.
   - `figures(rows) -> UsageFigures` and `change(cur, prev) -> UsageChange` (research R9).
   - `build_metrics(session, user, period, unit=None, team=None) -> UsageMetrics`: fills `period`, `scope`, `filter` and `summary` for now (later stories add `timeline`, `dashboards`, `units` and `teams`), and logs the structured line.
-- [X] T008 Create `api/app/insights/routes/usage.py` with `router = APIRouter(prefix="/api/usage", tags=["usage"])` and `GET /metrics` (query `date_from`, `date_to`, optional `unit`, `team`). It calls `usage_service.build_metrics` and maps `ValueError` to 400. Register it in `api/app/main.py` next to the other insights routers.
+- [X] T008 Create `api/app/ana/routes/usage.py` with `router = APIRouter(prefix="/api/usage", tags=["usage"])` and `GET /metrics` (query `date_from`, `date_to`, optional `unit`, `team`). It calls `usage_service.build_metrics` and maps `ValueError` to 400. Register it in `api/app/main.py` next to the other ana routers.
 - [X] T009 [P] Add the TypeScript types `UsageMetrics`, `UsagePeriod`, `UsageFigures`, `UsageChange`, `UsageSummary`, `UsageBucket`, `UsageDashboardRow`, `UsageUnitNode`, `UsageTeamRow`, `UsageErrors` and `UsageErrorItem` to `ui/src/types/api.ts`, mirroring contracts/usage-api.md
 - [X] T010 [P] Create `ui/src/lib/usageMetrics.ts`:
   - `getUsageMetrics({dateFrom, dateTo, unit?, team?})`;
@@ -129,7 +129,7 @@
 
 ### Implementation
 
-- [X] T015 [US1] Complete `figures()`, `change()` and the summary assembly in `api/app/insights/internal/usage_service.py`. Split `load_rows` output into current and previous by `executed_at`, and compute `outcomes` per key including `INCOMPLETE`. Make T014 pass.
+- [X] T015 [US1] Complete `figures()`, `change()` and the summary assembly in `api/app/ana/internal/usage_service.py`. Split `load_rows` output into current and previous by `executed_at`, and compute `outcomes` per key including `INCOMPLETE`. Make T014 pass.
 - [X] T016 [P] [US1] Create the headline tiles in `ui/src/components/svelte/UsageMetrics.svelte`:
   - tiles for Runs, Abandoned or refused attempts, Distinct users, Distinct dashboards, Success rate, Median duration (with the average as secondary text) and Incomplete;
   - each tile shows its change with an up, down or neutral mark and a tooltip naming the previous period's dates;
@@ -160,7 +160,7 @@
 
 ### Implementation
 
-- [X] T019 [US2] Add `timeline()` to `api/app/insights/internal/usage_service.py`: generate every bucket for the current window in local dates, then assign each current row by its local date. Include it in `build_metrics`. Make T018 pass.
+- [X] T019 [US2] Add `timeline()` to `api/app/ana/internal/usage_service.py`: generate every bucket for the current window in local dates, then assign each current row by its local date. Include it in `build_metrics`. Make T018 pass.
 - [X] T020 [US2] Load the `dataviz` skill, then create `ui/src/components/svelte/UsageTimeline.svelte`:
   - a responsive SVG stacked-bar chart with stack order Success, Failed, Timeout, Incomplete, then Cancelled and Unauthorized set apart (hatched or desaturated) as abandoned or refused attempts;
   - color tokens for light and dark;
@@ -201,13 +201,13 @@
 
 ### Implementation
 
-- [X] T023 [US3] Add `dashboard_rows()` to `api/app/insights/internal/usage_service.py`: aggregate current rows per dashboard, then fetch labels with one `select(Dashboard)` over the used ids plus the Published, active, in-scope unused ids. Include it in `build_metrics`.
-- [X] T024 [US3] Add `dashboard_errors(session, user, dashboard_id, period, unit, team, limit)` to `api/app/insights/internal/usage_service.py`:
+- [X] T023 [US3] Add `dashboard_rows()` to `api/app/ana/internal/usage_service.py`: aggregate current rows per dashboard, then fetch labels with one `select(Dashboard)` over the used ids plus the Published, active, in-scope unused ids. Include it in `build_metrics`.
+- [X] T024 [US3] Add `dashboard_errors(session, user, dashboard_id, period, unit, team, limit)` to `api/app/ana/internal/usage_service.py`:
   - check scope (raise a not-found error when out of scope);
   - one `GROUP BY error_message, status` query over the period with a non-empty `error_message`, merged into `items` with `statuses`;
   - apply the `unit` / `team` filter once US4 lands. Leave a single hook `_user_filter(...)` returning `None` for now.
 
-  Then add `GET /dashboards/{dashboard_id}/errors` to `api/app/insights/routes/usage.py` (`limit: int = Query(10, ge=1, le=50)`, not-found → 404). Make T022 pass.
+  Then add `GET /dashboards/{dashboard_id}/errors` to `api/app/ana/routes/usage.py` (`limit: int = Query(10, ge=1, le=50)`, not-found → 404). Make T022 pass.
 - [X] T025 [P] [US3] Create `ui/src/lib/tableExport.ts` by **extracting** `toCSV` and `downloadFile` from `ui/src/components/table/advancedTable.ts`, keeping the same output, and make `advancedTable.ts` import them. Add:
   - `toCSV(rows, columns, {bom: true})` with RFC 4180 quoting and a UTF-8 BOM option;
   - `exportFileName(table, period, filter)`, e.g. `usage-dashboards_2026-09-06_2026-10-05_unit-ENG`.
@@ -244,15 +244,15 @@
 
 ### Implementation
 
-- [X] T030 [US4] Add the group loaders to `api/app/insights/internal/usage_service.py`:
+- [X] T030 [US4] Add the group loaders to `api/app/ana/internal/usage_service.py`:
   - one query for active `BusinessUnit` rows into a `children` map, with a visited-set cycle guard;
   - one query for active users (`id`, `unit`) for membership and run attribution;
   - one query for active `Assignment` rows with a team (`user_id`, `team`, `valid_from`, `valid_to`);
   - one query for `Team` names.
 
   Keep this to four constant queries per request.
-- [X] T031 [US4] Add `teams_for_run(user_id, executed_at)` to `api/app/insights/internal/usage_service.py`. It implements the hybrid rule of research R8 (valid at `executed_at`, else currently valid, else `__none__`), compares in naive UTC, and memoises current teams per user.
-- [X] T032 [US4] Add `unit_tree()` and `team_rows()` to `api/app/insights/internal/usage_service.py` per data-model.md. Then implement the `unit` / `team` filter: resolve unit codes to their subtree once, filter the current and previous rows by user or by `teams_for_run`, and apply it before `figures`, `timeline` and `dashboard_rows`, but **not** before `unit_tree` / `team_rows`. Wire `_user_filter` into `dashboard_errors`. Include `units` and `teams` in `build_metrics`. Make T029 pass.
+- [X] T031 [US4] Add `teams_for_run(user_id, executed_at)` to `api/app/ana/internal/usage_service.py`. It implements the hybrid rule of research R8 (valid at `executed_at`, else currently valid, else `__none__`), compares in naive UTC, and memoises current teams per user.
+- [X] T032 [US4] Add `unit_tree()` and `team_rows()` to `api/app/ana/internal/usage_service.py` per data-model.md. Then implement the `unit` / `team` filter: resolve unit codes to their subtree once, filter the current and previous rows by user or by `teams_for_run`, and apply it before `figures`, `timeline` and `dashboard_rows`, but **not** before `unit_tree` / `team_rows`. Wire `_user_filter` into `dashboard_errors`. Include `units` and `teams` in `build_metrics`. Make T029 pass.
 - [X] T033 [US4] Create `ui/src/components/svelte/UsageAdoption.svelte`:
   - two tabs, By unit and By team;
   - the unit tab is an expandable tree (top-level expanded one level) with members, users who ran, adoption rate as a percentage with a small bar, runs and success rate;
@@ -292,7 +292,7 @@
 - [X] T040 [P] Update `docs/user-stories/06-ana.md` HU-AN07 with a **Status: ✅ implemented (SpecKit 008)** paragraph covering scope rules, run definition, unit tree, hybrid teams, exports, and the synthetic-data and index scripts
 - [X] T041 Update `memory/MEMORY.md`:
   - a decisions-log row for SpecKit 008 covering the Python aggregation and its rationale, `ORG_WIDE_PROFILES` vs MANAGE scope, run vs attempt, hybrid teams, `APP_TIMEZONE`, the in-repo `.xlsx` writer, the extracted `lib/tableExport.ts`, the indexes, `provisioned-db.sql`, and the synthetic scripts;
-  - in Feature status, a new shipped row, `insights` → "✅ done", and the HU-AN07 pending note removed;
+  - in Feature status, a new shipped row, `ana` → "✅ done", and the HU-AN07 pending note removed;
   - the backend-tests baseline count.
 - [X] T042 Add one rollup entry at the top of `memory/CHANGELOG.md` (`## YYYY-MM-DD HH:MM — …`, time from `date '+%Y-%m-%d %H:%M'`) covering the whole 008 change set, listing files affected
 

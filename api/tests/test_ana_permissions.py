@@ -2,7 +2,7 @@
 (specs/006-dashboard-management, US4 / FR-019–FR-022)."""
 from datetime import datetime
 
-from app.insights.internal.models import DashboardPermission
+from app.ana.internal.models import DashboardPermission
 from tests.ana_helpers import (
     FUTURE, PAST, data, mk_dashboard, mk_grant, mk_param, override, setup_owner, user,
 )

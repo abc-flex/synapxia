@@ -1,6 +1,6 @@
 """Dashboard Management — `/api/dashboards` core CRUD and the grant-scoped list
 (specs/006-dashboard-management, US1)."""
-from app.insights.internal.models import Dashboard, DashboardPermission
+from app.ana.internal.models import Dashboard, DashboardPermission
 from sqlmodel import select
 from tests.ana_helpers import (
     data, mk_dashboard, mk_grant, override, seed_ana_lists, seed_privileges, setup_owner,

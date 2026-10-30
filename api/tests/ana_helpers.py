@@ -2,7 +2,7 @@
 (specs/006-dashboard-management). Same style as inits_helpers.py, whose generic
 helpers are reused rather than copied."""
 from app.admin.internal.models import List as ListModel, Privilege
-from app.insights.internal.models import Dashboard, DashboardPermission, Parameter
+from app.ana.internal.models import Dashboard, DashboardPermission, Parameter
 from tests.inits_helpers import (  # noqa: F401 — re-exported for the test modules
     FUTURE, NOW, PAST, data, mk_list, mk_user_row, override, superuser, user,
 )

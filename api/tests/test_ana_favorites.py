@@ -1,6 +1,6 @@
 """Dashboard Management — favorites (`PUT`/`DELETE /api/dashboards/{id}/favorite`
 and `is_favorite` on the list; specs/006-dashboard-management, amended FR-004a)."""
-from app.insights.internal.models import FavoriteDashboard
+from app.ana.internal.models import FavoriteDashboard
 from tests.ana_helpers import (
     data, mk_dashboard, mk_grant, override, seed_ana_lists, seed_privileges, setup_owner, user,
 )

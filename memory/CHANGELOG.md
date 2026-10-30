@@ -20,6 +20,14 @@ Entries before the 2026-06-10 switchover (Keep-a-Changelog–style, auto-generat
 
 ---
 
+## 2026-10-30 15:02 — refactor(ana): rename the `insights` API package to `ana`
+- The analytics domain package `api/app/insights` is now `api/app/ana`, matching module `ANA`, the `/ana/*` UI routes, `ui/src/components/ana` and the DB band. Only the package path changed: no endpoint, request/response key, table or privilege was touched (Constitution II intact).
+- Updated the imports in `api/app/main.py` and the ANA test suites, docstrings and path comments, and the architecture docs (constitution, `AGENTS.md`, `api/AGENTS.md`, `api/CLAUDE.md`, `db/CLAUDE.md`, `docs/user-stories/06-ana.md`, `MEMORY.md`) plus the path references in `specs/006`–`009`. Older CHANGELOG entries keep the old name as history.
+- Verified: suite 857 passed / 0 failed; the API restarts cleanly with all 20 dashboard/usage/execution routes registered; live admin reads of catalog, with-access, parameter-lists and usage metrics answer 200; SSR of `/ana/dashboards`, `/ana/catalog`, `/ana/usage` answers 200.
+- Files affected: `api/app/ana/**` (moved from `api/app/insights/**`), `api/app/main.py`, `api/app/internal/list_values.py`, `api/tests/*ana*.py`, `api/tests/catalog_helpers.py`, `ui/src/components/ana/DashboardDetailModal.astro`, docs listed above.
+
+---
+
 ## 2026-10-24 21:46 — feat(proc): Value Chain + Process Map (SpecKit 010, HU-PR05/06)
 - Two new read-only views over one shared read. Both are gated by `PROC/VALUE_CHAIN` or `PROC/MAP`, never by Process Management, so Collaborator and Reviewer can use them.
   - **Value Chain** (`/proc/value_chain`): a compact chain that fits one screen. Primary activities follow the Precedes order and end in a margin marker; support activities sit in bands underneath. Each block shows its rolled-up asset and initiative counts and a Draft or Review marker, and blocks expand one level. Processes with no links are amber; a legend explains the color (no badge), and an *Only opportunities* switch dims the rest.

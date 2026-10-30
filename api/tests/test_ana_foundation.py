@@ -3,8 +3,8 @@ resolution and the grants read route (specs/006-dashboard-management)."""
 import pytest
 
 from app.collab.internal.models import Assignment
-from app.insights.internal import permissions_service as ps
-from app.insights.internal import status_service as ss
+from app.ana.internal import permissions_service as ps
+from app.ana.internal import status_service as ss
 from tests.ana_helpers import (
     FUTURE, PAST, data, mk_dashboard, mk_grant, override, seed_privileges, setup_owner,
     superuser, user,

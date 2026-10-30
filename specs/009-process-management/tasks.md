@@ -19,7 +19,7 @@
   - Domain `api/app/workflows/` (research R1). Models and services go in `internal/`, routes in `routes/`.
   - Gate every route with `require_privilege("PROC", "PROCESSES", can_edit=…)` from `app/internal/permissions.py`, and get the session from `app.internal.dependencies.get_db_session`.
   - Validate list values with `app.internal.list_values.validate_list_value`.
-  - Map service `ValueError` → 400, a missing process → 404, conflicts → 409, as in `api/app/insights/routes/dashboards.py`.
+  - Map service `ValueError` → 400, a missing process → 404, conflicts → 409, as in `api/app/ana/routes/dashboards.py`.
   - Routes return bare models or raise `HTTPException`; the global envelope wraps them.
 - **Service functions that write links must NOT commit.** They take the caller's session, so create (US5) can compose them in one transaction. Only the route-level orchestration commits or rolls back.
 - **Tests**:
@@ -64,7 +64,7 @@
   - Request models: `ProcessCreate` (core fields + optional `status`, `owner`, and optional lists `relations`, `assets`, `inits`); `ProcessUpdate` (all optional, **no `code`**); `RelationItem`, `AssetLinkItem`, `InitLinkItem`; `RelationsReplace`, `AssetsReplace`, `InitsReplace`.
   - Response models: `ProcessRead` (with `parent_name`, `unit_name`, `owner_name`); `ProcessDetail` (+ `allowed_statuses: List[str]`); `ProcessRelationRead`, `ProcessAssetRead`, `ProcessInitRead`; `ProcessFormOptions`.
   - Use field names exactly as in contracts/processes-api.md. Length limits are checked in validators so they answer 400, not 422 (same reason as SpecKit 006).
-- [X] T006 [P] Create `api/app/workflows/internal/status_service.py`, modelled on `api/app/insights/internal/status_service.py`:
+- [X] T006 [P] Create `api/app/workflows/internal/status_service.py`, modelled on `api/app/ana/internal/status_service.py`:
   - constants `DRAFT/REVIEW/PUBLISHED/DEPRECATED`;
   - `ALLOWED_TRANSITIONS = {(DRAFT,REVIEW),(REVIEW,PUBLISHED),(REVIEW,DRAFT),(PUBLISHED,DEPRECATED)}`;
   - `validate_create_status(status) -> "DRAFT"` (None or DRAFT accepted, otherwise `ValueError`);
@@ -129,7 +129,7 @@
   - `GET /form-options`, declared **before** `/{code}`; returns processes, units, owners, assets, initiatives (active only, names only), `relation_rules = relation_rules.RULES` and `can_edit` via `has_privilege(..., can_edit=True)` or superuser;
   - `GET /{code}`, `POST /` (commit or rollback here), `PUT /{code}`, `DELETE /{code}`.
   - Map `ValueError` → 400, missing → 404, and duplicate/children conflicts → 409 (use a small `ProcessConflict` exception defined in process_service).
-- [X] T016 [US1] Register the router in `api/app/main.py`: import `from .workflows.routes import processes as processes_router` next to the insights imports, and `app.include_router(processes_router.router)` in the router block.
+- [X] T016 [US1] Register the router in `api/app/main.py`: import `from .workflows.routes import processes as processes_router` next to the ana imports, and `app.include_router(processes_router.router)` in the router block.
 - [X] T017 [P] [US1] Add the i18n keys in `ui/src/i18n/en.json` and `es.json`:
   - `process_table.*`: column headers code/name/type/parent/unit/owner/status/tags, filter labels, search placeholder, `new`, empty state.
   - `process_modal.*`: title_new/title_edit, field labels and hints for every core field, code_readonly_hint, status_hint_create/status_hint_locked, save, discard confirm, errors such as duplicate code.

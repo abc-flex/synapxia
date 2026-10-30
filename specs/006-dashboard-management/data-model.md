@@ -1,7 +1,7 @@
 # Data Model — Dashboard Management (006)
 
 All three tables already exist in `db/sql/61-ana-ddl.sql`. This feature adds **no DDL**. It
-adds SQLModel mappings in `api/app/insights/internal/models.py`, request/read projections, and
+adds SQLModel mappings in `api/app/ana/internal/models.py`, request/read projections, and
 Spanish rows for the analytics lists.
 
 ## Entities

@@ -4,7 +4,7 @@ Nested under ``/api/dashboards/{dashboard_id}/parameters`` and keyed by the
 parameter name (part of the primary key, so never renamed). Reads need VIEW on
 the dashboard, writes MANAGE. Removal is logical; re-adding a removed name
 restores it. Each parameter's value source (GRANT / LIST / INPUT) is derived
-from its binding and list — see insights/internal/parameter_validation.py.
+from its binding and list — see ana/internal/parameter_validation.py.
 """
 import logging
 from datetime import datetime

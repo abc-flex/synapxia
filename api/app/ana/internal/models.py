@@ -4,7 +4,7 @@ specs/006-dashboard-management (HU-AN01 / HU-AN02 / HU-AN03). The three tables
 already exist in db/sql/61-ana-ddl.sql; this module only maps them.
 
 - ``dashboards``: the governed inventory. A dashboard is created in DRAFT and
-  its status then follows insights/internal/status_service.py.
+  its status then follows ana/internal/status_service.py.
 - ``parameters``: the inputs a dashboard accepts, keyed by (dashboard, name).
   The *value source* is derived, never stored: GRANT when ``context_binding``
   is set, else LIST when ``list`` is set, else INPUT (the viewer types it).

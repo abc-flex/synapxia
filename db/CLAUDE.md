@@ -75,7 +75,7 @@ db/
 | 30s | `collab` | `app/collab/` | Teams, roles, assignments, projects, dimensions, metrics |
 | 40s | `lib` | `app/lib/` | Asset library: assets, characterizations, favorites, actions, relations |
 | 50s | `inits` | `app/inits/` (stub) | GenAI initiatives: criterias, diagnostics, collaborations |
-| 60s | `ana` | `app/insights/` (stub) | Analytics: dashboards, parameters, executions |
+| 60s | `ana` | `app/ana/` | Analytics: dashboards, parameters, executions |
 
 When adding a new module, allocate the next free band (70s, 80s, …). Don't squeeze
 new modules between existing bands.

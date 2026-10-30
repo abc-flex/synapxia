@@ -6,13 +6,13 @@ Technical Context had no open unknowns.
 
 ---
 
-## R1 — Owning domain: `insights` (module code `ANA`)
+## R1 — Owning domain: `ana` (module code `ANA`)
 
-- **Decision**: All backend code goes in `api/app/insights/` (`internal/` models and services,
+- **Decision**: All backend code goes in `api/app/ana/` (`internal/` models and services,
   `routes/`). The module RBAC code is `ANA`, the option is `ANA/DASHBOARDS`, and the UI page is
   `ui/src/pages/ana/dashboards.astro` (the path already seeded in `options.path`).
-- **Rationale**: `docs/user-stories/06-ana.md` names `api/app/insights` as the API domain for the
-  `ANA` module, and `insights` is the stub reserved for it (only `dependencies.py` plus empty
+- **Rationale**: `docs/user-stories/06-ana.md` names `api/app/ana` as the API domain for the
+  `ANA` module, and `ana` is the stub reserved for it (only `dependencies.py` plus empty
   `models.py`/`routes/`). The constitution says to promote a stub only behind a SpecKit spec, and
   this is that spec.
 - **Alternatives**: a new `ana/` domain folder was rejected. It would duplicate the existing stub
@@ -20,7 +20,7 @@ Technical Context had no open unknowns.
 
 ## R2 — Per-dashboard permissions: bind the shared engine, don't copy it
 
-- **Decision**: New `insights/internal/permissions_service.py` binds
+- **Decision**: New `ana/internal/permissions_service.py` binds
   `app/internal/resource_permissions.py` to `DashboardPermission` with `_FK = "dashboard"`. It is
   a line-for-line twin of `inits/internal/permissions_service.py`:
   `accessible_dashboards`, `dashboards_user_access`, `dashboards_user_scopes`,
@@ -37,7 +37,7 @@ Technical Context had no open unknowns.
 
 ## R3 — Grant routes: mirror `init_permissions.py`
 
-- **Decision**: New `insights/routes/dashboard_permissions.py` at `/api/dashboard_permissions`,
+- **Decision**: New `ana/routes/dashboard_permissions.py` at `/api/dashboard_permissions`,
   with `GET /dashboard/{id}`, `POST /`, `PUT /{id}` and `DELETE /{id}` (revoke =
   `valid_to = now`). Module RBAC is `ANA/DASHBOARDS` (edit rights for writes), MANAGE on the
   dashboard is required for writes, and VIEW for reads. A live duplicate returns 409. A window
@@ -53,7 +53,7 @@ Technical Context had no open unknowns.
 
 ## R4 — Status lifecycle: a small service, server-enforced, no activity log
 
-- **Decision**: `insights/internal/status_service.py` holds the transition map from the
+- **Decision**: `ana/internal/status_service.py` holds the transition map from the
   clarified spec:
 
   | From | Allowed to |
@@ -87,13 +87,13 @@ Technical Context had no open unknowns.
 
 ## R6 — Parameters: a nested resource keyed by `(dashboard, name)`
 
-- **Decision**: New `insights/routes/parameters.py`, nested under `/api/dashboards/{id}/parameters`:
+- **Decision**: New `ana/routes/parameters.py`, nested under `/api/dashboards/{id}/parameters`:
   `GET` (active, ordered by `created_at, name`, bounded `skip`/`limit`), `POST`,
   `PUT /{name}` and `DELETE /{name}` (logical: `is_active=False`). All writes need MANAGE on the
   dashboard and reads need VIEW. `name` is immutable because it is part of the PK, so `PUT` has no
   `name` key. A `POST` with a name whose row is inactive **reactivates** it with the new values;
   an active duplicate → 409 (US3-3/4).
-- **Validation** (`insights/internal/parameter_validation.py`, raises `ValueError` → 400):
+- **Validation** (`ana/internal/parameter_validation.py`, raises `ValueError` → 400):
   - `data_type` ∈ `PARAM_TYPE` values.
   - `name`: `^[a-z][a-z0-9_]*$`, at most 100 characters. Parameter names are machine keys that
     appear in `executions.payload` (the seed uses `date_from`, `team`, …), so they are
@@ -133,7 +133,7 @@ Technical Context had no open unknowns.
 
 ## R9 — Source location validation
 
-- **Decision** (`insights/internal/source_validation.py`): when `sources_types = INTERNAL_PAGE`,
+- **Decision** (`ana/internal/source_validation.py`): when `sources_types = INTERNAL_PAGE`,
   `source_url` must be a platform path: it starts with `/`, is not `//`, has no scheme, and is at
   most 2048 characters. For every other source it must be an absolute `https://` URL with a host.
   The check runs on create and whenever either field changes on update. Nothing is fetched (spec
@@ -143,14 +143,14 @@ Technical Context had no open unknowns.
 
 ## R10 — Core-field validation reuses the inits pattern
 
-- **Decision**: `insights/internal/list_validation.py` with
+- **Decision**: `ana/internal/list_validation.py` with
   `LIST_FIELDS = {type: DASHBOARD_TYPE, sources_types: SOURCE_TYPE, status: DASHBOARD_STATUS}` and
   `REQUIRED_FIELDS = (name, type, sources_types, source_url)`. It works like
   `inits/internal/list_validation.py`.
 - **Generalising?** Both modules are about 40 lines and only the field map differs. Hoisting a
   shared `validate_list_value` into `app/internal/list_values.py` and keeping per-domain field
   maps is a cheap Principle-I improvement. It is done here because there are now two callers
-  (inits + insights). `inits/internal/list_validation.py` re-exports it, so its suites must pass
+  (inits + ana). `inits/internal/list_validation.py` re-exports it, so its suites must pass
   unchanged.
 
 ## R11 — UI: derive from Initiative Management, reuse shared pieces

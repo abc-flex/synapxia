@@ -5,7 +5,7 @@ from datetime import date, datetime, time, timedelta
 from tests.usage_helpers import (
     URL, admin, at, data, mk_dashboard, override, period, run, seed_usage, today, utc,
 )
-from app.insights.internal import usage_service
+from app.ana.internal import usage_service
 
 
 def body(client, qs=None):

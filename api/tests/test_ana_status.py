@@ -2,7 +2,7 @@
 (specs/006-dashboard-management, US2 / FR-012)."""
 import pytest
 
-from app.insights.internal.models import Dashboard
+from app.ana.internal.models import Dashboard
 from tests.ana_helpers import data, override, setup_owner, user
 
 STATUSES = ["DRAFT", "PUBLISHED", "ARCHIVED", "RETIRED"]

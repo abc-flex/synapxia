@@ -3,7 +3,7 @@
 A list-backed field stores a `list_items.value`. Values are language-independent,
 so a value is valid when ANY language row of the list defines it. Each domain
 keeps its own field → list map (``inits/internal/list_validation.py``,
-``insights/internal/list_validation.py``) and calls this one check.
+``ana/internal/list_validation.py``) and calls this one check.
 """
 from sqlmodel import Session, select
 

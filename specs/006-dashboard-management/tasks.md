@@ -67,13 +67,13 @@ Every story needs these.
 **⚠️ No story work starts until this phase is complete.**
 
 - [X] T005 Hoist list-value validation into the shared layer. Create `api/app/internal/list_values.py` with `validate_list_value(session, list_code, value)`, moved verbatim from `api/app/inits/internal/list_validation.py`. Change that inits module to `from ...internal.list_values import validate_list_value` and keep re-exporting the name, so `LIST_FIELDS`, `REQUIRED_FIELDS`, `validate_list_value` and `validate_core_fields` stay importable from it unchanged. Run `docker compose exec -T api uv run pytest -q tests/test_inits_*.py`; it must pass unchanged.
-- [X] T006 Write `api/app/insights/internal/models.py`, replacing the stub comment. Follow [data-model.md](data-model.md) and the `api/app/inits/internal/models.py` style (`Column(..., BigInteger, ForeignKey(...))` for bigint FKs, `tags` as `sa_column=Column("tags", JSON)`).
+- [X] T006 Write `api/app/ana/internal/models.py`, replacing the stub comment. Follow [data-model.md](data-model.md) and the `api/app/inits/internal/models.py` style (`Column(..., BigInteger, ForeignKey(...))` for bigint FKs, `tags` as `sa_column=Column("tags", JSON)`).
   - `DashboardBase`, `Dashboard(table="dashboards")`, `DashboardCreate` (name, description, type, sources_types, source_url, tags, detail, plus an optional `status` that is only accepted if it is DRAFT), `DashboardUpdate` (all optional, incl. `status`), and `DashboardWithAccess(DashboardBase)` with `id`, `my_access`, `allowed_statuses: List[str]` and `permission_scopes: List[str]`.
   - `Parameter(table="parameters")` with composite PK `dashboard` + `name`, `context_binding` as BigInteger FK to `dashboard_permissions.id`, and `list` as String(50) FK to `lists.code`. Also `ParameterCreate`, `ParameterUpdate` (no `name`), and `ParameterRead` (all columns + `value_source: str` + `binding_label: Optional[str]`).
   - `DashboardPermission(table="dashboard_permissions")` with no `is_active`, plus `DashboardPermissionCreate`, `DashboardPermissionUpdate` (`access_level`, `valid_from`, `valid_to`) and `RevokedDashboardPermission` (all columns + `bound_parameters: List[str]`).
   - `ListOption(value: str, label: str)`.
-- [X] T007 [P] Create `api/app/insights/internal/permissions_service.py`, a twin of `api/app/inits/internal/permissions_service.py` bound to `DashboardPermission` with `_FK = "dashboard"`. It exposes `DashboardAccessForbidden`, `not_revoked_clause`, `is_revoked`, `dashboards_user_access`, `dashboards_user_scopes`, `accessible_dashboards`, `user_dashboard_access` (superuser → MANAGE), `require_dashboard_manage` and `require_dashboard_view`, and re-exports `ACCESS_MANAGE`/`ACCESS_VIEW`.
-- [X] T008 [P] Create `api/app/insights/internal/status_service.py`, mirroring `api/app/inits/internal/status_service.py` without the collaboration logging.
+- [X] T007 [P] Create `api/app/ana/internal/permissions_service.py`, a twin of `api/app/inits/internal/permissions_service.py` bound to `DashboardPermission` with `_FK = "dashboard"`. It exposes `DashboardAccessForbidden`, `not_revoked_clause`, `is_revoked`, `dashboards_user_access`, `dashboards_user_scopes`, `accessible_dashboards`, `user_dashboard_access` (superuser → MANAGE), `require_dashboard_manage` and `require_dashboard_view`, and re-exports `ACCESS_MANAGE`/`ACCESS_VIEW`.
+- [X] T008 [P] Create `api/app/ana/internal/status_service.py`, mirroring `api/app/inits/internal/status_service.py` without the collaboration logging.
   - Define `StatusTransitionForbidden(ValueError)` and constants DRAFT/PUBLISHED/ARCHIVED/RETIRED.
   - `ALLOWED_TRANSITIONS` is a set of pairs: (DRAFT,PUBLISHED), (PUBLISHED,ARCHIVED), (PUBLISHED,RETIRED), (ARCHIVED,PUBLISHED), (ARCHIVED,RETIRED).
   - `_ORDER = [PUBLISHED, ARCHIVED, RETIRED]`.
@@ -81,9 +81,9 @@ Every story needs these.
   - `validate_create_status(status)`: None/blank/DRAFT → "DRAFT", anything else raises.
   - `validate_transition(current, new)`: returns True when the status changes, False when unchanged or blank, and raises a message listing the allowed moves when the move is disallowed.
   - Use `app/internal/status.normalize`.
-- [X] T009 [P] Create `api/app/insights/internal/list_validation.py` with `LIST_FIELDS = {"type": "DASHBOARD_TYPE", "sources_types": "SOURCE_TYPE", "status": "DASHBOARD_STATUS"}`, `REQUIRED_FIELDS = ("name", "type", "sources_types", "source_url")`, and a `validate_core_fields(session, fields, required=())` that has the same semantics as the inits one and uses `app/internal/list_values.validate_list_value`.
-- [X] T010 Create the grants read route in `api/app/insights/routes/dashboard_permissions.py` (router prefix `/api/dashboard_permissions`, tag `dashboard_permissions`). Include only `GET /dashboard/{dashboard_id}`: it returns 404 if the dashboard is missing, requires VIEW (`_guard`), returns grants that are not revoked ordered by id with bounded `skip`/`limit`, and is gated on `ANA/DASHBOARDS` read. US3's binding picker needs this; writes are added in US4.
-- [X] T011 Create empty-but-valid route modules `api/app/insights/routes/dashboards.py` (prefix `/api/dashboards`, tag `dashboards`) and `api/app/insights/routes/parameters.py` (prefix `/api/dashboards`, tag `dashboard_parameters`), each with a module docstring. Register all three insights routers in `api/app/main.py`: add imports next to the `inits` block (`from .insights.routes import dashboards as dashboards_router`, etc.) and `app.include_router(...)` calls in the matching section. Confirm `/docs` loads.
+- [X] T009 [P] Create `api/app/ana/internal/list_validation.py` with `LIST_FIELDS = {"type": "DASHBOARD_TYPE", "sources_types": "SOURCE_TYPE", "status": "DASHBOARD_STATUS"}`, `REQUIRED_FIELDS = ("name", "type", "sources_types", "source_url")`, and a `validate_core_fields(session, fields, required=())` that has the same semantics as the inits one and uses `app/internal/list_values.validate_list_value`.
+- [X] T010 Create the grants read route in `api/app/ana/routes/dashboard_permissions.py` (router prefix `/api/dashboard_permissions`, tag `dashboard_permissions`). Include only `GET /dashboard/{dashboard_id}`: it returns 404 if the dashboard is missing, requires VIEW (`_guard`), returns grants that are not revoked ordered by id with bounded `skip`/`limit`, and is gated on `ANA/DASHBOARDS` read. US3's binding picker needs this; writes are added in US4.
+- [X] T011 Create empty-but-valid route modules `api/app/ana/routes/dashboards.py` (prefix `/api/dashboards`, tag `dashboards`) and `api/app/ana/routes/parameters.py` (prefix `/api/dashboards`, tag `dashboard_parameters`), each with a module docstring. Register all three ana routers in `api/app/main.py`: add imports next to the `inits` block (`from .ana.routes import dashboards as dashboards_router`, etc.) and `app.include_router(...)` calls in the matching section. Confirm `/docs` loads.
 - [X] T012 [P] Add the UI types to `ui/src/types/api.ts`, mirroring the backend models: `Dashboard`, `DashboardCreate`, `DashboardUpdate`, `DashboardWithAccess`, `DashboardParameter` (incl. `value_source: "GRANT" | "LIST" | "INPUT"` and `binding_label`), `DashboardParameterCreate`, `DashboardParameterUpdate`, `DashboardPermission`, `DashboardPermissionCreate`, `DashboardPermissionUpdate`, `RevokedDashboardPermission` and `ListOption`.
 - [X] T013 [P] Create `ui/src/lib/dashboard_permissions.ts` with `getDashboardPermissions(dashboardId, skip=0, limit=500)`, wrapping `lib/api.ts` the way `ui/src/lib/init_permissions.ts` does. US4 adds the write functions.
 - [X] T014 [P] Add a test module `api/tests/test_ana_foundation.py`:
@@ -127,11 +127,11 @@ read-only. A created dashboard is Draft, its creator holds MANAGE, and it shows 
 
 ### Implementation for User Story 1
 
-- [X] T016 [P] [US1] Create `api/app/insights/internal/source_validation.py` with `validate_source_url(source_type, url)` (raises `ValueError`).
+- [X] T016 [P] [US1] Create `api/app/ana/internal/source_validation.py` with `validate_source_url(source_type, url)` (raises `ValueError`).
   - INTERNAL_PAGE: starts with `/`, not `//`, no `:` before the first `/`, at most 2048 characters.
   - Every other source: `urllib.parse.urlsplit` with scheme `https` and a non-empty netloc, at most 2048 characters.
   - Normalise the source code through `app/internal/status.normalize`.
-- [X] T017 [US1] Implement the dashboard routes in `api/app/insights/routes/dashboards.py`, per [contracts](contracts/dashboards-api.md#dashboards--apiappinsightsroutesdashboardspy). Declare `/with-access` before `/{dashboard_id}`.
+- [X] T017 [US1] Implement the dashboard routes in `api/app/ana/routes/dashboards.py`, per [contracts](contracts/dashboards-api.md#dashboards--apiappanaroutesdashboardspy). Declare `/with-access` before `/{dashboard_id}`.
   - Add a `_with_access(d, access, scopes)` builder that fills `allowed_statuses` from `status_service.allowed_statuses_for(d.status)`.
   - `GET /with-access`: copy `inits/routes/initiatives.py:get_all_with_access`, without favorites.
   - `GET /{dashboard_id}`: VIEW required.
@@ -200,7 +200,7 @@ check that the control is locked. A direct PUT with a disallowed status → 400 
 
 ### Implementation for User Story 2
 
-- [X] T025 [US2] Make the PUT atomic in `api/app/insights/routes/dashboards.py`: if any validation fails, the request applies nothing. Run every validation before the first `setattr`. Add `logger.info("Dashboard status changed: id=%s %s → %s by user=%s", …)` on a real change.
+- [X] T025 [US2] Make the PUT atomic in `api/app/ana/routes/dashboards.py`: if any validation fails, the request applies nothing. Run every validation before the first `setattr`. Add `logger.info("Dashboard status changed: id=%s %s → %s by user=%s", …)` on a real change.
 - [X] T026 [P] [US2] Add i18n keys `dashboard_detail_modal.status_hint_create` ("New dashboards start as Draft"), `status_hint_locked_retired` ("Retired dashboards are closed"), `status_hint_locked_unknown` and `status_transition_refused` to both `ui/src/i18n/en.json` and `ui/src/i18n/es.json`.
 - [X] T027 [US2] Implement the status policy in `ui/src/components/ana/DashboardDetailModal.astro`, mirroring `applyStatusPolicy` in `ui/src/components/lib/AssetDetailModal.astro`.
   - In create mode, lock the control to DRAFT with `status_hint_create`.
@@ -247,7 +247,7 @@ set, and no other tab changes.
 
 ### Implementation for User Story 3
 
-- [X] T031 [P] [US3] Create `api/app/insights/internal/parameter_validation.py` (all checks raise `ValueError`).
+- [X] T031 [P] [US3] Create `api/app/ana/internal/parameter_validation.py` (all checks raise `ValueError`).
   - `NAME_RE = ^[a-z][a-z0-9_]*$`.
   - `validate_name(name)`.
   - `validate_default(data_type, default, allowed_values: Optional[set])`: uses `decimal.Decimal` for NUMBER, `{"true","false"}` for BOOLEAN, and `date.fromisoformat` with a strict `YYYY-MM-DD` pattern for DATE.
@@ -255,13 +255,13 @@ set, and no other tab changes.
   - `validate_binding(session, dashboard_id, permission_id)`: the grant must exist, belong to the same dashboard, not be revoked (`permissions_service.is_revoked`) and have `target_type != "PUBLIC"`.
   - `value_source(param)`: GRANT if `context_binding`, else LIST if `list`, else INPUT.
   - `validate_parameter(session, dashboard_id, merged_fields)`: runs every check on the final merged state. `data_type` goes through `app/internal/list_values.validate_list_value(session, "PARAM_TYPE", …)`.
-- [X] T032 [US3] Implement `api/app/insights/routes/parameters.py`, per [contracts](contracts/dashboards-api.md#parameters--apiappinsightsroutesparameterspy).
+- [X] T032 [US3] Implement `api/app/ana/routes/parameters.py`, per [contracts](contracts/dashboards-api.md#parameters--apiappanaroutesparameterspy).
   - `GET /{dashboard_id}/parameters` (VIEW): build `ParameterRead` with `binding_label` from ONE batched `select(DashboardPermission).where(id.in_(binding_ids))`, formatted `"{target_type} {target_code}"`.
   - `POST /{dashboard_id}/parameters` (MANAGE): an inactive row with the same name is reactivated (overwrite fields, `is_active=True`, return 200 via `Response.status_code`); otherwise create and return 201.
   - `PUT /{dashboard_id}/parameters/{name}` (MANAGE): `exclude_unset`, merge, validate, set `updated_at`.
   - `DELETE /{dashboard_id}/parameters/{name}` (MANAGE): logical.
   - Missing or inactive dashboard → 404.
-- [X] T033 [US3] Add `GET /parameter-lists` to `api/app/insights/routes/dashboards.py`, declared before `/{dashboard_id}`. It is gated `ANA/DASHBOARDS` read and returns `ListOption[]` built from `admin.internal.models.List` rows (check the actual class name in `api/app/admin/internal/models.py`) where `type == "LIST_OF_VALUES"` and `is_active`, ordered by name.
+- [X] T033 [US3] Add `GET /parameter-lists` to `api/app/ana/routes/dashboards.py`, declared before `/{dashboard_id}`. It is gated `ANA/DASHBOARDS` read and returns `ListOption[]` built from `admin.internal.models.List` rows (check the actual class name in `api/app/admin/internal/models.py`) where `type == "LIST_OF_VALUES"` and `is_active`, ordered by name.
 - [X] T034 [P] [US3] Create `ui/src/lib/dashboard_parameters.ts` with `getParameters(dashboardId)`, `createParameter(dashboardId, body)`, `updateParameter(dashboardId, name, body)` and `deleteParameter(dashboardId, name)` (URL-encode `name`). Also add `getParameterLists()` to `ui/src/lib/dashboards.ts`.
 - [X] T035 [P] [US3] Add i18n keys to both `ui/src/i18n/en.json` and `ui/src/i18n/es.json`:
   - `dashboard_detail_modal.param_*`: the column headers name/label/type/required/default/source, the form labels, the value-source options `param_source_grant` ("Bound to a grant"), `param_source_list` ("From a list") and `param_source_input` ("Entered by the viewer"), and the binding sentence template (`param_binding_label`: "Bound to the grant for {type} {code}: value fixed for viewers who reach the dashboard through it").
@@ -315,7 +315,7 @@ sees the dashboard, a revoke removes access, and the grant stays recorded.
 
 ### Implementation for User Story 4
 
-- [X] T040 [US4] Add `POST /`, `PUT /{permission_id}` and `DELETE /{permission_id}` to `api/app/insights/routes/dashboard_permissions.py`, copied from `api/app/inits/routes/init_permissions.py`. On top of that copy:
+- [X] T040 [US4] Add `POST /`, `PUT /{permission_id}` and `DELETE /{permission_id}` to `api/app/ana/routes/dashboard_permissions.py`, copied from `api/app/inits/routes/init_permissions.py`. On top of that copy:
   - Validate `target_type`/`access_level` with `validate_list_value` (`TARGET_TYPE`/`ACCESS_LEVEL`).
   - Force `target_code="ALL"` when `target_type == "PUBLIC"`.
   - DELETE returns `RevokedDashboardPermission` with `bound_parameters`: the sorted names of active `Parameter` rows where `context_binding == permission_id`, from one query.
@@ -341,10 +341,10 @@ sees the dashboard, a revoke removes access, and the grant stays recorded.
 - [X] T048 Run the full suite with `docker compose exec -T api uv run pytest -q`. Expect the 570 baseline plus the new tests, with 0 failures. Also run `make test`.
 - [X] T049 [P] Run `cd ui && bun run build` (clean) and `astro check` (no new errors beyond the baseline, apart from the known "Svelte file is not a module" line per new Svelte import).
 - [ ] T050 Walk through the full quickstart (scenarios 1–8) as `felipe.cardenas` and `admin`, with the language switched to Spanish once. Then run the cleanup section.
-- [X] T051 [P] Update `docs/user-stories/06-ana.md`: mark HU-AN01/02/03 as implemented, document the status transitions, the three parameter value sources and the parameters-window hand-off to HU-AN05, and update the `insights` domain note.
-- [X] T052 [P] Update the stub domain lists. `insights` moves from stub to partial (Dashboard Management) in `AGENTS.md` ("What this is" paragraph), `api/AGENTS.md`/`api/CLAUDE.md` (domain list) and `.specify/memory/constitution.md` only if it lists `insights` as a stub. The constitution change is a PATCH wording fix; record it in its Sync Impact Report.
+- [X] T051 [P] Update `docs/user-stories/06-ana.md`: mark HU-AN01/02/03 as implemented, document the status transitions, the three parameter value sources and the parameters-window hand-off to HU-AN05, and update the `ana` domain note.
+- [X] T052 [P] Update the stub domain lists. `ana` moves from stub to partial (Dashboard Management) in `AGENTS.md` ("What this is" paragraph), `api/AGENTS.md`/`api/CLAUDE.md` (domain list) and `.specify/memory/constitution.md` only if it lists `ana` as a stub. The constitution change is a PATCH wording fix; record it in its Sync Impact Report.
 - [X] T053 Update `memory/MEMORY.md`:
-  - Feature status: a "Dashboard Management (HU-AN01–03, SpecKit 006)" row as ✅, and `insights` in the "In progress / stubs" table moved to partial.
+  - Feature status: a "Dashboard Management (HU-AN01–03, SpecKit 006)" row as ✅, and `ana` in the "In progress / stubs" table moved to partial.
   - Decisions log: a 2026-10-01 row with the lifecycle rules, the derived value source (GRANT/LIST/INPUT) and the parameters-window hand-off, the third binding of `resource_permissions`, the `list_values` hoist, the `PermissionsTab` extraction, `/parameter-lists` (ADMINISTRATIVE lacks `ADMIN/LISTS`) and the provisioned-DB script.
   - Update the backend tests baseline.
 - [X] T054 Add ONE rollup entry at the top of `memory/CHANGELOG.md` in the `## YYYY-MM-DD HH:MM — …` format (get the time with `date '+%Y-%m-%d %H:%M'`), covering the whole branch and listing the files affected. If an entry for this branch already exists, update it.
@@ -367,8 +367,8 @@ sees the dashboard, a revoke removes access, and the grant stays recorded.
   - logical removal and re-mark restores the row; calls are idempotent
   - favorites are personal
   - VIEW suffices, no grant → 403, missing/inactive → 404, no RBAC → 403
-- [X] T057 [US1] Map `favorite_dashboards` in `api/app/insights/internal/models.py`: `FavoriteDashboard(table)` + `DashboardFavoriteState`, and `DashboardWithAccess.is_favorite`.
-- [X] T058 [US1] Add favorites to `api/app/insights/routes/dashboards.py`: `_favorite_ids` (one batched query), `is_favorite` on `/with-access` and `GET /{id}`, and `PUT`/`DELETE /{dashboard_id}/favorite`. These are a copy of `inits/routes/initiatives.py:_set_favorite`, gated `ANA/DASHBOARDS` read + VIEW.
+- [X] T057 [US1] Map `favorite_dashboards` in `api/app/ana/internal/models.py`: `FavoriteDashboard(table)` + `DashboardFavoriteState`, and `DashboardWithAccess.is_favorite`.
+- [X] T058 [US1] Add favorites to `api/app/ana/routes/dashboards.py`: `_favorite_ids` (one batched query), `is_favorite` on `/with-access` and `GET /{id}`, and `PUT`/`DELETE /{dashboard_id}/favorite`. These are a copy of `inits/routes/initiatives.py:_set_favorite`, gated `ANA/DASHBOARDS` read + VIEW.
 - [X] T059 [P] [US1] Add `setDashboardFavorite(id, on)` to `ui/src/lib/dashboards.ts` and `is_favorite` to `DashboardWithAccess` in `ui/src/types/api.ts`.
 - [X] T060 [US1] Wire favorites into `ui/src/pages/ana/dashboards.astro`:
   - Rows get a `favorite` "yes"/"no" field.

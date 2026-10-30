@@ -15,7 +15,7 @@ final. Parameters are declared with a type-checked default, an optional allowed-
 an optional binding to one of the dashboard's grants. The value source (grant / list / viewer
 input) is derived from those two columns, ready for the future Execute story's parameters window.
 
-Technically this promotes the `insights` stub to a real domain:
+Technically this promotes the `ana` stub to a real domain:
 
 - SQLModel mappings over three tables that already exist (`dashboards`, `parameters`,
   `dashboard_permissions`), with no DDL.
@@ -66,10 +66,10 @@ file, 5 new test modules + helpers, and on the UI side 1 page, 1 modal, 2 island
 
 ### I. Modular Monolith Boundaries — ✅ PASS
 
-All new backend code lives in `api/app/insights/` (`internal/` models and services, `routes/`),
+All new backend code lives in `api/app/ana/` (`internal/` models and services, `routes/`),
 the domain the user stories assign to module `ANA` (R1). Permission resolution is **not** copied.
-`insights/internal/permissions_service.py` binds the shared engine in `app/internal`
-(R2). Since `inits` and `insights` now both need list-value validation, the 10-line
+`ana/internal/permissions_service.py` binds the shared engine in `app/internal`
+(R2). Since `inits` and `ana` now both need list-value validation, the 10-line
 `validate_list_value` moves to `app/internal/list_values.py` and each domain keeps its own field
 map (R10). No per-module connection, auth or permission plumbing is introduced.
 
@@ -160,7 +160,7 @@ api/app/inits/internal/
 └── list_validation.py          # REFACTOR: imports validate_list_value from app/internal;
                                 #   public names unchanged
 
-api/app/insights/
+api/app/ana/
 ├── internal/
 │   ├── models.py               # Dashboard(+Base/Create/Update/WithAccess), Parameter
 │   │                           #   (+Create/Update/Read), DashboardPermission(+Create/Update),

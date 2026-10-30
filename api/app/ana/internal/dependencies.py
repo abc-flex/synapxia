@@ -1,5 +1,5 @@
 """
-Insights module dependencies
+Analytics (ANA) module dependencies
 
 For backward compatibility, this module re-exports from the centralized
 dependencies module. All new code should import directly from:

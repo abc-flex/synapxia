@@ -1,5 +1,5 @@
 """Helpers for the Dashboard Catalog test modules (specs/007-dashboard-catalog)."""
-from app.insights.internal.models import Execution
+from app.ana.internal.models import Execution
 from tests.ana_helpers import (  # noqa: F401 — re-exported
     PAST, data, mk_dashboard, mk_grant, mk_list, mk_list_def, mk_param, override,
     seed_ana_lists, seed_privileges, superuser, user,

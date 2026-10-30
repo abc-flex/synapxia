@@ -1,6 +1,6 @@
 # Analytics — User Stories
 
-> Module `ANA` · API domain [`api/app/insights`](../../api/app) · DB band 60s
+> Module `ANA` · API domain [`api/app/ana`](../../api/app/ana) · DB band 60s
 > ([`61-ana-ddl.sql`](../../db/sql/61-ana-ddl.sql)) · Diagram [6-ana.png](../diagrams/6-ana.png)
 
 Analytics consolidates measurement and reporting: a managed catalog of dashboards (internal

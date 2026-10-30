@@ -128,7 +128,7 @@ ui/src/
 docs/user-stories/07-proc.md                # API domain reference → api/app/workflows
 ```
 
-**Structure Decision**: the existing three-surface layout, unchanged. The backend follows the domain layout of `api/app/insights/` (models and services in `internal/`, one route module per resource). The UI follows Dashboard Management's page → `.astro` modal shell → Svelte island split, with the Related tabs as a reusable component, in the way `PermissionsTab.svelte` was extracted.
+**Structure Decision**: the existing three-surface layout, unchanged. The backend follows the domain layout of `api/app/ana/` (models and services in `internal/`, one route module per resource). The UI follows Dashboard Management's page → `.astro` modal shell → Svelte island split, with the Related tabs as a reusable component, in the way `PermissionsTab.svelte` was extracted.
 
 ## Phase summary
 

@@ -2,7 +2,7 @@
 
 Grant-scoped inventory of dashboards. Creating one lands it in DRAFT and grants
 the creator MANAGE; every other write needs MANAGE on the dashboard. Status
-changes follow insights/internal/status_service.py and are enforced here, not
+changes follow ana/internal/status_service.py and are enforced here, not
 only by the UI's status control.
 """
 import logging

@@ -39,7 +39,7 @@ The spec has no open clarifications. The decisions below settle the design quest
 
 ## R5 — Status lifecycle in a dedicated service
 
-- **Decision**: a new module, `workflows/internal/status_service.py`, mirrors `insights/internal/status_service.py`:
+- **Decision**: a new module, `workflows/internal/status_service.py`, mirrors `ana/internal/status_service.py`:
   - `TRANSITIONS = {DRAFT: {REVIEW}, REVIEW: {PUBLISHED, DRAFT}, PUBLISHED: {DEPRECATED}, DEPRECATED: set()}`.
   - It provides `validate_create_status` (only DRAFT or omitted), `validate_transition` and `allowed_statuses_for`.
   - `GET /api/processes/{code}` returns `allowed_statuses` (the current status first), so the form never re-derives the rule (FR-008).

@@ -76,7 +76,7 @@ Cancelling the parameters window (no start happened) uses `POST /api/dashboards/
 
 ## R7 — Value validation for a run reuses parameter validation
 
-**Decision**: Extend `insights/internal/parameter_validation.py` with `validate_run_value(data_type, value, allowed)`. It applies the same rules as `validate_default` (NUMBER finite decimal, BOOLEAN `true|false`, DATE `YYYY-MM-DD`, list membership) and adds a 1 000-character cap. A required parameter with no value after defaults → 400. A required LIST parameter whose list is empty or inactive → 400 "cannot be run", recorded FAILED (spec edge case). Unknown names in the request → ignored. A value for a GRANT-applied parameter → ignored and replaced.
+**Decision**: Extend `ana/internal/parameter_validation.py` with `validate_run_value(data_type, value, allowed)`. It applies the same rules as `validate_default` (NUMBER finite decimal, BOOLEAN `true|false`, DATE `YYYY-MM-DD`, list membership) and adds a 1 000-character cap. A required parameter with no value after defaults → 400. A required LIST parameter whose list is empty or inactive → 400 "cannot be run", recorded FAILED (spec edge case). Unknown names in the request → ignored. A value for a GRANT-applied parameter → ignored and replaced.
 
 **Rationale**: One definition of a valid parameter value, shared by Management (defaults) and Execute (run values). `validate_default` is refactored to call the new function, so behaviour stays identical.
 

@@ -2,7 +2,7 @@
 sources (specs/007-dashboard-catalog R3/R7)."""
 import pytest
 
-from app.insights.internal import catalog_service, parameter_validation as pv
+from app.ana.internal import catalog_service, parameter_validation as pv
 from tests.catalog_helpers import (
     PAST, mk_dashboard, mk_grant, mk_list_def, mk_param, seed_ana_lists, superuser, viewer,
 )

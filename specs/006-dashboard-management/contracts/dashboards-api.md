@@ -9,7 +9,7 @@ conflict.
 
 Static paths (`/with-access`, `/parameter-lists`) are declared before `/{dashboard_id}`.
 
-## Dashboards — `api/app/insights/routes/dashboards.py`
+## Dashboards — `api/app/ana/routes/dashboards.py`
 
 ### `GET /api/dashboards/with-access?skip=0&limit=100` (`limit ≤ 500`)
 Active dashboards the caller can access, filtered **before** pagination and ordered by name.
@@ -64,7 +64,7 @@ the caller's favorite in `favorite_dashboards`. Both are idempotent, and the rem
 → `200 { "dashboard": 3, "is_favorite": true }` · 403 no grant · 404 missing/inactive.
 `DashboardWithAccess` rows (list and single GET) carry `is_favorite`.
 
-## Parameters — `api/app/insights/routes/parameters.py`
+## Parameters — `api/app/ana/routes/parameters.py`
 
 ### `GET /api/dashboards/{dashboard_id}/parameters?skip=0&limit=100` (`limit ≤ 500`)
 VIEW required. Active parameters, ordered by `created_at, name`. → `200 ParameterRead[]`
@@ -94,7 +94,7 @@ default). → `200 ParameterRead` · 400 · 403 · 404.
 ### `DELETE /api/dashboards/{dashboard_id}/parameters/{name}`
 MANAGE required. Logical delete. → `200 ParameterRead` · 403 · 404.
 
-## Grants — `api/app/insights/routes/dashboard_permissions.py`
+## Grants — `api/app/ana/routes/dashboard_permissions.py`
 
 ### `GET /api/dashboard_permissions/dashboard/{dashboard_id}?skip=0&limit=100` (`limit ≤ 500`)
 VIEW required. Grants that are not revoked (future-dated ones included), ordered by id.

@@ -117,6 +117,20 @@ export interface ListItemUpdate {
   is_active?: boolean;
 }
 
+/** One value of a list with its label per language (`/admin/list_items?list=CODE`). */
+export interface ListValueEntry {
+  value: string;
+  sort_order: number;
+  labels: Record<string, string>;
+}
+
+export interface ListValueMatrix {
+  list: string;
+  list_name: string;
+  languages: string[];
+  values: ListValueEntry[];
+}
+
 // Profile types
 export interface Profile {
   code: string;

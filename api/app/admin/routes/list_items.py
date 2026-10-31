@@ -6,10 +6,14 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 from sqlalchemy.exc import IntegrityError
 
-from ..internal.models import ListItem, ListItemCreate, ListItemUpdate, List as ListModel, User
+from ..internal.models import (
+    ListItem, ListItemCreate, ListItemUpdate, List as ListModel, ListValueMatrix,
+    ListValueMatrixSave, User,
+)
+from ..internal import list_value_matrix
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
-from ...internal.permissions import require_privilege
+from ...internal.permissions import check_any_privilege, require_privilege
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/list_items", tags=["list_items"])
@@ -63,6 +67,57 @@ def get_by_list(
         .order_by(ListItem.sort_order, ListItem.lang, ListItem.label)
     ).all()
     return items
+
+
+# The matrix is edited from the Lists page, so ADMIN/LISTS opens it too:
+# ADMIN/LIST_ITEMS has never been seeded to any profile.
+MATRIX_OPTIONS = ["LISTS", "LIST_ITEMS"]
+
+
+@router.get("/matrix/{list_code}", response_model=ListValueMatrix)
+def get_matrix(
+    list_code: str,
+    session: Session = Depends(get_db_session),
+    current_user: User = Depends(current_active_user),
+) -> ListValueMatrix:
+    """
+    The list's active values, each with its order and its label per language.
+
+    Not paginated on purpose: a list holds a bounded set of values, shown as one table.
+
+    - **list_code**: List code
+    """
+    check_any_privilege(session, current_user, "ADMIN", MATRIX_OPTIONS)
+    try:
+        return list_value_matrix.get_matrix(session, list_code)
+    except list_value_matrix.ListNotFound as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.put("/matrix/{list_code}", response_model=ListValueMatrix)
+def save_matrix(
+    list_code: str,
+    body: ListValueMatrixSave,
+    session: Session = Depends(get_db_session),
+    current_user: User = Depends(current_active_user),
+) -> ListValueMatrix:
+    """
+    Replace the list's values and labels in one transaction.
+
+    - **values**: the FULL set of `{value, sort_order, labels}`. Values left out, and
+      blank labels, are removed (logical delete); removed rows are reactivated.
+    """
+    check_any_privilege(session, current_user, "ADMIN", MATRIX_OPTIONS, can_edit=True)
+    try:
+        result = list_value_matrix.save_matrix(session, list_code, body.values)
+    except list_value_matrix.ListNotFound as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except list_value_matrix.InvalidMatrix as e:
+        session.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    logger.info(f"List values saved for list {list_code}: {len(body.values)} values")
+    return result
+
 
 @router.get("/{list_code}/{lang}/{value}", response_model=ListItem)
 def get(

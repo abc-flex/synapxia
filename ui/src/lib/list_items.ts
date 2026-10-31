@@ -4,7 +4,7 @@
  */
 
 import { apiGet, apiPost, apiPut, apiDelete, buildQueryString } from './api';
-import type { ListItem, ListItemCreate, ListItemUpdate } from '../types/api';
+import type { ListItem, ListItemCreate, ListItemUpdate, ListValueEntry, ListValueMatrix } from '../types/api';
 
 /**
  * Fetch all list_items with optional pagination
@@ -69,4 +69,21 @@ export async function updateListItem(list_code: string, lang: string, value: str
  */
 export async function deleteListItem(list_code: string, lang: string, value: string): Promise<void> {
   return apiDelete<void>(`/api/list_items/${encodeURIComponent(list_code)}/${encodeURIComponent(lang)}/${encodeURIComponent(value)}`);
+}
+
+/**
+ * Fetch a list's values, each with its order and label per language.
+ * @param list_code - List code
+ */
+export async function getListValueMatrix(list_code: string): Promise<ListValueMatrix> {
+  return apiGet<ListValueMatrix>(`/api/list_items/matrix/${encodeURIComponent(list_code)}`);
+}
+
+/**
+ * Save a list's values in one transaction.
+ * @param list_code - List code
+ * @param values - The FULL set; values left out and blank labels are removed
+ */
+export async function saveListValueMatrix(list_code: string, values: ListValueEntry[]): Promise<ListValueMatrix> {
+  return apiPut<ListValueMatrix>(`/api/list_items/matrix/${encodeURIComponent(list_code)}`, { values });
 }

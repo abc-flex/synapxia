@@ -7,7 +7,7 @@ import Toast from "../../components/Toast.astro";
 import { getLists } from "@/lib/lists";
 import { getModulesSelect } from "@/lib/modules";
 import { getListItemsbyList } from "@/lib/list_items";
-import { labelsByValue, labelsFor, listLabel } from "@/lib/listLang";
+import { labelsByValue, labelsFor, listLabel, toListOptions } from "@/lib/listLang";
 
 // Fetch lists from API
 let lists: any[] = [];
@@ -186,8 +186,14 @@ const fieldKeys = formFields.map((f) => f.key);
           data={data}
           tableId="lists"
           i18Item="list"
+          {/* Module + Type filters live as funnels in their column headers */}
           columnFilter="module"
           filterOptions={modules}
+          filterHeaderColumn="module_name"
+          columnFilter2="type"
+          filterOptions2={toListOptions(types, "en")}
+          filter2HeaderColumn="type_label"
+          filter2AllLabel="list_modal.all_types"
           detailPage="/admin/list_items"
           mdItem="list_item"
         />

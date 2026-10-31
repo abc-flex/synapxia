@@ -385,3 +385,26 @@ class PrivilegeMatrixEntry(SQLModel):
 class PrivilegeMatrixSave(SQLModel):
     privileges: list[PrivilegeMatrixEntry] = Field(
         default=[], description="The FULL set of options the profile may use; anything left out is revoked")
+
+
+# List value matrix (`/admin/list_items?list=CODE`): one row per value, one
+# label per language.
+
+
+class ListValueEntry(SQLModel):
+    value: str = Field(max_length=100, description="Item value")
+    sort_order: int = Field(default=0, description="Display order (every language)")
+    labels: dict[str, str] = Field(
+        default={}, description="Label per language code; a blank label removes that language")
+
+
+class ListValueMatrix(SQLModel):
+    list: str
+    list_name: str
+    languages: list[str] = []
+    values: list[ListValueEntry] = []
+
+
+class ListValueMatrixSave(SQLModel):
+    values: list[ListValueEntry] = Field(
+        default=[], description="The FULL set of the list's values; anything left out is removed")

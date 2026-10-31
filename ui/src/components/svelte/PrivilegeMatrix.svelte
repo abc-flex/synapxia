@@ -267,17 +267,18 @@
 </script>
 
 <div class="space-y-4">
-  <!-- Profile, summary and filters -->
-  <div class="flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-4 lg:flex-row lg:items-center lg:justify-between dark:border-gray-800 dark:bg-white/[0.03]">
-    <div class="min-w-0">
-      <label for="pm-profile" class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+  <!-- Profile, summary and filters: a 2×2 grid on wide screens, so the profile
+       lines up with the search and the summary with the filters. -->
+  <div class="grid gap-x-6 gap-y-3 rounded-xl border border-gray-200 bg-white p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center dark:border-gray-800 dark:bg-white/[0.03]">
+    <div class="flex min-w-0 items-center gap-3 lg:col-start-1 lg:row-start-1">
+      <label for="pm-profile" class="shrink-0 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
         {t("privilege_matrix.profile", "Profile")}
       </label>
       {#if profiles.length}
         <select
           id="pm-profile"
           bind:this={profileSelect}
-          class="{field} w-full min-w-[14rem] font-semibold sm:w-auto"
+          class="{field} min-w-0 flex-1 font-semibold sm:min-w-[14rem] sm:flex-none"
           value={profile}
           onchange={(e) => switchProfile((e.currentTarget as HTMLSelectElement).value)}
         >
@@ -288,66 +289,61 @@
       {:else}
         <p id="pm-profile" class="text-lg font-semibold text-gray-900 dark:text-white">{profileName || profile}</p>
       {/if}
-      {#if !loading && !loadError}
-        <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-          <span class="font-semibold text-gray-900 dark:text-white">{totals.granted} / {totals.options}</span>
-          {t("privilege_matrix.summary_access", "options with access")}
-          <span class="mx-1.5 text-gray-300 dark:text-gray-600">·</span>
-          <span class="font-semibold text-gray-900 dark:text-white">{totals.edit}</span>
-          {t("privilege_matrix.summary_edit", "options that can be edited")}
-        </p>
-      {/if}
     </div>
-
     {#if !loading && !loadError}
-      <div class="flex flex-col gap-2 lg:items-end">
-        <input
-          type="search"
-          bind:value={query}
-          placeholder={t("privilege_matrix.search", "Search options…")}
-          aria-label={t("privilege_matrix.search", "Search options…")}
-          class="{field} w-full lg:w-72"
-        />
-        <div class="flex flex-wrap items-center gap-2">
-          <div class="flex flex-wrap gap-2" role="group" aria-label={t("privilege_matrix.show", "Show")}>
-            <button type="button" class={chip(view === "all")} aria-pressed={view === "all"} onclick={() => (view = "all")}>
-              {t("privilege_matrix.view_all", "All")}
-            </button>
-            <button type="button" class={chip(view === "granted")} aria-pressed={view === "granted"} onclick={() => (view = "granted")}>
-              {t("privilege_matrix.view_granted", "With access")}
-            </button>
-            <button type="button" class={chip(view === "missing")} aria-pressed={view === "missing"} onclick={() => (view = "missing")}>
-              {t("privilege_matrix.view_missing", "Without access")}
-            </button>
-          </div>
-          <!-- Expand / collapse every module: icon-only, name on hover. -->
-          <span class="h-5 w-px bg-gray-200 dark:bg-gray-700" aria-hidden="true"></span>
-          <div class="flex gap-0.5">
-            <button
-              type="button"
-              class={ghost}
-              onclick={() => setAllCollapsed(false)}
-              disabled={query.trim() !== "" || !anyCollapsed}
-              title={t("privilege_matrix.expand_all", "Expand all")}
-              aria-label={t("privilege_matrix.expand_all", "Expand all")}
-            >
-              <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fill-rule="evenodd" d="M10 3a.75.75 0 01.55.24l3.25 3.5a.75.75 0 11-1.1 1.02L10 4.85 7.3 7.76a.75.75 0 01-1.1-1.02l3.25-3.5A.75.75 0 0110 3zm-3.76 9.2a.75.75 0 011.06.04l2.7 2.91 2.7-2.91a.75.75 0 111.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0l-3.25-3.5a.75.75 0 01.04-1.06z" clip-rule="evenodd" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              class={ghost}
-              onclick={() => setAllCollapsed(true)}
-              disabled={query.trim() !== "" || allCollapsed}
-              title={t("privilege_matrix.collapse_all", "Collapse all")}
-              aria-label={t("privilege_matrix.collapse_all", "Collapse all")}
-            >
-              <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fill-rule="evenodd" d="M6.24 3.2a.75.75 0 011.06.04L10 6.15l2.7-2.91a.75.75 0 111.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0L6.2 4.26a.75.75 0 01.04-1.06zm3.21 9.04a.75.75 0 011.1 0l3.25 3.5a.75.75 0 11-1.1 1.02L10 13.85l-2.7 2.91a.75.75 0 11-1.1-1.02l3.25-3.5z" clip-rule="evenodd" />
-              </svg>
-            </button>
-          </div>
+      <p class="text-xs text-gray-500 lg:col-start-1 lg:row-start-2 dark:text-gray-400">
+        <span class="font-semibold text-gray-900 dark:text-white">{totals.granted} / {totals.options}</span>
+        {t("privilege_matrix.summary_access", "options with access")}
+        <span class="mx-1.5 text-gray-300 dark:text-gray-600">·</span>
+        <span class="font-semibold text-gray-900 dark:text-white">{totals.edit}</span>
+        {t("privilege_matrix.summary_edit", "options that can be edited")}
+      </p>
+      <input
+        type="search"
+        bind:value={query}
+        placeholder={t("privilege_matrix.search", "Search options…")}
+        aria-label={t("privilege_matrix.search", "Search options…")}
+        class="{field} w-full lg:col-start-2 lg:row-start-1 lg:w-72"
+      />
+      <div class="flex flex-wrap items-center gap-2 lg:col-start-2 lg:row-start-2 lg:justify-end">
+        <div class="flex flex-wrap gap-2" role="group" aria-label={t("privilege_matrix.show", "Show")}>
+          <button type="button" class={chip(view === "all")} aria-pressed={view === "all"} onclick={() => (view = "all")}>
+            {t("privilege_matrix.view_all", "All")}
+          </button>
+          <button type="button" class={chip(view === "granted")} aria-pressed={view === "granted"} onclick={() => (view = "granted")}>
+            {t("privilege_matrix.view_granted", "With access")}
+          </button>
+          <button type="button" class={chip(view === "missing")} aria-pressed={view === "missing"} onclick={() => (view = "missing")}>
+            {t("privilege_matrix.view_missing", "Without access")}
+          </button>
+        </div>
+        <!-- Expand / collapse every module: icon-only, name on hover. -->
+        <span class="h-5 w-px bg-gray-200 dark:bg-gray-700" aria-hidden="true"></span>
+        <div class="flex gap-0.5">
+          <button
+            type="button"
+            class={ghost}
+            onclick={() => setAllCollapsed(false)}
+            disabled={query.trim() !== "" || !anyCollapsed}
+            title={t("privilege_matrix.expand_all", "Expand all")}
+            aria-label={t("privilege_matrix.expand_all", "Expand all")}
+          >
+            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M10 3a.75.75 0 01.55.24l3.25 3.5a.75.75 0 11-1.1 1.02L10 4.85 7.3 7.76a.75.75 0 01-1.1-1.02l3.25-3.5A.75.75 0 0110 3zm-3.76 9.2a.75.75 0 011.06.04l2.7 2.91 2.7-2.91a.75.75 0 111.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0l-3.25-3.5a.75.75 0 01.04-1.06z" clip-rule="evenodd" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            class={ghost}
+            onclick={() => setAllCollapsed(true)}
+            disabled={query.trim() !== "" || allCollapsed}
+            title={t("privilege_matrix.collapse_all", "Collapse all")}
+            aria-label={t("privilege_matrix.collapse_all", "Collapse all")}
+          >
+            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M6.24 3.2a.75.75 0 011.06.04L10 6.15l2.7-2.91a.75.75 0 111.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0L6.2 4.26a.75.75 0 01.04-1.06zm3.21 9.04a.75.75 0 011.1 0l3.25 3.5a.75.75 0 11-1.1 1.02L10 13.85l-2.7 2.91a.75.75 0 11-1.1-1.02l3.25-3.5z" clip-rule="evenodd" />
+            </svg>
+          </button>
         </div>
       </div>
     {/if}

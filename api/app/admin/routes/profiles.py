@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Depends
@@ -18,6 +18,7 @@ router = APIRouter(prefix="/api/profiles", tags=["profiles"])
 class ProfileBasic(SQLModel):
     value: str
     label: str
+    icon: Optional[str] = None
 
 @router.get("/select", response_model=List[ProfileBasic])
 def get_list(
@@ -25,13 +26,14 @@ def get_list(
     _: User = Depends(require_privilege("ADMIN", "PROFILES", can_edit=False))
 ) -> List[ProfileBasic]:
     """
-    Returns a profiles list optimized for selects with value (code) and label (name). 
-    Only active profiles.
+    Returns a profiles list optimized for selects with value (code), label (name)
+    and icon (slug from ui/src/images/icons). Only active profiles.
     """
     statement = (
         select(
-            Profile.code.label("value"), 
-            Profile.name.label("label")
+            Profile.code.label("value"),
+            Profile.name.label("label"),
+            Profile.icon.label("icon")
         )
         .where(Profile.is_active == True)
         .order_by(Profile.name)

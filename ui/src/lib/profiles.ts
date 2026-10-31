@@ -10,6 +10,8 @@ import type { Profile, ProfileCreate, ProfileUpdate } from '../types/api';
 export interface ProfileSelectOption {
   value: string;
   label: string;
+  /** Icon slug from src/images/icons (see lib/profileIcons.ts). */
+  icon?: string | null;
 }
 
 /**

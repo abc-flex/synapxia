@@ -17,6 +17,7 @@ const { col, row, locale } = Astro.props as Props;
 // language switcher (relabelLists in lib/listLang.ts).
 const listLabels = col.labelsKey ? listLabelsAttr(row[col.labelsKey]) : undefined;
 const titleIcon = col.as === "title" && col.iconKey ? iconSvg(row[col.iconKey]) : "";
+const textIcon = !col.as && col.iconKey ? iconSvg(row[col.iconKey]) : "";
 ---
 {col.as === "title" && titleIcon ? (
   <div class="flex items-center gap-3">
@@ -79,6 +80,13 @@ const titleIcon = col.as === "title" && col.iconKey ? iconSvg(row[col.iconKey]) 
   ) : (
     ""
   )
+) : textIcon ? (
+  <span class="inline-flex items-center gap-2">
+    <span class="h-5 w-5 shrink-0 text-indigo-600 dark:text-indigo-300 [&>svg]:h-5 [&>svg]:w-5" aria-hidden="true">
+      <Fragment set:html={textIcon} />
+    </span>
+    <span>{row[col.key]}</span>
+  </span>
 ) : listLabels ? (
   <span data-list-labels={listLabels}>{row[col.key]}</span>
 ) : (

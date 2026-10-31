@@ -20,6 +20,15 @@ Entries before the 2026-06-10 switchover (Keep-a-Changelog–style, auto-generat
 
 ---
 
+## 2026-10-31 10:21 — feat(admin): Users list filters in the column headers, profile shown with its icon
+- `/admin/users`: Profile and Business Unit filter from funnels in their column headers (`filterHeaderColumn`); the toolbar's business-unit select next to the title is gone. The Profile cell shows the profile's icon before its name.
+- `GET /api/profiles/select` gains an additive `icon` key (slug), so the page needs no second call; covered by `test_profiles_select_includes_icon` (suite 864/0). DataTable `iconKey` now also works on plain text columns (20 px icon before the value), not only on `as: "title"`.
+- Files affected: `api/app/admin/routes/profiles.py`, `api/tests/test_admin.py`, `ui/src/pages/admin/users.astro`, `ui/src/lib/profiles.ts`, `ui/src/components/table/partials/DataTableCellValue.astro`, `ui/src/types/datatable.ts`
+
+## 2026-10-31 10:05 — chore(db): seeded admin user renamed to "Admin SynapxIA"
+- The account menu shows the first name next to the avatar, so the seeded `admin` user (`Platform` / `Administrator`) read "Platform". Now `first_name = 'Admin'`, `last_name = 'SynapxIA'`: the label reads "Admin", the avatar "AS". Seed only (pre-production): an existing local volume picks it up on `make rebuild`.
+- Files affected: `db/sql/12-admin-insert.sql`
+
 ## 2026-10-31 00:13 — fix(ui): icons back to their container size
 - 77 SVGs in `ui/src/images/icons/` carried a leftover Heroicons `class="size-6"`, inert while no source file used `size-6`. The profile icon gallery (58524b1) used `size-6` in `CrudModal.astro`, Tailwind emitted the rule, and every one of those icons was forced to 24 px whatever its wrapper (reset arrow, header funnels, buttons). Removed the class from the files; wrappers size the icons again, as before.
 - Size audit of every icon injection point (`set:html` / `{@html}`): all wrappers now set the size explicitly. Scale: 20 px for menu, header and table-action icons; 16 px for compact toolbar buttons; 14 px for small markers (column funnel). Account menu items go 16 → 20 px (in line with the sidebar). The header theme toggle and notification bell had no size at all and now take 20 px.

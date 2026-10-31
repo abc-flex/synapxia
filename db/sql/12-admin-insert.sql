@@ -311,8 +311,8 @@ INSERT INTO users (id, username, email, password_hash, first_name, last_name, pr
     'admin@synapxia.org',
     '$2b$12$Q/ZWUi06lisvmpto32xbm.5r.ynn8fDfJ1fnLEPoBQqX.BqFAL5tG',
     -- Password: Admin123! (bcrypt hash, cost=12)
-    'Platform',
-    'Administrator',
+    'Admin',
+    'SynapxIA',
     'ADMINISTRATOR',
     'GEN_AI',
     TRUE);

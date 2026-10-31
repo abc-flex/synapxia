@@ -32,8 +32,9 @@ export interface ColumnConfig {
   /** ONLY for as:"title" — field rendered inline after the bold title in a
    * lighter/normal weight (e.g. a person's team/role next to their name). */
   titleSecondaryKey?: string;
-  /** ONLY for as:"title" — field holding an icon slug (src/images/icons/<slug>.svg)
-   * drawn in a tile before the title. Rows without a known icon get no tile. */
+  /** Field holding an icon slug (src/images/icons/<slug>.svg). For as:"title"
+   * it is drawn in a tile before the title; for a plain text column, as a
+   * 20 px icon before the value. Rows without a known icon get no icon. */
   iconKey?: string;
   /** ONLY for as:"date" — defaults to "date". */
   dateFormat?: "date" | "relative";

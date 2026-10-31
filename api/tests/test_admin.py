@@ -89,3 +89,21 @@ def test_openapi_profile_schema_includes_icon():
     assert "icon" in schemas["Profile"]["properties"]
     assert "icon" in schemas["ProfileCreate"]["properties"]
     assert "icon" in schemas["ProfileUpdate"]["properties"]
+
+
+def test_profiles_select_includes_icon(client, session):
+    """`/api/profiles/select` carries each profile's icon (additive key)."""
+    from tests.inits_helpers import data, override, superuser
+
+    session.add_all([
+        Profile(code="ADMINISTRATOR", name="Platform Administrator", icon="person-shield"),
+        Profile(code="COLLABORATOR", name="Standard Collaborator"),
+        Profile(code="OLD", name="Retired", icon="person-cog", is_active=False),
+    ])
+    session.commit()
+    override(superuser())
+    rows = data(client.get("/api/profiles/select"))
+    assert rows == [
+        {"value": "ADMINISTRATOR", "label": "Platform Administrator", "icon": "person-shield"},
+        {"value": "COLLABORATOR", "label": "Standard Collaborator", "icon": None},
+    ]

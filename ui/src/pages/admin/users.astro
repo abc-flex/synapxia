@@ -49,7 +49,7 @@ const columns = [
   { key: "name", label: "user_modal.first_name", as: "title", subtitleKey: "username", subtitleFormat: "text" },
   { key: "username", label: "user_modal.username", visible: false },
   { key: "profile", label: "user_modal.profile", visible: false },
-  { key: "profile_name", label: "user_modal.profile" },
+  { key: "profile_name", label: "user_modal.profile", iconKey: "profile_icon" },
   { key: "unit", label: "user_modal.unit", visible: false },
   { key: "unit_name", label: "user_modal.unit" },
 ];
@@ -62,6 +62,7 @@ const data = users.map((user) => ({
   last_name: user.last_name,
   profile: user.profile,
   profile_name: profiles.find((r) => String(r.value) === String(user.profile))?.label || user.profile,
+  profile_icon: profiles.find((r) => String(r.value) === String(user.profile))?.icon ?? null,
   unit: user.unit,
   unit_name: business_units.find((bu) => String(bu.value) === String(user.unit))?.label || user.unit,
   is_active: user.is_active,
@@ -194,8 +195,12 @@ const fieldKeys = formFields.map((f) => f.key);
           data={data}
           tableId="users"
           i18Item="user"
-          columnFilter="unit"
-          filterOptions={business_units}
+          columnFilter="profile"
+          filterOptions={profiles}
+          filterHeaderColumn="profile_name"
+          columnFilter2="unit"
+          filterOptions2={business_units}
+          filter2HeaderColumn="unit_name"
         />
       </div>
     </div>

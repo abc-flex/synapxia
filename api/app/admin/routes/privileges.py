@@ -6,7 +6,11 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 from sqlalchemy.exc import IntegrityError
 
-from ..internal.models import Privilege, PrivilegeCreate, PrivilegeUpdate, Profile, Option, User
+from ..internal.models import (
+    Privilege, PrivilegeCreate, PrivilegeMatrix, PrivilegeMatrixSave, PrivilegeUpdate,
+    Profile, Option, User,
+)
+from ..internal import privilege_matrix
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
 from ...internal.permissions import require_privilege
@@ -56,6 +60,50 @@ def get_by_profile(
         .order_by(Privilege.module, Privilege.option)
     ).all()
     return items
+
+
+@router.get("/profile/{profile_code}/matrix", response_model=PrivilegeMatrix)
+def get_matrix(
+    profile_code: str,
+    session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("ADMIN", "PRIVILEGES", can_edit=False))
+) -> PrivilegeMatrix:
+    """
+    Every active option of every active module, with the profile's access to each.
+
+    Not paginated on purpose: it is the bounded option catalog (tens of rows),
+    shown as one checklist.
+
+    - **profile_code**: Profile code
+    """
+    try:
+        return privilege_matrix.get_matrix(session, profile_code)
+    except privilege_matrix.ProfileNotFound as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.put("/profile/{profile_code}/matrix", response_model=PrivilegeMatrix)
+def save_matrix(
+    profile_code: str,
+    body: PrivilegeMatrixSave,
+    session: Session = Depends(get_db_session),
+    current_user: User = Depends(require_privilege("ADMIN", "PRIVILEGES", can_edit=True))
+) -> PrivilegeMatrix:
+    """
+    Replace the profile's privileges over the option catalog in one transaction.
+
+    - **privileges**: the FULL set of `{module, option, can_edit}` the profile may use.
+      Options left out are revoked (logical delete); revoked rows are reactivated.
+    """
+    try:
+        result = privilege_matrix.save_matrix(session, profile_code, body.privileges, current_user)
+    except privilege_matrix.ProfileNotFound as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except privilege_matrix.InvalidMatrix as e:
+        session.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    logger.info(f"Privileges saved for profile {profile_code}: {len(body.privileges)} options")
+    return result
 
 
 @router.get("/{profile_code}/{module_code}/{option_code}", response_model=Privilege)
@@ -156,7 +204,8 @@ def create(
 
 @router.put("/{profile_code}/{module_code}/{option_code}", response_model=Privilege)
 def update(
-    profile_code: str, module_code: str, option_code: str, privilege_update: PrivilegeUpdate, session: Session = Depends(get_db_session)
+    profile_code: str, module_code: str, option_code: str, privilege_update: PrivilegeUpdate, session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("ADMIN", "PRIVILEGES", can_edit=True))
 ) -> Privilege:
     """
     Update an existing privilege.

@@ -4,7 +4,27 @@
  */
 
 import { apiGet, apiPost, apiPut, apiDelete, buildQueryString } from './api';
-import type { Privilege, PrivilegeCreate, PrivilegeUpdate } from '../types/api';
+import type {
+  Privilege, PrivilegeCreate, PrivilegeUpdate, PrivilegeMatrix, PrivilegeMatrixEntry,
+} from '../types/api';
+
+/**
+ * Fetch a profile's privilege matrix: every active option of every active
+ * module, each marked with the profile's access.
+ * @param profile_code - Profile code
+ */
+export async function getPrivilegeMatrix(profile_code: string): Promise<PrivilegeMatrix> {
+  return apiGet<PrivilegeMatrix>(`/api/privileges/profile/${encodeURIComponent(profile_code)}/matrix`);
+}
+
+/**
+ * Save a profile's privilege matrix in one transaction.
+ * @param profile_code - Profile code
+ * @param privileges - The FULL set of granted options; anything left out is revoked
+ */
+export async function savePrivilegeMatrix(profile_code: string, privileges: PrivilegeMatrixEntry[]): Promise<PrivilegeMatrix> {
+  return apiPut<PrivilegeMatrix>(`/api/privileges/profile/${encodeURIComponent(profile_code)}/matrix`, { privileges });
+}
 
 /**
  * Fetch all privileges with optional pagination

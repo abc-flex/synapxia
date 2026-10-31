@@ -311,6 +311,37 @@ export interface PrivilegeUpdate {
   is_active?: boolean;
 }
 
+// Privilege matrix: one profile over the whole active option catalog.
+export interface PrivilegeMatrixOption {
+  code: string;
+  name: string;
+  description?: string | null;
+  path?: string | null;
+  type?: string | null;
+  granted: boolean;
+  can_edit: boolean;
+}
+
+export interface PrivilegeMatrixModule {
+  code: string;
+  name: string;
+  icon?: string | null;
+  options: PrivilegeMatrixOption[];
+}
+
+export interface PrivilegeMatrix {
+  profile: string;
+  profile_name: string;
+  modules: PrivilegeMatrixModule[];
+}
+
+/** One granted option in a matrix save; the request carries the FULL set. */
+export interface PrivilegeMatrixEntry {
+  module: string;
+  option: string;
+  can_edit: boolean;
+}
+
 // Category types
 export interface Category {
   code: string;

@@ -349,3 +349,39 @@ class PrivilegeUpdate(SQLModel):
         default=None, description="Indicates if can edit")
     is_active: Optional[bool] = Field(
         default=None, description="Indicates if the privilege is active")
+
+
+# --- Privilege matrix (one profile over the whole option catalog) ---
+
+class PrivilegeMatrixOption(SQLModel):
+    code: str
+    name: str
+    description: Optional[str] = None
+    path: Optional[str] = None
+    type: Optional[str] = None
+    granted: bool = False
+    can_edit: bool = False
+
+
+class PrivilegeMatrixModule(SQLModel):
+    code: str
+    name: str
+    icon: Optional[str] = None
+    options: list[PrivilegeMatrixOption] = []
+
+
+class PrivilegeMatrix(SQLModel):
+    profile: str
+    profile_name: str
+    modules: list[PrivilegeMatrixModule] = []
+
+
+class PrivilegeMatrixEntry(SQLModel):
+    module: str = Field(max_length=50, description="Module code")
+    option: str = Field(max_length=50, description="Option code")
+    can_edit: bool = Field(default=False, description="Indicates if can edit")
+
+
+class PrivilegeMatrixSave(SQLModel):
+    privileges: list[PrivilegeMatrixEntry] = Field(
+        default=[], description="The FULL set of options the profile may use; anything left out is revoked")

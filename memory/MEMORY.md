@@ -31,6 +31,8 @@ Run everything: `make dev`. Verify: `make test`.
 
 **Dev-server gotcha (Windows host):** the UI container's Vite watcher can miss edits made on the host through the bind mount (seen 2026-09-23 with in-place `sed -i` edits) and keep serving the old compiled module — the file inside the container is current, the browser still gets the stale version. Check with `curl -s "http://localhost:4321/src/<path>?astro&type=script&index=0&lang.ts" | grep <marker>`; fix with `docker compose exec -T ui touch src/<path>` (or restart the `ui` service) and a hard refresh.
 
+**Icon SVGs carry no class.** Files in `ui/src/images/icons/` are injected raw (`?raw` + `set:html`) and must be sized by their wrapper (`[&>svg]:size-5`, `h-4 w-4 [&>svg]:...`). Never leave Heroicons' `class="size-6"` on the `<svg>`: it is inert until any source file uses `size-6`, then Tailwind emits the rule and every icon jumps to 24 px (happened 2026-10-30, fixed by stripping it from 77 files). Size scale: 20 px (`h-5 w-5`) for menu, header and table-action icons; 16 px (`h-4 w-4`) for compact toolbar buttons; 14 px (`h-3.5 w-3.5`) for small markers. Every wrapper sets its size; none relies on the container.
+
 **Backend tests:** `docker compose exec -T api uv run pytest -q`. Two older decisions-log
 entries (2026-07-02) say the container's Python 3.14 venv cannot import the backend and tell
 you to build a 3.12 one — **that is no longer true** (verified 2026-09-16): the pydantic

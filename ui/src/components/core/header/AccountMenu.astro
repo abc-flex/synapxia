@@ -147,7 +147,7 @@ const initials = name
           {workItems.map((item) => (
             <li data-profiles={item.profiles?.length ? item.profiles.join(",") : undefined}>
               <a href={item.href || "#"} class="account-link group">
-                <span class="account-link-icon w-4 h-4 inline-block text-current shrink-0" aria-hidden="true">
+                <span class="account-link-icon w-5 h-5 inline-block text-current shrink-0" aria-hidden="true">
                   <Fragment set:html={ICONS[item.label] ?? ""} />
                 </span>
                 <span data-i18n={item.label}>{t(locale, item.label)}</span>
@@ -162,7 +162,7 @@ const initials = name
       {menuItems.map((item) => (
         <li>
           <a href={item.href || "#"} class="account-link group">
-            <span class="account-link-icon w-4 h-4 inline-block text-current shrink-0" aria-hidden="true">
+            <span class="account-link-icon w-5 h-5 inline-block text-current shrink-0" aria-hidden="true">
               <Fragment set:html={ICONS[item.label] ?? ""} />
             </span>
             <span data-i18n={item.label}>{t(locale, item.label)}</span>
@@ -172,7 +172,7 @@ const initials = name
     </ul>
 
     <button id="account-signout-btn" class="account-link mt-3 w-full text-left" type="button">
-      <span class="account-link-icon w-4 h-4 inline-block text-current shrink-0" aria-hidden="true">
+      <span class="account-link-icon w-5 h-5 inline-block text-current shrink-0" aria-hidden="true">
         <Fragment set:html={SignOutIcon} />
       </span>
       <span data-i18n={signOutLabel}>{t(locale, signOutLabel)}</span>

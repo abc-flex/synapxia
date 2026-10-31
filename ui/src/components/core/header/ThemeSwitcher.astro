@@ -15,10 +15,10 @@ const locale = getLocale(Astro);
   aria-pressed="false"
   data-theme-toggle
 >
-  <span class="hidden dark:block">
+  <span class="hidden h-5 w-5 dark:block">
     <Fragment set:html={SunIcon} />
   </span>
-  <span class="dark:hidden">
+  <span class="block h-5 w-5 dark:hidden">
     <Fragment set:html={MoonIcon} />
   </span>
 </button>

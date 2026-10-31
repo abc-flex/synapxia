@@ -127,7 +127,7 @@
     {#if grandTotal > 0}
       <span class="notify-dot" aria-hidden="true"><span class="notify-ping"></span></span>
     {/if}
-    {@html BellIcon}
+    <span class="block h-5 w-5" aria-hidden="true">{@html BellIcon}</span>
   </summary>
 
   <div class="notification-dropdown">

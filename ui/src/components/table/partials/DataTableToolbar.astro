@@ -85,7 +85,7 @@ const filterCount = filters.filter((f) => f.key && !f.headerColumn).length;
       </button>
     )}
     <DataTableFilters tableId={tableId} hasData={hasData} filters={filters} />
-    {hasData && (
+    {hasData && filters.some((f) => f.key) && (
       <button
         id={`${tableId}-reset`}
         type="button"

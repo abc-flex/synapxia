@@ -179,15 +179,17 @@ export function initAdvancedTable(
 
     /* ======================
        RESET FILTERS
-       Clears search + every filter select; shown only when something is active.
+       Clears every filter slot; shown only when one of them is active. The
+       search is NOT part of it: the search box has its own clear (×), so a
+       reset that also reacted to the search would be the same control twice.
+       Tables without filters render no reset button at all (DataTableToolbar).
        Declared before the filter-init blocks because those call applyFilters()
        on load, and applyFilters() calls updateResetVisibility().
     ====================== */
     const resetBtn = document.getElementById(`${tableId}-reset`);
 
-    const isFilterActive = (): boolean =>
+    const isColumnFilterActive = (): boolean =>
         Boolean(
-            (searchInput?.value ?? "") ||
             slotValue(filterSelect) ||
             slotValue(filterSelect2) ||
             slotValue(filterSelect3) ||
@@ -195,9 +197,12 @@ export function initAdvancedTable(
             extraSlots.some((s) => slotValue(s.el))
         );
 
+    const isFilterActive = (): boolean =>
+        Boolean((searchInput?.value ?? "") || isColumnFilterActive());
+
     const updateResetVisibility = () => {
         if (!resetBtn) return;
-        resetBtn.classList.toggle("hidden", !isFilterActive());
+        resetBtn.classList.toggle("hidden", !isColumnFilterActive());
     };
 
     // Write a filter's current value back to the URL (replaceState, no reload) so
@@ -214,7 +219,6 @@ export function initAdvancedTable(
 
     if (resetBtn) {
         resetBtn.addEventListener("click", () => {
-            if (searchInput) searchInput.value = "";
             setSlotValue(filterSelect, "");
             setSlotValue(filterSelect2, "");
             setSlotValue(filterSelect3, "");

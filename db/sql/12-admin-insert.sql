@@ -51,7 +51,7 @@ INSERT INTO options (module, code, name, description, sort_order, type, path, ic
      40,'FORM','/collab/dimensions','cube'),
     ('COLLAB','DASHBOARD','Assignment Dashboard',
      'Dashboard to monitor tasks and collaboration workload.',
-     50,'FORM','/collab/dashboard','clipboard-document-check');
+     50,'REPORT','/collab/dashboard','clipboard-document-check');
 
 -- ===== Module: ASSET LIBRARY =====
 INSERT INTO options (module, code, name, description, sort_order, type, path, icon) VALUES
@@ -102,7 +102,7 @@ INSERT INTO options (module, code, name, description, sort_order, type, path, ic
      10,'FORM','/ana/catalog','chart-pie'),
     ('ANA','USAGE','Usage Metrics',
      'Track and analyze the usage of dashboards.',
-     20,'FORM','/ana/usage','chart-bar');
+     20,'REPORT','/ana/usage','chart-bar');
 
 -- ===== Module: PROCESSES =====
 INSERT INTO options (module, code, name, description, sort_order, type, path, icon) VALUES
@@ -111,10 +111,10 @@ INSERT INTO options (module, code, name, description, sort_order, type, path, ic
      10,'FORM','/proc/processes','rectangle-group'),
     ('PROC','VALUE_CHAIN','Value Chain',
      'Identify stages where AI can create impact.',
-     20,'FORM','/proc/value_chain','link'),
+     20,'REPORT','/proc/value_chain','link'),
     ('PROC','MAP','Process Map',
      'High-level process landscape representation.',
-     30,'FORM','/proc/process_map','map');
+     30,'REPORT','/proc/process_map','map');
 
 -- **********************************
 -- ******** Table: Profiles *********

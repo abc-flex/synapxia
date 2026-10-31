@@ -19,9 +19,10 @@ from typing import Dict, List, Tuple
 from sqlmodel import Session, select
 
 from .models import (
-    Module, Option, Privilege, PrivilegeMatrix, PrivilegeMatrixEntry,
+    Privilege, PrivilegeMatrix, PrivilegeMatrixEntry,
     PrivilegeMatrixModule, PrivilegeMatrixOption, Profile,
 )
+from .option_catalog import catalog as _catalog
 
 # The option that lets a profile manage privileges. A non-superuser saving
 # their own profile must keep it with edit access, or they lock themselves out.
@@ -34,22 +35,6 @@ class ProfileNotFound(LookupError):
 
 class InvalidMatrix(ValueError):
     pass
-
-
-def _catalog(session: Session) -> Tuple[List[Module], Dict[str, List[Option]]]:
-    modules = session.exec(
-        select(Module).where(Module.is_active == True)
-        .order_by(Module.sort_order, Module.code)
-    ).all()
-    codes = {m.code for m in modules}
-    options: Dict[str, List[Option]] = {}
-    for o in session.exec(
-        select(Option).where(Option.is_active == True)
-        .order_by(Option.module, Option.sort_order, Option.name)
-    ).all():
-        if o.module in codes:
-            options.setdefault(o.module, []).append(o)
-    return list(modules), options
 
 
 def _profile(session: Session, profile_code: str) -> Profile:

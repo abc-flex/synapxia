@@ -252,6 +252,28 @@
     "empty_message": "No Privileges found",
     "delete_confirmation": "Are you sure you want to delete this Privilege"
   },
+  "option_catalog": {
+    "all_modules": "All modules",
+    "summary_modules": "modules",
+    "summary_options": "options",
+    "search": "Search options…",
+    "order": "Order",
+    "add_to": "New option in {module}",
+    "module_empty": "This module has no options yet",
+    "description": "Description",
+    "icon_search": "Search icons…",
+    "no_icon": "None",
+    "close": "Close",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete_confirm": "Delete",
+    "created": "Option created",
+    "updated": "Option updated",
+    "deleted": "Option removed",
+    "load_error": "Could not load the options",
+    "save_error": "Could not save the option",
+    "delete_error": "Could not remove the option"
+  },
   "privilege_matrix": {
     "profile": "Profile",
     "summary_access": "options with access",

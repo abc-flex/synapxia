@@ -351,6 +351,27 @@ class PrivilegeUpdate(SQLModel):
         default=None, description="Indicates if the privilege is active")
 
 
+# --- Option catalog (`/admin/options`: every active module with its options) ---
+
+class OptionCatalogOption(SQLModel):
+    code: str
+    name: str
+    description: Optional[str] = None
+    path: Optional[str] = None
+    icon: Optional[str] = None
+    type: str
+    sort_order: int = 0
+
+
+class OptionCatalogModule(SQLModel):
+    code: str
+    name: str
+    description: Optional[str] = None
+    icon: Optional[str] = None
+    sort_order: int = 0
+    options: list[OptionCatalogOption] = []
+
+
 # --- Privilege matrix (one profile over the whole option catalog) ---
 
 class PrivilegeMatrixOption(SQLModel):

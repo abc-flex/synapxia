@@ -20,6 +20,12 @@ Entries before the 2026-06-10 switchover (Keep-a-Changelog–style, auto-generat
 
 ---
 
+## 2026-10-31 13:50 — feat(admin): Options grouped by module like the privilege checklist; module icons in the Modules list
+- `/admin/options` is now `OptionCatalog.svelte`: one section per active module (icon, name, code, option count, "+" to add an option there) with the module's options as rows (icon, name, code, path, type, order, edit/remove), plus a module filter, search and expand/collapse all. Create/edit go through a dialog with an icon picker over every SVG in `images/icons/` (`ALL_ICON_SLUGS`); the old form never sent `icon`/`description`. Single-row option routes unchanged.
+- New read `GET /api/options/catalog` (`ADMIN/OPTIONS` read; not scoped to the caller's privileges like `GET /api/options/`). The catalog query moved to `admin/internal/option_catalog.py`, shared with the privilege matrix. 2 tests (suite 872/0). `/admin/modules` shows each module's icon in its title column (`iconKey`).
+- Seed: COLLAB/DASHBOARD, ANA/USAGE, PROC/VALUE_CHAIN and PROC/MAP are type `REPORT` (were `FORM`). Provisioned DBs: `UPDATE options SET type='REPORT' WHERE (module,code) IN (('COLLAB','DASHBOARD'),('ANA','USAGE'),('PROC','VALUE_CHAIN'),('PROC','MAP'));` (applied to the local DB).
+- Files affected: `db/sql/12-admin-insert.sql`, `api/app/admin/internal/option_catalog.py`, `api/app/admin/internal/privilege_matrix.py`, `api/app/admin/internal/models.py`, `api/app/admin/routes/options.py`, `api/tests/test_admin_option_catalog.py`, `ui/src/components/svelte/OptionCatalog.svelte`, `ui/src/pages/admin/options.astro`, `ui/src/pages/admin/modules.astro`, `ui/src/lib/options.ts`, `ui/src/lib/profileIcons.ts`, `ui/src/types/api.ts`, `ui/src/i18n/{en,es}.json`
+
 ## 2026-10-31 10:21 — feat(admin): Users list filters in the column headers, profile shown with its icon
 - `/admin/users`: Profile and Business Unit filter from funnels in their column headers (`filterHeaderColumn`); the toolbar's business-unit select next to the title is gone. The Profile cell shows the profile's icon before its name.
 - `GET /api/profiles/select` gains an additive `icon` key (slug), so the page needs no second call; covered by `test_profiles_select_includes_icon` (suite 864/0). DataTable `iconKey` now also works on plain text columns (20 px icon before the value), not only on `as: "title"`.

@@ -15,6 +15,11 @@ export function iconSvg(slug: string | null | undefined): string {
   return icons[`/src/images/icons/${slug}.svg`] ?? "";
 }
 
+/** Every icon slug in src/images/icons/, alphabetical (module/option pickers). */
+export const ALL_ICON_SLUGS: string[] = Object.keys(icons)
+  .map((p) => p.slice(p.lastIndexOf("/") + 1, -".svg".length))
+  .sort();
+
 /** Typical organizational roles, in gallery order. All are people icons (a
  * person with a role badge; Tabler Icons, MIT), stored as `person-*.svg`. */
 export const PROFILE_ICON_SLUGS = [

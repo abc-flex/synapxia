@@ -6,7 +6,10 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select, SQLModel
 from sqlalchemy.exc import IntegrityError
 
-from ..internal.models import Option, OptionCreate, OptionUpdate, Module, Privilege, User
+from ..internal.models import (
+    Option, OptionCatalogModule, OptionCreate, OptionUpdate, Module, Privilege, User,
+)
+from ..internal import option_catalog
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
 from ...internal.permissions import require_privilege, has_privilege
@@ -37,6 +40,20 @@ def get_list(
         .order_by(Option.name)
     )
     return session.exec(statement).all()
+
+
+@router.get("/catalog", response_model=List[OptionCatalogModule])
+def get_catalog(
+    session: Session = Depends(get_db_session),
+    _: User = Depends(require_privilege("ADMIN", "OPTIONS", can_edit=False))
+) -> List[OptionCatalogModule]:
+    """
+    Every active module with its active options, for the options admin page.
+
+    Unlike `GET /` this is not scoped to the caller's own privileges. Not
+    paginated on purpose: it is the bounded option catalog (tens of rows).
+    """
+    return option_catalog.get_catalog(session)
 
 
 @router.get("/", response_model=List[Option])

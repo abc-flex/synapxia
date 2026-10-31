@@ -4,7 +4,7 @@
  */
 
 import { apiGet, apiPost, apiPut, apiDelete, buildQueryString } from './api';
-import type { Option, OptionCreate, OptionUpdate } from '../types/api';
+import type { Option, OptionCatalogModule, OptionCreate, OptionUpdate } from '../types/api';
 
 // Interface for select options with value and label
 export interface OptionSelectOption {
@@ -78,4 +78,12 @@ export async function updateOption(module: string, code: string, data: OptionUpd
  */
 export async function deleteOption(module: string, code: string): Promise<void> {
   return apiDelete<void>(`/api/options/${encodeURIComponent(module)}/${encodeURIComponent(code)}`);
+}
+
+/**
+ * Every active module with its active options (`/admin/options`). Unlike
+ * `getOptions`, not scoped to the caller's own privileges.
+ */
+export async function getOptionCatalog(): Promise<OptionCatalogModule[]> {
+  return apiGet<OptionCatalogModule[]>('/api/options/catalog');
 }

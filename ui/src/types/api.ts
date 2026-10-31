@@ -260,6 +260,26 @@ export interface OptionUpdate {
   is_active?: boolean;
 }
 
+/** One module of the option catalog (`GET /api/options/catalog`). */
+export interface OptionCatalogOption {
+  code: string;
+  name: string;
+  description?: string | null;
+  path?: string | null;
+  icon?: string | null;
+  type: string;
+  sort_order: number;
+}
+
+export interface OptionCatalogModule {
+  code: string;
+  name: string;
+  description?: string | null;
+  icon?: string | null;
+  sort_order: number;
+  options: OptionCatalogOption[];
+}
+
 // Project types
 export interface Project {
   code: string;

@@ -252,6 +252,28 @@
     "empty_message": "No se encontraron Privilegios",
     "delete_confirmation": "¿Está seguro de que desea eliminar este Privilegio?"
   },
+  "option_catalog": {
+    "all_modules": "Todos los módulos",
+    "summary_modules": "módulos",
+    "summary_options": "opciones",
+    "search": "Buscar opciones…",
+    "order": "Orden",
+    "add_to": "Nueva opción en {module}",
+    "module_empty": "Este módulo aún no tiene opciones",
+    "description": "Descripción",
+    "icon_search": "Buscar íconos…",
+    "no_icon": "Ninguno",
+    "close": "Cerrar",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "delete_confirm": "Eliminar",
+    "created": "Opción creada",
+    "updated": "Opción actualizada",
+    "deleted": "Opción eliminada",
+    "load_error": "No se pudieron cargar las opciones",
+    "save_error": "No se pudo guardar la opción",
+    "delete_error": "No se pudo eliminar la opción"
+  },
   "privilege_matrix": {
     "profile": "Perfil",
     "summary_access": "opciones con acceso",

@@ -4,6 +4,7 @@
 import checkSvg from "@/images/icons/check.svg?raw";
 import { statusTone, formatDate, formatRelative, renderSubtitle } from "@/lib/datatable";
 import { listLabelsAttr } from "@/lib/listLang";
+import { iconSvg } from "@/lib/profileIcons";
 import type { ColumnConfig } from "@/types/datatable";
 
 interface Props {
@@ -15,8 +16,26 @@ const { col, row, locale } = Astro.props as Props;
 // List-backed column → every language's label, so the cell follows the
 // language switcher (relabelLists in lib/listLang.ts).
 const listLabels = col.labelsKey ? listLabelsAttr(row[col.labelsKey]) : undefined;
+const titleIcon = col.as === "title" && col.iconKey ? iconSvg(row[col.iconKey]) : "";
 ---
-{col.as === "title" ? (
+{col.as === "title" && titleIcon ? (
+  <div class="flex items-center gap-3">
+    <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-300 [&>svg]:size-5" aria-hidden="true">
+      <Fragment set:html={titleIcon} />
+    </span>
+    <div class="min-w-0">
+      <span class="dt-title">
+        {row[col.key]}
+        {col.titleSecondaryKey && row[col.titleSecondaryKey] && (
+          <span class="dt-title-secondary">{row[col.titleSecondaryKey]}</span>
+        )}
+      </span>
+      {col.subtitleKey && renderSubtitle(col, row, locale) && (
+        <span class="dt-subtitle">{renderSubtitle(col, row, locale)}</span>
+      )}
+    </div>
+  </div>
+) : col.as === "title" ? (
   <>
     <span class="dt-title">
       {row[col.key]}

@@ -13,7 +13,7 @@ interface Field {
   key: string;
   label: string;
   name?: string;
-  type?: "text" | "textarea" | "select" | "email" | "number" | "checkbox" | "calendar";
+  type?: "text" | "textarea" | "select" | "email" | "number" | "checkbox" | "calendar" | "icon";
   pk?: boolean;
   required?: boolean;
   disabled?: boolean;
@@ -26,6 +26,11 @@ interface Field {
   // For type: "calendar" — include a time picker (renders datetime-local)
   // instead of a date-only picker. Default false (date only).
   withTime?: boolean;
+  // For type: "icon" — the gallery of choices (value = icon slug, label = i18n
+  // key, svg = raw markup), rendered as a radio group of icon tiles.
+  iconOptions?: { value: string; label: string; svg: string }[];
+  // For type: "icon" — the choice preselected in create mode (and after reset).
+  defaultValue?: string;
 }
 
 // Normalize an arbitrary date/datetime string into the value format that
@@ -268,6 +273,39 @@ const triggerTextKey =
                     {field.required && <span class="text-red-500">*</span>}
                     <span data-i18n={field.label}>{field.label}</span>
                   </label>
+                </div>
+              </div>
+            );
+          }
+
+          if (field.type === "icon") {
+            const selected = value || (mode === "create" ? field.defaultValue || "" : "");
+            return (
+              <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-4" key={field.key}>
+                <div class="sm:w-32 sm:pt-2">
+                  <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {field.required && <span class="text-red-500">*</span>}
+                    <span data-i18n={field.label}>{field.label}</span>
+                  </span>
+                </div>
+                <div class="grid flex-1 grid-cols-4 gap-2 sm:grid-cols-5" role="radiogroup">
+                  {(field.iconOptions || []).map((opt) => (
+                    <label class="cursor-pointer">
+                      <input
+                        type="radio"
+                        name={field.key}
+                        value={opt.value}
+                        checked={opt.value === selected}
+                        required={field.required}
+                        disabled={fieldDisabled}
+                        class="peer sr-only"
+                      />
+                      <span class="flex h-full flex-col items-center gap-1 rounded-lg border border-gray-200 px-1 py-2 text-gray-500 transition hover:border-indigo-300 hover:text-indigo-600 peer-checked:border-indigo-500 peer-checked:bg-indigo-50 peer-checked:text-indigo-700 peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-200 peer-disabled:opacity-60 dark:border-gray-800 dark:text-gray-400 dark:hover:border-indigo-700 dark:peer-checked:border-indigo-400 dark:peer-checked:bg-indigo-500/10 dark:peer-checked:text-indigo-300">
+                        <span class="size-6 [&>svg]:size-6" aria-hidden="true"><Fragment set:html={opt.svg} /></span>
+                        <span class="text-center text-[11px] leading-tight" data-i18n={opt.label}>{opt.label}</span>
+                      </span>
+                    </label>
+                  ))}
                 </div>
               </div>
             );

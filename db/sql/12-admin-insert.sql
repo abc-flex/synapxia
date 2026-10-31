@@ -125,19 +125,19 @@ VALUES
     ('ADMINISTRATOR',
      'Platform Administrator',
      'Full access to all modules and options in SynapxIA, including configuration, security and operational capabilities.',
-     'user-group'),
+     'person-shield'),
     ('ADMINISTRATIVE',
      'Operational Administrator',
      'Administrative role with full edit access to collaboration, Generative AI, AI initiatives, metrics, processes and digital assets, but without platform-level administration features.',
-     'user-group'),
+     'person-cog'),
     ('COLLABORATOR',
      'Standard Collaborator',
      'Operational user with read access to collaboration, Generative AI, AI initiatives, processes and digital assets, and edit rights only for AI initiative proposals.',
-     'user-group'),
+     'person-users'),
     ('REVIEWER',
      'Reviewer',
      'Reviews proposed library assets before publication: can run the review workflow (review/modify/publish/reject) over digital assets, characterizations and actions.',
-     'user-group');
+     'person-search');
 
 -- **********************************
 -- ******** Table: Privileges ********

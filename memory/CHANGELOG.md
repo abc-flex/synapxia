@@ -20,6 +20,11 @@ Entries before the 2026-06-10 switchover (Keep-a-Changelog–style, auto-generat
 
 ---
 
+## 2026-10-30 23:01 — feat(admin): profile icon gallery + icon in the Profiles list
+- `/admin/profiles` create/edit dialogs replace the free-text icon input with a gallery of 20 role icons, all people (a person with a role badge: administrator, operations, leader, reviewer, auditor, developer, finance, HR, support…; Tabler Icons, MIT, normalized to the folder's 1.5 stroke as `person-*.svg`), labelled in en/es (`profile_icons.*`). `profiles.icon` still stores an icon slug from `src/images/icons/`. The list shows each profile's icon in a tile before its name.
+- Reusable: `CrudModal` gained a `type: "icon"` field (radio tiles, `iconOptions` + `defaultValue`), `crudClient.js` fills/clears radio groups, and DataTable `title` columns take an opt-in `iconKey`. Seed gives the four profiles distinct icons (applied to the local dev DB too). UI-only, no API/DDL change.
+- Files affected: `ui/src/lib/profileIcons.ts`, `ui/src/components/forms/CrudModal.astro`, `ui/src/lib/crudClient.js`, `ui/src/components/table/partials/DataTableCellValue.astro`, `ui/src/types/datatable.ts`, `ui/src/pages/admin/profiles.astro`, `ui/src/i18n/{en,es}.json`, `ui/src/images/icons/person-*.svg`, `db/sql/12-admin-insert.sql`
+
 ## 2026-10-30 17:41 — feat(admin): hierarchical Business Units table, hierarchy modal removed
 - `/admin/business_units` now lists units as a tree: roots first, each child indented under its parent with a boxed +/− toggle. Roots start expanded, so two levels show by default; deeper levels open from their parent, and every level can collapse. Search and filters show the matches together with their ancestors. The "View Hierarchy" button and its ECharts modal were removed at the user's request.
 - Built as an opt-in `treeParentKey` prop on the shared `DataTable` (`buildTreeRows` in `lib/datatable.ts` orders rows depth-first and breaks missing parents and cycles; `advancedTable.ts` owns the expand state and starts tree tables at 50 rows per page). The cell renderer moved to `DataTableCellValue.astro` so `DataTableCell` can wrap it. Other tables are unchanged. New i18n key `data_table.expand_collapse` (en/es). Verified by SSR markup and `bun run build`; **not click-tested in a browser**.

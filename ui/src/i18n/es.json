@@ -217,6 +217,28 @@
     "empty_message": "No se encontraron Perfiles",
     "delete_confirmation": "¿Está seguro de que desea eliminar este Perfil?"
   },
+  "profile_icons": {
+    "person-shield": "Administrador",
+    "person-cog": "Operaciones",
+    "person-star": "Líder",
+    "person-group": "Equipo",
+    "person-users": "Colaborador",
+    "person-check": "Aprobador",
+    "person-search": "Revisor",
+    "person-scan": "Auditor",
+    "person-code": "Desarrollador",
+    "person-bolt": "Datos e IA",
+    "person-edit": "Editor",
+    "person-share": "Mercadeo",
+    "person-dollar": "Finanzas",
+    "person-heart": "Talento Humano",
+    "person-plus": "Reclutador",
+    "person-question": "Soporte",
+    "person-screen": "Formador",
+    "person-pin": "Personal de campo",
+    "person-square": "Invitado",
+    "person-circle": "Usuario"
+  },
   "privilege_modal": {
     "profile": "Perfil",
     "module": "Módulo",

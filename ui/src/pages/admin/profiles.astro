@@ -5,6 +5,7 @@ import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
 import { getProfiles } from "@/lib/profiles";
+import { PROFILE_ICON_OPTIONS } from "@/lib/profileIcons";
 
 // Fetch profiles from API
 let profiles: any[] = [];
@@ -22,7 +23,7 @@ try {
 
 const columns = [
   { key: "code", label: "profile_modal.code", visible: false },
-  { key: "name", label: "profile_modal.name", as: "title", subtitleKey: "code", subtitleFormat: "text" },
+  { key: "name", label: "profile_modal.name", as: "title", subtitleKey: "code", subtitleFormat: "text", iconKey: "icon" },
 ];
 const data = profiles.map((item) => ({
   id: item.code,
@@ -37,12 +38,18 @@ const data = profiles.map((item) => ({
 const tableFields = [
   { key: "code", label: "profile_modal.code", pk: true, required: true, placeholder: "e.g. ADMIN" },
   { key: "name", label: "profile_modal.name", required: true, placeholder: "e.g. Administration" },
-  { key: "icon", label: "profile_modal.icon", placeholder: "Heroicon path" },
   {
     key: "description",
     label: "profile_modal.description",
     type: "textarea" as const,
     placeholder: "Optional details of profile",
+  },
+  {
+    key: "icon",
+    label: "profile_modal.icon",
+    type: "icon" as const,
+    iconOptions: PROFILE_ICON_OPTIONS,
+    defaultValue: "person-group",
   },
 ];
 const fieldKeys = tableFields.map((f) => f.key);

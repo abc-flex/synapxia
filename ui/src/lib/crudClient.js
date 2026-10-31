@@ -64,7 +64,12 @@ export function initCrudPage({
 
           const value = record[key];
 
-          if (input.type === "checkbox") {
+          if (input.type === "radio") {
+            // Radio group (e.g. an icon gallery): check the matching choice.
+            dialog.querySelectorAll(`[name="${key}"]`).forEach((radio) => {
+              radio.checked = radio.value === String(value ?? "");
+            });
+          } else if (input.type === "checkbox") {
             input.checked = Boolean(value);
           } else if (input.tagName === "SELECT") {
             // Handle select fields - try multiple matching strategies
@@ -131,8 +136,13 @@ export function initCrudPage({
     keys.forEach((key) => {
       const input = dialog.querySelector(`[name="${key}"]`);
       if (!input) return;
-      
-      if (input.type === "checkbox") {
+
+      if (input.type === "radio") {
+        // Back to the server-rendered default choice, if any.
+        dialog.querySelectorAll(`[name="${key}"]`).forEach((radio) => {
+          radio.checked = radio.defaultChecked;
+        });
+      } else if (input.type === "checkbox") {
         input.checked = false;
       } else if (input.tagName === "SELECT") {
         input.value = "";

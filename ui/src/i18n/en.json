@@ -217,6 +217,28 @@
     "empty_message": "No Profiles found",
     "delete_confirmation": "Are you sure you want to delete this Profile"
   },
+  "profile_icons": {
+    "person-shield": "Administrator",
+    "person-cog": "Operations",
+    "person-star": "Leader",
+    "person-group": "Team",
+    "person-users": "Collaborator",
+    "person-check": "Approver",
+    "person-search": "Reviewer",
+    "person-scan": "Auditor",
+    "person-code": "Developer",
+    "person-bolt": "Data & AI",
+    "person-edit": "Editor",
+    "person-share": "Marketing",
+    "person-dollar": "Finance",
+    "person-heart": "Human Resources",
+    "person-plus": "Recruiter",
+    "person-question": "Support",
+    "person-screen": "Trainer",
+    "person-pin": "Field Staff",
+    "person-square": "Guest",
+    "person-circle": "User"
+  },
   "privilege_modal": {
     "profile": "Profile",
     "module": "Module",

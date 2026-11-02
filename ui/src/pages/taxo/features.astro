@@ -6,7 +6,7 @@ import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
 import { getFeatures } from "@/lib/features";
 import { getListItemsbyList } from "@/lib/list_items";
-import { labelsByValue, labelsFor, listLabel } from "@/lib/listLang";
+import { labelsByValue, labelsFor, listLabel, toListOptions } from "@/lib/listLang";
 import { getListsbyType } from "@/lib/lists";
 
 // Fetch features from API
@@ -180,6 +180,11 @@ const fieldKeys = formFields.map((f) => f.key);
           data={data}
           tableId="features"
           i18Item="feature"
+          {/* Type filter lives as a funnel in its column header */}
+          columnFilter2="type"
+          filterOptions2={toListOptions(types, "en")}
+          filter2HeaderColumn="type_name"
+          filter2AllLabel="feature_modal.all_types"
         />
         <!-- ====== Table End -->
       </div>

@@ -5,6 +5,10 @@ import DataTable from "../../components/table/DataTable.astro";
 import CrudModal from "../../components/forms/CrudModal.astro";
 import Toast from "../../components/Toast.astro";
 import { getCategories } from "@/lib/categories";
+import { ALL_ICON_OPTIONS } from "@/lib/profileIcons";
+import { getOptions } from "@/lib/options";
+import { getSpecifications } from "@/lib/specifications";
+import { getAssetsByCategory, isPublished } from "@/lib/assets";
 
 // Fetch categories from API
 let categories: any[] = [];
@@ -21,7 +25,7 @@ try {
 // Fetch categories for select field
 const columns = [
   { key: "code", label: "category_modal.code", visible: false },
-  { key: "name", label: "category_modal.name", as: "title", subtitleKey: "code", subtitleFormat: "text" },
+  { key: "name", label: "category_modal.name", as: "title", subtitleKey: "code", subtitleFormat: "text", iconKey: "icon" },
   { key: "parent", label: "category_modal.parent", visible: false },
   { key: "parent_name", label: "category_modal.parent" },
 ];
@@ -30,6 +34,46 @@ const categories_list = categories.map((item) => ({
   value: item.code,
   name: item.name,
 }));
+
+// A category is defined and can be explored when ALL of these hold:
+//  1. it has active specifications (its characterization is defined);
+//  2. it has an Explore path (`option`);
+//  3. an active AI Library option carries its code — /lib/explore takes the
+//     page's name and icon from it; /api/options is scoped to the caller's
+//     privileges, so this also means the caller may explore it (the API
+//     ignores `module`, hence the client-side filter);
+//  4. it has at least one published asset — otherwise /lib/explore shows
+//     "coming soon" instead of the gallery (same test, `isPublished`).
+// Any failed lookup leaves the action disabled rather than enabled.
+let specifiedCodes = new Set<string>();
+let libOptionCodes = new Set<string>();
+try {
+  const [specs, options] = await Promise.all([
+    getSpecifications(0, 1000),
+    getOptions("LIB", 0, 500),
+  ]);
+  specifiedCodes = new Set(specs.filter((s) => s.is_active !== false).map((s) => s.category));
+  libOptionCodes = new Set(
+    options.filter((o) => o.module === "LIB" && o.is_active !== false).map((o) => o.code),
+  );
+} catch (error) {
+  console.error("Failed to resolve explorable categories:", error);
+}
+const candidates = categories.filter(
+  (c) => c.option && specifiedCodes.has(c.code) && libOptionCodes.has(c.code),
+);
+// Only the few candidates left need the asset lookup (one call each).
+const published = await Promise.all(
+  candidates.map(async (c) => {
+    try {
+      const assets = await getAssetsByCategory(c.code, 0, 500);
+      return assets.some((a) => isPublished(a.status)) ? c.code : null;
+    } catch {
+      return null;
+    }
+  }),
+);
+const explorable = new Set(published.filter((code): code is string => code !== null));
 
 const data = categories.map((item) => ({
   id: item.code,
@@ -40,6 +84,7 @@ const data = categories.map((item) => ({
   parent_name: categories.find((c) => c.code === item.parent)?.name || item.parent,
   icon: item.icon,
   option: item.option,
+  explore_url: explorable.has(item.code) ? `/lib/explore?code=${encodeURIComponent(item.code)}` : "",
   is_active: item.is_active,
   created_at: item.created_at,
   updated_at: item.updated_at,
@@ -48,7 +93,7 @@ const formFields = [
   { key: "code", label: "category_modal.code", pk: true, required: true },
   { key: "name", label: "category_modal.name", required: true },
   { key: "parent", label: "category_modal.parent", type: "select" as const, options: categories_list, required: false },
-  { key: "icon", label: "category_modal.icon", placeholder: "Heroicon path" },
+  { key: "icon", label: "category_modal.icon", type: "icon" as const, iconOptions: ALL_ICON_OPTIONS, iconSearch: true },
   { key: "option", label: "category_modal.option", placeholder: "Library path" },
   {
     key: "description",
@@ -179,6 +224,13 @@ const fieldKeys = formFields.map((f) => f.key);
           i18Item="category"
           detailPage="/taxo/specifications"
           mdItem="specification"
+          treeParentKey="parent"
+          rowLink={{
+            hrefKey: "explore_url",
+            icon: "compass",
+            title: "category_modal.explore",
+            disabledTitle: "category_modal.explore_unavailable",
+          }}
         />
         <!-- ====== Table End -->
       </div>

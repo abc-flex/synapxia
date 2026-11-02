@@ -47,6 +47,19 @@ export interface ColumnConfig {
 }
 
 /** Option shape accepted by the toolbar filter <select>s. */
+/** Optional per-row navigation action (DataTable `rowLink`). The row field
+ * named by `hrefKey` holds the target URL; a row where it is empty renders the
+ * button disabled, with `disabledTitle` explaining why. */
+export interface RowLinkConfig {
+  hrefKey: string;
+  /** Icon slug in src/images/icons/. */
+  icon: string;
+  /** i18n key for the tooltip of an enabled link. */
+  title: string;
+  /** i18n key for the tooltip of a disabled one. */
+  disabledTitle: string;
+}
+
 export interface FilterOption {
   value?: string;
   code?: string;

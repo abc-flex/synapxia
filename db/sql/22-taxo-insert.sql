@@ -2,23 +2,23 @@
 -- ******* Table categories *********
 -- **********************************
 
-INSERT INTO categories (code, name, description, parent, option) VALUES
-    ('AI_ASSETS', 'AI Assets', 'Category for all AI-related assets', NULL, NULL),
+INSERT INTO categories (code, name, description, parent, option, icon) VALUES
+    ('AI_ASSETS', 'AI Assets', 'Category for all AI-related assets', NULL, NULL, 'ai-library'),
     -- Classic AI and Machine Learning Models
-    ('CLASSIC_AI', 'Classic AI', 'Category for Classic AI assets', 'AI_ASSETS', NULL),
-    ('ML_MODELS', 'Machine Learning Models', 'Category for Machine Learning Models', 'CLASSIC_AI', NULL),
-    ('ALGORITHMS', 'Algorithms', 'Category for Algorithms', 'CLASSIC_AI', NULL),
-    ('DATASETS', 'Datasets', 'Category for Datasets', 'CLASSIC_AI', NULL),
+    ('CLASSIC_AI', 'Classic AI', 'Category for Classic AI assets', 'AI_ASSETS', NULL, 'cpu-chip'),
+    ('ML_MODELS', 'Machine Learning Models', 'Category for Machine Learning Models', 'CLASSIC_AI', NULL, 'neural-network'),
+    ('ALGORITHMS', 'Algorithms', 'Category for Algorithms', 'CLASSIC_AI', NULL, 'math-function'),
+    ('DATASETS', 'Datasets', 'Category for Datasets', 'CLASSIC_AI', NULL, 'circle-stack'),
     -- Generative AI
-    ('GEN_AI', 'Generative AI', 'Category for Generative AI assets', 'AI_ASSETS', NULL),
-    ('PROMPTS', 'Prompts', 'Category for Prompt', 'GEN_AI', '/lib/explore?code=PROMPTS'),
-    ('MCPS', 'Model Context Protocol', 'Category for MCPs servers and clients definitions', 'GEN_AI', '/lib/explore?code=MCPS'),
-    ('AGENTS', 'Agents', 'Category for AI Agents', 'GEN_AI', '/lib/explore?code=AGENTS'),
-    ('FLOWS', 'AI Flows', 'Category for Generative AI Flows in N8n', 'GEN_AI', '/lib/explore?code=FLOWS'),
-    ('SKILLS', 'Skills', 'Category for AI Skills in Generative AI tools', 'GEN_AI', '/lib/explore?code=SKILLS'),
-    ('ASSISTANTS', 'Assistants aka GPTs', 'Category for AI Assistants in ChatGPT', 'GEN_AI', '/lib/explore?code=ASSISTANTS'),
-    ('RAG_APPS', 'RAG Apps', 'Category for Retrieval-Augmented Generation applications', 'GEN_AI', '/lib/explore?code=RAG_APPS'),
-    ('MODELS', 'Gen AI Models', 'Category for Gen AI Models', 'GEN_AI', '/lib/explore?code=MODELS');
+    ('GEN_AI', 'Generative AI', 'Category for Generative AI assets', 'AI_ASSETS', NULL, 'sparkles'),
+    ('PROMPTS', 'Prompts', 'Category for Prompt', 'GEN_AI', '/lib/explore?code=PROMPTS', 'command-line'),
+    ('MCPS', 'Model Context Protocol', 'Category for MCPs servers and clients definitions', 'GEN_AI', '/lib/explore?code=MCPS', 'plug-connected'),
+    ('AGENTS', 'Agents', 'Category for AI Agents', 'GEN_AI', '/lib/explore?code=AGENTS', 'robot'),
+    ('FLOWS', 'AI Flows', 'Category for Generative AI Flows in N8n', 'GEN_AI', '/lib/explore?code=FLOWS', 'route'),
+    ('SKILLS', 'Skills', 'Category for AI Skills in Generative AI tools', 'GEN_AI', '/lib/explore?code=SKILLS', 'puzzle'),
+    ('ASSISTANTS', 'Assistants aka GPTs', 'Category for AI Assistants in ChatGPT', 'GEN_AI', '/lib/explore?code=ASSISTANTS', 'chat-bubble-left-right'),
+    ('RAG_APPS', 'RAG Apps', 'Category for Retrieval-Augmented Generation applications', 'GEN_AI', '/lib/explore?code=RAG_APPS', 'document-magnifying-glass'),
+    ('MODELS', 'Gen AI Models', 'Category for Gen AI Models', 'GEN_AI', '/lib/explore?code=MODELS', 'brain');
 
 -- **********************************
 -- ******* Table features ****

@@ -31,6 +31,10 @@ interface Field {
   iconOptions?: { value: string; label: string; svg: string }[];
   // For type: "icon" — the choice preselected in create mode (and after reset).
   defaultValue?: string;
+  // For type: "icon" — compact, searchable gallery with a "None" tile, the
+  // same picker as the modules/options catalog; labels are tooltips (slugs),
+  // not i18n keys. Use it for large galleries (e.g. ALL_ICON_OPTIONS).
+  iconSearch?: boolean;
 }
 
 // Normalize an arbitrary date/datetime string into the value format that
@@ -278,6 +282,58 @@ const triggerTextKey =
             );
           }
 
+          if (field.type === "icon" && field.iconSearch) {
+            const selected = value || (mode === "create" ? field.defaultValue || "" : "");
+            const tile = "flex h-9 items-center justify-center rounded-md border border-transparent text-gray-500 hover:border-gray-300 hover:text-indigo-600 peer-checked:border-indigo-500 peer-checked:bg-indigo-50 peer-checked:text-indigo-700 peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-200 peer-disabled:opacity-60 dark:text-gray-400 dark:hover:border-gray-700 dark:peer-checked:bg-indigo-500/10 dark:peer-checked:text-indigo-300";
+            return (
+              <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-4" key={field.key} data-icon-picker>
+                <div class="sm:w-32 sm:pt-2">
+                  <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {field.required && <span class="text-red-500">*</span>}
+                    <span data-i18n={field.label}>{field.label}</span>
+                  </span>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="mb-1 flex items-center justify-between gap-3">
+                    <p class="truncate font-mono text-[11px] text-gray-400 dark:text-gray-500" data-icon-current>{selected}</p>
+                    <input
+                      type="search"
+                      data-icon-search
+                      placeholder="Search icons…"
+                      data-i18n-placeholder="option_catalog.icon_search"
+                      aria-label="Search icons…"
+                      disabled={fieldDisabled}
+                      class="w-44 rounded-lg border border-gray-300 bg-white px-3 py-1 text-xs text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                    />
+                  </div>
+                  <div class="grid max-h-48 grid-cols-6 gap-1.5 overflow-y-auto rounded-lg border border-gray-200 p-2 sm:grid-cols-10 dark:border-gray-800" role="radiogroup">
+                    {!field.required && (
+                      <label class="cursor-pointer" title="None" data-i18n-title="option_catalog.no_icon">
+                        <input type="radio" name={field.key} value="" checked={selected === ""} disabled={fieldDisabled} class="peer sr-only" />
+                        <span class={`${tile} text-[10px]`} data-i18n="option_catalog.no_icon">None</span>
+                      </label>
+                    )}
+                    {(field.iconOptions || []).map((opt) => (
+                      <label class="cursor-pointer" title={opt.label} data-icon-slug={opt.value}>
+                        <input
+                          type="radio"
+                          name={field.key}
+                          value={opt.value}
+                          checked={opt.value === selected}
+                          required={field.required}
+                          disabled={fieldDisabled}
+                          aria-label={opt.label}
+                          class="peer sr-only"
+                        />
+                        <span class={`${tile} [&>svg]:h-5 [&>svg]:w-5`} aria-hidden="true"><Fragment set:html={opt.svg} /></span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
           if (field.type === "icon") {
             const selected = value || (mode === "create" ? field.defaultValue || "" : "");
             return (
@@ -407,6 +463,41 @@ const triggerTextKey =
     // List-backed selects (filterLang) need no client step here: each option
     // carries data-list-labels and loadClientTranslations repaints it.
 
+    // Searchable icon galleries (field.iconSearch): filter tiles by slug and
+    // echo the chosen slug. crudClient fires `change` after prefilling, so the
+    // echo also follows edit-mode prefill and create-mode reset.
+    const pickers = modal.querySelectorAll("[data-icon-picker]");
+    const syncPicker = (picker) => {
+      const checked = picker.querySelector('input[type="radio"]:checked');
+      const current = picker.querySelector("[data-icon-current]");
+      if (current) current.textContent = checked ? checked.value : "";
+    };
+    const filterPicker = (picker, query) => {
+      const q = query.trim().toLowerCase();
+      picker.querySelectorAll("[data-icon-slug]").forEach((tile) => {
+        tile.hidden = q !== "" && !tile.dataset.iconSlug.includes(q);
+      });
+    };
+    pickers.forEach((picker) => {
+      const search = picker.querySelector("[data-icon-search]");
+      search?.addEventListener("input", () => filterPicker(picker, search.value));
+      // Enter in the search box must not submit the form.
+      search?.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") e.preventDefault();
+      });
+      picker.addEventListener("change", (e) => {
+        if (e.target.type === "radio") syncPicker(picker);
+      });
+    });
+    const resetPickers = () => {
+      pickers.forEach((picker) => {
+        const search = picker.querySelector("[data-icon-search]");
+        if (search) search.value = "";
+        filterPicker(picker, "");
+        syncPicker(picker);
+      });
+    };
+
     const open = () => {
       if (!modal.open) {
         // Reset form fields in create mode
@@ -420,6 +511,7 @@ const triggerTextKey =
             }
           }
         }
+        resetPickers();
         modal.showModal();
       }
     };

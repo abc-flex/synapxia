@@ -69,6 +69,7 @@ export function initCrudPage({
             dialog.querySelectorAll(`[name="${key}"]`).forEach((radio) => {
               radio.checked = radio.value === String(value ?? "");
             });
+            input.dispatchEvent(new Event("change", { bubbles: true }));
           } else if (input.type === "checkbox") {
             input.checked = Boolean(value);
           } else if (input.tagName === "SELECT") {
@@ -142,6 +143,7 @@ export function initCrudPage({
         dialog.querySelectorAll(`[name="${key}"]`).forEach((radio) => {
           radio.checked = radio.defaultChecked;
         });
+        input.dispatchEvent(new Event("change", { bubbles: true }));
       } else if (input.type === "checkbox") {
         input.checked = false;
       } else if (input.tagName === "SELECT") {

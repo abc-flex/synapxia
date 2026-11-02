@@ -441,7 +441,9 @@
     "edit": "Editar Categoría",
     "delete": "Eliminar Categoría",
     "empty_message": "No se encontraron Categorías",
-    "delete_confirmation": "¿Está seguro de que desea eliminar esta Categoría?"
+    "delete_confirmation": "¿Está seguro de que desea eliminar esta Categoría?",
+    "explore": "Explorar categoría",
+    "explore_unavailable": "Aún no disponible para exploración"
   },
   "feature_modal": {
     "code": "Código",
@@ -449,6 +451,7 @@
     "description": "Descripción",
     "type": "Tipo",
     "list": "Lista",
+    "all_types": "Todos los tipos",
     "one_title": "Característica",
     "many_title": "Características",
     "filter_title": "Todas las Características",

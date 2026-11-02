@@ -51,6 +51,13 @@ export interface IconOption {
   svg: string;
 }
 
+/** Every icon as a gallery choice, labeled by its slug (CrudModal `iconSearch`). */
+export const ALL_ICON_OPTIONS: IconOption[] = ALL_ICON_SLUGS.map((slug) => ({
+  value: slug,
+  label: slug,
+  svg: iconSvg(slug),
+}));
+
 export const PROFILE_ICON_OPTIONS: IconOption[] = PROFILE_ICON_SLUGS.map((slug) => ({
   value: slug,
   label: `profile_icons.${slug}`,

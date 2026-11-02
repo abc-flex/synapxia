@@ -2,6 +2,8 @@
 import editSvg from "@/images/icons/edit.svg?raw";
 import deleteSvg from "@/images/icons/delete.svg?raw";
 import listSvg from "@/images/icons/list-bullet.svg?raw";
+import { iconSvg } from "@/lib/profileIcons";
+import type { RowLinkConfig } from "@/types/datatable";
 
 interface Props {
   row: Record<string, any>;
@@ -15,6 +17,8 @@ interface Props {
    * row's value isn't true, the mutation buttons (edit/delete/detail-expand)
    * are not rendered. Unset (default) = today's unconditional buttons. */
   manageKey?: string | null;
+  /** Per-row navigation button: enabled where row[hrefKey] holds a URL. */
+  rowLink?: RowLinkConfig | null;
 }
 const {
   row,
@@ -25,9 +29,13 @@ const {
   favoriteAction = false,
   favoriteKey = "favorite",
   manageKey = null,
+  rowLink = null,
 } = Astro.props as Props;
 
 const canManage = !manageKey || row[manageKey] === true;
+// A row without a URL still renders the button, disabled, so the actions
+// column keeps its alignment.
+const linkHref = rowLink ? row[rowLink.hrefKey] || "" : "";
 ---
 <td class="actions-cell px-2 py-1 text-right space-x-0">
   <div class="actions-wrapper">
@@ -44,6 +52,31 @@ const canManage = !manageKey || row[manageKey] === true;
       </a>
       <span class="dot">•</span>
     )}
+    {rowLink && (linkHref ? (
+      <a
+        href={linkHref}
+        class="action-btn p-1 rounded hover:bg-indigo-50 dark:hover:bg-gray-800"
+        data-action="link"
+        data-i18n-title={rowLink.title}
+        title=""
+      >
+        <span class="w-5 h-5 inline-block [&>svg]:w-5 [&>svg]:h-5">
+          <Fragment set:html={iconSvg(rowLink.icon)} />
+        </span>
+      </a>
+    ) : (
+      <span
+        class="inline-flex p-1 text-gray-300 cursor-not-allowed dark:text-gray-600"
+        aria-disabled="true"
+        data-i18n-title={rowLink.disabledTitle}
+        title=""
+      >
+        <span class="w-5 h-5 inline-block [&>svg]:w-5 [&>svg]:h-5">
+          <Fragment set:html={iconSvg(rowLink.icon)} />
+        </span>
+      </span>
+    ))}
+    {rowLink && <span class="dot">•</span>}
     {detailExpand && canManage && (
       <button
         class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded detail-expand-btn"

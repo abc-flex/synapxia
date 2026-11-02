@@ -1,7 +1,7 @@
 ---
 import DataTableCell from "./DataTableCell.astro";
 import DataTableActions from "./DataTableActions.astro";
-import type { ColumnConfig } from "@/types/datatable";
+import type { ColumnConfig, RowLinkConfig } from "@/types/datatable";
 import type { TreeRowMeta } from "@/lib/datatable";
 
 interface Props {
@@ -15,6 +15,7 @@ interface Props {
   favoriteAction?: boolean;
   favoriteKey?: string;
   manageKey?: string | null;
+  rowLink?: RowLinkConfig | null;
   /** Tree mode: per-row position, aligned with `data` (null = flat table). */
   treeMeta?: TreeRowMeta[] | null;
 }
@@ -29,6 +30,7 @@ const {
   favoriteAction = false,
   favoriteKey = "favorite",
   manageKey = null,
+  rowLink = null,
   treeMeta = null,
 } = Astro.props as Props;
 ---
@@ -57,6 +59,7 @@ const {
           favoriteAction={favoriteAction}
           favoriteKey={favoriteKey}
           manageKey={manageKey}
+          rowLink={rowLink}
         />
       </tr>
     ))

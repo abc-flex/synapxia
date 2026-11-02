@@ -10,7 +10,7 @@ import DataTableHead from "./partials/DataTableHead.astro";
 import DataTableBody from "./partials/DataTableBody.astro";
 import DataTablePagination from "./partials/DataTablePagination.astro";
 import DataTableEmpty from "./partials/DataTableEmpty.astro";
-import type { ColumnConfig, FilterOption } from "@/types/datatable";
+import type { ColumnConfig, FilterOption, RowLinkConfig } from "@/types/datatable";
 import type { FilterSlotInput } from "@/lib/datatable";
 import { buildFilterConfigs, buildTreeRows } from "@/lib/datatable";
 
@@ -77,6 +77,9 @@ const {
   // ordered depth-first, the first visible column is indented with a +/− toggle,
   // and only the first two levels start visible. null = flat table (default).
   treeParentKey = null,
+  // Optional per-row navigation button (see RowLinkConfig): enabled where the
+  // row's `hrefKey` field holds a URL, disabled elsewhere. null = none (default).
+  rowLink = null,
 } = Astro.props as {
   columns?: ColumnConfig[];
   data?: Record<string, any>[];
@@ -116,6 +119,7 @@ const {
   manageKey?: string | null;
   extraFilters?: FilterSlotInput[];
   treeParentKey?: string | null;
+  rowLink?: RowLinkConfig | null;
 };
 
 // Tree mode reorders the rows once, here, so the body, the client config and
@@ -173,6 +177,7 @@ const filterConfigs = buildFilterConfigs(tableId, [
         favoriteAction={favoriteAction}
         favoriteKey={favoriteKey}
         manageKey={manageKey}
+        rowLink={rowLink}
         treeMeta={tree?.meta ?? null}
       />
     </table>

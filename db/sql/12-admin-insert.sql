@@ -60,25 +60,25 @@ INSERT INTO options (module, code, name, description, sort_order, type, path, ic
      10,'CARD_GALLERY','/lib/assets','archive-box'),
     ('LIB','PROMPTS','Prompt Gallery',
      'Curated gallery of reusable GenAI prompts.',
-     20,'CARD_GALLERY','/lib/explore?code=PROMPTS','chat-bubble-bottom-center-text'),
+     20,'CARD_GALLERY','/lib/explore?code=PROMPTS','command-line'),
     ('LIB','MCPS','MCP Directory',
      'Curated directory of tools compatible with Model Context Protocol.',
-     30,'CARD_GALLERY','/lib/explore?code=MCPS','server-stack'),
+     30,'CARD_GALLERY','/lib/explore?code=MCPS','plug-connected'),
     ('LIB','AGENTS','Agent Repository',
      'Inventory of AI agents with higher autonomy.',
-     40,'CARD_GALLERY','/lib/explore?code=AGENTS','cpu-chip'),
+     40,'CARD_GALLERY','/lib/explore?code=AGENTS','robot'),
     ('LIB','FLOWS','Agentic Flows',
      'Registry of agentic flows with multiple agents and MCP tools.',
-     50,'CARD_GALLERY','/lib/explore?code=FLOWS','arrows-right-left'),
+     50,'CARD_GALLERY','/lib/explore?code=FLOWS','route'),
     ('LIB','SKILLS','Skill Catalog',
      'Curated catalog of reusable skills for AI agents.',
-     60,'CARD_GALLERY','/lib/explore?code=SKILLS','academic-cap'),
+     60,'CARD_GALLERY','/lib/explore?code=SKILLS','puzzle'),
     ('LIB','RAG_APPS','RAG Apps',
      'Directory of Retrieval-Augmented Generation applications.',
      70,'CARD_GALLERY','/lib/explore?code=RAG_APPS','document-magnifying-glass'),
     ('LIB','MODELS','Models',
      'Catalog of AI and ML models used in the platform.',
-     80,'CARD_GALLERY','/lib/explore?code=MODELS','beaker');
+     80,'CARD_GALLERY','/lib/explore?code=MODELS','brain');
 
 -- ===== Module: INITIATIVES =====
 INSERT INTO options (module, code, name, description, sort_order, type, path, icon) VALUES

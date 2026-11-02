@@ -66,6 +66,11 @@ export async function getAssetsByCategoryWithAccess(category_code: string, skip:
   return apiGet<AssetWithAccessLevels[]>(`/api/assets/category/${category_code}/with-access${queryString}`);
 }
 
+/** True for a PUBLISHED status, tolerating the legacy `N-` sort prefix
+ * (`3-PUBLISHED`). The single test for "this asset is visible in Explore". */
+export const isPublished = (raw: unknown): boolean =>
+  String(raw ?? "").replace(/^\d+-/, "").toUpperCase() === "PUBLISHED";
+
 /**
  * All assets in one category the caller's PRIVILEGE lets them query — NOT
  * scoped by per-asset `asset_permissions` grants (unlike

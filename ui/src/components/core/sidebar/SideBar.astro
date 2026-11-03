@@ -3,7 +3,7 @@ import { t } from "@/i18n";
 import { getLocale } from "@/utils/getLocale";
 import { NavModule, NavOption } from "../../types/nav";
 import MenuItem from "./SideBarMenuItem.astro";
-import { buildSidebarLayout } from "@/lib/navigation";
+import { buildSidebarLayout, isOptionActive } from "@/lib/navigation";
 
 const locale = getLocale(Astro);
 
@@ -14,6 +14,7 @@ interface Props {
   modules?: NavModule[];
   options?: NavOption[];
   currentPath?: string;
+  currentSearch?: string;
   currentModuleName?: string;
 }
 
@@ -21,6 +22,7 @@ const {
   modules = [],
   options = [],
   currentPath = "",
+  currentSearch = "",
   currentModuleName = "",
 } = Astro.props as Props;
 
@@ -89,6 +91,7 @@ const { groups, flatItems } = buildSidebarLayout(modules, options);
                 module={module}
                 options={moduleOptions}
                 currentPath={currentPath}
+                currentSearch={currentSearch}
                 currentModuleName={currentModuleName}
               />
             </li>
@@ -97,7 +100,7 @@ const { groups, flatItems } = buildSidebarLayout(modules, options);
             <li>
               <a
                 href={item.path || "#"}
-                class={`menu-item group ${item.path === currentPath ? "menu-item-active" : "menu-item-inactive"}`}
+                class={`menu-item group ${isOptionActive(item.path, currentPath, currentSearch) ? "menu-item-active" : "menu-item-inactive"}`}
                 role="button"
               >
                 <span class="menu-item-icon-tile">
@@ -139,7 +142,7 @@ const { groups, flatItems } = buildSidebarLayout(modules, options);
 
      Re-rendering is cheap: the menu has a handful of items.
      ============================================================ */
-  import { getNavigationData, readNavCache, buildSidebarLayout, type NavigationData, type FlatSidebarItem } from "@/lib/navigation";
+  import { getNavigationData, readNavCache, buildSidebarLayout, isOptionActive, type NavigationData, type FlatSidebarItem } from "@/lib/navigation";
   import type { NavModule, NavOption } from "@/types/nav";
   import { loadClientTranslations } from "@/utils/i18nClient";
 
@@ -180,7 +183,7 @@ const { groups, flatItems } = buildSidebarLayout(modules, options);
       if (hasChildren) {
         const items = opts
           .map((o) => {
-            const active = o.path === currentPath;
+            const active = isOptionActive(o.path, currentPath, window.location.search);
             const optI18n = `menu_options.${o.code.toLowerCase()}`;
             // Use option icon when present, otherwise the original bullet dot.
             const optIconSvg = o.icon ? (icons[o.icon] || "") : "";
@@ -236,7 +239,7 @@ const { groups, flatItems } = buildSidebarLayout(modules, options);
     // link instead of a near-empty expandable section (see buildSidebarLayout).
     const buildFlatItem = (item: FlatSidebarItem) => {
       const iconSvg = moduleIcon(item.icon || "");
-      const isActive = item.path === currentPath;
+      const isActive = isOptionActive(item.path, currentPath, window.location.search);
       const optI18n = `menu_options.${item.code.toLowerCase()}`;
       return `
         <li>

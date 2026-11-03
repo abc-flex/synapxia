@@ -81,7 +81,7 @@ const currentModuleName = pathSegments[0] || "";
       {/* The sidebar brand text must never vary by page — SideBar's own
           default ("SynapxIA") is used unconditionally. `title` only ever
           feeds the <title> tag below (the browser tab). */}
-      <SideBar modules={primaryNav} options={itemsNav} currentPath={currentPath} currentModuleName={currentModuleName} />
+      <SideBar modules={primaryNav} options={itemsNav} currentPath={currentPath} currentSearch={Astro.url.search} currentModuleName={currentModuleName} />
 
       {/* Mobile drawer backdrop — shown only while the off-canvas sidebar is open (<lg). */}
       <div data-sidebar-backdrop class="fixed inset-0 z-[9998] hidden bg-black/40 lg:hidden"></div>

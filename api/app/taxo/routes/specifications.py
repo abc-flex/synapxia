@@ -6,7 +6,11 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 from sqlalchemy.exc import IntegrityError
 
-from ..internal.models import Specification, SpecificationCreate, SpecificationUpdate, Category, Feature
+from ..internal.models import (
+    Specification, SpecificationCreate, SpecificationUpdate, Category, Feature,
+    SpecificationMatrix, SpecificationMatrixSave,
+)
+from ..internal import specification_matrix
 from ..internal.dependencies import get_db_session
 from ...auth.routes import current_active_user
 from ...internal.permissions import require_privilege, check_any_privilege
@@ -66,6 +70,57 @@ def get_by_category(
         .offset(skip)
         .limit(limit)
     ).all()
+
+
+# The matrix is opened from the Categories page, so TAXO/CATEGORIES opens it
+# too: TAXO/SPECIFICATIONS is never seeded (memory/MEMORY.md "Known blockers").
+MATRIX_OPTIONS = ["CATEGORIES", "SPECIFICATIONS"]
+
+
+@router.get("/category/{category_code}/matrix", response_model=SpecificationMatrix)
+def get_matrix(
+    category_code: str,
+    session: Session = Depends(get_db_session),
+    current_user: User = Depends(current_active_user),
+) -> SpecificationMatrix:
+    """
+    Every active feature, with the category's specification of each.
+
+    Not paginated on purpose: it is the bounded feature catalog (tens of rows),
+    shown as one checklist.
+
+    - **category_code**: Category code
+    """
+    check_any_privilege(session, current_user, "TAXO", MATRIX_OPTIONS)
+    try:
+        return specification_matrix.get_matrix(session, category_code)
+    except specification_matrix.CategoryNotFound as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.put("/category/{category_code}/matrix", response_model=SpecificationMatrix)
+def save_matrix(
+    category_code: str,
+    body: SpecificationMatrixSave,
+    session: Session = Depends(get_db_session),
+    current_user: User = Depends(current_active_user),
+) -> SpecificationMatrix:
+    """
+    Replace the category's specifications over the feature catalog in one transaction.
+
+    - **specifications**: the FULL set of `{feature, default_value, required, copyable, sort_order}`.
+      Features left out are removed (logical delete); removed rows are reactivated.
+    """
+    check_any_privilege(session, current_user, "TAXO", MATRIX_OPTIONS, can_edit=True)
+    try:
+        result = specification_matrix.save_matrix(session, category_code, body.specifications)
+    except specification_matrix.CategoryNotFound as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except specification_matrix.InvalidMatrix as e:
+        session.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    logger.info(f"Specifications saved for category {category_code}: {len(body.specifications)} features")
+    return result
 
 
 @router.get("/{category_code}/{feature_code}", response_model=Specification)

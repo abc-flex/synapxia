@@ -450,6 +450,35 @@ export interface Specification {
   updated_at?: string;
 }
 
+// Specification matrix (`/taxo/specifications?category=CODE`): one category
+// over the whole active feature catalog.
+export interface SpecificationMatrixFeature {
+  code: string;
+  name: string;
+  description?: string | null;
+  type?: string | null;
+  list?: string | null;
+  specified: boolean;
+  default_value?: string | null;
+  required: boolean;
+  copyable: boolean;
+  sort_order: number;
+}
+
+export interface SpecificationMatrix {
+  category: string;
+  category_name: string;
+  features: SpecificationMatrixFeature[];
+}
+
+export interface SpecificationMatrixEntry {
+  feature: string;
+  default_value: string | null;
+  required: boolean;
+  copyable: boolean;
+  sort_order: number;
+}
+
 export interface SpecificationCreate {
   category: string;
   feature: string;

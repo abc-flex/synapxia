@@ -4,7 +4,9 @@
  */
 
 import { apiGet, apiPost, apiPut, apiDelete, buildQueryString } from './api';
-import type { Specification, SpecificationCreate, SpecificationUpdate } from '../types/api';
+import type {
+  Specification, SpecificationCreate, SpecificationUpdate, SpecificationMatrix, SpecificationMatrixEntry,
+} from '../types/api';
 
 /**
  * Fetch all specifications with optional pagination
@@ -67,4 +69,21 @@ export async function updateSpecification(category_code: string, feature_code: s
  */
 export async function deleteSpecification(category_code: string, feature_code: string): Promise<void> {
   return apiDelete<void>(`/api/specifications/${encodeURIComponent(category_code)}/${encodeURIComponent(feature_code)}`);
+}
+
+/**
+ * One category's specification over every active feature (the checklist).
+ * @param category_code - Category code
+ */
+export async function getSpecificationMatrix(category_code: string): Promise<SpecificationMatrix> {
+  return apiGet<SpecificationMatrix>(`/api/specifications/category/${encodeURIComponent(category_code)}/matrix`);
+}
+
+/**
+ * Save a category's specifications in one transaction.
+ * @param category_code - Category code
+ * @param specifications - The FULL set; features left out are removed
+ */
+export async function saveSpecificationMatrix(category_code: string, specifications: SpecificationMatrixEntry[]): Promise<SpecificationMatrix> {
+  return apiPut<SpecificationMatrix>(`/api/specifications/category/${encodeURIComponent(category_code)}/matrix`, { specifications });
 }

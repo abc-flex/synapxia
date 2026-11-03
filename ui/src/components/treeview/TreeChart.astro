@@ -123,6 +123,47 @@ const treeDataJson = JSON.stringify(treeData);
 
     const chart = echarts.init(container);
 
+    // Colors follow the theme on <html class="dark">, set before first paint,
+    // so the chart opens in the mode the page was entered with.
+    const PALETTES = {
+      light: {
+        background: '#ffffff',
+        label: '#1e293b',
+        line: '#cbd5e1',
+        node: '#4f46e5',
+        tooltipBg: '#ffffff',
+        tooltipBorder: '#e2e8f0',
+        tooltipText: '#1e293b',
+      },
+      dark: {
+        background: '#111827',
+        label: '#e5e7eb',
+        line: '#4b5563',
+        node: '#818cf8',
+        tooltipBg: '#1f2937',
+        tooltipBorder: '#374151',
+        tooltipText: '#f3f4f6',
+      },
+    };
+    const isDark = () => document.documentElement.classList.contains('dark');
+    let palette = isDark() ? PALETTES.dark : PALETTES.light;
+
+    const themeOption = (p) => ({
+      backgroundColor: p.background,
+      tooltip: {
+        backgroundColor: p.tooltipBg,
+        borderColor: p.tooltipBorder,
+        textStyle: { color: p.tooltipText },
+      },
+      series: [
+        {
+          label: { color: p.label },
+          lineStyle: { color: p.line },
+          itemStyle: { color: boxed ? p.background : p.node, borderColor: p.node },
+        },
+      ],
+    });
+
     const isLinkable = (data) =>
       !!data && !!data.leavePath && (data.nodeCount ?? 0) > 0;
 
@@ -158,7 +199,6 @@ const treeDataJson = JSON.stringify(treeData);
         verticalAlign: 'middle',
         align: 'right',
         fontSize: 12,
-        color: '#1e293b',
       },
       leaves: {
         label: {
@@ -168,12 +208,7 @@ const treeDataJson = JSON.stringify(treeData);
         },
       },
       lineStyle: {
-        color: '#cbd5e1',
         width: 1.5,
-      },
-      itemStyle: {
-        color: '#4f46e5',
-        borderColor: '#4f46e5',
       },
     };
 
@@ -188,7 +223,7 @@ const treeDataJson = JSON.stringify(treeData);
         formatter: (params) => {
           const childLabel =
             params.data?.childCount > 0
-              ? `<br/><span style="color:#94a3b8">${params.data.childCount} sub-elemento(s)</span>`
+              ? `<br/><span style="color:${isDark() ? '#9ca3af' : '#94a3b8'}">${params.data.childCount} sub-elemento(s)</span>`
               : '';
           return params.data && params.data.value
             ? `<strong>${params.name}</strong><br/>${params.data.value}${childLabel}`
@@ -214,6 +249,17 @@ const treeDataJson = JSON.stringify(treeData);
     };
 
     chart.setOption(option);
+    chart.setOption(themeOption(palette));
+    container.closest('.chart-container')?.classList.toggle('is-dark', isDark());
+
+    // Keep the chart in step if the theme is switched while the page is open.
+    new MutationObserver(() => {
+      const next = isDark() ? PALETTES.dark : PALETTES.light;
+      if (next === palette) return;
+      palette = next;
+      chart.setOption(themeOption(palette));
+      container.closest('.chart-container')?.classList.toggle('is-dark', isDark());
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
     chart.on('click', (params) => {
       if (isLinkable(params.data)) {
@@ -309,6 +355,22 @@ const treeDataJson = JSON.stringify(treeData);
   .chart-toolbar button:hover {
     background: #eef2ff;
     border-color: #4f46e5;
+  }
+
+  /* Dark theme: same values as the chart's dark palette (gray-900 surface). */
+  .chart-container.is-dark {
+    background: #111827;
+  }
+
+  .chart-container.is-dark .chart-toolbar button {
+    border-color: #374151;
+    background: rgba(31, 41, 55, 0.92);
+    color: #a5b4fc;
+  }
+
+  .chart-container.is-dark .chart-toolbar button:hover {
+    background: #1f2937;
+    border-color: #818cf8;
   }
 
   .chart-scroll {

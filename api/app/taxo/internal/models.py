@@ -131,3 +131,39 @@ class SpecificationUpdate(SQLModel):
         default=None, description="Display order of this feature within its category")
     is_active: Optional[bool] = Field(
         default=None, description="Indicates if the specification is active")
+
+
+# Specification matrix (`/taxo/specifications?category=CODE`): one category's
+# specification over the whole active feature catalog.
+
+class SpecificationMatrixFeature(SQLModel):
+    code: str
+    name: str
+    description: Optional[str] = None
+    type: Optional[str] = None
+    list: Optional[str] = None
+    specified: bool = False
+    default_value: Optional[str] = None
+    required: bool = False
+    copyable: bool = False
+    sort_order: int = 0
+
+
+class SpecificationMatrix(SQLModel):
+    category: str
+    category_name: str
+    features: list[SpecificationMatrixFeature] = []
+
+
+class SpecificationMatrixEntry(SQLModel):
+    feature: str = Field(max_length=50, description="Feature code")
+    default_value: Optional[str] = Field(
+        default=None, description="Default value (Any or a List_items.value of the feature's list)")
+    required: bool = Field(default=False, description="Whether the feature is required")
+    copyable: bool = Field(default=False, description="Whether the feature can be copied")
+    sort_order: int = Field(default=0, description="Display order within the category")
+
+
+class SpecificationMatrixSave(SQLModel):
+    specifications: list[SpecificationMatrixEntry] = Field(
+        default=[], description="The FULL set of features the category specifies; anything left out is removed")

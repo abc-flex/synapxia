@@ -1,91 +1,21 @@
 ---
+/**
+ * Specifications — the one place to define what a category characterizes.
+ *
+ * `?category=CODE` (the Categories list links here per row) opens that
+ * category's checklist: every active feature, grouped by feature type, with
+ * Included / order / default value / Required / Copyable per feature
+ * (SpecificationMatrix.svelte). Without `?category=` the island opens the
+ * first category.
+ */
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumb from "../../components/core/Breadcrumb.astro";
-import DataTable from "../../components/table/DataTable.astro";
-import CrudModal from "../../components/forms/CrudModal.astro";
-import Toast from "../../components/Toast.astro";
-import { getSpecifications } from "@/lib/specifications";
-import { getCategoriesSelect } from "@/lib/categories";
-import { getFeaturesSelect } from "@/lib/features";
 
-// Fetch specifications from API
-let specifications: any[] = [];
-let errorMessage: string | null = null;
-
-try {
-  const apiLists = await getSpecifications();
-  specifications = apiLists;
-} catch (error) {
-  console.error('Failed to fetch specifications:', error);
-  errorMessage = error instanceof Error ? error.message : 'Failed to fetch specifications from API';
-  // Fallback to empty array to still render the page
-  specifications = [];
-}
-
-// Fetch categories from API for select field
-let categories: any[] = [];
-try {
-  const apiCategories = await getCategoriesSelect();
-  categories = apiCategories;
-} catch (error) {
-  console.error('Failed to fetch categories:', error);
-  errorMessage = error instanceof Error ? error.message : 'Failed to fetch categories from API';
-  // Fallback to empty array to still render the page
-  categories = [];
-}
-
-// Fetch features from API for select field
-let features: any[] = [];
-try {
-  const apiFeatures = await getFeaturesSelect();
-  features = apiFeatures;
-} catch (error) {
-  console.error('Failed to fetch features:', error);
-  errorMessage = error instanceof Error ? error.message : 'Failed to fetch features from API';
-  // Fallback to empty array to still render the page
-  features = [];
-}
-
-const columns = [
-  { key: "sort_order", label: "specification_modal.sort_order" },
-  { key: "category", label: "specification_modal.category", visible: false },
-  { key: "feature_name", label: "specification_modal.feature", as: "title", subtitleKey: "category_name", subtitleFormat: "text" },
-  { key: "feature", label: "specification_modal.feature", visible: false },
-  { key: "feature_name", label: "specification_modal.feature", visible: false },
-  { key: "default_value", label: "specification_modal.default_value" },
-  { key: "required", label: "specification_modal.required", as: "boolean" },
-  { key: "copyable", label: "specification_modal.copyable", as: "boolean" },
-];
-const data = specifications.map((item) => ({
-  id: `${item.category}::${item.feature}`,
-  category: item.category,
-  category_name: categories.find((c) => String(c.value) === String(item.category))?.label || item.category,
-  feature: item.feature,
-  feature_name: features.find((f) => String(f.value) === String(item.feature))?.label || item.feature,
-  default_value: item.default_value,
-  required: item.required,
-  copyable: item.copyable,
-  sort_order: item.sort_order,
-  is_active: item.is_active,
-  created_at: item.created_at,
-  updated_at: item.updated_at,
-}));
-const formFields = [
-  { key: "category", label: "specification_modal.category", type: "select" as const, options: categories, pk: true, required: true },
-  { key: "feature", label: "specification_modal.feature", type: "select" as const, options: features, pk: true, required: true },
-  { key: "default_value", label: "specification_modal.default_value", type: "text" as const },
-  { key: "required", label: "specification_modal.required", type: "checkbox" as const },
-  { key: "copyable", label: "specification_modal.copyable", type: "checkbox" as const },
-  { key: "sort_order", label: "specification_modal.sort_order", type: "number" as const, required: true },
-];
-const fieldKeys = ["id", ...formFields.map((f) => f.key)];
+const category = Astro.url.searchParams.get("category") ?? "";
 ---
 
 <BaseLayout>
-  {errorMessage && <Toast message={errorMessage} variant="error" open={true} />}
-
   <div class="mx-auto w-full max-w-full md:p-0">
-    <!-- Breadcrumb Start -->
     <Breadcrumb
       moduleName="Asset Taxonomy"
       pageName="Specifications"
@@ -96,109 +26,16 @@ const fieldKeys = ["id", ...formFields.map((f) => f.key)];
       pageNameKey="menu_options.specifications"
       pageTitleKey="menu_options.specifications"
     />
-    <!-- Breadcrumb End -->
 
-    <CrudModal
-      mode="create"
-      modalId="specification-create-modal"
-      entityName="Specification"
-      fields={formFields}
-      showTrigger={false}
-    />
-    <CrudModal
-      mode="edit"
-      modalId="specification-edit-modal"
-      entityName="Specification"
-      fields={formFields}
-      showTrigger={false}
-    />
-    <CrudModal
-      mode="delete"
-      modalId="specification-delete-modal"
-      entityName="Specification"
-      fields={formFields}
-      showTrigger={false}
-    />
-
-    <div
-      id="specifications-data"
-      data-rows={encodeURIComponent(JSON.stringify(data))}
-      data-keys={encodeURIComponent(JSON.stringify(fieldKeys))}
-      class="hidden"
-      aria-hidden="true"
-    >
-    </div>
-
-    <script>
-      import { initCrudPage } from "@/lib/crudClient";
-      import {
-        createSpecification,
-        updateSpecification,
-        deleteSpecification,
-      } from "@/lib/specifications";
-      import { showToast, flashToast } from "@/lib/toast";
-
-      initCrudPage({
-        dataId: "specifications-data",
-        editModalId: "specification-edit-modal",
-        deleteModalId: "specification-delete-modal",
-      });
-
-      // Handle CRUD form submissions
-      document.addEventListener("crud-submit", async (e) => {
-        const { modalId, mode, data } = e.detail;
-
-        try {
-          // Parse composite ID: "category::feature"
-          const [category, feature] = data.id.split("::");
-          if (mode === "create") {
-            // Create new specification
-            await createSpecification({
-              category: data.category,
-              feature: data.feature,
-              default_value: data.default_value || null,
-              required: data.required || false,
-              copyable: data.copyable || false,
-              sort_order: data.sort_order || 0,
-            });
-            flashToast("Specification created successfully!");
-            window.location.reload();
-          } else if (mode === "edit") {
-            // Update existing specification
-            await updateSpecification(category, feature, {
-              default_value: data.default_value || null,
-              required: data.required || false,
-              copyable: data.copyable || false,
-              sort_order: data.sort_order || 0,
-              is_active: data.is_active !== false,
-            });
-            flashToast("Specification updated successfully!");
-            window.location.reload();
-          } else if (mode === "delete") {
-            await deleteSpecification(category, feature);
-            flashToast("Specification deleted successfully!");
-            window.location.reload();
-          }
-        } catch (error) {
-          console.error("CRUD operation failed:", error);
-          showToast(error instanceof Error ? error.message : "An error occurred", "error");
-        }
-      });
-    </script>
-
-    <div class="space-y-5 sm:space-y-6">
-      <div class="border-0 p-0">
-        <DataTable
-          columns={columns}
-          data={data}
-          tableId="specifications"
-          i18Item="specification"
-          columnFilter="category"
-          filterOptions={categories}
-          masterPage="/taxo/categories"
-          mdItem="category"
-        />
-      </div>
-    </div>
+    <div id="specification-matrix-root" data-category={category}></div>
   </div>
+
+  <script>
+    // Mount the Svelte component manually (bundled @/ script, no island codegen).
+    import { mount } from "svelte";
+    import SpecificationMatrix from "@/components/svelte/SpecificationMatrix.svelte";
+
+    const root = document.getElementById("specification-matrix-root");
+    if (root) mount(SpecificationMatrix, { target: root, props: { category: root.dataset.category ?? "" } });
+  </script>
 </BaseLayout>

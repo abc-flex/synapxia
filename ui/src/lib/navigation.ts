@@ -132,6 +132,24 @@ export function buildSidebarLayout(modules: NavModule[], options: NavOption[]): 
 }
 
 /**
+ * Whether a menu option points at the page being shown. The paths must match
+ * and every query parameter the option carries must have the same value in
+ * the current URL: `/lib/explore?code=PROMPTS` is active only for that code,
+ * while `/admin/privileges` stays active on `/admin/privileges?profile=X`.
+ */
+export function isOptionActive(optionPath: string | null | undefined, pathname: string, search = ""): boolean {
+  if (!optionPath) return false;
+  const [path, query = ""] = optionPath.split("?");
+  const trim = (p: string) => (p.length > 1 ? p.replace(/\/+$/, "") : p);
+  if (trim(path) !== trim(pathname)) return false;
+  const current = new URLSearchParams(search);
+  for (const [key, value] of new URLSearchParams(query)) {
+    if (current.get(key) !== value) return false;
+  }
+  return true;
+}
+
+/**
  * Clear the cached nav data — call from logout so the next user doesn't
  * inherit the previous user's menu items.
  */
